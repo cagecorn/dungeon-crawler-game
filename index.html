@@ -499,6 +499,8 @@
                     <h3>✨ 장착 중인 아이템</h3>
                     <div class="equipped-slot" id="equipped-weapon">무기: 없음</div>
                     <div class="equipped-slot" id="equipped-armor">방어구: 없음</div>
+                    <div class="equipped-slot" id="equipped-accessory1">악세서리1: 없음</div>
+                    <div class="equipped-slot" id="equipped-accessory2">악세서리2: 없음</div>
                 </div>
                 <h3>📦 보유 아이템</h3>
                 <div id="inventory-items"></div>
@@ -785,6 +787,30 @@
                 level: 3,
                 icon: '🛡️'
             },
+            critCharm: {
+                name: '💎 치명 부적',
+                type: ITEM_TYPES.ACCESSORY,
+                critChance: 0.05,
+                price: 20,
+                level: 1,
+                icon: '💎'
+            },
+            evasionCharm: {
+                name: '🍀 회피 부적',
+                type: ITEM_TYPES.ACCESSORY,
+                evasion: 0.05,
+                price: 20,
+                level: 1,
+                icon: '🍀'
+            },
+            aimRing: {
+                name: '🎯 명중 반지',
+                type: ITEM_TYPES.ACCESSORY,
+                accuracy: 0.05,
+                price: 25,
+                level: 2,
+                icon: '🎯'
+            },
             healthPotion: {
                 name: '🧪 체력 포션',
                 type: ITEM_TYPES.POTION,
@@ -847,7 +873,9 @@
                 inventory: [],
                 equipped: {
                     weapon: null,
-                    armor: null
+                    armor: null,
+                    accessory1: null,
+                    accessory2: null
                 }
             },
             mercenaries: [],
@@ -941,14 +969,17 @@ function healTarget(healer, target) {
             const attackStat = options.attackValue !== undefined ? options.attackValue : (magic ? attacker.magicPower : attacker.attack);
             const defenseStat = options.defenseValue !== undefined ? options.defenseValue : (magic ? defender.magicResist : defender.defense);
 
-            const hitChance = attacker.accuracy / (attacker.accuracy + defender.evasion);
+            const attackerAcc = getStat(attacker, 'accuracy');
+            const defenderEva = getStat(defender, 'evasion');
+            const hitChance = attackerAcc / (attackerAcc + defenderEva);
             if (Math.random() > hitChance) {
                 return { hit: false };
             }
 
             let damage = Math.max(1, attackStat - defenseStat);
             let crit = false;
-            if (Math.random() < attacker.critChance) {
+            const critChance = getStat(attacker, 'critChance');
+            if (Math.random() < critChance) {
                 damage = Math.floor(damage * 1.5);
                 crit = true;
             }
@@ -970,22 +1001,42 @@ function healTarget(healer, target) {
 
             return { hit: true, crit, damage, statusApplied };
         }
+
+        function formatItem(item) {
+            const stats = [];
+            if (item.attack !== undefined) stats.push(`공격+${item.attack}`);
+            if (item.defense !== undefined) stats.push(`방어+${item.defense}`);
+            if (item.healing !== undefined) stats.push(`회복+${item.healing}`);
+            if (item.fireDamage !== undefined) stats.push(`🔥+${item.fireDamage}`);
+            if (item.iceDamage !== undefined) stats.push(`❄️+${item.iceDamage}`);
+            if (item.lightningDamage !== undefined) stats.push(`⚡+${item.lightningDamage}`);
+            if (item.maxHealth !== undefined && item.type !== ITEM_TYPES.POTION && item.type !== ITEM_TYPES.REVIVE) stats.push(`HP+${item.maxHealth}`);
+            if (item.accuracy !== undefined) stats.push(`명중+${item.accuracy}`);
+            if (item.evasion !== undefined) stats.push(`회피+${item.evasion}`);
+            if (item.critChance !== undefined) stats.push(`치명+${item.critChance}`);
+            if (item.magicPower !== undefined) stats.push(`마공+${item.magicPower}`);
+            if (item.magicResist !== undefined) stats.push(`마방+${item.magicResist}`);
+            return `${item.name}${stats.length ? ' (' + stats.join(', ') + ')' : ''}`;
+        }
+
+        function getStat(character, stat) {
+            let value = character[stat] || 0;
+            if (character.equipped) {
+                ['weapon', 'armor', 'accessory1', 'accessory2'].forEach(slot => {
+                    const it = character.equipped[slot];
+                    if (it && it[stat] !== undefined) {
+                        value += it[stat];
+                    }
+                });
+            }
+            return value;
+        }
         // 인벤토리 UI 갱신
         function updateInventoryDisplay() {
             const container = document.getElementById('inventory-items');
             container.innerHTML = '';
 
-            const formatItem = item => {
-                const stats = [];
-                if (item.attack !== undefined) stats.push(`공격+${item.attack}`);
-                if (item.defense !== undefined) stats.push(`방어+${item.defense}`);
-                if (item.healing !== undefined) stats.push(`회복+${item.healing}`);
-                if (item.fireDamage !== undefined) stats.push(`🔥+${item.fireDamage}`);
-                if (item.iceDamage !== undefined) stats.push(`❄️+${item.iceDamage}`);
-                if (item.lightningDamage !== undefined) stats.push(`⚡+${item.lightningDamage}`);
-                if (item.maxHealth !== undefined && item.type !== ITEM_TYPES.POTION && item.type !== ITEM_TYPES.REVIVE) stats.push(`HP+${item.maxHealth}`);
-                return `${item.name}${stats.length ? ' (' + stats.join(', ') + ')' : ''}`;
-            };
+
 
             gameState.player.inventory.forEach(item => {
                 const div = document.createElement('div');
@@ -1007,6 +1058,22 @@ function healTarget(healer, target) {
             } else {
                 armorSlot.textContent = '방어구: 없음';
             }
+            const acc1Slot = document.getElementById('equipped-accessory1');
+            if (gameState.player.equipped.accessory1) {
+                acc1Slot.textContent = `악세서리1: ${formatItem(gameState.player.equipped.accessory1)}`;
+                acc1Slot.onclick = () => unequipAccessory('accessory1');
+            } else {
+                acc1Slot.textContent = '악세서리1: 없음';
+                acc1Slot.onclick = null;
+            }
+            const acc2Slot = document.getElementById('equipped-accessory2');
+            if (gameState.player.equipped.accessory2) {
+                acc2Slot.textContent = `악세서리2: ${formatItem(gameState.player.equipped.accessory2)}`;
+                acc2Slot.onclick = () => unequipAccessory('accessory2');
+            } else {
+                acc2Slot.textContent = '악세서리2: 없음';
+                acc2Slot.onclick = null;
+            }
         }
 
         // 용병 목록 갱신
@@ -1021,6 +1088,8 @@ function healTarget(healer, target) {
                 const hp = `${merc.health}/${merc.maxHealth}`;
                 const weapon = merc.equipped && merc.equipped.weapon ? merc.equipped.weapon.name : '없음';
                 const armor = merc.equipped && merc.equipped.armor ? merc.equipped.armor.name : '없음';
+                const accessory1 = merc.equipped && merc.equipped.accessory1 ? merc.equipped.accessory1.name : '없음';
+                const accessory2 = merc.equipped && merc.equipped.accessory2 ? merc.equipped.accessory2.name : '없음';
                 const attackBonus = merc.equipped && merc.equipped.weapon ? merc.equipped.weapon.attack : 0;
                 const defenseBonus = merc.equipped && merc.equipped.armor ? merc.equipped.armor.defense : 0;
                 const totalAttack = merc.attack + attackBonus;
@@ -1028,7 +1097,7 @@ function healTarget(healer, target) {
 
                 div.textContent = `${i + 1}. ${merc.icon} ${merc.name} Lv.${merc.level} (${hp}) ` +
                     `[공격:${totalAttack}, 방어:${totalDefense}] ` +
-                    `[무기:${weapon}, 방어구:${armor}] ` +
+                    `[무기:${weapon}, 방어구:${armor}, 악세1:${accessory1}, 악세2:${accessory2}] ` +
                     `[특성:${merc.traits.join(', ')}]`;
 
                 if (merc.alive) {
@@ -1037,6 +1106,8 @@ function healTarget(healer, target) {
                         const slots = [];
                         if (merc.equipped && merc.equipped.weapon) slots.push('0: 무기');
                         if (merc.equipped && merc.equipped.armor) slots.push('1: 방어구');
+                        if (merc.equipped && merc.equipped.accessory1) slots.push('2: 악세서리1');
+                        if (merc.equipped && merc.equipped.accessory2) slots.push('3: 악세서리2');
                         if (slots.length === 0) return;
                         const choice = prompt(`${merc.name}의 장비를 해제하려면 번호를 입력하세요:\n${slots.join('\n')}`);
                         if (choice === null) return;
@@ -1044,6 +1115,10 @@ function healTarget(healer, target) {
                             unequipItemFromMercenary(merc.id, 'weapon');
                         } else if (choice === '1' && merc.equipped.armor) {
                             unequipItemFromMercenary(merc.id, 'armor');
+                        } else if (choice === '2' && merc.equipped.accessory1) {
+                            unequipItemFromMercenary(merc.id, 'accessory1');
+                        } else if (choice === '3' && merc.equipped.accessory2) {
+                            unequipItemFromMercenary(merc.id, 'accessory2');
                         }
                     };
                 } else {
@@ -1065,6 +1140,8 @@ function healTarget(healer, target) {
         function showMercenaryDetails(merc) {
             const weapon = merc.equipped && merc.equipped.weapon ? merc.equipped.weapon.name : '없음';
             const armor = merc.equipped && merc.equipped.armor ? merc.equipped.armor.name : '없음';
+            const accessory1 = merc.equipped && merc.equipped.accessory1 ? merc.equipped.accessory1.name : '없음';
+            const accessory2 = merc.equipped && merc.equipped.accessory2 ? merc.equipped.accessory2.name : '없음';
             const attackBonus = merc.equipped && merc.equipped.weapon ? merc.equipped.weapon.attack : 0;
             const defenseBonus = merc.equipped && merc.equipped.armor ? merc.equipped.armor.defense : 0;
             const totalAttack = merc.attack + attackBonus;
@@ -1076,13 +1153,15 @@ function healTarget(healer, target) {
                 `HP: ${merc.health}/${merc.maxHealth}\n` +
                 `공격력: ${totalAttack}\n` +
                 `방어력: ${totalDefense}\n` +
-                `명중률: ${merc.accuracy}\n` +
-                `회피율: ${merc.evasion}\n` +
-                `치명타: ${merc.critChance}\n` +
-                `마법공격: ${merc.magicPower}\n` +
-                `마법방어: ${merc.magicResist}\n` +
+                `명중률: ${getStat(merc, 'accuracy')}\n` +
+                `회피율: ${getStat(merc, 'evasion')}\n` +
+                `치명타: ${getStat(merc, 'critChance')}\n` +
+                `마법공격: ${getStat(merc, 'magicPower')}\n` +
+                `마법방어: ${getStat(merc, 'magicResist')}\n` +
                 `무기: ${weapon}\n` +
                 `방어구: ${armor}\n` +
+                `악세서리1: ${accessory1}\n` +
+                `악세서리2: ${accessory2}\n` +
                 `특성:\n${traitInfo}`;
 
             alert(info);
@@ -1095,11 +1174,11 @@ function healTarget(healer, target) {
             document.getElementById('maxHealth').textContent = gameState.player.maxHealth;
             document.getElementById('attack').textContent = gameState.player.attack;
             document.getElementById('defense').textContent = gameState.player.defense;
-            document.getElementById('accuracy').textContent = gameState.player.accuracy;
-            document.getElementById('evasion').textContent = gameState.player.evasion;
-            document.getElementById('critChance').textContent = gameState.player.critChance;
-            document.getElementById('magicPower').textContent = gameState.player.magicPower;
-            document.getElementById('magicResist').textContent = gameState.player.magicResist;
+            document.getElementById('accuracy').textContent = getStat(gameState.player, 'accuracy');
+            document.getElementById('evasion').textContent = getStat(gameState.player, 'evasion');
+            document.getElementById('critChance').textContent = getStat(gameState.player, 'critChance');
+            document.getElementById('magicPower').textContent = getStat(gameState.player, 'magicPower');
+            document.getElementById('magicResist').textContent = getStat(gameState.player, 'magicResist');
             document.getElementById('exp').textContent = gameState.player.exp;
             document.getElementById('expNeeded').textContent = gameState.player.expNeeded;
             document.getElementById('gold').textContent = gameState.player.gold;
@@ -1449,7 +1528,9 @@ function healTarget(healer, target) {
                 traits: traits,
                 equipped: {
                     weapon: null,
-                    armor: null
+                    armor: null,
+                    accessory1: null,
+                    accessory2: null
                 }
             };
         }
@@ -1568,6 +1649,18 @@ function healTarget(healer, target) {
                 }
                 gameState.player.equipped.armor = item;
                 addMessage(`🛡️ ${item.name}을(를) 장착했습니다. 방어력 +${item.defense}`, 'item');
+            } else if (item.type === ITEM_TYPES.ACCESSORY) {
+                let slot = null;
+                if (!gameState.player.equipped.accessory1) slot = 'accessory1';
+                else if (!gameState.player.equipped.accessory2) slot = 'accessory2';
+                else {
+                    const choice = prompt(`교체할 악세서리 슬롯을 선택하세요:\n0: ${formatItem(gameState.player.equipped.accessory1)}\n1: ${formatItem(gameState.player.equipped.accessory2)}`);
+                    if (choice === null) return;
+                    slot = choice === '1' ? 'accessory2' : 'accessory1';
+                    addToInventory(gameState.player.equipped[slot]);
+                }
+                gameState.player.equipped[slot] = item;
+                addMessage(`💍 ${item.name}을(를) 장착했습니다.`, 'item');
             }
             
             const index = gameState.player.inventory.findIndex(i => i.id === item.id);
@@ -1579,11 +1672,22 @@ function healTarget(healer, target) {
             updateStats();
         }
 
+        function unequipAccessory(slot) {
+            const item = gameState.player.equipped[slot];
+            if (item) {
+                addToInventory(item);
+                gameState.player.equipped[slot] = null;
+                addMessage(`📦 ${item.name}을(를) 해제했습니다.`, 'item');
+                updateInventoryDisplay();
+                updateStats();
+            }
+        }
+
         // 용병에게 아이템 장착
         function equipItemToMercenary(item, mercenary) {
             // 용병 장비 초기화 확인
             if (!mercenary.equipped) {
-                mercenary.equipped = { weapon: null, armor: null };
+                mercenary.equipped = { weapon: null, armor: null, accessory1: null, accessory2: null };
             }
             
             if (item.type === ITEM_TYPES.WEAPON) {
@@ -1598,6 +1702,18 @@ function healTarget(healer, target) {
                 }
                 mercenary.equipped.armor = item;
                 addMessage(`🛡️ ${mercenary.name}이(가) ${item.name}을(를) 장착했습니다.`, 'mercenary');
+            } else if (item.type === ITEM_TYPES.ACCESSORY) {
+                let slot = null;
+                if (!mercenary.equipped.accessory1) slot = 'accessory1';
+                else if (!mercenary.equipped.accessory2) slot = 'accessory2';
+                else {
+                    const choice = prompt(`${mercenary.name}의 교체할 악세서리 슬롯을 선택하세요:\n0: ${formatItem(mercenary.equipped.accessory1)}\n1: ${formatItem(mercenary.equipped.accessory2)}`);
+                    if (choice === null) return;
+                    slot = choice === '1' ? 'accessory2' : 'accessory1';
+                    addToInventory(mercenary.equipped[slot]);
+                }
+                mercenary.equipped[slot] = item;
+                addMessage(`💍 ${mercenary.name}이(가) ${item.name}을(를) 장착했습니다.`, 'mercenary');
             }
             
             const index = gameState.player.inventory.findIndex(i => i.id === item.id);
