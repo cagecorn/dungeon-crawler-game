@@ -1319,7 +1319,15 @@
                 return;
             }
             
-            if (gameState.mercenaries.some(m => m.x === newX && m.y === newY && m.alive)) {
+            const blockingMercenary = gameState.mercenaries.find(m => m.x === newX && m.y === newY && m.alive);
+            if (blockingMercenary) {
+                const oldX = gameState.player.x;
+                const oldY = gameState.player.y;
+                gameState.player.x = newX;
+                gameState.player.y = newY;
+                blockingMercenary.x = oldX;
+                blockingMercenary.y = oldY;
+                processTurn();
                 return;
             }
             
