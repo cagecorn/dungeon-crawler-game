@@ -512,6 +512,30 @@
             }
         };
 
+        // 용병 특성
+        const POSITIVE_TRAITS = [
+            '근면함',
+            '용감함',
+            '민첩함',
+            '강인함',
+            '행운아'
+        ];
+
+        const NEGATIVE_TRAITS = [
+            '겁쟁이',
+            '둔함',
+            '허약함',
+            '나태함',
+            '불운'
+        ];
+
+        const TRADEOFF_TRAITS = [
+            '공격형(방어↓)',
+            '방어형(공격↓)',
+            '신속(체력↓)',
+            '치유 전문(공격↓)'
+        ];
+
         // 몬스터 타입 정의
         const MONSTER_TYPES = {
             ZOMBIE: {
@@ -803,7 +827,8 @@
 
                 div.textContent = `${i + 1}. ${merc.icon} ${merc.name} Lv.${merc.level} (${hp}) ` +
                     `[공격:${totalAttack}, 방어:${totalDefense}] ` +
-                    `[무기:${weapon}, 방어구:${armor}]`;
+                    `[무기:${weapon}, 방어구:${armor}] ` +
+                    `[특성:${merc.traits.join(', ')}]`;
 
                 div.onclick = () => {
                     const slots = [];
@@ -1114,6 +1139,12 @@
         // 용병 생성 함수
         function createMercenary(type, x, y) {
             const mercType = MERCENARY_TYPES[type];
+            const allTraits = [...POSITIVE_TRAITS, ...NEGATIVE_TRAITS, ...TRADEOFF_TRAITS];
+            const traits = [];
+            while (traits.length < 2) {
+                const t = allTraits[Math.floor(Math.random() * allTraits.length)];
+                if (!traits.includes(t)) traits.push(t);
+            }
             return {
                 id: Math.random().toString(36).substr(2, 9),
                 type: type,
@@ -1131,6 +1162,7 @@
                 expNeeded: 15,
                 alive: true,
                 hasActed: false,
+                traits: traits,
                 equipped: {
                     weapon: null,
                     armor: null
