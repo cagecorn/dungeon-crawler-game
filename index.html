@@ -1514,6 +1514,37 @@
             });
             
             generateDungeon();
+
+            // 새 층에서 살아있는 용병들을 플레이어 근처로 이동
+            gameState.mercenaries.forEach(mercenary => {
+                if (!mercenary.alive) return;
+
+                const positions = [
+                    {x: gameState.player.x + 1, y: gameState.player.y},
+                    {x: gameState.player.x - 1, y: gameState.player.y},
+                    {x: gameState.player.x, y: gameState.player.y + 1},
+                    {x: gameState.player.x, y: gameState.player.y - 1},
+                    {x: gameState.player.x + 1, y: gameState.player.y + 1},
+                    {x: gameState.player.x - 1, y: gameState.player.y - 1},
+                    {x: gameState.player.x + 1, y: gameState.player.y - 1},
+                    {x: gameState.player.x - 1, y: gameState.player.y + 1}
+                ];
+
+                for (const pos of positions) {
+                    if (pos.x >= 0 && pos.x < gameState.dungeonSize &&
+                        pos.y >= 0 && pos.y < gameState.dungeonSize &&
+                        gameState.dungeon[pos.y][pos.x] === 'empty' &&
+                        !gameState.mercenaries.some(m => m !== mercenary && m.alive && m.x === pos.x && m.y === pos.y) &&
+                        !gameState.monsters.some(m => m.x === pos.x && m.y === pos.y)) {
+                        mercenary.x = pos.x;
+                        mercenary.y = pos.y;
+                        break;
+                    }
+                }
+            });
+
+            // 변경된 위치 반영
+            renderDungeon();
         }
 
         // 턴 처리 (최적화됨)
