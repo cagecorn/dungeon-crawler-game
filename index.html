@@ -357,6 +357,17 @@
             display: flex;
             gap: 8px;
         }
+        #actions {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+            margin-top: 15px;
+        }
+        .actions-row {
+            display: flex;
+            gap: 8px;
+        }
         button {
             background: linear-gradient(45deg, #4CAF50, #45a049);
             color: white;
@@ -461,6 +472,18 @@
                     <button id="load-game" style="background: linear-gradient(45deg, #FF9800, #F57C00);">📁 게임 불러오기</button>
                     <button id="new-game" style="background: linear-gradient(45deg, #9E9E9E, #757575);">🔄 새 게임</button>
                 </div>
+            </div>
+        </div>
+        <div id="actions">
+            <div class="actions-row">
+                <button id="attack">Attack</button>
+                <button id="skill1">Skill1</button>
+                <button id="skill2">Skill2</button>
+            </div>
+            <div class="actions-row">
+                <button id="heal">Heal</button>
+                <button id="recall">Recall</button>
+                <button id="other">Other</button>
             </div>
         </div>
         
@@ -2408,6 +2431,60 @@ function healTarget(healer, target) {
             updateCamera();
             addMessage('📁 게임을 불러왔습니다.', 'info');
         }
+        function attackAction() {
+            // Reserved for future ranged attack logic
+        }
+
+        function skill1Action() {
+        }
+
+        function skill2Action() {
+        }
+
+        function healAction() {
+            const healAmount = Math.min(Math.floor(gameState.player.maxHealth * 0.3), gameState.player.maxHealth - gameState.player.health);
+            if (healAmount > 0) {
+                gameState.player.health += healAmount;
+                addMessage(`💚 플레이어가 휴식을 취해 ${healAmount} 체력을 회복했습니다.`, 'info');
+                updateStats();
+            } else {
+                addMessage('❤️ 체력이 이미 가득 찼습니다.', 'info');
+            }
+            processTurn();
+        }
+
+        function recallMercenaries() {
+            const positions = [
+                {x: gameState.player.x + 1, y: gameState.player.y},
+                {x: gameState.player.x - 1, y: gameState.player.y},
+                {x: gameState.player.x, y: gameState.player.y + 1},
+                {x: gameState.player.x, y: gameState.player.y - 1},
+                {x: gameState.player.x + 1, y: gameState.player.y + 1},
+                {x: gameState.player.x - 1, y: gameState.player.y - 1},
+                {x: gameState.player.x + 1, y: gameState.player.y - 1},
+                {x: gameState.player.x - 1, y: gameState.player.y + 1}
+            ];
+            gameState.mercenaries.forEach(mercenary => {
+                if (!mercenary.alive) return;
+                for (const pos of positions) {
+                    if (pos.x >= 0 && pos.x < gameState.dungeonSize &&
+                        pos.y >= 0 && pos.y < gameState.dungeonSize &&
+                        gameState.dungeon[pos.y][pos.x] === 'empty' &&
+                        !gameState.mercenaries.some(m => m !== mercenary && m.alive && m.x === pos.x && m.y === pos.y) &&
+                        !gameState.monsters.some(m => m.x === pos.x && m.y === pos.y)) {
+                        mercenary.x = pos.x;
+                        mercenary.y = pos.y;
+                        break;
+                    }
+                }
+            });
+            renderDungeon();
+            addMessage('📣 용병들을 호출했습니다.', 'mercenary');
+            processTurn();
+        }
+
+        function otherAction() {
+        }
 
         // 초기화 및 입력 처리
         generateDungeon();
@@ -2418,6 +2495,12 @@ function healTarget(healer, target) {
         document.getElementById('right').onclick = () => movePlayer(1, 0);
         document.getElementById('save-game').onclick = saveGame;
         document.getElementById('load-game').onclick = loadGame;
+        document.getElementById('attack').onclick = attackAction;
+        document.getElementById('skill1').onclick = skill1Action;
+        document.getElementById('skill2').onclick = skill2Action;
+        document.getElementById('heal').onclick = healAction;
+        document.getElementById('recall').onclick = recallMercenaries;
+        document.getElementById('other').onclick = otherAction;
 
         document.addEventListener('keydown', (e) => {
             if (e.key === 'ArrowUp') {
