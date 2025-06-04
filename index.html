@@ -1031,7 +1031,8 @@
                 gameState.player.attack += 1;
                 gameState.player.defense += 1;
                 gameState.player.expNeeded = Math.floor(gameState.player.expNeeded * 1.5);
-                addMessage(`🎉 플레이어 레벨이 ${gameState.player.level}이(가) 되었습니다!`, 'level');
+                addMessage(`🎉 플레이어 레벨이 ${gameState.player.level}이(가) 되었습니다! (공격력 +1, 방어력 +1, 체력 +5)`, 'level');
+                updateStats();
             }
         }
 
@@ -1603,6 +1604,7 @@
                         gameState.player.gold += monster.gold;
                         
                         checkLevelUp();
+                        updateStats();
                         
                         if (monster.special === 'boss') {
                             const bossItems = ['magicSword', 'plateArmor', 'greaterHealthPotion', 'reviveScroll'];
@@ -1905,6 +1907,7 @@
                         
                         checkMercenaryLevelUp(mercenary);
                         checkLevelUp();
+                        updateStats();
                         
                         if (nearestMonster.special === 'boss') {
                             const bossItems = ['magicSword', 'plateArmor', 'greaterHealthPotion', 'reviveScroll'];
