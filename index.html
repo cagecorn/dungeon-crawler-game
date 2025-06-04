@@ -1399,7 +1399,14 @@
                         gameState.dungeon[newY][newX] === 'empty' &&
                         !(newX === gameState.player.x && newY === gameState.player.y) &&
                         !gameState.monsters.some(m => m.x === newX && m.y === newY) &&
-                        !gameState.mercenaries.some(m => m.x === newX && m.y === newY && m.alive && m !== mercenary
-</script>
+                        !gameState.mercenaries.some(m => m.x === newX && m.y === newY && m.alive && m !== mercenary)) {
+
+                        mercenary.x = newX;
+                        mercenary.y = newY;
+                    }
+                }
+            }
+        }
+    </script>
 </body>
 </html>
