@@ -491,6 +491,7 @@
                 <button class="hire-button" onclick="hireMercenary('WARRIOR')">⚔️ 전사 고용 (50💰)</button>
                 <button class="hire-button" onclick="hireMercenary('ARCHER')">🏹 궁수 고용 (60💰)</button>
                 <button class="hire-button" onclick="hireMercenary('HEALER')">✚ 힐러 고용 (70💰)</button>
+                <button class="hire-button" onclick="hireMercenary('WIZARD')">🔮 마법사 고용 (80💰)</button>
             </div>
             
             <div class="inventory">
@@ -566,6 +567,21 @@
                 role: 'support',
                 description: '아군을 치료하는 지원 용병',
                 cost: 70
+            },
+            WIZARD: {
+                name: '🔮 마법사',
+                icon: '🧙',
+                baseHealth: 7,
+                baseAttack: 3,
+                baseDefense: 1,
+                baseAccuracy: 0.8,
+                baseEvasion: 0.12,
+                baseCritChance: 0.1,
+                baseMagicPower: 5,
+                baseMagicResist: 2,
+                role: 'caster',
+                description: '마법 공격에 특화된 용병',
+                cost: 80
             }
         };
 
@@ -2219,7 +2235,8 @@ function healTarget(healer, target) {
             });
             
             if (nearestMonster) {
-                const attackRange = mercenary.role === 'ranged' ? 3 : 1;
+                const attackRange = mercenary.role === 'ranged' ? 3 :
+                                    mercenary.role === 'caster' ? 2 : 1;
                 if (nearestDistance <= attackRange) {
                     // 공격 (장비 보너스 적용)
                     let totalAttack = mercenary.attack;
