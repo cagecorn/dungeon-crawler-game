@@ -746,6 +746,7 @@
                     if (visited[ny][nx]) continue;
                     const cell = gameState.dungeon[ny][nx];
                     if ((cell === 'wall' || cell === 'monster') && !(nx === targetX && ny === targetY)) continue;
+                    if (gameState.mercenaries.some(m => m.alive && m.x === nx && m.y === ny && !(nx === startX && ny === startY))) continue;
                     visited[ny][nx] = true;
                     cameFrom[key(nx, ny)] = [x, y];
                     queue.push([nx, ny]);
@@ -1736,11 +1737,13 @@
                     if (path && path.length > 1) {
                         const step = path[1];
                         const newDistanceFromPlayer = getDistance(step.x, step.y, gameState.player.x, gameState.player.y);
+                        const occupied = gameState.mercenaries.some(m => m !== mercenary && m.alive && m.x === step.x && m.y === step.y);
                         if (step.x >= 0 && step.x < gameState.dungeonSize &&
                             step.y >= 0 && step.y < gameState.dungeonSize &&
                             gameState.dungeon[step.y][step.x] !== 'wall' &&
                             gameState.dungeon[step.y][step.x] !== 'monster' &&
                             !(step.x === gameState.player.x && step.y === gameState.player.y) &&
+                            !occupied &&
                             newDistanceFromPlayer <= maxDistanceFromPlayer) {
                             mercenary.x = step.x;
                             mercenary.y = step.y;
@@ -1751,11 +1754,13 @@
                 const path = findPath(mercenary.x, mercenary.y, gameState.player.x, gameState.player.y);
                 if (path && path.length > 1) {
                     const step = path[1];
+                    const occupied = gameState.mercenaries.some(m => m !== mercenary && m.alive && m.x === step.x && m.y === step.y);
                     if (step.x >= 0 && step.x < gameState.dungeonSize &&
                         step.y >= 0 && step.y < gameState.dungeonSize &&
                         gameState.dungeon[step.y][step.x] !== 'wall' &&
                         gameState.dungeon[step.y][step.x] !== 'monster' &&
-                        !(step.x === gameState.player.x && step.y === gameState.player.y)) {
+                        !(step.x === gameState.player.x && step.y === gameState.player.y) &&
+                        !occupied) {
                         mercenary.x = step.x;
                         mercenary.y = step.y;
                     }
