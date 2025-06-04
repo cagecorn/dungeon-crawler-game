@@ -537,6 +537,24 @@
             '치유 전문(공격↓)'
         ];
 
+        // 특성 상세 설명
+        const TRAIT_DETAILS = {
+            '근면함': '경험치 획득량이 증가합니다.',
+            '용감함': '전투 시 공격력이 소폭 증가합니다.',
+            '민첩함': '이동 속도와 회피율이 향상됩니다.',
+            '강인함': '최대 체력과 방어력이 증가합니다.',
+            '행운아': '아이템 발견 확률이 높아집니다.',
+            '겁쟁이': '체력이 낮을 때 도망칠 확률이 높습니다.',
+            '둔함': '공격 속도와 이동 속도가 감소합니다.',
+            '허약함': '최대 체력이 감소합니다.',
+            '나태함': '행동 속도가 느려집니다.',
+            '불운': '아이템 발견 확률이 낮아집니다.',
+            '공격형(방어↓)': '공격력 증가, 방어력 감소.',
+            '방어형(공격↓)': '방어력 증가, 공격력 감소.',
+            '신속(체력↓)': '이동 속도 증가, 체력 감소.',
+            '치유 전문(공격↓)': '치유 능력 향상, 공격력 감소.'
+        };
+
         // 몬스터 타입 정의
         const MONSTER_TYPES = {
             ZOMBIE: {
@@ -857,6 +875,7 @@
 
                 if (merc.alive) {
                     div.onclick = () => {
+                        showMercenaryDetails(merc);
                         const slots = [];
                         if (merc.equipped && merc.equipped.weapon) slots.push('0: 무기');
                         if (merc.equipped && merc.equipped.armor) slots.push('1: 방어구');
@@ -882,6 +901,28 @@
 
                 list.appendChild(div);
             });
+        }
+
+        // 용병 상세 정보 표시
+        function showMercenaryDetails(merc) {
+            const weapon = merc.equipped && merc.equipped.weapon ? merc.equipped.weapon.name : '없음';
+            const armor = merc.equipped && merc.equipped.armor ? merc.equipped.armor.name : '없음';
+            const attackBonus = merc.equipped && merc.equipped.weapon ? merc.equipped.weapon.attack : 0;
+            const defenseBonus = merc.equipped && merc.equipped.armor ? merc.equipped.armor.defense : 0;
+            const totalAttack = merc.attack + attackBonus;
+            const totalDefense = merc.defense + defenseBonus;
+
+            const traitInfo = merc.traits.map(t => `- ${t}: ${TRAIT_DETAILS[t] || ''}`).join('\n');
+
+            const info = `${merc.icon} ${merc.name} Lv.${merc.level}\n` +
+                `HP: ${merc.health}/${merc.maxHealth}\n` +
+                `공격력: ${totalAttack}\n` +
+                `방어력: ${totalDefense}\n` +
+                `무기: ${weapon}\n` +
+                `방어구: ${armor}\n` +
+                `특성:\n${traitInfo}`;
+
+            alert(info);
         }
 
         // 플레이어 능력치 표시 업데이트
@@ -1994,6 +2035,13 @@
             else if (e.key === 'ArrowRight') {
                 e.preventDefault();
                 movePlayer(1, 0);
+            }
+            else if (/^[1-9]$/.test(e.key)) {
+                const idx = parseInt(e.key) - 1;
+                if (gameState.mercenaries[idx]) {
+                    e.preventDefault();
+                    showMercenaryDetails(gameState.mercenaries[idx]);
+                }
             }
         });
     </script>
