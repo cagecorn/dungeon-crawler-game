@@ -1248,7 +1248,8 @@ function healTarget(healer, target) {
         }
 
         function createTreasure(x, y, gold) {
-            return { x, y, gold };
+            const floorBonus = Math.max(0, gameState.floor - 1) * 2;
+            return { x, y, gold: gold + floorBonus };
         }
 
         // 던전 렌더링
@@ -1363,7 +1364,7 @@ function healTarget(healer, target) {
             gameState.dungeon[exitY][exitX] = 'exit';
 
             const monsterTypes = Object.keys(MONSTER_TYPES);
-            const monsterCount = gameState.floor === 1 ? 3 : 5;
+            const monsterCount = gameState.floor === 1 ? 5 : 8;
             for (let i = 0; i < monsterCount; i++) {
                 let x, y;
                 do {
@@ -1376,7 +1377,8 @@ function healTarget(healer, target) {
                 gameState.dungeon[y][x] = 'monster';
             }
 
-            for (let i = 0; i < 3; i++) {
+            const treasureCount = gameState.floor === 1 ? 5 : 8;
+            for (let i = 0; i < treasureCount; i++) {
                 let x, y;
                 do {
                     x = Math.floor(Math.random() * size);
@@ -1388,7 +1390,8 @@ function healTarget(healer, target) {
             }
 
             const itemKeys = Object.keys(ITEMS);
-            for (let i = 0; i < 3; i++) {
+            const itemCount = gameState.floor === 1 ? 5 : 8;
+            for (let i = 0; i < itemCount; i++) {
                 let x, y;
                 do {
                     x = Math.floor(Math.random() * size);
