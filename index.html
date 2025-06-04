@@ -475,7 +475,8 @@
         const ITEM_TYPES = {
             WEAPON: 'weapon',
             ARMOR: 'armor',
-            POTION: 'potion'
+            POTION: 'potion',
+            REVIVE: 'revive'
         };
 
         // 용병 타입 정의
@@ -659,6 +660,13 @@
                 price: 15,
                 level: 2,
                 icon: '💊'
+            },
+            reviveScroll: {
+                name: '✨ 부활 스크롤',
+                type: ITEM_TYPES.REVIVE,
+                price: 0,
+                level: 2,
+                icon: '✨'
             }
         };
 
@@ -805,19 +813,31 @@
                     `[공격:${totalAttack}, 방어:${totalDefense}] ` +
                     `[무기:${weapon}, 방어구:${armor}]`;
 
-                div.onclick = () => {
-                    const slots = [];
-                    if (merc.equipped && merc.equipped.weapon) slots.push('0: 무기');
-                    if (merc.equipped && merc.equipped.armor) slots.push('1: 방어구');
-                    if (slots.length === 0) return;
-                    const choice = prompt(`${merc.name}의 장비를 해제하려면 번호를 입력하세요:\n${slots.join('\n')}`);
-                    if (choice === null) return;
-                    if (choice === '0' && merc.equipped.weapon) {
-                        unequipItemFromMercenary(merc.id, 'weapon');
-                    } else if (choice === '1' && merc.equipped.armor) {
-                        unequipItemFromMercenary(merc.id, 'armor');
-                    }
-                };
+                if (merc.alive) {
+                    div.onclick = () => {
+                        const slots = [];
+                        if (merc.equipped && merc.equipped.weapon) slots.push('0: 무기');
+                        if (merc.equipped && merc.equipped.armor) slots.push('1: 방어구');
+                        if (slots.length === 0) return;
+                        const choice = prompt(`${merc.name}의 장비를 해제하려면 번호를 입력하세요:\n${slots.join('\n')}`);
+                        if (choice === null) return;
+                        if (choice === '0' && merc.equipped.weapon) {
+                            unequipItemFromMercenary(merc.id, 'weapon');
+                        } else if (choice === '1' && merc.equipped.armor) {
+                            unequipItemFromMercenary(merc.id, 'armor');
+                        }
+                    };
+                } else {
+                    const reviveBtn = document.createElement('button');
+                    reviveBtn.textContent = '부활';
+                    reviveBtn.style.marginLeft = '5px';
+                    reviveBtn.onclick = (e) => {
+                        e.stopPropagation();
+                        reviveMercenary(merc);
+                    };
+                    div.appendChild(reviveBtn);
+                }
+
                 list.appendChild(div);
             });
         }
@@ -1185,6 +1205,25 @@
                 }
                 useItemOnTarget(item, target);
                 return;
+            } else if (item.type === ITEM_TYPES.REVIVE) {
+                const dead = gameState.mercenaries.filter(m => !m.alive);
+                if (dead.length === 0) {
+                    addMessage('부활할 용병이 없습니다.', 'info');
+                    return;
+                }
+                const reviveOptions = dead.map((m, i) => `${i}: ${m.name}`);
+                const choice = prompt(`${item.name}을(를) 사용할 대상을 선택하세요:\n${reviveOptions.join('\n')}`);
+                if (choice === null) return;
+                const idx = parseInt(choice, 10);
+                if (!isNaN(idx) && dead[idx]) {
+                    const merc = dead[idx];
+                    const invIndex = gameState.player.inventory.findIndex(i => i.id === item.id);
+                    if (invIndex !== -1) {
+                        gameState.player.inventory.splice(invIndex, 1);
+                    }
+                    reviveMercenary(merc);
+                }
+                return;
             }
 
             const choice = prompt(`${item.name}을(를) 장착할 대상을 선택하세요:\n${options.join('\n')}`);
@@ -1292,6 +1331,34 @@
                     addMessage(`❤️ ${name}의 체력이 이미 가득 찼습니다.`, 'info');
                 }
             }
+        }
+
+        // 용병 부활
+        function reviveMercenary(mercenary) {
+            if (mercenary.alive) return;
+
+            const scrollIndex = gameState.player.inventory.findIndex(i => i.key === 'reviveScroll');
+            if (scrollIndex !== -1) {
+                gameState.player.inventory.splice(scrollIndex, 1);
+                mercenary.alive = true;
+                mercenary.health = mercenary.maxHealth;
+                addMessage(`✨ 부활 스크롤로 ${mercenary.name}을(를) 부활시켰습니다!`, 'mercenary');
+                updateInventoryDisplay();
+            } else {
+                const cost = 100;
+                if (gameState.player.gold < cost) {
+                    addMessage(`💸 골드가 부족합니다. 부활에는 ${cost} 골드가 필요합니다.`, 'info');
+                    return;
+                }
+                gameState.player.gold -= cost;
+                mercenary.alive = true;
+                mercenary.health = mercenary.maxHealth;
+                addMessage(`💰 ${cost}골드를 사용해 ${mercenary.name}을(를) 부활시켰습니다.`, 'mercenary');
+            }
+
+            updateStats();
+            updateMercenaryDisplay();
+            renderDungeon();
         }
 
         // 기본 플레이어 대상 아이템 사용 (호환성)
@@ -1430,7 +1497,7 @@
                         checkLevelUp();
                         
                         if (monster.special === 'boss') {
-                            const bossItems = ['magicSword', 'plateArmor', 'greaterHealthPotion'];
+                            const bossItems = ['magicSword', 'plateArmor', 'greaterHealthPotion', 'reviveScroll'];
                             const bossItemKey = bossItems[Math.floor(Math.random() * bossItems.length)];
                             const bossItem = createItem(bossItemKey, newX, newY);
                             gameState.items.push(bossItem);
@@ -1707,7 +1774,7 @@
                         checkLevelUp();
                         
                         if (nearestMonster.special === 'boss') {
-                            const bossItems = ['magicSword', 'plateArmor', 'greaterHealthPotion'];
+                            const bossItems = ['magicSword', 'plateArmor', 'greaterHealthPotion', 'reviveScroll'];
                             const bossItemKey = bossItems[Math.floor(Math.random() * bossItems.length)];
                             const bossItem = createItem(bossItemKey, nearestMonster.x, nearestMonster.y);
                             gameState.items.push(bossItem);
