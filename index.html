@@ -475,6 +475,7 @@
         const ITEM_TYPES = {
             WEAPON: 'weapon',
             ARMOR: 'armor',
+            ACCESSORY: 'accessory',
             POTION: 'potion',
             REVIVE: 'revive'
         };
@@ -712,6 +713,18 @@
             }
         };
 
+        // 접두사/접미사 풀
+        const PREFIXES = [
+            { name: 'Flaming', modifiers: { fireDamage: 2 } },
+            { name: 'Sharp', modifiers: { attack: 1 } },
+            { name: 'Sturdy', modifiers: { defense: 1 } }
+        ];
+        const SUFFIXES = [
+            { name: 'of Protection', modifiers: { defense: 2 } },
+            { name: 'of Fury', modifiers: { attack: 2 } },
+            { name: 'of Vitality', modifiers: { maxHealth: 5 } }
+        ];
+
         // 게임 상태
         const gameState = {
             dungeon: [],
@@ -823,11 +836,15 @@
             container.innerHTML = '';
 
             const formatItem = item => {
-                let stat = '';
-                if (item.attack !== undefined) stat = ` +${item.attack}`;
-                else if (item.defense !== undefined) stat = ` +${item.defense}`;
-                else if (item.healing !== undefined) stat = ` +${item.healing}`;
-                return `${item.name}${stat}`;
+                const stats = [];
+                if (item.attack !== undefined) stats.push(`공격+${item.attack}`);
+                if (item.defense !== undefined) stats.push(`방어+${item.defense}`);
+                if (item.healing !== undefined) stats.push(`회복+${item.healing}`);
+                if (item.fireDamage !== undefined) stats.push(`🔥+${item.fireDamage}`);
+                if (item.iceDamage !== undefined) stats.push(`❄️+${item.iceDamage}`);
+                if (item.lightningDamage !== undefined) stats.push(`⚡+${item.lightningDamage}`);
+                if (item.maxHealth !== undefined && item.type !== ITEM_TYPES.POTION && item.type !== ITEM_TYPES.REVIVE) stats.push(`HP+${item.maxHealth}`);
+                return `${item.name}${stats.length ? ' (' + stats.join(', ') + ')' : ''}`;
             };
 
             gameState.player.inventory.forEach(item => {
@@ -1269,15 +1286,37 @@
         // 아이템 생성 함수
         function createItem(itemKey, x, y) {
             const itemData = ITEMS[itemKey];
-            return {
+            const item = {
                 id: Math.random().toString(36).substr(2, 9),
                 key: itemKey,
+                baseName: itemData.name,
                 name: itemData.name,
                 type: itemData.type,
                 x: x,
                 y: y,
                 ...itemData
             };
+
+            if (item.type === ITEM_TYPES.WEAPON || item.type === ITEM_TYPES.ARMOR || item.type === ITEM_TYPES.ACCESSORY) {
+                if (Math.random() < 0.5) {
+                    const prefix = PREFIXES[Math.floor(Math.random() * PREFIXES.length)];
+                    item.prefix = prefix.name;
+                    item.name = `${prefix.name} ${item.name}`;
+                    for (const stat in prefix.modifiers) {
+                        item[stat] = (item[stat] || 0) + prefix.modifiers[stat];
+                    }
+                }
+                if (Math.random() < 0.5) {
+                    const suffix = SUFFIXES[Math.floor(Math.random() * SUFFIXES.length)];
+                    item.suffix = suffix.name;
+                    item.name = `${item.name} ${suffix.name}`;
+                    for (const stat in suffix.modifiers) {
+                        item[stat] = (item[stat] || 0) + suffix.modifiers[stat];
+                    }
+                }
+            }
+
+            return item;
         }
 
         // 메시지 로그 추가
@@ -1610,7 +1649,7 @@
                             const bossItem = createItem(bossItemKey, newX, newY);
                             gameState.items.push(bossItem);
                             gameState.dungeon[newY][newX] = 'item';
-                            addMessage(`🎁 ${monster.name}이(가) 귀중한 아이템을 떨어뜨렸습니다!`, "treasure");
+                            addMessage(`🎁 ${monster.name}이(가) ${bossItem.name}을(를) 떨어뜨렸습니다!`, "treasure");
                         } else if (Math.random() < monster.lootChance) {
                             const itemKeys = Object.keys(ITEMS);
                             const availableItems = itemKeys.filter(key => 
@@ -1621,7 +1660,7 @@
                             const droppedItem = createItem(randomItemKey, newX, newY);
                             gameState.items.push(droppedItem);
                             gameState.dungeon[newY][newX] = 'item';
-                            addMessage(`📦 ${monster.name}이(가) 아이템을 떨어뜨렸습니다!`, "item");
+                            addMessage(`📦 ${monster.name}이(가) ${droppedItem.name}을(를) 떨어뜨렸습니다!`, "item");
                         } else {
                             gameState.dungeon[newY][newX] = 'empty';
                         }
@@ -1912,16 +1951,18 @@
                             const bossItem = createItem(bossItemKey, nearestMonster.x, nearestMonster.y);
                             gameState.items.push(bossItem);
                             gameState.dungeon[nearestMonster.y][nearestMonster.x] = 'item';
+                            addMessage(`🎁 ${nearestMonster.name}이(가) ${bossItem.name}을(를) 떨어뜨렸습니다!`, "treasure");
                         } else if (Math.random() < nearestMonster.lootChance) {
                             const itemKeys = Object.keys(ITEMS);
-                            const availableItems = itemKeys.filter(key => 
+                            const availableItems = itemKeys.filter(key =>
                                 ITEMS[key].level <= Math.ceil(gameState.floor / 2 + 1)
                             );
                             const randomItemKey = availableItems[Math.floor(Math.random() * availableItems.length)];
-                            
+
                             const droppedItem = createItem(randomItemKey, nearestMonster.x, nearestMonster.y);
                             gameState.items.push(droppedItem);
                             gameState.dungeon[nearestMonster.y][nearestMonster.x] = 'item';
+                            addMessage(`📦 ${nearestMonster.name}이(가) ${droppedItem.name}을(를) 떨어뜨렸습니다!`, "item");
                         } else {
                             gameState.dungeon[nearestMonster.y][nearestMonster.x] = 'empty';
                         }
