@@ -770,18 +770,35 @@
         function updateInventoryDisplay() {
             const container = document.getElementById('inventory-items');
             container.innerHTML = '';
+
+            const formatItem = item => {
+                let stat = '';
+                if (item.attack !== undefined) stat = ` +${item.attack}`;
+                else if (item.defense !== undefined) stat = ` +${item.defense}`;
+                else if (item.healing !== undefined) stat = ` +${item.healing}`;
+                return `${item.name}${stat}`;
+            };
+
             gameState.player.inventory.forEach(item => {
                 const div = document.createElement('div');
                 div.className = 'inventory-item';
-                div.textContent = `${item.icon || ''} ${item.name}`;
+                div.textContent = formatItem(item);
                 div.onclick = () => handleItemClick(item);
                 container.appendChild(div);
             });
 
             const weaponSlot = document.getElementById('equipped-weapon');
-            weaponSlot.textContent = gameState.player.equipped.weapon ? `무기: ${gameState.player.equipped.weapon.name}` : '무기: 없음';
+            if (gameState.player.equipped.weapon) {
+                weaponSlot.textContent = `무기: ${formatItem(gameState.player.equipped.weapon)}`;
+            } else {
+                weaponSlot.textContent = '무기: 없음';
+            }
             const armorSlot = document.getElementById('equipped-armor');
-            armorSlot.textContent = gameState.player.equipped.armor ? `방어구: ${gameState.player.equipped.armor.name}` : '방어구: 없음';
+            if (gameState.player.equipped.armor) {
+                armorSlot.textContent = `방어구: ${formatItem(gameState.player.equipped.armor)}`;
+            } else {
+                armorSlot.textContent = '방어구: 없음';
+            }
         }
 
         // 용병 목록 갱신
