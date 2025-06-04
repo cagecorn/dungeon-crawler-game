@@ -440,6 +440,11 @@
                 <div>❤️ 체력: <span id="health">20</span>/<span id="maxHealth">20</span></div>
                 <div>⚔️ 공격력: <span id="attack">5</span> <span id="weaponBonus"></span></div>
                 <div>🛡️ 방어력: <span id="defense">1</span> <span id="armorBonus"></span></div>
+                <div>🎯 명중률: <span id="accuracy">0.8</span></div>
+                <div>💨 회피율: <span id="evasion">0.1</span></div>
+                <div>💥 치명타: <span id="critChance">0.05</span></div>
+                <div>🔮 마법공격: <span id="magicPower">0</span></div>
+                <div>✨ 마법방어: <span id="magicResist">0</span></div>
                 <div>⭐ 경험치: <span id="exp">0</span>/<span id="expNeeded">20</span></div>
                 <div>💰 골드: <span id="gold">0</span></div>
                 <div>🏰 층: <span id="floor">1</span></div>
@@ -487,6 +492,11 @@
                 baseHealth: 15,
                 baseAttack: 4,
                 baseDefense: 2,
+                baseAccuracy: 0.8,
+                baseEvasion: 0.1,
+                baseCritChance: 0.05,
+                baseMagicPower: 0,
+                baseMagicResist: 0,
                 role: 'tank',
                 description: '높은 체력과 방어력을 가진 근접 전투 용병',
                 cost: 50
@@ -497,6 +507,11 @@
                 baseHealth: 10,
                 baseAttack: 5,
                 baseDefense: 1,
+                baseAccuracy: 0.85,
+                baseEvasion: 0.15,
+                baseCritChance: 0.1,
+                baseMagicPower: 0,
+                baseMagicResist: 0,
                 role: 'ranged',
                 description: '원거리에서 적을 공격하는 용병',
                 cost: 60
@@ -507,6 +522,11 @@
                 baseHealth: 8,
                 baseAttack: 2,
                 baseDefense: 1,
+                baseAccuracy: 0.75,
+                baseEvasion: 0.1,
+                baseCritChance: 0.05,
+                baseMagicPower: 2,
+                baseMagicResist: 1,
                 role: 'support',
                 description: '아군을 치료하는 지원 용병',
                 cost: 70
@@ -564,6 +584,11 @@
                 baseHealth: 8,
                 baseAttack: 3,
                 baseDefense: 1,
+                baseAccuracy: 0.6,
+                baseEvasion: 0.05,
+                baseCritChance: 0.02,
+                baseMagicPower: 0,
+                baseMagicResist: 0,
                 baseExp: 6,
                 baseGold: 3,
                 speed: 0.5,
@@ -577,6 +602,11 @@
                 baseHealth: 4,
                 baseAttack: 2,
                 baseDefense: 0,
+                baseAccuracy: 0.65,
+                baseEvasion: 0.1,
+                baseCritChance: 0.05,
+                baseMagicPower: 0,
+                baseMagicResist: 0,
                 baseExp: 4,
                 baseGold: 5,
                 speed: 1.5,
@@ -590,6 +620,11 @@
                 baseHealth: 5,
                 baseAttack: 4,
                 baseDefense: 1,
+                baseAccuracy: 0.7,
+                baseEvasion: 0.1,
+                baseCritChance: 0.05,
+                baseMagicPower: 0,
+                baseMagicResist: 0,
                 baseExp: 8,
                 baseGold: 7,
                 speed: 1,
@@ -603,6 +638,11 @@
                 baseHealth: 3,
                 baseAttack: 6,
                 baseDefense: 0,
+                baseAccuracy: 0.75,
+                baseEvasion: 0.1,
+                baseCritChance: 0.1,
+                baseMagicPower: 5,
+                baseMagicResist: 1,
                 baseExp: 10,
                 baseGold: 10,
                 speed: 1,
@@ -616,6 +656,11 @@
                 baseHealth: 12,
                 baseAttack: 5,
                 baseDefense: 3,
+                baseAccuracy: 0.7,
+                baseEvasion: 0.05,
+                baseCritChance: 0.05,
+                baseMagicPower: 0,
+                baseMagicResist: 0.5,
                 baseExp: 15,
                 baseGold: 12,
                 speed: 0.8,
@@ -629,6 +674,11 @@
                 baseHealth: 30,
                 baseAttack: 8,
                 baseDefense: 5,
+                baseAccuracy: 0.8,
+                baseEvasion: 0.1,
+                baseCritChance: 0.1,
+                baseMagicPower: 3,
+                baseMagicResist: 2,
                 baseExp: 50,
                 baseGold: 50,
                 speed: 1,
@@ -724,6 +774,13 @@
                 health: 20,
                 attack: 5,
                 defense: 1,
+                accuracy: 0.8,
+                evasion: 0.1,
+                critChance: 0.05,
+                magicPower: 0,
+                magicResist: 0,
+                elementResistances: {fire:0, ice:0, lightning:0, earth:0, light:0, dark:0},
+                statusResistances: {poison:0, bleed:0, burn:0, freeze:0},
                 exp: 0,
                 expNeeded: 20,
                 gold: 100,
@@ -806,7 +863,7 @@
         }
 
         // 간단한 치유 로직
-        function healTarget(healer, target) {
+function healTarget(healer, target) {
             const healAmount = Math.min(3 + healer.level, target.maxHealth - target.health);
             if (healAmount > 0) {
                 target.health += healAmount;
@@ -817,6 +874,43 @@
             return false;
         }
 
+        // 통합 공격 처리
+        function performAttack(attacker, defender, options = {}) {
+            const magic = options.magic || false;
+            const element = options.element;
+            const status = options.status;
+            const attackStat = options.attackValue !== undefined ? options.attackValue : (magic ? attacker.magicPower : attacker.attack);
+            const defenseStat = options.defenseValue !== undefined ? options.defenseValue : (magic ? defender.magicResist : defender.defense);
+
+            const hitChance = attacker.accuracy / (attacker.accuracy + defender.evasion);
+            if (Math.random() > hitChance) {
+                return { hit: false };
+            }
+
+            let damage = Math.max(1, attackStat - defenseStat);
+            let crit = false;
+            if (Math.random() < attacker.critChance) {
+                damage = Math.floor(damage * 1.5);
+                crit = true;
+            }
+
+            if (element && defender.elementResistances && defender.elementResistances[element] !== undefined) {
+                const resist = defender.elementResistances[element];
+                damage = Math.max(1, Math.floor(damage * (1 - resist)));
+            }
+
+            defender.health -= damage;
+
+            let statusApplied = false;
+            if (status && defender.statusResistances && defender.statusResistances[status] !== undefined) {
+                if (Math.random() > defender.statusResistances[status]) {
+                    defender[status] = true;
+                    statusApplied = true;
+                }
+            }
+
+            return { hit: true, crit, damage, statusApplied };
+        }
         // 인벤토리 UI 갱신
         function updateInventoryDisplay() {
             const container = document.getElementById('inventory-items');
@@ -919,6 +1013,11 @@
                 `HP: ${merc.health}/${merc.maxHealth}\n` +
                 `공격력: ${totalAttack}\n` +
                 `방어력: ${totalDefense}\n` +
+                `명중률: ${merc.accuracy}\n` +
+                `회피율: ${merc.evasion}\n` +
+                `치명타: ${merc.critChance}\n` +
+                `마법공격: ${merc.magicPower}\n` +
+                `마법방어: ${merc.magicResist}\n` +
                 `무기: ${weapon}\n` +
                 `방어구: ${armor}\n` +
                 `특성:\n${traitInfo}`;
@@ -933,6 +1032,11 @@
             document.getElementById('maxHealth').textContent = gameState.player.maxHealth;
             document.getElementById('attack').textContent = gameState.player.attack;
             document.getElementById('defense').textContent = gameState.player.defense;
+            document.getElementById('accuracy').textContent = gameState.player.accuracy;
+            document.getElementById('evasion').textContent = gameState.player.evasion;
+            document.getElementById('critChance').textContent = gameState.player.critChance;
+            document.getElementById('magicPower').textContent = gameState.player.magicPower;
+            document.getElementById('magicResist').textContent = gameState.player.magicResist;
             document.getElementById('exp').textContent = gameState.player.exp;
             document.getElementById('expNeeded').textContent = gameState.player.expNeeded;
             document.getElementById('gold').textContent = gameState.player.gold;
@@ -969,6 +1073,13 @@
                 health: data.baseHealth,
                 attack: data.baseAttack,
                 defense: data.baseDefense,
+                accuracy: data.baseAccuracy,
+                evasion: data.baseEvasion,
+                critChance: data.baseCritChance,
+                magicPower: data.baseMagicPower,
+                magicResist: data.baseMagicResist,
+                elementResistances: {fire:0, ice:0, lightning:0, earth:0, light:0, dark:0},
+                statusResistances: {poison:0, bleed:0, burn:0, freeze:0},
                 exp: data.baseExp,
                 gold: data.baseGold,
                 range: data.range,
@@ -1254,6 +1365,13 @@
                 health: mercType.baseHealth,
                 attack: mercType.baseAttack,
                 defense: mercType.baseDefense,
+                accuracy: mercType.baseAccuracy,
+                evasion: mercType.baseEvasion,
+                critChance: mercType.baseCritChance,
+                magicPower: mercType.baseMagicPower,
+                magicResist: mercType.baseMagicResist,
+                elementResistances: {fire:0, ice:0, lightning:0, earth:0, light:0, dark:0},
+                statusResistances: {poison:0, bleed:0, burn:0, freeze:0},
                 exp: 0,
                 expNeeded: 15,
                 alive: true,
@@ -1498,7 +1616,7 @@
             
             if (nearestTarget) {
                 let totalDefense = nearestTarget.defense;
-                
+
                 if (nearestTarget === gameState.player && gameState.player.equipped.armor) {
                     totalDefense += gameState.player.equipped.armor.defense;
                 } else if (nearestTarget !== gameState.player) {
@@ -1510,16 +1628,25 @@
                         totalDefense += nearestTarget.equipped.armor.defense;
                     }
                 }
-                
-                const damage = Math.max(1, monster.attack - totalDefense);
-                nearestTarget.health -= damage;
-                
-                let attackType = monster.special === 'magic' ? '🔮 마법 공격' : 
+
+                const attackValue = monster.special === 'magic' ? monster.magicPower : monster.attack;
+                const result = performAttack(monster, nearestTarget, {
+                    attackValue: attackValue,
+                    magic: monster.special === 'magic',
+                    defenseValue: totalDefense
+                });
+
+                let attackType = monster.special === 'magic' ? '🔮 마법 공격' :
                                monster.special === 'ranged' ? '🏹 원거리 공격' :
                                '⚔️ 공격';
-                
+
                 const targetName = nearestTarget === gameState.player ? "플레이어" : nearestTarget.name;
-                addMessage(`${monster.name}이(가) ${targetName}에게 ${attackType}으로 ${damage}의 피해를 입혔습니다!`, "combat");
+                if (!result.hit) {
+                    addMessage(`${monster.name}의 공격이 빗나갔습니다!`, "combat");
+                } else {
+                    const critMsg = result.crit ? ' (치명타!)' : '';
+                    addMessage(`${monster.name}이(가) ${targetName}에게 ${attackType}으로 ${result.damage}의 피해를 입혔습니다${critMsg}!`, "combat");
+                }
                 
                 if (nearestTarget.health <= 0) {
                     if (nearestTarget === gameState.player) {
@@ -1590,11 +1717,14 @@
                     if (gameState.player.equipped.weapon) {
                         totalAttack += gameState.player.equipped.weapon.attack;
                     }
-                    
-                    const damage = Math.max(1, totalAttack - monster.defense);
-                    monster.health -= damage;
-                    
-                    addMessage(`⚔️ ${monster.name}에게 ${damage}의 피해를 입혔습니다!`, "combat");
+
+                    const result = performAttack(gameState.player, monster, { attackValue: totalAttack });
+                    if (!result.hit) {
+                        addMessage(`❌ ${monster.name}에게 공격이 빗나갔습니다!`, "combat");
+                    } else {
+                        const critMsg = result.crit ? ' (치명타!)' : '';
+                        addMessage(`⚔️ ${monster.name}에게 ${result.damage}의 피해를 입혔습니다${critMsg}!`, "combat");
+                    }
                     
                     if (monster.health <= 0) {
                         addMessage(`💀 ${monster.name}을(를) 처치했습니다!`, "combat");
@@ -1888,10 +2018,13 @@
                         totalAttack += mercenary.equipped.weapon.attack;
                     }
                     
-                    const damage = Math.max(1, totalAttack - nearestMonster.defense);
-                    nearestMonster.health -= damage;
-                    
-                    addMessage(`⚔️ ${mercenary.name}이(가) ${nearestMonster.name}에게 ${damage}의 피해를 입혔습니다!`, "mercenary");
+                    const result = performAttack(mercenary, nearestMonster, { attackValue: totalAttack });
+                    if (!result.hit) {
+                        addMessage(`❌ ${mercenary.name}의 공격이 빗나갔습니다!`, "mercenary");
+                    } else {
+                        const critMsg = result.crit ? ' (치명타!)' : '';
+                        addMessage(`⚔️ ${mercenary.name}이(가) ${nearestMonster.name}에게 ${result.damage}의 피해를 입혔습니다${critMsg}!`, "mercenary");
+                    }
                     
                     if (nearestMonster.health <= 0) {
                         addMessage(`💀 ${mercenary.name}이(가) ${nearestMonster.name}을(를) 처치했습니다!`, "mercenary");
