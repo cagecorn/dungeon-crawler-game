@@ -1,416 +1,237 @@
-<!DOCTYPE html>
-<html lang="ko">
-<head>
-    <meta charset="UTF-8">
-    <title>간단한 던전 크롤러</title>
-    <style>
-        body {
-            font-family: 'Arial', sans-serif;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            background-color: #222;
-            color: #eee;
-            margin: 0;
-            padding: 20px;
+// 뷰포트 밖의 셀은 숨김 처리
+                    if (x < startX || x >= endX || y < startY || y >= endY) {
+                        cell.style.display = 'none';
+                        continue;
+                    }
+                    
+                    cell.style.display = 'flex';
+                    
+                    // 기존 클래스 제거
+                    cell.className = 'cell';
+                    cell.style.color = '';
+                    
+                    if (gameState.fogOfWar[y][x]) {
+                        cell.classList.add('fog');
+                        cell.textContent = '';
+                    } else {
+                        if (x === gameState.player.x && y === gameState.player.y) {
+                            cell.classList.add('player');
+                            cell.textContent = '🧙‍♂️';
+                        } else {
+                            const mercenary = gameState.mercenaries.find(m => m.x === x && m.y === y && m.alive);
+                            if (mercenary) {
+                                cell.classList.add('mercenary');
+                                cell.textContent = mercenary.icon;
+                            } else {
+                                const cellType = gameState.dungeon[y][x];
+                                cell.classList.add(cellType);
+                                
+                                switch (cellType) {
+                                    case 'wall':
+                                        cell.textContent = '🧱';
+                                        break;
+                                    case 'monster':
+                                        const monster = gameState.monsters.find(m => m.x === x && m.y === y);
+                                        if (monster) {
+                                            cell.textContent = monster.icon;
+                                            cell.style.color = monster.color;
+                                        } else {
+                                            cell.textContent = '👹';
+                                        }
+                                        break;
+                                    case 'treasure':
+                                        cell.textContent = '💎';
+                                        break;
+                                    case 'item':
+                                        cell.textContent = '📦';
+                                        break;
+                                    case 'exit':
+                                        cell.textContent = '🌀';
+                                        break;
+                                    default:
+                                        cell.textContent = '⬜';
+                                }
+                            }
+                        }
+                    }
+                }
+            }
         }
-        h1 {
-            color: #ff6600;
-            margin-bottom: 10px;
-        }
-        .game-container {
-            display: flex;
-            gap: 20px;
-            margin-bottom: 20px;
-        }
-        .dungeon {
-            display: grid;
-            grid-template-columns: repeat(10, 40px);
-            grid-template-rows: repeat(10, 40px);
-            gap: 2px;
-            background-color: #333;
-            padding: 10px;
-            border-radius: 5px;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
-        }
-        .cell {
-            width: 40px;
-            height: 40px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            font-size: 24px;
-            background-color: #444;
-            border-radius: 3px;
-            transition: all 0.2s;
-        }
-        .wall {
-            background-color: #222;
-        }
-        .player {
-            background-color: #4CAF50;
-            color: white;
-        }
-        .monster {
-            background-color: #f44336;
-            color: white;
-        }
-        .treasure {
-            background-color: #FFD700;
-            color: black;
-        }
-        .item {
-            background-color: #9575CD;
-            color: white;
-        }
-        .exit {
-            background-color: #2196F3;
-            color: white;
-        }
-        .empty {
-            background-color: #666;
-        }
-        .fog {
-            background-color: #444;
-            color: #444;
-        }
-        .stats {
-            background-color: #333;
-            padding: 20px;
-            border-radius: 5px;
-            min-width: 200px;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
-        }
-        .stats h2 {
-            color: #4CAF50;
-            margin-top: 0;
-            border-bottom: 1px solid #555;
-            padding-bottom: 10px;
-        }
-        .stats div {
-            margin-bottom: 10px;
-        }
-        .inventory {
-            background-color: #333;
-            padding: 20px;
-            border-radius: 5px;
-            min-width: 200px;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
-            margin-top: 20px;
-        }
-        .inventory h2 {
-            color: #9575CD;
-            margin-top: 0;
-            border-bottom: 1px solid #555;
-            padding-bottom: 10px;
-        }
-        .inventory-slot {
-            background-color: #444;
-            padding: 8px;
-            margin-bottom: 5px;
-            border-radius: 3px;
-            cursor: pointer;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        .inventory-slot:hover {
-            background-color: #555;
-        }
-        .inventory-slot.equipped {
-            background-color: #2a5434;
-            border: 1px solid #4CAF50;
-        }
-        .equipped-items {
-            margin-bottom: 20px;
-        }
-        .equipped-items h3 {
-            color: #4CAF50;
-            margin-bottom: 10px;
-        }
-        .equipped-slot {
-            background-color: #444;
-            padding: 8px;
-            margin-bottom: 5px;
-            border-radius: 3px;
-            font-size: 14px;
-        }
-        .equipped-slot.empty {
-            color: #888;
-            font-style: italic;
-        }
-        .message-log {
-            background-color: #333;
-            padding: 15px;
-            border-radius: 5px;
-            width: 100%;
-            max-width: 600px;
-            height: 150px;
-            overflow-y: auto;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
-        }
-        .message {
-            margin-bottom: 5px;
-            padding: 5px;
-            border-radius: 3px;
-        }
-        .message.info {
-            background-color: #444;
-        }
-        .message.combat {
-            background-color: #541212;
-        }
-        .message.treasure {
-            background-color: #5f4b00;
-        }
-        .message.item {
-            background-color: #3d3051;
-        }
-        .message.level {
-            background-color: #1a472a;
-        }
-        button {
-            background-color: #4CAF50;
-            color: white;
-            border: none;
-            padding: 10px 20px;
-            margin: 10px 0;
-            border-radius: 5px;
-            cursor: pointer;
-            font-size: 16px;
-            transition: background-color 0.3s;
-        }
-        button:hover {
-            background-color: #45a049;
-        }
-        .controls {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 10px;
-            margin-top: 20px;
-        }
-        .controls-row {
-            display: flex;
-            gap: 10px;
-        }
-    </style>
-</head>
-<body>
-    <h1>던전 크롤러</h1>
-    <div class="game-container">
-        <div class="dungeon" id="dungeon"></div>
         
-        <div>
-            <div class="stats">
-                <h2>플레이어 정보</h2>
-                <div>레벨: <span id="level">1</span></div>
-                <div>체력: <span id="health">20</span>/<span id="maxHealth">20</span></div>
-                <div>공격력: <span id="attack">5</span> <span id="weaponBonus"></span></div>
-                <div>방어력: <span id="defense">1</span> <span id="armorBonus"></span></div>
-                <div>경험치: <span id="exp">0</span>/<span id="expNeeded">20</span></div>
-                <div>골드: <span id="gold">0</span></div>
-                <div>층: <span id="floor">1</span></div>
-            </div>
+        // 시야 업데이트
+        function updateFogOfWar() {
+            const viewRange = 3;
             
-            <div class="inventory">
-                <h2>인벤토리</h2>
-                <div class="equipped-items">
-                    <h3>장착 중인 아이템</h3>
-                    <div class="equipped-slot" id="equipped-weapon">무기: 없음</div>
-                    <div class="equipped-slot" id="equipped-armor">방어구: 없음</div>
-                </div>
-                <h3>보유 아이템</h3>
-                <div id="inventory-items"></div>
-            </div>
-        </div>
-    </div>
-    
-    <div class="message-log" id="message-log"></div>
-    
-    <div class="controls">
-    <div class="controls-row">
-        <button id="up">↑</button>
-    </div>
-    <div class="controls-row">
-        <button id="left">←</button>
-        <button id="down">↓</button>
-        <button id="right">→</button>
-    </div>
-    <div class="controls-row" style="margin-top: 10px;">
-        <button id="save-game" style="background-color: #2196F3;">게임 저장</button>
-        <button id="load-game" style="background-color: #FF9800;">게임 불러오기</button>
-    </div>
-</div>
-
-    <script>
-        // 아이템 타입 정의
-        const ITEM_TYPES = {
-            WEAPON: 'weapon',
-            ARMOR: 'armor',
-            POTION: 'potion'
-        };
-
-        // 몬스터 타입 정의
-        const MONSTER_TYPES = {
-            ZOMBIE: {
-                name: '좀비',
-                icon: 'Z',
-                color: '#8B4513',
-                baseHealth: 8,
-                baseAttack: 3,
-                baseDefense: 1,
-                baseExp: 6,
-                baseGold: 3,
-                speed: 0.5,
-                range: 1,
-                special: 'slow'
-            },
-            GOBLIN: {
-                name: '고블린',
-                icon: 'G',
-                color: '#32CD32',
-                baseHealth: 4,
-                baseAttack: 2,
-                baseDefense: 0,
-                baseExp: 4,
-                baseGold: 5,
-                speed: 1.5,
-                range: 1,
-                special: 'fast'
-            },
-            ARCHER: {
-                name: '궁수',
-                icon: 'A',
-                color: '#DAA520',
-                baseHealth: 5,
-                baseAttack: 4,
-                baseDefense: 1,
-                baseExp: 8,
-                baseGold: 7,
-                speed: 1,
-                range: 3,
-                special: 'ranged'
-            },
-            WIZARD: {
-                name: '마법사',
-                icon: 'W',
-                color: '#9932CC',
-                baseHealth: 3,
-                baseAttack: 6,
-                baseDefense: 0,
-                baseExp: 10,
-                baseGold: 10,
-                speed: 1,
-                range: 4,
-                special: 'magic'
-            },
-            ORC: {
-                name: '오크 전사',
-                icon: 'O',
-                color: '#B22222',
-                baseHealth: 12,
-                baseAttack: 5,
-                baseDefense: 3,
-                baseExp: 15,
-                baseGold: 12,
-                speed: 0.8,
-                range: 1,
-                special: 'strong'
-            },
-            BOSS: {
-                name: '던전 보스',
-                icon: '★',
-                color: '#FF4500',
-                baseHealth: 30,
-                baseAttack: 8,
-                baseDefense: 5,
-                baseExp: 50,
-                baseGold: 50,
-                speed: 1,
-                range: 2,
-                special: 'boss'
+            const { x, y } = gameState.player;
+            for (let dy = -viewRange; dy <= viewRange; dy++) {
+                for (let dx = -viewRange; dx <= viewRange; dx++) {
+                    const newY = y + dy;
+                    const newX = x + dx;
+                    
+                    if (newY >= 0 && newY < gameState.dungeonSize && 
+                        newX >= 0 && newX < gameState.dungeonSize) {
+                        gameState.fogOfWar[newY][newX] = false;
+                    }
+                }
             }
-        };
+            
+            gameState.mercenaries.forEach(mercenary => {
+                if (mercenary.alive) {
+                    const mercViewRange = 2;
+                    for (let dy = -mercViewRange; dy <= mercViewRange; dy++) {
+                        for (let dx = -mercViewRange; dx <= mercViewRange; dx++) {
+                            const newY = mercenary.y + dy;
+                            const newX = mercenary.x + dx;
+                            
+                            if (newY >= 0 && newY < gameState.dungeonSize && 
+                                newX >= 0 && newX < gameState.dungeonSize) {
+                                gameState.fogOfWar[newY][newX] = false;
+                            }
+                        }
+                    }
+                }
+            });
+        }
+        
+        // 거리 계산
+        function getDistance(x1, y1, x2, y2) {
+            return Math.abs(x1 - x2) + Math.abs(y1 - y2);
+        }
 
-        // 아이템 데이터베이스
-        const ITEMS = {
-            // 무기
-            shortSword: {
-                name: '단검',
-                type: ITEM_TYPES.WEAPON,
-                attack: 2,
-                price: 10,
-                level: 1,
-                icon: '⚔️'
-            },
-            longSword: {
-                name: '장검',
-                type: ITEM_TYPES.WEAPON,
-                attack: 4,
-                price: 25,
-                level: 2,
-                icon: '🗡️'
-            },
-            magicSword: {
-                name: '마법검',
-                type: ITEM_TYPES.WEAPON,
-                attack: 6,
-                price: 50,
-                level: 3,
-                icon: '✨'
-            },
-            
-            // 방어구
-            leatherArmor: {
-                name: '가죽 갑옷',
-                type: ITEM_TYPES.ARMOR,
-                defense: 2,
-                price: 15,
-                level: 1,
-                icon: '🛡️'
-            },
-            chainMail: {
-                name: '사슬 갑옷',
-                type: ITEM_TYPES.ARMOR,
-                defense: 4,
-                price: 35,
-                level: 2,
-                icon: '🛡️'
-            },
-            plateArmor: {
-                name: '판금 갑옷',
-                type: ITEM_TYPES.ARMOR,
-                defense: 6,
-                price: 60,
-                level: 3,
-                icon: '🛡️'
-            },
-            
-            // 포션
-            healthPotion: {
-                name: '체력 포션',
-                type: ITEM_TYPES.POTION,
-                healing: 10,
-                price: 5,
-                level: 1,
-                icon: '🧪'
-            },
-            greaterHealthPotion: {
-                name: '대형 체력 포션',
-                type: ITEM_TYPES.POTION,
-                healing: 25,
-                price: 15,
-                level: 2,
-                icon: '🧪'
+        // 시야 확인
+        function hasLineOfSight(x1, y1, x2, y2) {
+            const dx = Math.abs(x2 - x1);
+            const dy = Math.abs(y2 - y1);
+            const sx = x1 < x2 ? 1 : -1;
+            const sy = y1 < y2 ? 1 : -1;
+            let err = dx - dy;
+            let x = x1;
+            let y = y1;
+
+            while (x !== x2 || y !== y2) {
+                if (x !== x1 || y !== y1) {
+                    if (gameState.dungeon[y] && gameState.dungeon[y][x] === 'wall') {
+                        return false;
+                    }
+                }
+                const e2 = 2 * err;
+                if (e2 > -dy) {
+                    err -= dy;
+                    x += sx;
+                }
+                if (e2 < dx) {
+                    err += dx;
+                    y += sy;
+                }
             }
-        };
+            return true;
+        }
 
-        // 게임 상태
-        const gameState = {
-            dungeon: [],
-            fogOfWar: [],
-            player: {
+        // 키보드 이벤트
+        document.addEventListener('keydown', (e) => {
+            if (!gameState.gameRunning) return;
+            
+            switch(e.key) {
+                case 'ArrowUp':
+                case 'w':
+                case 'W':
+                    e.preventDefault();
+                    movePlayer(0, -1);
+                    break;
+                case 'ArrowDown':
+                case 's':
+                case 'S':
+                    e.preventDefault();
+                    movePlayer(0, 1);
+                    break;
+                case 'ArrowLeft':
+                case 'a':
+                case 'A':
+                    e.preventDefault();
+                    movePlayer(-1, 0);
+                    break;
+                case 'ArrowRight':
+                case 'd':
+                case 'D':
+                    e.preventDefault();
+                    movePlayer(1, 0);
+                    break;
+            }
+        });
+
+        // 버튼 이벤트
+        document.getElementById('up').addEventListener('click', () => movePlayer(0, -1));
+        document.getElementById('down').addEventListener('click', () => movePlayer(0, 1));
+        document.getElementById('left').addEventListener('click', () => movePlayer(-1, 0));
+        document.getElementById('right').addEventListener('click', () => movePlayer(1, 0));
+        document.getElementById('save-game').addEventListener('click', saveGame);
+        document.getElementById('load-game').addEventListener('click', loadGame);
+        document.getElementById('new-game').addEventListener('click', newGame);
+
+        // 게임 시작
+        generateDungeon();
+    </script>
+</body>
+</html>)) {
+                        
+                        mercenary.x = newX;
+                        mercenary.y = newY;
+                    }
+                } else if (playerDistance <= 1) {
+                    // 플레이어와 너무 가까우면 약간 떨어짐
+                    const dx = Math.sign(mercenary.x - gameState.player.x) || (Math.random() < 0.5 ? 1 : -1);
+                    const dy = Math.sign(mercenary.y - gameState.player.y) || (Math.random() < 0.5 ? 1 : -1);
+                    
+                    let newX = mercenary.x + dx;
+                    let newY = mercenary.y + dy;
+                    
+                    if (newX >= 0 && newX < gameState.dungeonSize && 
+                        newY >= 0 && newY < gameState.dungeonSize &&
+                        gameState.dungeon[newY][newX] === 'empty' &&
+                        !gameState.monsters.some(m => m.x === newX && m.y === newY) &&
+                        !gameState.mercenaries.some(m => m.x === newX && m.y === newY && m.alive && m !== mercenary)) {
+                        
+                        mercenary.x = newX;
+                        mercenary.y = newY;
+                    }
+                }
+            }
+            
+            mercenary.hasActed = true;
+        }
+
+        // 치료 함수
+        function healTarget(healer, target) {
+            if (target.health < target.maxHealth) {
+                const healAmount = Math.floor(healer.attack * 1.5);
+                const actualHeal = Math.min(healAmount, target.maxHealth - target.health);
+                target.health += actualHeal;
+                
+                const targetName = target === gameState.player ? "플레이어" : target.name;
+                addMessage(`💚 ${healer.name}이(가) ${targetName}을(를) ${actualHeal} 치료했습니다.`, "mercenary");
+                return true;
+            }
+            return false;
+        }
+
+        // 게임 저장
+        function saveGame() {
+            addMessage('⚠️ 브라우저 환경에서는 게임 저장이 지원되지 않습니다.', 'info');
+        }
+
+        // 게임 불러오기
+        function loadGame() {
+            addMessage('⚠️ 브라우저 환경에서는 게임 불러오기가 지원되지 않습니다.', 'info');
+        }
+
+        // 새 게임 시작
+        function newGame() {
+            // 게임 상태 초기화
+            gameState.floor = 1;
+            gameState.gameRunning = true;
+            
+            // 플레이어 초기화
+            gameState.player = {
                 x: 0,
                 y: 0,
                 level: 1,
@@ -420,89 +241,95 @@
                 defense: 1,
                 exp: 0,
                 expNeeded: 20,
-                gold: 0,
+                gold: 100,
                 inventory: [],
                 equipped: {
                     weapon: null,
                     armor: null
                 }
-            },
-            monsters: [],
-            treasures: [],
-            items: [],
-            exitLocation: { x: 0, y: 0 },
-            floor: 1,
-            dungeonSize: 10
-        };
-
-        // 아이템 생성 함수
-        function createItem(itemKey, x, y) {
-            const itemData = ITEMS[itemKey];
-            return {
-                id: Math.random().toString(36).substr(2, 9),
-                key: itemKey,
-                name: itemData.name,
-                type: itemData.type,
-                x: x,
-                y: y,
-                ...itemData
             };
-        }
-
-        // 인벤토리에 아이템 추가
-        function addToInventory(item) {
-            gameState.player.inventory.push(item);
-            updateInventoryDisplay();
-        }
-
-        // 아이템 장착
-        function equipItem(item) {
-            if (item.type === ITEM_TYPES.WEAPON) {
-                if (gameState.player.equipped.weapon) {
-                    // 기존 장착 아이템을 인벤토리로
-                    addToInventory(gameState.player.equipped.weapon);
-                }
-                gameState.player.equipped.weapon = item;
-                addMessage(`${item.name}을(를) 장착했습니다. 공격력 +${item.attack}`, 'item');
-            } else if (item.type === ITEM_TYPES.ARMOR) {
-                if (gameState.player.equipped.armor) {
-                    // 기존 장착 아이템을 인벤토리로
-                    addToInventory(gameState.player.equipped.armor);
-                }
-                gameState.player.equipped.armor = item;
-                addMessage(`${item.name}을(를) 장착했습니다. 방어력 +${item.defense}`, 'item');
+            
+            // 용병, 몬스터, 아이템 초기화
+            gameState.mercenaries = [];
+            gameState.monsters = [];
+            gameState.treasures = [];
+            gameState.items = [];
+            
+            // 카메라 초기화
+            gameState.camera = { x: 0, y: 0 };
+            
+            // 게임 오버 화면 제거
+            const gameOverDiv = document.querySelector('.game-over');
+            if (gameOverDiv) {
+                gameOverDiv.remove();
             }
             
-            // 인벤토리에서 제거
-            const index = gameState.player.inventory.findIndex(i => i.id === item.id);
-            if (index !== -1) {
-                gameState.player.inventory.splice(index, 1);
+            // 아이템 메뉴 제거
+            const itemMenu = document.querySelector('.item-menu');
+            if (itemMenu) {
+                itemMenu.remove();
             }
             
-            updateInventoryDisplay();
-            updateStats();
+            // 메시지 로그 초기화
+            document.getElementById('message-log').innerHTML = '';
+            
+            generateDungeon();
+            addMessage('🎮 새로운 모험이 시작됩니다!', 'info');
         }
 
-        // 아이템 사용
-        function useItem(item) {
-            if (item.type === ITEM_TYPES.POTION) {
-                if (gameState.player.health < gameState.player.maxHealth) {
-                    const healAmount = Math.min(item.healing, gameState.player.maxHealth - gameState.player.health);
-                    gameState.player.health += healAmount;
-                    addMessage(`${item.name}을(를) 사용하여 체력을 ${healAmount} 회복했습니다.`, 'item');
-                    
-                    // 인벤토리에서 제거
-                    const index = gameState.player.inventory.findIndex(i => i.id === item.id);
-                    if (index !== -1) {
-                        gameState.player.inventory.splice(index, 1);
-                    }
-                    
-                    updateInventoryDisplay();
-                    updateStats();
-                } else {
-                    addMessage('이미 체력이 가득 찼습니다.', 'info');
-                }
+        // 용병 정보 업데이트
+        function updateMercenaryDisplay() {
+            const mercenaryList = document.getElementById('mercenary-list');
+            mercenaryList.innerHTML = '';
+            
+            if (gameState.mercenaries.length === 0) {
+                mercenaryList.innerHTML = '<div style="color: #888; font-style: italic;">👥 용병 없음</div>';
+                return;
             }
+            
+            gameState.mercenaries.forEach(mercenary => {
+                const mercInfo = document.createElement('div');
+                mercInfo.className = `mercenary-info ${mercenary.alive ? '' : 'dead'}`;
+                
+                const healthPercent = Math.round((mercenary.health / mercenary.maxHealth) * 100);
+                const expPercent = Math.round((mercenary.exp / mercenary.expNeeded) * 100);
+                
+                // 장비 보너스 계산
+                let totalAttack = mercenary.attack;
+                let totalDefense = mercenary.defense;
+                let weaponBonus = '';
+                let armorBonus = '';
+                
+                if (mercenary.equipped && mercenary.equipped.weapon) {
+                    totalAttack += mercenary.equipped.weapon.attack;
+                    weaponBonus = ` (+${mercenary.equipped.weapon.attack})`;
+                }
+                
+                if (mercenary.equipped && mercenary.equipped.armor) {
+                    totalDefense += mercenary.equipped.armor.defense;
+                    armorBonus = ` (+${mercenary.equipped.armor.defense})`;
+                }
+                
+                mercInfo.innerHTML = `
+                    <div><strong>${mercenary.icon} ${mercenary.name}</strong> (Lv.${mercenary.level})</div>
+                    <div>❤️ 체력: ${mercenary.health}/${mercenary.maxHealth} (${healthPercent}%)</div>
+                    <div>⚔️ 공격: ${totalAttack}${weaponBonus} | 🛡️ 방어: ${totalDefense}${armorBonus}</div>
+                    <div>⭐ 경험치: ${mercenary.exp}/${mercenary.expNeeded} (${expPercent}%)</div>
+                    <div class="mercenary-equipment">
+                        <div style="font-size: 10px; margin-top: 4px; color: #bbb;">
+                            🗡️ 무기: ${mercenary.equipped && mercenary.equipped.weapon ? mercenary.equipped.weapon.name : '없음'}
+                            ${mercenary.equipped && mercenary.equipped.weapon ? '<span class="unequip-btn" onclick="unequipItemFromMercenary(\'' + mercenary.id + '\', \'weapon\')" style="color: #ff6666; cursor: pointer; margin-left: 5px; font-size: 9px; text-decoration: underline;">[해제]</span>' : ''}
+                        </div>
+                        <div style="font-size: 10px; color: #bbb;">
+                            🛡️ 방어구: ${mercenary.equipped && mercenary.equipped.armor ? mercenary.equipped.armor.name : '없음'}
+                            ${mercenary.equipped && mercenary.equipped.armor ? '<span class="unequip-btn" onclick="unequipItemFromMercenary(\'' + mercenary.id + '\', \'armor\')" style="color: #ff6666; cursor: pointer; margin-left: 5px; font-size: 9px; text-decoration: underline;">[해제]</span>' : ''}
+                        </div>
+                    </div>
+                    ${mercenary.alive ? '' : '<div style="color: #ff6666;">💀 전사함</div>'}
+                `;
+                
+                mercenaryList.appendChild(mercInfo);
+            });
         }
 
         // 인벤토리 화면 업데이트
@@ -510,27 +337,25 @@
             const inventoryItems = document.getElementById('inventory-items');
             inventoryItems.innerHTML = '';
             
-            // 장착 아이템 표시
             const weaponSlot = document.getElementById('equipped-weapon');
             const armorSlot = document.getElementById('equipped-armor');
             
             if (gameState.player.equipped.weapon) {
-                weaponSlot.textContent = `무기: ${gameState.player.equipped.weapon.name} (+${gameState.player.equipped.weapon.attack})`;
+                weaponSlot.textContent = `⚔️ 무기: ${gameState.player.equipped.weapon.name} (+${gameState.player.equipped.weapon.attack})`;
                 weaponSlot.className = 'equipped-slot';
             } else {
-                weaponSlot.textContent = '무기: 없음';
+                weaponSlot.textContent = '⚔️ 무기: 없음';
                 weaponSlot.className = 'equipped-slot empty';
             }
             
             if (gameState.player.equipped.armor) {
-                armorSlot.textContent = `방어구: ${gameState.player.equipped.armor.name} (+${gameState.player.equipped.armor.defense})`;
+                armorSlot.textContent = `🛡️ 방어구: ${gameState.player.equipped.armor.name} (+${gameState.player.equipped.armor.defense})`;
                 armorSlot.className = 'equipped-slot';
             } else {
-                armorSlot.textContent = '방어구: 없음';
+                armorSlot.textContent = '🛡️ 방어구: 없음';
                 armorSlot.className = 'equipped-slot empty';
             }
             
-            // 인벤토리 아이템 표시
             gameState.player.inventory.forEach(item => {
                 const slot = document.createElement('div');
                 slot.className = 'inventory-slot';
@@ -546,12 +371,12 @@
                 
                 slot.innerHTML = `<span>${itemText}</span>`;
                 
-                // 클릭 이벤트
+                // 아이템 클릭 시 옵션 메뉴 표시
                 slot.addEventListener('click', () => {
-                    if (item.type === ITEM_TYPES.WEAPON || item.type === ITEM_TYPES.ARMOR) {
-                        equipItem(item);
-                    } else if (item.type === ITEM_TYPES.POTION) {
+                    if (item.type === ITEM_TYPES.POTION) {
                         useItem(item);
+                    } else {
+                        showItemMenu(item, slot);
                     }
                 });
                 
@@ -559,32 +384,193 @@
             });
             
             if (gameState.player.inventory.length === 0) {
-                inventoryItems.innerHTML = '<div style="color: #888; font-style: italic;">비어있음</div>';
+                inventoryItems.innerHTML = '<div style="color: #888; font-style: italic;">📦 비어있음</div>';
+            }
+        }
+
+        // 아이템 메뉴 표시
+        function showItemMenu(item, slotElement) {
+            // 기존 메뉴 제거
+            const existingMenu = document.querySelector('.item-menu');
+            if (existingMenu) {
+                existingMenu.remove();
+            }
+            
+            const menu = document.createElement('div');
+            menu.className = 'item-menu';
+            menu.style.cssText = `
+                position: absolute;
+                background: linear-gradient(135deg, #2a2a2a, #333);
+                border: 1px solid #555;
+                border-radius: 6px;
+                padding: 8px;
+                z-index: 1000;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.8);
+                min-width: 120px;
+            `;
+            
+            // 플레이어 장착 버튼
+            const equipPlayerBtn = document.createElement('button');
+            equipPlayerBtn.textContent = '🧙‍♂️ 플레이어 장착';
+            equipPlayerBtn.style.cssText = `
+                width: 100%;
+                padding: 4px 8px;
+                margin: 2px 0;
+                background: linear-gradient(45deg, #4CAF50, #45a049);
+                color: white;
+                border: none;
+                border-radius: 4px;
+                cursor: pointer;
+                font-size: 11px;
+            `;
+            equipPlayerBtn.onclick = () => {
+                equipItem(item);
+                menu.remove();
+            };
+            menu.appendChild(equipPlayerBtn);
+            
+            // 용병 장착 버튼들
+            gameState.mercenaries.forEach(mercenary => {
+                if (mercenary.alive) {
+                    const equipMercBtn = document.createElement('button');
+                    equipMercBtn.textContent = `${mercenary.icon} ${mercenary.name}`;
+                    equipMercBtn.style.cssText = `
+                        width: 100%;
+                        padding: 4px 8px;
+                        margin: 2px 0;
+                        background: linear-gradient(45deg, #2196F3, #1976D2);
+                        color: white;
+                        border: none;
+                        border-radius: 4px;
+                        cursor: pointer;
+                        font-size: 11px;
+                    `;
+                    equipMercBtn.onclick = () => {
+                        equipItemToMercenary(item, mercenary);
+                        menu.remove();
+                    };
+                    menu.appendChild(equipMercBtn);
+                }
+            });
+            
+            // 취소 버튼
+            const cancelBtn = document.createElement('button');
+            cancelBtn.textContent = '❌ 취소';
+            cancelBtn.style.cssText = `
+                width: 100%;
+                padding: 4px 8px;
+                margin: 2px 0;
+                background: linear-gradient(45deg, #666, #555);
+                color: white;
+                border: none;
+                border-radius: 4px;
+                cursor: pointer;
+                font-size: 11px;
+            `;
+            cancelBtn.onclick = () => menu.remove();
+            menu.appendChild(cancelBtn);
+            
+            // 메뉴 위치 계산
+            const rect = slotElement.getBoundingClientRect();
+            menu.style.left = `${rect.right + 10}px`;
+            menu.style.top = `${rect.top}px`;
+            
+            document.body.appendChild(menu);
+            
+            // 외부 클릭 시 메뉴 닫기
+            setTimeout(() => {
+                document.addEventListener('click', function closeMenu(e) {
+                    if (!menu.contains(e.target) && e.target !== slotElement) {
+                        menu.remove();
+                        document.removeEventListener('click', closeMenu);
+                    }
+                });
+            }, 10);
+        }
+
+        // 플레이어 스탯 업데이트
+        function updateStats() {
+            document.getElementById('level').textContent = gameState.player.level;
+            document.getElementById('health').textContent = gameState.player.health;
+            document.getElementById('maxHealth').textContent = gameState.player.maxHealth;
+            
+            let totalAttack = gameState.player.attack;
+            let weaponBonus = '';
+            if (gameState.player.equipped.weapon) {
+                totalAttack += gameState.player.equipped.weapon.attack;
+                weaponBonus = `(+${gameState.player.equipped.weapon.attack})`;
+            }
+            document.getElementById('attack').textContent = totalAttack;
+            document.getElementById('weaponBonus').textContent = weaponBonus;
+            
+            let totalDefense = gameState.player.defense;
+            let armorBonus = '';
+            if (gameState.player.equipped.armor) {
+                totalDefense += gameState.player.equipped.armor.defense;
+                armorBonus = `(+${gameState.player.equipped.armor.defense})`;
+            }
+            document.getElementById('defense').textContent = totalDefense;
+            document.getElementById('armorBonus').textContent = armorBonus;
+            
+            document.getElementById('exp').textContent = gameState.player.exp;
+            document.getElementById('expNeeded').textContent = gameState.player.expNeeded;
+            document.getElementById('gold').textContent = gameState.player.gold;
+            document.getElementById('floor').textContent = gameState.floor;
+        }
+
+        // 레벨업 체크
+        function checkLevelUp() {
+            if (gameState.player.exp >= gameState.player.expNeeded) {
+                gameState.player.level++;
+                gameState.player.exp -= gameState.player.expNeeded;
+                gameState.player.expNeeded = Math.floor(gameState.player.expNeeded * 1.5);
+                
+                gameState.player.maxHealth += 5;
+                gameState.player.health = gameState.player.maxHealth;
+                gameState.player.attack += 2;
+                gameState.player.defense += 1;
+                
+                addMessage(`🎉 레벨 업! (Lv.${gameState.player.level}) 모든 능력치가 증가했습니다!`, "level");
+                updateStats();
+            }
+        }
+
+        // 용병 레벨업 체크
+        function checkMercenaryLevelUp(mercenary) {
+            if (mercenary.exp >= mercenary.expNeeded) {
+                mercenary.level++;
+                mercenary.exp -= mercenary.expNeeded;
+                mercenary.expNeeded = Math.floor(mercenary.expNeeded * 1.4);
+                
+                mercenary.maxHealth += 3;
+                mercenary.health = mercenary.maxHealth;
+                mercenary.attack += 1;
+                mercenary.defense += 1;
+                
+                addMessage(`🎉 ${mercenary.name}이(가) 레벨 업했습니다! (Lv.${mercenary.level})`, "mercenary");
+                updateMercenaryDisplay();
             }
         }
 
         // 던전 생성 함수
         function generateDungeon() {
-            // 던전 초기화
             gameState.dungeon = Array(gameState.dungeonSize).fill().map(() => Array(gameState.dungeonSize).fill('wall'));
             gameState.fogOfWar = Array(gameState.dungeonSize).fill().map(() => Array(gameState.dungeonSize).fill(true));
             gameState.monsters = [];
             gameState.treasures = [];
             gameState.items = [];
             
-            // 던전 레이아웃 생성 (간단한 랜덤 룸 생성)
             const rooms = [];
-            const roomCount = 3 + Math.floor(Math.random() * 3); // 3-5개의 방
+            const roomCount = 5 + Math.floor(Math.random() * 4);
             
             for (let i = 0; i < roomCount; i++) {
-                const roomWidth = 3 + Math.floor(Math.random() * 3);
-                const roomHeight = 3 + Math.floor(Math.random() * 3);
+                const roomWidth = 4 + Math.floor(Math.random() * 4);
+                const roomHeight = 4 + Math.floor(Math.random() * 4);
                 const roomX = 1 + Math.floor(Math.random() * (gameState.dungeonSize - roomWidth - 2));
                 const roomY = 1 + Math.floor(Math.random() * (gameState.dungeonSize - roomHeight - 2));
                 
                 rooms.push({ x: roomX, y: roomY, width: roomWidth, height: roomHeight });
                 
-                // 방 안을 빈 공간으로 채우기
                 for (let y = roomY; y < roomY + roomHeight; y++) {
                     for (let x = roomX; x < roomX + roomWidth; x++) {
                         gameState.dungeon[y][x] = 'empty';
@@ -592,25 +578,21 @@
                 }
             }
             
-            // 방들을 연결하는 복도 생성
             for (let i = 0; i < rooms.length - 1; i++) {
                 const room1 = rooms[i];
                 const room2 = rooms[i + 1];
                 
-                // 방의 중심 좌표
                 const x1 = Math.floor(room1.x + room1.width / 2);
                 const y1 = Math.floor(room1.y + room1.height / 2);
                 const x2 = Math.floor(room2.x + room2.width / 2);
                 const y2 = Math.floor(room2.y + room2.height / 2);
                 
-                // 수평 복도
                 const minX = Math.min(x1, x2);
                 const maxX = Math.max(x1, x2);
                 for (let x = minX; x <= maxX; x++) {
                     gameState.dungeon[y1][x] = 'empty';
                 }
                 
-                // 수직 복도
                 const minY = Math.min(y1, y2);
                 const maxY = Math.max(y1, y2);
                 for (let y = minY; y <= maxY; y++) {
@@ -618,12 +600,31 @@
                 }
             }
             
-            // 플레이어 위치 설정 (첫 번째 방의 중앙)
             const startRoom = rooms[0];
             gameState.player.x = Math.floor(startRoom.x + startRoom.width / 2);
             gameState.player.y = Math.floor(startRoom.y + startRoom.height / 2);
             
-            // 출구 위치 설정 (마지막 방의 중앙)
+            gameState.mercenaries.forEach(mercenary => {
+                if (mercenary.alive) {
+                    const positions = [
+                        {x: gameState.player.x + 1, y: gameState.player.y},
+                        {x: gameState.player.x - 1, y: gameState.player.y},
+                        {x: gameState.player.x, y: gameState.player.y + 1},
+                        {x: gameState.player.x, y: gameState.player.y - 1}
+                    ];
+                    
+                    for (const pos of positions) {
+                        if (pos.x >= 0 && pos.x < gameState.dungeonSize && 
+                            pos.y >= 0 && pos.y < gameState.dungeonSize && 
+                            gameState.dungeon[pos.y][pos.x] === 'empty') {
+                            mercenary.x = pos.x;
+                            mercenary.y = pos.y;
+                            break;
+                        }
+                    }
+                }
+            });
+            
             const exitRoom = rooms[rooms.length - 1];
             gameState.exitLocation = {
                 x: Math.floor(exitRoom.x + exitRoom.width / 2),
@@ -631,7 +632,7 @@
             };
             gameState.dungeon[gameState.exitLocation.y][gameState.exitLocation.x] = 'exit';
             
-            // 몬스터 타입별 가중치 (층수에 따라 변화)
+            // 몬스터 생성
             const getMonsterTypeWeights = () => {
                 const weights = {
                     ZOMBIE: 10,
@@ -643,7 +644,6 @@
                 return weights;
             };
             
-            // 가중치 기반 랜덤 몬스터 타입 선택
             const selectMonsterType = (isSpecial = false) => {
                 if (isSpecial && gameState.floor >= 5 && Math.random() < 0.2) {
                     return 'BOSS';
@@ -657,25 +657,23 @@
                     random -= weight;
                     if (random <= 0) return type;
                 }
-                return 'ZOMBIE'; // 기본값
+                return 'ZOMBIE';
             };
             
-            // 몬스터 배치
-            const monsterCount = 3 + Math.floor(gameState.floor * 1.5);
+            const monsterCount = 5 + Math.floor(gameState.floor * 2);
             let monstersPlaced = 0;
             
             while (monstersPlaced < monsterCount) {
                 const x = Math.floor(Math.random() * gameState.dungeonSize);
                 const y = Math.floor(Math.random() * gameState.dungeonSize);
                 
-                // 빈 공간이고 플레이어나 출구가 없는 위치에만 몬스터 배치
                 if (gameState.dungeon[y][x] === 'empty' && 
                     !(y === gameState.player.y && x === gameState.player.x) &&
-                    !(y === gameState.exitLocation.y && x === gameState.exitLocation.x)) {
+                    !(y === gameState.exitLocation.y && x === gameState.exitLocation.x) &&
+                    !gameState.mercenaries.some(m => m.x === x && m.y === y && m.alive)) {
                     
                     gameState.dungeon[y][x] = 'monster';
                     
-                    // 몬스터 타입 선택 (마지막 몬스터는 특별한 몬스터일 가능성)
                     const isLastMonster = (monstersPlaced === monsterCount - 1);
                     const monsterType = selectMonsterType(isLastMonster);
                     const monsterTemplate = MONSTER_TYPES[monsterType];
@@ -698,7 +696,7 @@
                         range: monsterTemplate.range,
                         special: monsterTemplate.special,
                         lootChance: 0.3 + gameState.floor * 0.05,
-                        hasActed: false // 턴 행동 여부
+                        hasActed: false
                     });
                     
                     monstersPlaced++;
@@ -706,18 +704,18 @@
             }
             
             // 보물 배치
-            const treasureCount = 2 + Math.floor(Math.random() * 3);
+            const treasureCount = 3 + Math.floor(Math.random() * 4);
             let treasuresPlaced = 0;
             
             while (treasuresPlaced < treasureCount) {
                 const x = Math.floor(Math.random() * gameState.dungeonSize);
                 const y = Math.floor(Math.random() * gameState.dungeonSize);
                 
-                // 빈 공간이고 플레이어, 몬스터, 출구가 없는 위치에만 보물 배치
                 if (gameState.dungeon[y][x] === 'empty' && 
                     !(y === gameState.player.y && x === gameState.player.x) &&
                     !(y === gameState.exitLocation.y && x === gameState.exitLocation.x) &&
-                    !gameState.monsters.some(m => m.x === x && m.y === y)) {
+                    !gameState.monsters.some(m => m.x === x && m.y === y) &&
+                    !gameState.mercenaries.some(m => m.x === x && m.y === y && m.alive)) {
                     
                     gameState.dungeon[y][x] = 'treasure';
                     
@@ -733,23 +731,22 @@
             }
             
             // 아이템 배치
-            const itemCount = 1 + Math.floor(Math.random() * (1 + gameState.floor * 0.5));
+            const itemCount = 3 + Math.floor(Math.random() * (2 + gameState.floor * 0.5));
             let itemsPlaced = 0;
             
             while (itemsPlaced < itemCount) {
                 const x = Math.floor(Math.random() * gameState.dungeonSize);
                 const y = Math.floor(Math.random() * gameState.dungeonSize);
                 
-                // 빈 공간이고 다른 오브젝트가 없는 위치에만 아이템 배치
                 if (gameState.dungeon[y][x] === 'empty' && 
                     !(y === gameState.player.y && x === gameState.player.x) &&
                     !(y === gameState.exitLocation.y && x === gameState.exitLocation.x) &&
                     !gameState.monsters.some(m => m.x === x && m.y === y) &&
-                    !gameState.treasures.some(t => t.x === x && t.y === y)) {
+                    !gameState.treasures.some(t => t.x === x && t.y === y) &&
+                    !gameState.mercenaries.some(m => m.x === x && m.y === y && m.alive)) {
                     
                     gameState.dungeon[y][x] = 'item';
                     
-                    // 랜덤 아이템 선택
                     const itemKeys = Object.keys(ITEMS);
                     const availableItems = itemKeys.filter(key => 
                         ITEMS[key].level <= Math.ceil(gameState.floor / 2)
@@ -763,402 +760,711 @@
                 }
             }
             
-            // 플레이어 주변의 시야 업데이트
             updateFogOfWar();
+            updateCamera();
             renderDungeon();
             updateStats();
             updateInventoryDisplay();
-            addMessage("새로운 던전에 들어왔습니다. 출구를 찾으세요!", "info");
+            updateMercenaryDisplay();
+            addMessage(`🏰 던전 ${gameState.floor}층에 들어왔습니다. 🚪 출구를 찾으세요!`, "info");
         }
         
-        // 던전 렌더링
+        // 던전 렌더링 (뷰포트 컬링 적용)
         function renderDungeon() {
             const dungeonElement = document.getElementById('dungeon');
-            dungeonElement.innerHTML = '';
+            if (!dungeonElement) return;
             
+            // 뷰포트 범위 계산 (약간의 여유분 포함)
+            const startX = Math.max(0, gameState.camera.x - 1);
+            const endX = Math.min(gameState.dungeonSize, gameState.camera.x + gameState.viewportSize + 1);
+            const startY = Math.max(0, gameState.camera.y - 1);
+            const endY = Math.min(gameState.dungeonSize, gameState.camera.y + gameState.viewportSize + 1);
+            
+            // 기존 셀들이 있으면 재사용, 없으면 새로 생성
+            let cells = dungeonElement.children;
+            const totalCells = gameState.dungeonSize * gameState.dungeonSize;
+            
+            // 필요한 만큼 셀 생성
+            while (cells.length < totalCells) {
+                const cell = document.createElement('div');
+                cell.className = 'cell';
+                dungeonElement.appendChild(cell);
+            }
+            
+            let cellIndex = 0;
             for (let y = 0; y < gameState.dungeonSize; y++) {
                 for (let x = 0; x < gameState.dungeonSize; x++) {
-                    const cell = document.createElement('div');
-                    cell.className = 'cell';
+                    const cell = cells[cellIndex++];
                     
-                    // 시야에 가려진 영역
-                    if (gameState.fogOfWar[y][x]) {
-                        cell.classList.add('fog');
-                    } else {
-                        // 플레이어 위치
-                        if (x === gameState.player.x && y === gameState.player.y) {
-                            cell.classList.add('player');
-                            cell.textContent = '@';
-                        } else {
-                            // 다른 던전 요소들
-                            const cellType = gameState.dungeon[y][x];
-                            cell.classList.add(cellType);
-                            
-                            switch (cellType) {
-                                case 'wall':
-                                    cell.textContent = '#';
-                                    break;
-                                case 'monster':
-                                    // 몬스터 타입에 따른 아이콘과 색상
-                                    const monster = gameState.monsters.find(m => m.x === x && m.y === y);
-                                    if (monster) {
-                                        cell.textContent = monster.icon;
-                                        cell.style.color = monster.color;
-                                    } else {
-                                        cell.textContent = 'M';
-                                    }
-                                    break;
-                                case 'treasure':
-                                    cell.textContent = 'T';
-                                    break;
-                                case 'item':
-                                    cell.textContent = 'I';
-                                    break;
-                                case 'exit':
-                                    cell.textContent = 'E';
-                                    break;
-                                default:
-                                    cell.textContent = '.';
-                            }
-                        }
-                    }
-                    
-                    dungeonElement.appendChild(cell);
-                }
+                    // 뷰포트 밖의 셀은 숨김 처리
+                    if (x < startX || x >= endX || y < startY || y >= endY) {
+                        cell.style.display = 'none';
+                        continue;
+                    }<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>개선된 던전 크롤러</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            background: linear-gradient(135deg, #1a1a2e, #16213e);
+            color: #eee;
+            margin: 0;
+            padding: 10px;
+            min-height: 100vh;
+            box-sizing: border-box;
+        }
+        h1 {
+            color: #ff6600;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
+            font-size: 24px;
+        }
+        .main-container {
+            display: flex;
+            gap: 15px;
+            max-width: 1400px;
+            width: 100%;
+            margin-bottom: 15px;
+        }
+        .game-area {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            flex: 1;
+        }
+        .dungeon-container {
+            position: relative;
+            width: 600px;
+            height: 600px;
+            overflow: hidden;
+            background-color: #0f1419;
+            border-radius: 8px;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.8);
+            border: 2px solid #444;
+        }
+        .dungeon {
+            position: absolute;
+            display: grid;
+            grid-template-columns: repeat(25, 24px);
+            grid-template-rows: repeat(25, 24px);
+            gap: 1px;
+            transition: transform 0.15s ease;
+            will-change: transform;
+        }
+        .cell {
+            width: 24px;
+            height: 24px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 14px;
+            background-color: #2a2a2a;
+            border-radius: 2px;
+            transition: all 0.3s;
+            position: relative;
+        }
+        .wall {
+            background: linear-gradient(45deg, #1a1a1a, #2a2a2a);
+            color: #666;
+        }
+        .player {
+            background: radial-gradient(circle, #4CAF50, #45a049);
+            color: white;
+            box-shadow: 0 0 8px rgba(76, 175, 80, 0.6);
+            animation: playerGlow 2s ease-in-out infinite alternate;
+            z-index: 10;
+        }
+        @keyframes playerGlow {
+            from { box-shadow: 0 0 8px rgba(76, 175, 80, 0.6); }
+            to { box-shadow: 0 0 12px rgba(76, 175, 80, 0.9); }
+        }
+        .mercenary {
+            background: radial-gradient(circle, #2196F3, #1976D2);
+            color: white;
+            box-shadow: 0 0 6px rgba(33, 150, 243, 0.5);
+            z-index: 9;
+        }
+        .monster {
+            background: radial-gradient(circle, #f44336, #d32f2f);
+            color: white;
+            box-shadow: 0 0 6px rgba(244, 67, 54, 0.5);
+            animation: monsterPulse 1.5s ease-in-out infinite alternate;
+        }
+        @keyframes monsterPulse {
+            from { transform: scale(1); }
+            to { transform: scale(1.1); }
+        }
+        .treasure {
+            background: radial-gradient(circle, #FFD700, #FFC107);
+            color: #8B4513;
+            box-shadow: 0 0 10px rgba(255, 215, 0, 0.7);
+            animation: treasureSparkle 1s ease-in-out infinite alternate;
+        }
+        @keyframes treasureSparkle {
+            from { box-shadow: 0 0 10px rgba(255, 215, 0, 0.7); }
+            to { box-shadow: 0 0 15px rgba(255, 215, 0, 1); }
+        }
+        .item {
+            background: radial-gradient(circle, #9575CD, #7E57C2);
+            color: white;
+            box-shadow: 0 0 6px rgba(149, 117, 205, 0.5);
+        }
+        .exit {
+            background: linear-gradient(45deg, #00BCD4, #00ACC1, #0097A7);
+            color: white;
+            box-shadow: 0 0 15px rgba(0, 188, 212, 0.8);
+            animation: exitPortal 2s ease-in-out infinite;
+            font-size: 18px;
+            border: 2px solid #B2EBF2;
+        }
+        @keyframes exitPortal {
+            0% { 
+                box-shadow: 0 0 15px rgba(0, 188, 212, 0.8);
+                transform: scale(1);
             }
+            50% { 
+                box-shadow: 0 0 25px rgba(0, 188, 212, 1);
+                transform: scale(1.05);
+            }
+            100% { 
+                box-shadow: 0 0 15px rgba(0, 188, 212, 0.8);
+                transform: scale(1);
+            }
+        }
+        .empty {
+            background-color: #3a3a3a;
+        }
+        .fog {
+            background-color: #0d0d0d;
+            color: #0d0d0d;
+            box-shadow: inset 0 0 15px rgba(0, 0, 0, 0.9);
+            border: 1px solid #111;
+        }
+        .fog::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(45deg, #000 25%, transparent 25%, transparent 75%, #000 75%, #000),
+                        linear-gradient(45deg, #000 25%, transparent 25%, transparent 75%, #000 75%, #000);
+            background-size: 4px 4px;
+            background-position: 0 0, 2px 2px;
+            opacity: 0.3;
+        }
+        .side-panel {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            min-width: 280px;
+            max-width: 300px;
+        }
+        .stats {
+            background: linear-gradient(135deg, #2a2a2a, #333);
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 0 15px rgba(0, 0, 0, 0.7);
+            border: 1px solid #555;
+        }
+        .stats h2 {
+            color: #4CAF50;
+            margin: 0 0 12px 0;
+            border-bottom: 2px solid #4CAF50;
+            padding-bottom: 8px;
+            text-align: center;
+            font-size: 16px;
+        }
+        .stats div {
+            margin-bottom: 6px;
+            font-size: 13px;
+        }
+        .mercenary-panel {
+            background: linear-gradient(135deg, #2a2a2a, #333);
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 0 15px rgba(0, 0, 0, 0.7);
+            border: 1px solid #555;
+        }
+        .mercenary-panel h2 {
+            color: #2196F3;
+            margin: 0 0 12px 0;
+            border-bottom: 2px solid #2196F3;
+            padding-bottom: 8px;
+            text-align: center;
+            font-size: 16px;
+        }
+        .mercenary-info {
+            background-color: #444;
+            padding: 8px;
+            margin-bottom: 8px;
+            border-radius: 6px;
+            font-size: 11px;
+            border-left: 3px solid #2196F3;
+        }
+        .mercenary-info.dead {
+            background-color: #5c2626;
+            color: #999;
+            border-left: 3px solid #f44336;
+        }
+        .hire-panel {
+            background: linear-gradient(135deg, #2a2a2a, #333);
+            padding: 15px;
+            border-radius: 8px;
+            border: 1px solid #555;
+            box-shadow: 0 0 15px rgba(0, 0, 0, 0.7);
+        }
+        .hire-panel h2 {
+            color: #FFD700;
+            margin: 0 0 12px 0;
+            border-bottom: 2px solid #FFD700;
+            padding-bottom: 8px;
+            text-align: center;
+            font-size: 16px;
+        }
+        .hire-button {
+            background: linear-gradient(45deg, #FFD700, #FFC107);
+            color: #222;
+            border: none;
+            padding: 8px 12px;
+            margin: 3px 0;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: bold;
+            width: 100%;
+            transition: all 0.3s;
+        }
+        .hire-button:hover {
+            background: linear-gradient(45deg, #FFC107, #FF9800);
+            transform: translateY(-1px);
+        }
+        .hire-button:disabled {
+            background: #666;
+            color: #999;
+            cursor: not-allowed;
+            transform: none;
+        }
+        .inventory {
+            background: linear-gradient(135deg, #2a2a2a, #333);
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 0 15px rgba(0, 0, 0, 0.7);
+            border: 1px solid #555;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .inventory h2 {
+            color: #9575CD;
+            margin: 0 0 12px 0;
+            border-bottom: 2px solid #9575CD;
+            padding-bottom: 8px;
+            text-align: center;
+            font-size: 16px;
+        }
+        .inventory h3 {
+            color: #4CAF50;
+            margin: 0 0 8px 0;
+            font-size: 14px;
+        }
+        .inventory-slot {
+            background-color: #444;
+            padding: 6px;
+            margin-bottom: 4px;
+            border-radius: 4px;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: all 0.3s;
+            border-left: 3px solid transparent;
+            font-size: 11px;
+        }
+        .inventory-slot:hover {
+            background-color: #555;
+            border-left: 3px solid #9575CD;
+            transform: translateX(3px);
+        }
+        .equipped-slot {
+            background-color: #444;
+            padding: 6px;
+            margin-bottom: 4px;
+            border-radius: 4px;
+            font-size: 11px;
+            border-left: 3px solid #4CAF50;
+        }
+        .equipped-slot.empty {
+            color: #888;
+            font-style: italic;
+            border-left: 3px solid #666;
+        }
+        .message-log {
+            background: linear-gradient(135deg, #2a2a2a, #333);
+            padding: 12px;
+            border-radius: 8px;
+            height: 150px;
+            overflow-y: auto;
+            box-shadow: 0 0 15px rgba(0, 0, 0, 0.7);
+            border: 1px solid #555;
+        }
+        .message {
+            margin-bottom: 4px;
+            padding: 4px 6px;
+            border-radius: 3px;
+            border-left: 3px solid;
+            font-size: 12px;
+        }
+        .message.info {
+            background-color: #444;
+            border-left-color: #2196F3;
+        }
+        .message.combat {
+            background-color: #541212;
+            border-left-color: #f44336;
+        }
+        .message.treasure {
+            background-color: #5f4b00;
+            border-left-color: #FFD700;
+        }
+        .message.item {
+            background-color: #3d3051;
+            border-left-color: #9575CD;
+        }
+        .message.level {
+            background-color: #1a472a;
+            border-left-color: #4CAF50;
+        }
+        .message.mercenary {
+            background-color: #1a3347;
+            border-left-color: #2196F3;
+        }
+        .controls {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+            margin-top: 15px;
+        }
+        .controls-row {
+            display: flex;
+            gap: 8px;
+        }
+        button {
+            background: linear-gradient(45deg, #4CAF50, #45a049);
+            color: white;
+            border: none;
+            padding: 10px 16px;
+            margin: 0;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s;
+            box-shadow: 0 3px 6px rgba(0,0,0,0.3);
+        }
+        button:hover {
+            background: linear-gradient(45deg, #45a049, #388e3c);
+            transform: translateY(-2px);
+            box-shadow: 0 5px 10px rgba(0,0,0,0.4);
+        }
+        .game-over {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: linear-gradient(135deg, #2a2a2a, #1a1a1a);
+            border: 3px solid #f44336;
+            padding: 30px;
+            border-radius: 12px;
+            text-align: center;
+            z-index: 1000;
+            box-shadow: 0 0 30px rgba(244, 67, 54, 0.8);
         }
         
-        // 시야 업데이트
-        function updateFogOfWar() {
-            const viewRange = 2;
-            const { x, y } = gameState.player;
-            
-            for (let dy = -viewRange; dy <= viewRange; dy++) {
-                for (let dx = -viewRange; dx <= viewRange; dx++) {
-                    const newY = y + dy;
-                    const newX = x + dx;
-                    
-                    if (newY >= 0 && newY < gameState.dungeonSize && 
-                        newX >= 0 && newX < gameState.dungeonSize) {
-                        gameState.fogOfWar[newY][newX] = false;
-                    }
-                }
-            }
+        /* 스크롤바 스타일링 */
+        .inventory::-webkit-scrollbar,
+        .message-log::-webkit-scrollbar {
+            width: 6px;
         }
+        .inventory::-webkit-scrollbar-track,
+        .message-log::-webkit-scrollbar-track {
+            background: #1a1a1a;
+            border-radius: 3px;
+        }
+        .inventory::-webkit-scrollbar-thumb,
+        .message-log::-webkit-scrollbar-thumb {
+            background: #555;
+            border-radius: 3px;
+        }
+        .inventory::-webkit-scrollbar-thumb:hover,
+        .message-log::-webkit-scrollbar-thumb:hover {
+            background: #777;
+        }
+    </style>
+</head>
+<body>
+    <h1>🏰 던전 크롤러 🗡️</h1>
+    <div class="main-container">
+        <div class="game-area">
+            <div class="dungeon-container">
+                <div class="dungeon" id="dungeon"></div>
+            </div>
+            <div class="message-log" id="message-log"></div>
+            <div class="controls">
+                <div class="controls-row">
+                    <button id="up">⬆️</button>
+                </div>
+                <div class="controls-row">
+                    <button id="left">⬅️</button>
+                    <button id="down">⬇️</button>
+                    <button id="right">➡️</button>
+                </div>
+                <div class="controls-row" style="margin-top: 10px;">
+                    <button id="save-game" style="background: linear-gradient(45deg, #2196F3, #1976D2);">💾 게임 저장</button>
+                    <button id="load-game" style="background: linear-gradient(45deg, #FF9800, #F57C00);">📁 게임 불러오기</button>
+                    <button id="new-game" style="background: linear-gradient(45deg, #9E9E9E, #757575);">🔄 새 게임</button>
+                </div>
+            </div>
+        </div>
         
-        // 거리 계산 함수
-        function getDistance(x1, y1, x2, y2) {
-            return Math.abs(x1 - x2) + Math.abs(y1 - y2);
-        }
+        <div class="side-panel">
+            <div class="stats">
+                <h2>🛡️ 플레이어 정보</h2>
+                <div>📊 레벨: <span id="level">1</span></div>
+                <div>❤️ 체력: <span id="health">20</span>/<span id="maxHealth">20</span></div>
+                <div>⚔️ 공격력: <span id="attack">5</span> <span id="weaponBonus"></span></div>
+                <div>🛡️ 방어력: <span id="defense">1</span> <span id="armorBonus"></span></div>
+                <div>⭐ 경험치: <span id="exp">0</span>/<span id="expNeeded">20</span></div>
+                <div>💰 골드: <span id="gold">0</span></div>
+                <div>🏰 층: <span id="floor">1</span></div>
+            </div>
+            
+            <div class="mercenary-panel">
+                <h2>🤝 용병 부대</h2>
+                <div id="mercenary-list"></div>
+            </div>
+            
+            <div class="hire-panel">
+                <h2>💼 용병 고용</h2>
+                <button class="hire-button" onclick="hireMercenary('WARRIOR')">⚔️ 전사 고용 (50💰)</button>
+                <button class="hire-button" onclick="hireMercenary('ARCHER')">🏹 궁수 고용 (60💰)</button>
+                <button class="hire-button" onclick="hireMercenary('HEALER')">✚ 힐러 고용 (70💰)</button>
+            </div>
+            
+            <div class="inventory">
+                <h2>🎒 인벤토리</h2>
+                <div class="equipped-items">
+                    <h3>✨ 장착 중인 아이템</h3>
+                    <div class="equipped-slot" id="equipped-weapon">무기: 없음</div>
+                    <div class="equipped-slot" id="equipped-armor">방어구: 없음</div>
+                </div>
+                <h3>📦 보유 아이템</h3>
+                <div id="inventory-items"></div>
+            </div>
+        </div>
+    </div>
 
-        // 시야 체크 함수
-        function hasLineOfSight(x1, y1, x2, y2) {
-            const dx = Math.abs(x2 - x1);
-            const dy = Math.abs(y2 - y1);
-            const sx = x1 < x2 ? 1 : -1;
-            const sy = y1 < y2 ? 1 : -1;
-            let err = dx - dy;
-            let x = x1;
-            let y = y1;
+    <script>
+        // 아이템 타입 정의
+        const ITEM_TYPES = {
+            WEAPON: 'weapon',
+            ARMOR: 'armor',
+            POTION: 'potion'
+        };
 
-            while (x !== x2 || y !== y2) {
-                if (x !== x1 || y !== y1) {
-                    if (gameState.dungeon[y][x] === 'wall') {
-                        return false;
-                    }
-                }
-                const e2 = 2 * err;
-                if (e2 > -dy) {
-                    err -= dy;
-                    x += sx;
-                }
-                if (e2 < dx) {
-                    err += dx;
-                    y += sy;
-                }
+        // 용병 타입 정의
+        const MERCENARY_TYPES = {
+            WARRIOR: {
+                name: '⚔️ 전사',
+                icon: '🛡️',
+                baseHealth: 15,
+                baseAttack: 4,
+                baseDefense: 2,
+                role: 'tank',
+                description: '높은 체력과 방어력을 가진 근접 전투 용병',
+                cost: 50
+            },
+            ARCHER: {
+                name: '🏹 궁수',
+                icon: '🎯',
+                baseHealth: 10,
+                baseAttack: 5,
+                baseDefense: 1,
+                role: 'ranged',
+                description: '원거리에서 적을 공격하는 용병',
+                cost: 60
+            },
+            HEALER: {
+                name: '✚ 힐러',
+                icon: '💚',
+                baseHealth: 8,
+                baseAttack: 2,
+                baseDefense: 1,
+                role: 'support',
+                description: '아군을 치료하는 지원 용병',
+                cost: 70
             }
-            return true;
-        }
+        };
 
-        // 몬스터 공격 함수
-        function monsterAttack(monster) {
-            const distance = getDistance(monster.x, monster.y, gameState.player.x, gameState.player.y);
-            
-            // 사거리 내에 있고 시야가 확보되면 공격
-            if (distance <= monster.range && hasLineOfSight(monster.x, monster.y, gameState.player.x, gameState.player.y)) {
-                let totalDefense = gameState.player.defense;
-                if (gameState.player.equipped.armor) {
-                    totalDefense += gameState.player.equipped.armor.defense;
-                }
-                
-                const damage = Math.max(1, monster.attack - totalDefense);
-                gameState.player.health -= damage;
-                
-                let attackType = monster.special === 'magic' ? '마법 공격' : 
-                               monster.special === 'ranged' ? '원거리 공격' :
-                               '공격';
-                
-                addMessage(`${monster.name}이(가) ${attackType}으로 ${damage}의 피해를 입혔습니다!`, "combat");
-                
-                // 플레이어 사망 체크
-                if (gameState.player.health <= 0) {
-                    handlePlayerDeath();
-                    return true;
-                }
+        // 몬스터 타입 정의
+        const MONSTER_TYPES = {
+            ZOMBIE: {
+                name: '🧟 좀비',
+                icon: '🧟‍♂️',
+                color: '#8B4513',
+                baseHealth: 8,
+                baseAttack: 3,
+                baseDefense: 1,
+                baseExp: 6,
+                baseGold: 3,
+                speed: 0.5,
+                range: 1,
+                special: 'slow'
+            },
+            GOBLIN: {
+                name: '👹 고블린',
+                icon: '👹',
+                color: '#32CD32',
+                baseHealth: 4,
+                baseAttack: 2,
+                baseDefense: 0,
+                baseExp: 4,
+                baseGold: 5,
+                speed: 1.5,
+                range: 1,
+                special: 'fast'
+            },
+            ARCHER: {
+                name: '🏹 궁수',
+                icon: '🏹',
+                color: '#DAA520',
+                baseHealth: 5,
+                baseAttack: 4,
+                baseDefense: 1,
+                baseExp: 8,
+                baseGold: 7,
+                speed: 1,
+                range: 3,
+                special: 'ranged'
+            },
+            WIZARD: {
+                name: '🧙‍♂️ 마법사',
+                icon: '🔮',
+                color: '#9932CC',
+                baseHealth: 3,
+                baseAttack: 6,
+                baseDefense: 0,
+                baseExp: 10,
+                baseGold: 10,
+                speed: 1,
+                range: 4,
+                special: 'magic'
+            },
+            ORC: {
+                name: '💪 오크 전사',
+                icon: '👹',
+                color: '#B22222',
+                baseHealth: 12,
+                baseAttack: 5,
+                baseDefense: 3,
+                baseExp: 15,
+                baseGold: 12,
+                speed: 0.8,
+                range: 1,
+                special: 'strong'
+            },
+            BOSS: {
+                name: '👑 던전 보스',
+                icon: '💀',
+                color: '#FF4500',
+                baseHealth: 30,
+                baseAttack: 8,
+                baseDefense: 5,
+                baseExp: 50,
+                baseGold: 50,
+                speed: 1,
+                range: 2,
+                special: 'boss'
             }
-            return false;
-        }
+        };
 
-        // 몬스터 이동 함수
-        function moveMonster(monster) {
-            if (monster.hasActed) return;
-            
-            const distance = getDistance(monster.x, monster.y, gameState.player.x, gameState.player.y);
-            
-            // 공격 범위 내면 공격
-            if (distance <= monster.range && hasLineOfSight(monster.x, monster.y, gameState.player.x, gameState.player.y)) {
-                monsterAttack(monster);
-                monster.hasActed = true;
-                return;
+        // 아이템 데이터베이스
+        const ITEMS = {
+            shortSword: {
+                name: '🗡️ 단검',
+                type: ITEM_TYPES.WEAPON,
+                attack: 2,
+                price: 10,
+                level: 1,
+                icon: '🗡️'
+            },
+            longSword: {
+                name: '⚔️ 장검',
+                type: ITEM_TYPES.WEAPON,
+                attack: 4,
+                price: 25,
+                level: 2,
+                icon: '⚔️'
+            },
+            magicSword: {
+                name: '✨ 마법검',
+                type: ITEM_TYPES.WEAPON,
+                attack: 6,
+                price: 50,
+                level: 3,
+                icon: '✨'
+            },
+            leatherArmor: {
+                name: '🛡️ 가죽 갑옷',
+                type: ITEM_TYPES.ARMOR,
+                defense: 2,
+                price: 15,
+                level: 1,
+                icon: '🛡️'
+            },
+            chainMail: {
+                name: '🔗 사슬 갑옷',
+                type: ITEM_TYPES.ARMOR,
+                defense: 4,
+                price: 35,
+                level: 2,
+                icon: '🔗'
+            },
+            plateArmor: {
+                name: '🛡️ 판금 갑옷',
+                type: ITEM_TYPES.ARMOR,
+                defense: 6,
+                price: 60,
+                level: 3,
+                icon: '🛡️'
+            },
+            healthPotion: {
+                name: '🧪 체력 포션',
+                type: ITEM_TYPES.POTION,
+                healing: 10,
+                price: 5,
+                level: 1,
+                icon: '🧪'
+            },
+            greaterHealthPotion: {
+                name: '💊 대형 체력 포션',
+                type: ITEM_TYPES.POTION,
+                healing: 25,
+                price: 15,
+                level: 2,
+                icon: '💊'
             }
-            
-            // 플레이어를 추적 (시야 범위 내에서만)
-            if (distance <= 5 && hasLineOfSight(monster.x, monster.y, gameState.player.x, gameState.player.y)) {
-                const dx = Math.sign(gameState.player.x - monster.x);
-                const dy = Math.sign(gameState.player.y - monster.y);
-                
-                let newX = monster.x;
-                let newY = monster.y;
-                
-                // 대각선 이동보다 직선 이동 우선
-                if (Math.random() < 0.5) {
-                    if (dx !== 0) newX += dx;
-                    else if (dy !== 0) newY += dy;
-                } else {
-                    if (dy !== 0) newY += dy;
-                    else if (dx !== 0) newX += dx;
-                }
-                
-                // 이동 가능한지 체크
-                if (newX >= 0 && newX < gameState.dungeonSize && 
-                    newY >= 0 && newY < gameState.dungeonSize &&
-                    gameState.dungeon[newY][newX] === 'empty' &&
-                    !(newX === gameState.player.x && newY === gameState.player.y) &&
-                    !gameState.monsters.some(m => m.x === newX && m.y === newY)) {
-                    
-                    // 기존 위치를 빈 공간으로
-                    gameState.dungeon[monster.y][monster.x] = 'empty';
-                    
-                    // 새 위치로 이동
-                    monster.x = newX;
-                    monster.y = newY;
-                    gameState.dungeon[newY][newX] = 'monster';
-                }
-            }
-            
-            monster.hasActed = true;
-        }
+        };
 
-        // 플레이어 이동
-        function movePlayer(dx, dy) {
-            const newX = gameState.player.x + dx;
-            const newY = gameState.player.y + dy;
-            
-            // 맵 범위를 벗어나지 않았는지 확인
-            if (newX < 0 || newX >= gameState.dungeonSize || newY < 0 || newY >= gameState.dungeonSize) {
-                return;
-            }
-            
-            const targetCell = gameState.dungeon[newY][newX];
-            
-            // 벽은 통과할 수 없음
-            if (targetCell === 'wall') {
-                return;
-            }
-            
-            // 몬스터와 전투
-            if (targetCell === 'monster') {
-                // 몬스터 찾기
-                const monsterIndex = gameState.monsters.findIndex(m => m.x === newX && m.y === newY);
-                if (monsterIndex !== -1) {
-                    const monster = gameState.monsters[monsterIndex];
-                    
-                    // 전투 로직 - 장비 보너스 적용
-                    let totalAttack = gameState.player.attack;
-                    if (gameState.player.equipped.weapon) {
-                        totalAttack += gameState.player.equipped.weapon.attack;
-                    }
-                    
-                    const playerDamage = Math.max(1, totalAttack - monster.defense);
-                    monster.health -= playerDamage;
-                    
-                    addMessage(`${monster.name}에게 ${playerDamage}의 피해를 입혔습니다!`, "combat");
-                    
-                    // 몬스터가 죽었는지 확인
-                    if (monster.health <= 0) {
-                        addMessage(`${monster.name}을(를) 처치했습니다! ${monster.exp} 경험치와 ${monster.gold} 골드를 얻었습니다.`, "combat");
-                        
-                        // 경험치와 골드 획득
-                        gameState.player.exp += monster.exp;
-                        gameState.player.gold += monster.gold;
-                        
-                        // 보스 처치 시 특별 보상
-                        if (monster.special === 'boss') {
-                            addMessage(`보스를 처치했습니다! 추가 보상을 획득합니다!`, "level");
-                            gameState.player.gold += 100;
-                            
-                            // 보스는 항상 좋은 아이템 드롭
-                            const bossItems = ['magicSword', 'plateArmor', 'greaterHealthPotion'];
-                            const bossItemKey = bossItems[Math.floor(Math.random() * bossItems.length)];
-                            const bossItem = createItem(bossItemKey, newX, newY);
-                            gameState.items.push(bossItem);
-                            gameState.dungeon[newY][newX] = 'item';
-                            addMessage(`보스가 ${bossItem.name}을(를) 떨어뜨렸습니다!`, "item");
-                        } else if (Math.random() < monster.lootChance) {
-                            // 일반 아이템 드롭
-                            const itemKeys = Object.keys(ITEMS);
-                            const availableItems = itemKeys.filter(key => 
-                                ITEMS[key].level <= Math.ceil(gameState.floor / 2 + 1)
-                            );
-                            const randomItemKey = availableItems[Math.floor(Math.random() * availableItems.length)];
-                            
-                            const droppedItem = createItem(randomItemKey, newX, newY);
-                            gameState.items.push(droppedItem);
-                            gameState.dungeon[newY][newX] = 'item';
-                            
-                            addMessage(`${monster.name}이(가) ${droppedItem.name}을(를) 떨어뜨렸습니다!`, "item");
-                        } else {
-                            gameState.dungeon[newY][newX] = 'empty';
-                        }
-                        
-                        // 레벨업 체크
-                        checkLevelUp();
-                        
-                        // 몬스터 제거
-                        gameState.monsters.splice(monsterIndex, 1);
-                        
-                        // 플레이어 이동
-                        if (gameState.dungeon[newY][newX] === 'empty') {
-                            gameState.player.x = newX;
-                            gameState.player.y = newY;
-                        }
-                    } else {
-                        // 몬스터 반격
-                        addMessage(`${monster.name}의 체력: ${monster.health}/${monster.maxHealth}`, "combat");
-                    }
-                }
-            } 
-            // 보물 획득
-            else if (targetCell === 'treasure') {
-                const treasureIndex = gameState.treasures.findIndex(t => t.x === newX && t.y === newY);
-                if (treasureIndex !== -1) {
-                    const treasure = gameState.treasures[treasureIndex];
-                    
-                    gameState.player.gold += treasure.gold;
-                    addMessage(`보물을 발견했습니다! ${treasure.gold} 골드를 획득했습니다.`, "treasure");
-                    
-                    // 보물 제거
-                    gameState.treasures.splice(treasureIndex, 1);
-                    gameState.dungeon[newY][newX] = 'empty';
-                    
-                    // 플레이어 이동
-                    gameState.player.x = newX;
-                    gameState.player.y = newY;
-                }
-            }
-            // 아이템 획득
-            else if (targetCell === 'item') {
-                const itemIndex = gameState.items.findIndex(i => i.x === newX && i.y === newY);
-                if (itemIndex !== -1) {
-                    const item = gameState.items[itemIndex];
-                    
-                    addToInventory(item);
-                    addMessage(`${item.name}을(를) 획득했습니다!`, "item");
-                    
-                    // 아이템 제거
-                    gameState.items.splice(itemIndex, 1);
-                    gameState.dungeon[newY][newX] = 'empty';
-                    
-                    // 플레이어 이동
-                    gameState.player.x = newX;
-                    gameState.player.y = newY;
-                }
-            }
-            // 출구
-            else if (targetCell === 'exit') {
-                // 다음 층으로 진행
-                gameState.floor++;
-                addMessage(`축하합니다! ${gameState.floor}층으로 내려갑니다.`, "level");
-                
-                // 체력 일부 회복
-                const healAmount = Math.floor(gameState.player.maxHealth * 0.3);
-                gameState.player.health = Math.min(gameState.player.maxHealth, gameState.player.health + healAmount);
-                addMessage(`휴식을 취해 체력이 ${healAmount} 회복되었습니다.`, "info");
-                
-                // 새 던전 생성
-                generateDungeon();
-                return;
-            }
-            // 빈 공간 이동
-            else {
-                gameState.player.x = newX;
-                gameState.player.y = newY;
-            }
-            
-            // 플레이어 턴 종료 후 몬스터들의 턴
-            processMonsterseTurn();
-            
-            // 시야 업데이트
-updateFogOfWar();
-
-// 화면 업데이트
-renderDungeon();
-updateStats();
-
-// 자동 저장
-autoSave();
-        }
-
-        // 몬스터들의 턴 처리
-        function processMonsterseTurn() {
-            // 모든 몬스터의 행동 플래그 초기화
-            gameState.monsters.forEach(monster => {
-                monster.hasActed = false;
-            });
-            
-            // 속도에 따라 몬스터들 정렬 (빠른 몬스터부터)
-            const sortedMonsters = [...gameState.monsters].sort((a, b) => b.speed - a.speed);
-            
-            // 각 몬스터의 행동 처리
-            sortedMonsters.forEach(monster => {
-                // 속도에 따라 여러 번 행동 가능
-                const actionCount = Math.floor(monster.speed);
-                const extraActionChance = monster.speed - actionCount;
-                
-                for (let i = 0; i < actionCount; i++) {
-                    moveMonster(monster);
-                }
-                
-                // 추가 행동 확률
-                if (Math.random() < extraActionChance) {
-                    moveMonster(monster);
-                }
-            });
-        }
-        
-        // 플레이어 사망 처리
-        function handlePlayerDeath() {
-            addMessage("당신은 사망했습니다. 게임 오버!", "combat");
-            // 1초 후 게임 재시작
-            setTimeout(() => {
-                resetGame();
-            }, 1000);
-        }
-        
-        // 게임 재시작
-        function resetGame() {
-            // 플레이어 상태 초기화
-            gameState.player = {
+        // 게임 상태
+        const gameState = {
+            dungeon: [],
+            fogOfWar: [],
+            player: {
                 x: 0,
                 y: 0,
                 level: 1,
@@ -1168,43 +1474,151 @@ autoSave();
                 defense: 1,
                 exp: 0,
                 expNeeded: 20,
-                gold: 0,
+                gold: 100,
                 inventory: [],
                 equipped: {
                     weapon: null,
                     armor: null
                 }
-            };
-            gameState.floor = 1;
+            },
+            mercenaries: [],
+            monsters: [],
+            treasures: [],
+            items: [],
+            exitLocation: { x: 0, y: 0 },
+            floor: 1,
+            dungeonSize: 25,
+            viewportSize: 25,
+            camera: { x: 0, y: 0 },
+            gameRunning: true
+        };
+
+        // 카메라 업데이트 (최적화됨)
+        function updateCamera() {
+            const dungeonElement = document.getElementById('dungeon');
+            if (!dungeonElement) return;
             
-            // 메시지 초기화
-            document.getElementById('message-log').innerHTML = '';
-            addMessage("게임을 다시 시작합니다.", "info");
+            const cellSize = 25; // 24px + 1px gap
             
-            // 새 던전 생성
-            generateDungeon();
-        }
-        
-        // 레벨업 체크
-        function checkLevelUp() {
-            if (gameState.player.exp >= gameState.player.expNeeded) {
-                gameState.player.level++;
-                gameState.player.exp -= gameState.player.expNeeded;
-                gameState.player.expNeeded = Math.floor(gameState.player.expNeeded * 1.5);
+            // 플레이어를 중심으로 카메라 위치 계산
+            const centerX = Math.floor(gameState.viewportSize / 2);
+            const centerY = Math.floor(gameState.viewportSize / 2);
+            
+            const newCameraX = gameState.player.x - centerX;
+            const newCameraY = gameState.player.y - centerY;
+            
+            // 던전 경계 체크
+            const clampedX = Math.max(0, Math.min(newCameraX, gameState.dungeonSize - gameState.viewportSize));
+            const clampedY = Math.max(0, Math.min(newCameraY, gameState.dungeonSize - gameState.viewportSize));
+            
+            // 카메라 위치가 변경된 경우에만 업데이트
+            if (gameState.camera.x !== clampedX || gameState.camera.y !== clampedY) {
+                gameState.camera.x = clampedX;
+                gameState.camera.y = clampedY;
                 
-                // 능력치 증가
-                gameState.player.maxHealth += 5;
-                gameState.player.health = gameState.player.maxHealth;
-                gameState.player.attack += 2;
-                gameState.player.defense += 1;
-                
-                addMessage(`레벨 업! 이제 당신은 레벨 ${gameState.player.level}입니다.`, "level");
-                updateStats();
+                // 카메라 변환 적용
+                const translateX = -gameState.camera.x * cellSize;
+                const translateY = -gameState.camera.y * cellSize;
+                dungeonElement.style.transform = `translate3d(${translateX}px, ${translateY}px, 0)`;
             }
         }
-        
-        // 메시지 추가
-        function addMessage(text, type = "info") {
+
+        // 용병 고용 함수
+        function hireMercenary(type) {
+            const mercType = MERCENARY_TYPES[type];
+            
+            if (gameState.player.gold < mercType.cost) {
+                addMessage(`💸 골드가 부족합니다. ${mercType.name} 고용에는 ${mercType.cost} 골드가 필요합니다.`, 'info');
+                return;
+            }
+            
+            if (gameState.mercenaries.filter(m => m.alive).length >= 3) {
+                addMessage('👥 최대 3명의 용병만 고용할 수 있습니다.', 'info');
+                return;
+            }
+            
+            gameState.player.gold -= mercType.cost;
+            
+            // 플레이어 근처의 빈 공간 찾기
+            const positions = [
+                {x: gameState.player.x + 1, y: gameState.player.y},
+                {x: gameState.player.x - 1, y: gameState.player.y},
+                {x: gameState.player.x, y: gameState.player.y + 1},
+                {x: gameState.player.x, y: gameState.player.y - 1},
+                {x: gameState.player.x + 1, y: gameState.player.y + 1},
+                {x: gameState.player.x - 1, y: gameState.player.y - 1},
+                {x: gameState.player.x + 1, y: gameState.player.y - 1},
+                {x: gameState.player.x - 1, y: gameState.player.y + 1}
+            ];
+            
+            let spawnPos = null;
+            for (const pos of positions) {
+                if (pos.x >= 0 && pos.x < gameState.dungeonSize && 
+                    pos.y >= 0 && pos.y < gameState.dungeonSize && 
+                    gameState.dungeon[pos.y][pos.x] === 'empty' &&
+                    !gameState.mercenaries.some(m => m.x === pos.x && m.y === pos.y && m.alive) &&
+                    !gameState.monsters.some(m => m.x === pos.x && m.y === pos.y)) {
+                    spawnPos = pos;
+                    break;
+                }
+            }
+            
+            if (spawnPos) {
+                const mercenary = createMercenary(type, spawnPos.x, spawnPos.y);
+                gameState.mercenaries.push(mercenary);
+                addMessage(`🎉 ${mercType.name}을(를) 고용했습니다!`, 'mercenary');
+                updateStats();
+                updateMercenaryDisplay();
+                renderDungeon();
+            } else {
+                gameState.player.gold += mercType.cost;
+                addMessage('❌ 용병을 배치할 공간이 없습니다.', 'info');
+            }
+        }
+
+        // 용병 생성 함수
+        function createMercenary(type, x, y) {
+            const mercType = MERCENARY_TYPES[type];
+            return {
+                id: Math.random().toString(36).substr(2, 9),
+                type: type,
+                name: mercType.name,
+                icon: mercType.icon,
+                role: mercType.role,
+                x: x,
+                y: y,
+                level: 1,
+                maxHealth: mercType.baseHealth,
+                health: mercType.baseHealth,
+                attack: mercType.baseAttack,
+                defense: mercType.baseDefense,
+                exp: 0,
+                expNeeded: 15,
+                alive: true,
+                hasActed: false,
+                equipped: {
+                    weapon: null,
+                    armor: null
+                }
+            };
+        }
+
+        // 아이템 생성 함수
+        function createItem(itemKey, x, y) {
+            const itemData = ITEMS[itemKey];
+            return {
+                id: Math.random().toString(36).substr(2, 9),
+                key: itemKey,
+                name: itemData.name,
+                type: itemData.type,
+                x: x,
+                y: y,
+                ...itemData
+            };
+        }
+
+        // 메시지 로그 추가
+        function addMessage(text, type = 'info') {
             const messageLog = document.getElementById('message-log');
             const message = document.createElement('div');
             message.className = `message ${type}`;
@@ -1212,111 +1626,579 @@ autoSave();
             messageLog.appendChild(message);
             messageLog.scrollTop = messageLog.scrollHeight;
         }
-        
-        // 스탯 업데이트
-        function updateStats() {
-            document.getElementById('level').textContent = gameState.player.level;
-            document.getElementById('health').textContent = gameState.player.health;
-            document.getElementById('maxHealth').textContent = gameState.player.maxHealth;
-            document.getElementById('attack').textContent = gameState.player.attack;
-            document.getElementById('defense').textContent = gameState.player.defense;
-            document.getElementById('exp').textContent = gameState.player.exp;
-            document.getElementById('expNeeded').textContent = gameState.player.expNeeded;
-            document.getElementById('gold').textContent = gameState.player.gold;
-            document.getElementById('floor').textContent = gameState.floor;
-            
-            // 장비 보너스 표시
-            const weaponBonus = document.getElementById('weaponBonus');
-            const armorBonus = document.getElementById('armorBonus');
-            
-            if (gameState.player.equipped.weapon) {
-                weaponBonus.textContent = `(+${gameState.player.equipped.weapon.attack})`;
-                weaponBonus.style.color = '#4CAF50';
-            } else {
-                weaponBonus.textContent = '';
+
+        // 인벤토리에 아이템 추가
+        function addToInventory(item) {
+            gameState.player.inventory.push(item);
+            updateInventoryDisplay();
+        }
+
+        // 아이템 장착 (플레이어)
+        function equipItem(item) {
+            if (item.type === ITEM_TYPES.WEAPON) {
+                if (gameState.player.equipped.weapon) {
+                    addToInventory(gameState.player.equipped.weapon);
+                }
+                gameState.player.equipped.weapon = item;
+                addMessage(`⚔️ ${item.name}을(를) 장착했습니다. 공격력 +${item.attack}`, 'item');
+            } else if (item.type === ITEM_TYPES.ARMOR) {
+                if (gameState.player.equipped.armor) {
+                    addToInventory(gameState.player.equipped.armor);
+                }
+                gameState.player.equipped.armor = item;
+                addMessage(`🛡️ ${item.name}을(를) 장착했습니다. 방어력 +${item.defense}`, 'item');
             }
             
-            if (gameState.player.equipped.armor) {
-                armorBonus.textContent = `(+${gameState.player.equipped.armor.defense})`;
-                armorBonus.style.color = '#4CAF50';
-            } else {
-                armorBonus.textContent = '';
+            const index = gameState.player.inventory.findIndex(i => i.id === item.id);
+            if (index !== -1) {
+                gameState.player.inventory.splice(index, 1);
+            }
+            
+            updateInventoryDisplay();
+            updateStats();
+        }
+
+        // 용병에게 아이템 장착
+        function equipItemToMercenary(item, mercenary) {
+            // 용병 장비 초기화 확인
+            if (!mercenary.equipped) {
+                mercenary.equipped = { weapon: null, armor: null };
+            }
+            
+            if (item.type === ITEM_TYPES.WEAPON) {
+                if (mercenary.equipped.weapon) {
+                    addToInventory(mercenary.equipped.weapon);
+                }
+                mercenary.equipped.weapon = item;
+                addMessage(`⚔️ ${mercenary.name}이(가) ${item.name}을(를) 장착했습니다.`, 'mercenary');
+            } else if (item.type === ITEM_TYPES.ARMOR) {
+                if (mercenary.equipped.armor) {
+                    addToInventory(mercenary.equipped.armor);
+                }
+                mercenary.equipped.armor = item;
+                addMessage(`🛡️ ${mercenary.name}이(가) ${item.name}을(를) 장착했습니다.`, 'mercenary');
+            }
+            
+            const index = gameState.player.inventory.findIndex(i => i.id === item.id);
+            if (index !== -1) {
+                gameState.player.inventory.splice(index, 1);
+            }
+            
+            updateInventoryDisplay();
+            updateMercenaryDisplay();
+        }
+
+        // 용병 장비 해제
+        function unequipItemFromMercenary(mercenaryId, slotType) {
+            const mercenary = gameState.mercenaries.find(m => m.id === mercenaryId);
+            if (!mercenary || !mercenary.equipped) return;
+            
+            const item = mercenary.equipped[slotType];
+            if (item) {
+                addToInventory(item);
+                mercenary.equipped[slotType] = null;
+                addMessage(`📦 ${mercenary.name}의 ${item.name}을(를) 해제했습니다.`, 'mercenary');
+                updateInventoryDisplay();
+                updateMercenaryDisplay();
             }
         }
-        
-        // 키보드 입력 이벤트
-        document.addEventListener('keydown', (e) => {
-            switch (e.key) {
-                case 'ArrowUp':
-                    movePlayer(0, -1);
-                    break;
-                case 'ArrowDown':
-                    movePlayer(0, 1);
-                    break;
-                case 'ArrowLeft':
-                    movePlayer(-1, 0);
-                    break;
-                case 'ArrowRight':
-                    movePlayer(1, 0);
-                    break;
+
+        // 아이템 사용
+        function useItem(item) {
+            if (item.type === ITEM_TYPES.POTION) {
+                if (gameState.player.health < gameState.player.maxHealth) {
+                    const healAmount = Math.min(item.healing, gameState.player.maxHealth - gameState.player.health);
+                    gameState.player.health += healAmount;
+                    addMessage(`🩹 ${item.name}을(를) 사용하여 체력을 ${healAmount} 회복했습니다.`, 'item');
+                    
+                    const index = gameState.player.inventory.findIndex(i => i.id === item.id);
+                    if (index !== -1) {
+                        gameState.player.inventory.splice(index, 1);
+                    }
+                    
+                    updateInventoryDisplay();
+                    updateStats();
+                } else {
+                    addMessage('❤️ 이미 체력이 가득 찼습니다.', 'info');
+                }
             }
-        });
-        
-        // 방향 버튼 이벤트
-document.getElementById('up').addEventListener('click', () => movePlayer(0, -1));
-document.getElementById('down').addEventListener('click', () => movePlayer(0, 1));
-document.getElementById('left').addEventListener('click', () => movePlayer(-1, 0));
-document.getElementById('right').addEventListener('click', () => movePlayer(1, 0));
+        }
 
-// 게임 저장 함수
-function saveGame() {
-    // 깊은 복사를 통해 순환 참조 문제 해결
-    const stateToCopy = JSON.parse(JSON.stringify(gameState));
-    
-    // localStorage에 저장
-    localStorage.setItem('dungeonCrawlerSave', JSON.stringify(stateToCopy));
-    addMessage("게임이 저장되었습니다.", "info");
-}
+        // 몬스터 공격 (용병 방어력 보너스 적용, 안전성 체크 추가)
+        function monsterAttack(monster) {
+            let nearestTarget = null;
+            let nearestDistance = Infinity;
+            
+            const playerDistance = getDistance(monster.x, monster.y, gameState.player.x, gameState.player.y);
+            if (playerDistance <= monster.range && hasLineOfSight(monster.x, monster.y, gameState.player.x, gameState.player.y)) {
+                nearestTarget = gameState.player;
+                nearestDistance = playerDistance;
+            }
+            
+            gameState.mercenaries.forEach(mercenary => {
+                if (mercenary.alive) {
+                    const distance = getDistance(monster.x, monster.y, mercenary.x, mercenary.y);
+                    if (distance <= monster.range && distance < nearestDistance && 
+                        hasLineOfSight(monster.x, monster.y, mercenary.x, mercenary.y)) {
+                        nearestTarget = mercenary;
+                        nearestDistance = distance;
+                    }
+                }
+            });
+            
+            if (nearestTarget) {
+                let totalDefense = nearestTarget.defense;
+                
+                if (nearestTarget === gameState.player && gameState.player.equipped.armor) {
+                    totalDefense += gameState.player.equipped.armor.defense;
+                } else if (nearestTarget !== gameState.player) {
+                    // 용병 장비 초기화 확인
+                    if (!nearestTarget.equipped) {
+                        nearestTarget.equipped = { weapon: null, armor: null };
+                    }
+                    if (nearestTarget.equipped.armor) {
+                        totalDefense += nearestTarget.equipped.armor.defense;
+                    }
+                }
+                
+                const damage = Math.max(1, monster.attack - totalDefense);
+                nearestTarget.health -= damage;
+                
+                let attackType = monster.special === 'magic' ? '🔮 마법 공격' : 
+                               monster.special === 'ranged' ? '🏹 원거리 공격' :
+                               '⚔️ 공격';
+                
+                const targetName = nearestTarget === gameState.player ? "플레이어" : nearestTarget.name;
+                addMessage(`${monster.name}이(가) ${targetName}에게 ${attackType}으로 ${damage}의 피해를 입혔습니다!`, "combat");
+                
+                if (nearestTarget.health <= 0) {
+                    if (nearestTarget === gameState.player) {
+                        handlePlayerDeath();
+                        return true;
+                    } else {
+                        nearestTarget.alive = false;
+                        nearestTarget.health = 0;
+                        addMessage(`💀 ${nearestTarget.name}이(가) 전사했습니다...`, "mercenary");
+                        updateMercenaryDisplay();
+                    }
+                }
+            }
+            return false;
+        }
 
-// 게임 불러오기 함수
-function loadGame() {
-    const savedGame = localStorage.getItem('dungeonCrawlerSave');
-    
-    if (savedGame) {
-        // 저장된 게임 상태 불러오기
-        const loadedState = JSON.parse(savedGame);
-        
-        // 게임 상태 복원
-        gameState.dungeon = loadedState.dungeon;
-        gameState.fogOfWar = loadedState.fogOfWar;
-        gameState.player = loadedState.player;
-        gameState.monsters = loadedState.monsters;
-        gameState.treasures = loadedState.treasures;
-        gameState.items = loadedState.items;
-        gameState.exitLocation = loadedState.exitLocation;
-        gameState.floor = loadedState.floor;
-        
-        // UI 업데이트
-        renderDungeon();
-        updateStats();
-        updateInventoryDisplay();
-        addMessage("이전에 저장한 게임을 불러왔습니다.", "info");
-    } else {
-        addMessage("저장된 게임이 없습니다.", "info");
-    }
-}
+        // 플레이어 사망 처리
+        function handlePlayerDeath() {
+            gameState.gameRunning = false;
+            addMessage("💀 플레이어가 사망했습니다...", "combat");
+            
+            const gameOverDiv = document.createElement('div');
+            gameOverDiv.className = 'game-over';
+            gameOverDiv.innerHTML = `
+                <h2 style="color: #f44336;">⚰️ 게임 오버</h2>
+                <p>🏰 던전 ${gameState.floor}층에서 전사했습니다.</p>
+                <p>👹 처치한 몬스터: ${gameState.floor * 3}마리</p>
+                <p>💰 획득한 골드: ${gameState.player.gold}</p>
+                <button onclick="location.reload()">🔄 다시 시작</button>
+            `;
+            document.body.appendChild(gameOverDiv);
+        }
 
-// 자동 저장 함수
-function autoSave() {
-    saveGame();
-}
+        // 플레이어 이동
+        function movePlayer(dx, dy) {
+            if (!gameState.gameRunning) return;
+            
+            const newX = gameState.player.x + dx;
+            const newY = gameState.player.y + dy;
+            
+            if (newX < 0 || newX >= gameState.dungeonSize || 
+                newY < 0 || newY >= gameState.dungeonSize) {
+                return;
+            }
+            
+            const cellType = gameState.dungeon[newY][newX];
+            
+            if (cellType === 'wall') {
+                return;
+            }
+            
+            if (gameState.mercenaries.some(m => m.x === newX && m.y === newY && m.alive)) {
+                return;
+            }
+            
+            if (cellType === 'monster') {
+                const monster = gameState.monsters.find(m => m.x === newX && m.y === newY);
+                if (monster) {
+                    let totalAttack = gameState.player.attack;
+                    if (gameState.player.equipped.weapon) {
+                        totalAttack += gameState.player.equipped.weapon.attack;
+                    }
+                    
+                    const damage = Math.max(1, totalAttack - monster.defense);
+                    monster.health -= damage;
+                    
+                    addMessage(`⚔️ ${monster.name}에게 ${damage}의 피해를 입혔습니다!`, "combat");
+                    
+                    if (monster.health <= 0) {
+                        addMessage(`💀 ${monster.name}을(를) 처치했습니다!`, "combat");
+                        
+                        gameState.player.exp += monster.exp;
+                        gameState.player.gold += monster.gold;
+                        
+                        checkLevelUp();
+                        
+                        if (monster.special === 'boss') {
+                            const bossItems = ['magicSword', 'plateArmor', 'greaterHealthPotion'];
+                            const bossItemKey = bossItems[Math.floor(Math.random() * bossItems.length)];
+                            const bossItem = createItem(bossItemKey, newX, newY);
+                            gameState.items.push(bossItem);
+                            gameState.dungeon[newY][newX] = 'item';
+                            addMessage(`🎁 ${monster.name}이(가) 귀중한 아이템을 떨어뜨렸습니다!`, "treasure");
+                        } else if (Math.random() < monster.lootChance) {
+                            const itemKeys = Object.keys(ITEMS);
+                            const availableItems = itemKeys.filter(key => 
+                                ITEMS[key].level <= Math.ceil(gameState.floor / 2 + 1)
+                            );
+                            const randomItemKey = availableItems[Math.floor(Math.random() * availableItems.length)];
+                            
+                            const droppedItem = createItem(randomItemKey, newX, newY);
+                            gameState.items.push(droppedItem);
+                            gameState.dungeon[newY][newX] = 'item';
+                            addMessage(`📦 ${monster.name}이(가) 아이템을 떨어뜨렸습니다!`, "item");
+                        } else {
+                            gameState.dungeon[newY][newX] = 'empty';
+                        }
+                        
+                        const monsterIndex = gameState.monsters.findIndex(m => m === monster);
+                        if (monsterIndex !== -1) {
+                            gameState.monsters.splice(monsterIndex, 1);
+                        }
+                    }
+                    
+                    processTurn();
+                    return;
+                }
+            }
+            
+            gameState.player.x = newX;
+            gameState.player.y = newY;
+            
+            if (cellType === 'treasure') {
+                const treasure = gameState.treasures.find(t => t.x === newX && t.y === newY);
+                if (treasure) {
+                    gameState.player.gold += treasure.gold;
+                    addMessage(`💎 보물을 발견했습니다! ${treasure.gold} 골드를 획득했습니다!`, "treasure");
+                    
+                    const treasureIndex = gameState.treasures.findIndex(t => t === treasure);
+                    if (treasureIndex !== -1) {
+                        gameState.treasures.splice(treasureIndex, 1);
+                    }
+                    gameState.dungeon[newY][newX] = 'empty';
+                }
+            }
+            
+            if (cellType === 'item') {
+                const item = gameState.items.find(i => i.x === newX && i.y === newY);
+                if (item) {
+                    addToInventory(item);
+                    addMessage(`📦 ${item.name}을(를) 획득했습니다!`, "item");
+                    
+                    const itemIndex = gameState.items.findIndex(i => i === item);
+                    if (itemIndex !== -1) {
+                        gameState.items.splice(itemIndex, 1);
+                    }
+                    gameState.dungeon[newY][newX] = 'empty';
+                }
+            }
+            
+            if (cellType === 'exit') {
+                nextFloor();
+                return;
+            }
+            
+            processTurn();
+        }
 
-// 저장/불러오기 버튼 이벤트
-document.getElementById('save-game').addEventListener('click', saveGame);
-document.getElementById('load-game').addEventListener('click', loadGame);
+        // 다음 층으로
+        function nextFloor() {
+            gameState.floor++;
+            addMessage(`🌀 던전 ${gameState.floor}층으로 내려갑니다...`, "level");
+            
+            // 용병들 체력 약간 회복
+            gameState.mercenaries.forEach(mercenary => {
+                if (mercenary.alive) {
+                    mercenary.health = Math.min(mercenary.maxHealth, mercenary.health + Math.floor(mercenary.maxHealth * 0.2));
+                }
+            });
+            
+            generateDungeon();
+        }
 
-// 게임 초기화
-generateDungeon();
-    </script>
-</body>
-</html>
+        // 턴 처리 (최적화됨)
+        function processTurn() {
+            if (!gameState.gameRunning) return;
+            
+            // 용병 턴 처리
+            gameState.mercenaries.forEach(mercenary => {
+                mercenary.hasActed = false;
+            });
+            
+            gameState.mercenaries.forEach(mercenary => {
+                processMercenaryTurn(mercenary);
+            });
+            
+            // 몬스터 턴 처리
+            gameState.monsters.forEach(monster => {
+                monster.hasActed = false;
+            });
+            
+            for (const monster of [...gameState.monsters]) {
+                if (monster.hasActed || !gameState.gameRunning) continue;
+                
+                let nearestTarget = null;
+                let nearestDistance = Infinity;
+                
+                // 가장 가까운 대상 찾기
+                const playerDistance = getDistance(monster.x, monster.y, gameState.player.x, gameState.player.y);
+                if (playerDistance <= monster.range + 2) { // 이동 + 공격 범위
+                    nearestTarget = gameState.player;
+                    nearestDistance = playerDistance;
+                }
+                
+                gameState.mercenaries.forEach(mercenary => {
+                    if (mercenary.alive) {
+                        const distance = getDistance(monster.x, monster.y, mercenary.x, mercenary.y);
+                        if (distance <= monster.range + 2 && distance < nearestDistance) {
+                            nearestTarget = mercenary;
+                            nearestDistance = distance;
+                        }
+                    }
+                });
+                
+                if (nearestTarget) {
+                    // 공격 범위 내에 있으면 공격
+                    if (nearestDistance <= monster.range && 
+                        hasLineOfSight(monster.x, monster.y, nearestTarget.x, nearestTarget.y)) {
+                        if (monsterAttack(monster)) {
+                            return; // 플레이어가 죽으면 게임 종료
+                        }
+                    } else {
+                        // 대상에게 접근
+                        const dx = Math.sign(nearestTarget.x - monster.x);
+                        const dy = Math.sign(nearestTarget.y - monster.y);
+                        
+                        let newX = monster.x;
+                        let newY = monster.y;
+                        
+                        // 대각선 이동보다 직선 이동 우선
+                        if (Math.random() < 0.5) {
+                            if (dx !== 0) newX += dx;
+                            else if (dy !== 0) newY += dy;
+                        } else {
+                            if (dy !== 0) newY += dy;
+                            else if (dx !== 0) newX += dx;
+                        }
+                        
+                        // 이동 가능한지 체크
+                        if (newX >= 0 && newX < gameState.dungeonSize && 
+                            newY >= 0 && newY < gameState.dungeonSize &&
+                            gameState.dungeon[newY][newX] === 'empty' &&
+                            !(newX === gameState.player.x && newY === gameState.player.y) &&
+                            !gameState.monsters.some(m => m.x === newX && m.y === newY && m !== monster) &&
+                            !gameState.mercenaries.some(m => m.x === newX && m.y === newY && m.alive)) {
+                            
+                            // 몬스터 이동
+                            gameState.dungeon[monster.y][monster.x] = 'empty';
+                            monster.x = newX;
+                            monster.y = newY;
+                            gameState.dungeon[newY][newX] = 'monster';
+                            
+                            // 이동 후 공격 가능한지 체크
+                            const newDistance = getDistance(monster.x, monster.y, nearestTarget.x, nearestTarget.y);
+                            if (newDistance <= monster.range && 
+                                hasLineOfSight(monster.x, monster.y, nearestTarget.x, nearestTarget.y)) {
+                                if (monsterAttack(monster)) {
+                                    return;
+                                }
+                            }
+                        }
+                    }
+                }
+                
+                monster.hasActed = true;
+            }
+            
+            updateFogOfWar();
+            // 렌더링과 카메라 업데이트를 한 번에 처리
+            requestAnimationFrame(() => {
+                updateCamera();
+                renderDungeon();
+            });
+            updateStats();
+        }
+
+        // 용병 AI (개선됨 - 장비 보너스 적용, 안전성 체크 추가)
+        function processMercenaryTurn(mercenary) {
+            if (!mercenary.alive || mercenary.hasActed) return;
+            
+            // 장비 초기화 확인
+            if (!mercenary.equipped) {
+                mercenary.equipped = { weapon: null, armor: null };
+            }
+            
+            // 플레이어와의 거리 체크 - 너무 멀리 떨어지지 않도록
+            const playerDistance = getDistance(mercenary.x, mercenary.y, gameState.player.x, gameState.player.y);
+            const maxDistanceFromPlayer = 6; // 플레이어로부터 최대 6칸까지만
+            
+            // 힐러는 치료 우선
+            if (mercenary.role === 'support') {
+                if (gameState.player.health < gameState.player.maxHealth * 0.7) {
+                    if (getDistance(mercenary.x, mercenary.y, gameState.player.x, gameState.player.y) <= 2) {
+                        if (healTarget(mercenary, gameState.player)) {
+                            mercenary.hasActed = true;
+                            return;
+                        }
+                    }
+                }
+                
+                for (const otherMerc of gameState.mercenaries) {
+                    if (otherMerc !== mercenary && otherMerc.alive && otherMerc.health < otherMerc.maxHealth * 0.5) {
+                        if (getDistance(mercenary.x, mercenary.y, otherMerc.x, otherMerc.y) <= 2) {
+                            if (healTarget(mercenary, otherMerc)) {
+                                mercenary.hasActed = true;
+                                return;
+                            }
+                        }
+                    }
+                }
+            }
+            
+            // 가장 가까운 시야 내 몬스터 찾기 (fog of war 고려)
+            let nearestMonster = null;
+            let nearestDistance = Infinity;
+            
+            gameState.monsters.forEach(monster => {
+                // 몬스터가 시야 밖(fog of war)에 있으면 무시
+                if (gameState.fogOfWar[monster.y] && gameState.fogOfWar[monster.y][monster.x]) {
+                    return;
+                }
+                
+                const distance = getDistance(mercenary.x, mercenary.y, monster.x, monster.y);
+                
+                // 플레이어로부터 너무 멀리 떨어진 몬스터는 공격하지 않음
+                const monsterToPlayerDistance = getDistance(monster.x, monster.y, gameState.player.x, gameState.player.y);
+                if (monsterToPlayerDistance > maxDistanceFromPlayer + 2) {
+                    return;
+                }
+                
+                if (distance < nearestDistance && hasLineOfSight(mercenary.x, mercenary.y, monster.x, monster.y)) {
+                    nearestDistance = distance;
+                    nearestMonster = monster;
+                }
+            });
+            
+            if (nearestMonster) {
+                const attackRange = mercenary.role === 'ranged' ? 3 : 1;
+                if (nearestDistance <= attackRange) {
+                    // 공격 (장비 보너스 적용)
+                    let totalAttack = mercenary.attack;
+                    if (mercenary.equipped && mercenary.equipped.weapon) {
+                        totalAttack += mercenary.equipped.weapon.attack;
+                    }
+                    
+                    const damage = Math.max(1, totalAttack - nearestMonster.defense);
+                    nearestMonster.health -= damage;
+                    
+                    addMessage(`⚔️ ${mercenary.name}이(가) ${nearestMonster.name}에게 ${damage}의 피해를 입혔습니다!`, "mercenary");
+                    
+                    if (nearestMonster.health <= 0) {
+                        addMessage(`💀 ${mercenary.name}이(가) ${nearestMonster.name}을(를) 처치했습니다!`, "mercenary");
+                        
+                        const mercExp = Math.floor(nearestMonster.exp * 0.6);
+                        const playerExp = Math.floor(nearestMonster.exp * 0.4);
+                        
+                        mercenary.exp += mercExp;
+                        gameState.player.exp += playerExp;
+                        gameState.player.gold += nearestMonster.gold;
+                        
+                        checkMercenaryLevelUp(mercenary);
+                        checkLevelUp();
+                        
+                        if (nearestMonster.special === 'boss') {
+                            const bossItems = ['magicSword', 'plateArmor', 'greaterHealthPotion'];
+                            const bossItemKey = bossItems[Math.floor(Math.random() * bossItems.length)];
+                            const bossItem = createItem(bossItemKey, nearestMonster.x, nearestMonster.y);
+                            gameState.items.push(bossItem);
+                            gameState.dungeon[nearestMonster.y][nearestMonster.x] = 'item';
+                        } else if (Math.random() < nearestMonster.lootChance) {
+                            const itemKeys = Object.keys(ITEMS);
+                            const availableItems = itemKeys.filter(key => 
+                                ITEMS[key].level <= Math.ceil(gameState.floor / 2 + 1)
+                            );
+                            const randomItemKey = availableItems[Math.floor(Math.random() * availableItems.length)];
+                            
+                            const droppedItem = createItem(randomItemKey, nearestMonster.x, nearestMonster.y);
+                            gameState.items.push(droppedItem);
+                            gameState.dungeon[nearestMonster.y][nearestMonster.x] = 'item';
+                        } else {
+                            gameState.dungeon[nearestMonster.y][nearestMonster.x] = 'empty';
+                        }
+                        
+                        const monsterIndex = gameState.monsters.findIndex(m => m === nearestMonster);
+                        if (monsterIndex !== -1) {
+                            gameState.monsters.splice(monsterIndex, 1);
+                        }
+                    }
+                } else {
+                    // 몬스터에게 접근 (플레이어로부터 너무 멀어지지 않는 선에서)
+                    const dx = Math.sign(nearestMonster.x - mercenary.x);
+                    const dy = Math.sign(nearestMonster.y - mercenary.y);
+                    
+                    let newX = mercenary.x;
+                    let newY = mercenary.y;
+                    
+                    if (Math.random() < 0.5) {
+                        if (dx !== 0) newX += dx;
+                        else if (dy !== 0) newY += dy;
+                    } else {
+                        if (dy !== 0) newY += dy;
+                        else if (dx !== 0) newX += dx;
+                    }
+                    
+                    // 새 위치가 플레이어로부터 너무 멀어지는지 체크
+                    const newDistanceFromPlayer = getDistance(newX, newY, gameState.player.x, gameState.player.y);
+                    
+                    if (newX >= 0 && newX < gameState.dungeonSize && 
+                        newY >= 0 && newY < gameState.dungeonSize &&
+                        gameState.dungeon[newY][newX] === 'empty' &&
+                        !(newX === gameState.player.x && newY === gameState.player.y) &&
+                        !gameState.monsters.some(m => m.x === newX && m.y === newY) &&
+                        !gameState.mercenaries.some(m => m.x === newX && m.y === newY && m.alive && m !== mercenary) &&
+                        newDistanceFromPlayer <= maxDistanceFromPlayer) {
+                        
+                        mercenary.x = newX;
+                        mercenary.y = newY;
+                    }
+                }
+            } else {
+                // 몬스터가 없거나 시야에 없으면 플레이어 근처에 머무름
+                if (playerDistance > 4) {
+                    const dx = Math.sign(gameState.player.x - mercenary.x);
+                    const dy = Math.sign(gameState.player.y - mercenary.y);
+                    
+                    let newX = mercenary.x;
+                    let newY = mercenary.y;
+                    
+                    if (Math.random() < 0.5) {
+                        if (dx !== 0) newX += dx;
+                        else if (dy !== 0) newY += dy;
+                    } else {
+                        if (dy !== 0) newY += dy;
+                        else if (dx !== 0) newX += dx;
+                    }
+                    
+                    if (newX >= 0 && newX < gameState.dungeonSize && 
+                        newY >= 0 && newY < gameState.dungeonSize &&
+                        gameState.dungeon[newY][newX] === 'empty' &&
+                        !(newX === gameState.player.x && newY === gameState.player.y) &&
+                        !gameState.monsters.some(m => m.x === newX && m.y === newY) &&
+                        !gameState.mercenaries.some(m => m.x === newX && m.y === newY && m.alive && m !== mercenary
