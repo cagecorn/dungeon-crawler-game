@@ -829,9 +829,14 @@
                     if (x === gameState.player.x && y === gameState.player.y) {
                         cellType = 'player';
                         div.textContent = '😀';
-                    } else if (cellType === 'monster') {
-                        const m = gameState.monsters.find(mon => mon.x === x && mon.y === y);
-                        if (m) div.textContent = m.icon;
+                    } else {
+                        const merc = gameState.mercenaries.find(m => m.x === x && m.y === y && m.alive);
+                        if (merc) {
+                            cellType = 'mercenary';
+                            div.textContent = merc.icon;
+                        } else if (cellType === 'monster') {
+                            const m = gameState.monsters.find(mon => mon.x === x && mon.y === y);
+                            if (m) div.textContent = m.icon;
                     } else if (cellType === 'item') {
                         const it = gameState.items.find(it => it.x === x && it.y === y);
                         if (it) div.textContent = it.icon;
@@ -839,6 +844,7 @@
                         div.textContent = '💰';
                     } else if (cellType === 'exit') {
                         div.textContent = '🚪';
+                    }
                     }
 
                     div.className = `cell ${cellType}`;
