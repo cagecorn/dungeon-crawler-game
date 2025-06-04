@@ -1112,15 +1112,23 @@
 
         // 아이템 클릭 시 대상 선택
         function handleItemClick(item) {
-            if (item.type === ITEM_TYPES.POTION) {
-                useItem(item);
-                return;
-            }
-
             const options = ['0: 플레이어'];
             gameState.mercenaries.forEach((m, i) => {
                 options.push(`${i + 1}: ${m.name}`);
             });
+
+            if (item.type === ITEM_TYPES.POTION) {
+                const choice = prompt(`${item.name}을(를) 사용할 대상을 선택하세요:\n${options.join('\n')}`);
+                if (choice === null) return;
+                const index = parseInt(choice, 10);
+                let target = gameState.player;
+                if (!isNaN(index) && index > 0 && gameState.mercenaries[index - 1]) {
+                    target = gameState.mercenaries[index - 1];
+                }
+                useItemOnTarget(item, target);
+                return;
+            }
+
             const choice = prompt(`${item.name}을(를) 장착할 대상을 선택하세요:\n${options.join('\n')}`);
             if (choice === null) return;
             const index = parseInt(choice, 10);
@@ -1201,25 +1209,36 @@
             }
         }
 
-        // 아이템 사용
-        function useItem(item) {
+        // 아이템 사용 (대상 지정)
+        function useItemOnTarget(item, target) {
             if (item.type === ITEM_TYPES.POTION) {
-                if (gameState.player.health < gameState.player.maxHealth) {
-                    const healAmount = Math.min(item.healing, gameState.player.maxHealth - gameState.player.health);
-                    gameState.player.health += healAmount;
-                    addMessage(`🩹 ${item.name}을(를) 사용하여 체력을 ${healAmount} 회복했습니다.`, 'item');
-                    
+                if (target.health < target.maxHealth) {
+                    const healAmount = Math.min(item.healing, target.maxHealth - target.health);
+                    target.health += healAmount;
+                    const name = target === gameState.player ? '플레이어' : target.name;
+                    addMessage(`🩹 ${item.name}을(를) 사용하여 ${name}의 체력을 ${healAmount} 회복했습니다.`, 'item');
+
                     const index = gameState.player.inventory.findIndex(i => i.id === item.id);
                     if (index !== -1) {
                         gameState.player.inventory.splice(index, 1);
                     }
-                    
+
                     updateInventoryDisplay();
-                    updateStats();
+                    if (target === gameState.player) {
+                        updateStats();
+                    } else {
+                        updateMercenaryDisplay();
+                    }
                 } else {
-                    addMessage('❤️ 이미 체력이 가득 찼습니다.', 'info');
+                    const name = target === gameState.player ? '플레이어' : target.name;
+                    addMessage(`❤️ ${name}의 체력이 이미 가득 찼습니다.`, 'info');
                 }
             }
+        }
+
+        // 기본 플레이어 대상 아이템 사용 (호환성)
+        function useItem(item) {
+            useItemOnTarget(item, gameState.player);
         }
 
         // 몬스터 공격 (용병 방어력 보너스 적용, 안전성 체크 추가)
