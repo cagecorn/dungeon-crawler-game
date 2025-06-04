@@ -1628,9 +1628,10 @@
                 mercenary.equipped = { weapon: null, armor: null };
             }
             
-            // 플레이어와의 거리 체크 - 너무 멀리 떨어지지 않도록
+            // 플레이어와의 거리 유지 (1~3칸 사이)
             const playerDistance = getDistance(mercenary.x, mercenary.y, gameState.player.x, gameState.player.y);
-            const maxDistanceFromPlayer = 6; // 플레이어로부터 최대 6칸까지만
+            const minDistanceFromPlayer = 1;
+            const maxDistanceFromPlayer = 3;
             
             // 힐러는 치료 우선
             if (mercenary.role === 'support') {
@@ -1666,13 +1667,6 @@
                 }
                 
                 const distance = getDistance(mercenary.x, mercenary.y, monster.x, monster.y);
-                
-                // 플레이어로부터 너무 멀리 떨어진 몬스터는 공격하지 않음
-                const monsterToPlayerDistance = getDistance(monster.x, monster.y, gameState.player.x, gameState.player.y);
-                if (monsterToPlayerDistance > maxDistanceFromPlayer + 2) {
-                    return;
-                }
-                
                 if (distance < nearestDistance && hasLineOfSight(mercenary.x, mercenary.y, monster.x, monster.y)) {
                     nearestDistance = distance;
                     nearestMonster = monster;
@@ -1740,24 +1734,48 @@
                             step.y >= 0 && step.y < gameState.dungeonSize &&
                             gameState.dungeon[step.y][step.x] !== 'wall' &&
                             gameState.dungeon[step.y][step.x] !== 'monster' &&
-                            !(step.x === gameState.player.x && step.y === gameState.player.y) &&
-                            newDistanceFromPlayer <= maxDistanceFromPlayer) {
-                            mercenary.x = step.x;
-                            mercenary.y = step.y;
+                            !(step.x === gameState.player.x && step.y === gameState.player.y)) {
+                            if (mercenary.role === 'tank') {
+                                mercenary.x = step.x;
+                                mercenary.y = step.y;
+                            } else if (newDistanceFromPlayer >= minDistanceFromPlayer && newDistanceFromPlayer <= maxDistanceFromPlayer) {
+                                mercenary.x = step.x;
+                                mercenary.y = step.y;
+                            } else if (playerDistance > maxDistanceFromPlayer) {
+                                // too far from player, move toward player instead
+                                const backPath = findPath(mercenary.x, mercenary.y, gameState.player.x, gameState.player.y);
+                                if (backPath && backPath.length > 1) {
+                                    const backStep = backPath[1];
+                                    const backDist = getDistance(backStep.x, backStep.y, gameState.player.x, gameState.player.y);
+                                    if (backStep.x >= 0 && backStep.x < gameState.dungeonSize &&
+                                        backStep.y >= 0 && backStep.y < gameState.dungeonSize &&
+                                        gameState.dungeon[backStep.y][backStep.x] !== 'wall' &&
+                                        gameState.dungeon[backStep.y][backStep.x] !== 'monster' &&
+                                        !(backStep.x === gameState.player.x && backStep.y === gameState.player.y) &&
+                                        backDist >= minDistanceFromPlayer && backDist <= maxDistanceFromPlayer) {
+                                        mercenary.x = backStep.x;
+                                        mercenary.y = backStep.y;
+                                    }
+                                }
+                            }
                         }
                     }
                 }
             } else {
-                const path = findPath(mercenary.x, mercenary.y, gameState.player.x, gameState.player.y);
-                if (path && path.length > 1) {
-                    const step = path[1];
-                    if (step.x >= 0 && step.x < gameState.dungeonSize &&
-                        step.y >= 0 && step.y < gameState.dungeonSize &&
-                        gameState.dungeon[step.y][step.x] !== 'wall' &&
-                        gameState.dungeon[step.y][step.x] !== 'monster' &&
-                        !(step.x === gameState.player.x && step.y === gameState.player.y)) {
-                        mercenary.x = step.x;
-                        mercenary.y = step.y;
+                if (playerDistance > maxDistanceFromPlayer) {
+                    const path = findPath(mercenary.x, mercenary.y, gameState.player.x, gameState.player.y);
+                    if (path && path.length > 1) {
+                        const step = path[1];
+                        const distAfter = getDistance(step.x, step.y, gameState.player.x, gameState.player.y);
+                        if (step.x >= 0 && step.x < gameState.dungeonSize &&
+                            step.y >= 0 && step.y < gameState.dungeonSize &&
+                            gameState.dungeon[step.y][step.x] !== 'wall' &&
+                            gameState.dungeon[step.y][step.x] !== 'monster' &&
+                            !(step.x === gameState.player.x && step.y === gameState.player.y) &&
+                            distAfter >= minDistanceFromPlayer && distAfter <= maxDistanceFromPlayer) {
+                            mercenary.x = step.x;
+                            mercenary.y = step.y;
+                        }
                     }
                 }
             }
