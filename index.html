@@ -795,8 +795,7 @@
                     if (nx < 0 || ny < 0 || nx >= size || ny >= size) continue;
                     if (visited[ny][nx]) continue;
                     const cell = gameState.dungeon[ny][nx];
-                    const blockedByMerc = gameState.mercenaries.some(m => m.x === nx && m.y === ny && m.alive && !(nx === startX && ny === startY));
-                    if ((cell === 'wall' || cell === 'monster' || blockedByMerc) && !(nx === targetX && ny === targetY)) continue;
+                    if ((cell === 'wall' || cell === 'monster') && !(nx === targetX && ny === targetY)) continue;
                     visited[ny][nx] = true;
                     cameFrom[key(nx, ny)] = [x, y];
                     queue.push([nx, ny]);
@@ -1936,13 +1935,22 @@
                     if (path && path.length > 1) {
                         const step = path[1];
                         const newDistanceFromPlayer = getDistance(step.x, step.y, gameState.player.x, gameState.player.y);
-                        const occupied = gameState.mercenaries.some(m => m !== mercenary && m.alive && m.x === step.x && m.y === step.y);
-                        if (!occupied && step.x >= 0 && step.x < gameState.dungeonSize &&
+                        const occupyingMerc = gameState.mercenaries.find(m => m !== mercenary && m.alive && m.x === step.x && m.y === step.y);
+                        const stepValid = step.x >= 0 && step.x < gameState.dungeonSize &&
                             step.y >= 0 && step.y < gameState.dungeonSize &&
                             gameState.dungeon[step.y][step.x] !== 'wall' &&
                             gameState.dungeon[step.y][step.x] !== 'monster' &&
-                            !(step.x === gameState.player.x && step.y === gameState.player.y)) {
-                            if (mercenary.role === 'tank') {
+                            !(step.x === gameState.player.x && step.y === gameState.player.y);
+
+                        if (stepValid) {
+                            if (occupyingMerc) {
+                                const oldX = mercenary.x;
+                                const oldY = mercenary.y;
+                                mercenary.x = step.x;
+                                mercenary.y = step.y;
+                                occupyingMerc.x = oldX;
+                                occupyingMerc.y = oldY;
+                            } else if (mercenary.role === 'tank') {
                                 mercenary.x = step.x;
                                 mercenary.y = step.y;
                             } else if (newDistanceFromPlayer >= minDistanceFromPlayer && newDistanceFromPlayer <= maxDistanceFromPlayer) {
@@ -1954,15 +1962,25 @@
                                 if (backPath && backPath.length > 1) {
                                     const backStep = backPath[1];
                                     const backDist = getDistance(backStep.x, backStep.y, gameState.player.x, gameState.player.y);
-                                    const backOccupied = gameState.mercenaries.some(m => m !== mercenary && m.alive && m.x === backStep.x && m.y === backStep.y);
-                                    if (!backOccupied && backStep.x >= 0 && backStep.x < gameState.dungeonSize &&
+                                    const backOccupying = gameState.mercenaries.find(m => m !== mercenary && m.alive && m.x === backStep.x && m.y === backStep.y);
+                                    const backValid = backStep.x >= 0 && backStep.x < gameState.dungeonSize &&
                                         backStep.y >= 0 && backStep.y < gameState.dungeonSize &&
                                         gameState.dungeon[backStep.y][backStep.x] !== 'wall' &&
                                         gameState.dungeon[backStep.y][backStep.x] !== 'monster' &&
                                         !(backStep.x === gameState.player.x && backStep.y === gameState.player.y) &&
-                                        backDist >= minDistanceFromPlayer && backDist <= maxDistanceFromPlayer) {
-                                        mercenary.x = backStep.x;
-                                        mercenary.y = backStep.y;
+                                        backDist >= minDistanceFromPlayer && backDist <= maxDistanceFromPlayer;
+                                    if (backValid) {
+                                        if (backOccupying) {
+                                            const bOldX = mercenary.x;
+                                            const bOldY = mercenary.y;
+                                            mercenary.x = backStep.x;
+                                            mercenary.y = backStep.y;
+                                            backOccupying.x = bOldX;
+                                            backOccupying.y = bOldY;
+                                        } else {
+                                            mercenary.x = backStep.x;
+                                            mercenary.y = backStep.y;
+                                        }
                                     }
                                 }
                             }
@@ -1975,15 +1993,26 @@
                     if (path && path.length > 1) {
                         const step = path[1];
                         const distAfter = getDistance(step.x, step.y, gameState.player.x, gameState.player.y);
-                        const occupied = gameState.mercenaries.some(m => m !== mercenary && m.alive && m.x === step.x && m.y === step.y);
-                        if (!occupied && step.x >= 0 && step.x < gameState.dungeonSize &&
+                        const occupyingMerc = gameState.mercenaries.find(m => m !== mercenary && m.alive && m.x === step.x && m.y === step.y);
+                        const stepValid = step.x >= 0 && step.x < gameState.dungeonSize &&
                             step.y >= 0 && step.y < gameState.dungeonSize &&
                             gameState.dungeon[step.y][step.x] !== 'wall' &&
                             gameState.dungeon[step.y][step.x] !== 'monster' &&
                             !(step.x === gameState.player.x && step.y === gameState.player.y) &&
-                            distAfter >= minDistanceFromPlayer && distAfter <= maxDistanceFromPlayer) {
-                            mercenary.x = step.x;
-                            mercenary.y = step.y;
+                            distAfter >= minDistanceFromPlayer && distAfter <= maxDistanceFromPlayer;
+
+                        if (stepValid) {
+                            if (occupyingMerc) {
+                                const oldX = mercenary.x;
+                                const oldY = mercenary.y;
+                                mercenary.x = step.x;
+                                mercenary.y = step.y;
+                                occupyingMerc.x = oldX;
+                                occupyingMerc.y = oldY;
+                            } else {
+                                mercenary.x = step.x;
+                                mercenary.y = step.y;
+                            }
                         }
                     }
                 }
