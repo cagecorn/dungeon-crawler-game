@@ -407,6 +407,36 @@
         .message-log::-webkit-scrollbar-thumb:hover {
             background: #777;
         }
+
+        /* Trait info panel */
+        .trait-info {
+            background: linear-gradient(135deg, #2a2a2a, #333);
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 0 15px rgba(0, 0, 0, 0.7);
+            border: 1px solid #555;
+            max-width: 1400px;
+            width: 100%;
+            margin-top: 15px;
+            font-size: 13px;
+        }
+        .trait-info h2 {
+            color: #ff6600;
+            margin: 0 0 12px 0;
+            border-bottom: 2px solid #ff6600;
+            padding-bottom: 8px;
+            text-align: center;
+            font-size: 16px;
+        }
+        .trait-info ul {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+        .trait-info li {
+            margin-bottom: 4px;
+            font-size: 12px;
+        }
     </style>
 </head>
 <body>
@@ -475,6 +505,8 @@
             </div>
         </div>
     </div>
+
+    <div id="trait-info" class="trait-info"></div>
 
     <script>
         // 아이템 타입 정의
@@ -575,6 +607,20 @@
             '신속(체력↓)': '이동 속도 증가, 체력 감소.',
             '치유 전문(공격↓)': '치유 능력 향상, 공격력 감소.'
         };
+
+        // 특성 정보 영역 렌더링
+        function renderTraitInfo() {
+            const container = document.getElementById('trait-info');
+            if (!container) return;
+            container.innerHTML = '<h2>📜 특성 정보</h2>';
+            const ul = document.createElement('ul');
+            for (const [name, desc] of Object.entries(TRAIT_DETAILS)) {
+                const li = document.createElement('li');
+                li.innerHTML = `<strong>${name}</strong>: ${desc}`;
+                ul.appendChild(li);
+            }
+            container.appendChild(ul);
+        }
 
         // 몬스터 타입 정의
         const MONSTER_TYPES = {
@@ -2185,6 +2231,7 @@ function healTarget(healer, target) {
 
         // 초기화 및 입력 처리
         generateDungeon();
+        renderTraitInfo();
         document.getElementById('up').onclick = () => movePlayer(0, -1);
         document.getElementById('down').onclick = () => movePlayer(0, 1);
         document.getElementById('left').onclick = () => movePlayer(-1, 0);
