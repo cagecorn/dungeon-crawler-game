@@ -205,6 +205,10 @@
             font-size: 11px;
             border-left: 3px solid #2196F3;
         }
+        .mercenary-info.alive {
+            background-color: #444;
+            border-left: 3px solid #2196F3;
+        }
         .mercenary-info.dead {
             background-color: #5c2626;
             color: #999;
@@ -748,11 +752,21 @@
             list.innerHTML = '';
             gameState.mercenaries.forEach((merc, i) => {
                 const div = document.createElement('div');
-                div.className = 'mercenary-entry';
+                const statusClass = merc.alive ? 'alive' : 'dead';
+                div.className = `mercenary-info ${statusClass}`;
+
                 const hp = `${merc.health}/${merc.maxHealth}`;
                 const weapon = merc.equipped && merc.equipped.weapon ? merc.equipped.weapon.name : '없음';
                 const armor = merc.equipped && merc.equipped.armor ? merc.equipped.armor.name : '없음';
-                div.textContent = `${i + 1}. ${merc.icon} ${merc.name} Lv.${merc.level} (${hp}) [무기:${weapon}, 방어구:${armor}]`;
+                const attackBonus = merc.equipped && merc.equipped.weapon ? merc.equipped.weapon.attack : 0;
+                const defenseBonus = merc.equipped && merc.equipped.armor ? merc.equipped.armor.defense : 0;
+                const totalAttack = merc.attack + attackBonus;
+                const totalDefense = merc.defense + defenseBonus;
+
+                div.textContent = `${i + 1}. ${merc.icon} ${merc.name} Lv.${merc.level} (${hp}) ` +
+                    `[공격:${totalAttack}, 방어:${totalDefense}] ` +
+                    `[무기:${weapon}, 방어구:${armor}]`;
+
                 div.onclick = () => {
                     const slots = [];
                     if (merc.equipped && merc.equipped.weapon) slots.push('0: 무기');
