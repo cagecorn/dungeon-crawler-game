@@ -1829,12 +1829,38 @@
             }
         }
 
+        // 게임 저장
+        function saveGame() {
+            localStorage.setItem('dungeonCrawlerSave', JSON.stringify(gameState));
+            addMessage('💾 게임이 저장되었습니다.', 'info');
+        }
+
+        // 게임 불러오기
+        function loadGame() {
+            const data = localStorage.getItem('dungeonCrawlerSave');
+            if (!data) {
+                addMessage('❌ 저장된 게임이 없습니다.', 'info');
+                return;
+            }
+            const saved = JSON.parse(data);
+            Object.assign(gameState, saved);
+            updateFogOfWar();
+            updateStats();
+            updateInventoryDisplay();
+            updateMercenaryDisplay();
+            renderDungeon();
+            updateCamera();
+            addMessage('📁 게임을 불러왔습니다.', 'info');
+        }
+
         // 초기화 및 입력 처리
         generateDungeon();
         document.getElementById('up').onclick = () => movePlayer(0, -1);
         document.getElementById('down').onclick = () => movePlayer(0, 1);
         document.getElementById('left').onclick = () => movePlayer(-1, 0);
         document.getElementById('right').onclick = () => movePlayer(1, 0);
+        document.getElementById('save-game').onclick = saveGame;
+        document.getElementById('load-game').onclick = loadGame;
 
         document.addEventListener('keydown', (e) => {
             if (e.key === 'ArrowUp') {
