@@ -48,8 +48,9 @@
         .dungeon {
             position: absolute;
             display: grid;
-            grid-template-columns: repeat(25, 24px);
-            grid-template-rows: repeat(25, 24px);
+            --dungeon-size: 125;
+            grid-template-columns: repeat(var(--dungeon-size), 24px);
+            grid-template-rows: repeat(var(--dungeon-size), 24px);
             gap: 1px;
             transition: transform 0.15s ease;
             will-change: transform;
@@ -796,7 +797,7 @@
             items: [],
             exitLocation: { x: 0, y: 0 },
             floor: 1,
-            dungeonSize: 25,
+            dungeonSize: 125,
             viewportSize: 25,
             camera: { x: 0, y: 0 },
             gameRunning: true
@@ -1161,6 +1162,12 @@ function healTarget(healer, target) {
         // 던전 생성
         function generateDungeon() {
             const size = gameState.dungeonSize;
+            const dungeonEl = document.getElementById('dungeon');
+            if (dungeonEl) {
+                dungeonEl.style.setProperty('--dungeon-size', size);
+                dungeonEl.style.gridTemplateColumns = `repeat(${size}, 24px)`;
+                dungeonEl.style.gridTemplateRows = `repeat(${size}, 24px)`;
+            }
             gameState.dungeon = [];
             gameState.fogOfWar = [];
             gameState.monsters = [];
