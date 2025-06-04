@@ -716,6 +716,44 @@
             return true;
         }
 
+        // BFS 경로 탐색
+        function findPath(startX, startY, targetX, targetY) {
+            const size = gameState.dungeonSize;
+            const queue = [[startX, startY]];
+            const visited = Array.from({ length: size }, () => Array(size).fill(false));
+            const cameFrom = {};
+            const key = (x, y) => `${x},${y}`;
+            visited[startY][startX] = true;
+            cameFrom[key(startX, startY)] = null;
+
+            while (queue.length) {
+                const [x, y] = queue.shift();
+                if (x === targetX && y === targetY) {
+                    const path = [];
+                    let cur = [x, y];
+                    while (cur) {
+                        path.unshift({ x: cur[0], y: cur[1] });
+                        cur = cameFrom[key(cur[0], cur[1])];
+                    }
+                    return path;
+                }
+
+                const dirs = [[1,0], [-1,0], [0,1], [0,-1]];
+                for (const [dx, dy] of dirs) {
+                    const nx = x + dx;
+                    const ny = y + dy;
+                    if (nx < 0 || ny < 0 || nx >= size || ny >= size) continue;
+                    if (visited[ny][nx]) continue;
+                    const cell = gameState.dungeon[ny][nx];
+                    if ((cell === 'wall' || cell === 'monster') && !(nx === targetX && ny === targetY)) continue;
+                    visited[ny][nx] = true;
+                    cameFrom[key(nx, ny)] = [x, y];
+                    queue.push([nx, ny]);
+                }
+            }
+            return null;
+        }
+
         // 간단한 치유 로직
         function healTarget(healer, target) {
             const healAmount = Math.min(3 + healer.level, target.maxHealth - target.health);
@@ -1694,62 +1732,32 @@
                         }
                     }
                 } else {
-                    // 몬스터에게 접근 (플레이어로부터 너무 멀어지지 않는 선에서)
-                    const dx = Math.sign(nearestMonster.x - mercenary.x);
-                    const dy = Math.sign(nearestMonster.y - mercenary.y);
-                    
-                    let newX = mercenary.x;
-                    let newY = mercenary.y;
-                    
-                    if (Math.random() < 0.5) {
-                        if (dx !== 0) newX += dx;
-                        else if (dy !== 0) newY += dy;
-                    } else {
-                        if (dy !== 0) newY += dy;
-                        else if (dx !== 0) newX += dx;
-                    }
-                    
-                    // 새 위치가 플레이어로부터 너무 멀어지는지 체크
-                    const newDistanceFromPlayer = getDistance(newX, newY, gameState.player.x, gameState.player.y);
-                    
-                    if (newX >= 0 && newX < gameState.dungeonSize && 
-                        newY >= 0 && newY < gameState.dungeonSize &&
-                        gameState.dungeon[newY][newX] === 'empty' &&
-                        !(newX === gameState.player.x && newY === gameState.player.y) &&
-                        !gameState.monsters.some(m => m.x === newX && m.y === newY) &&
-                        !gameState.mercenaries.some(m => m.x === newX && m.y === newY && m.alive && m !== mercenary) &&
-                        newDistanceFromPlayer <= maxDistanceFromPlayer) {
-                        
-                        mercenary.x = newX;
-                        mercenary.y = newY;
+                    const path = findPath(mercenary.x, mercenary.y, nearestMonster.x, nearestMonster.y);
+                    if (path && path.length > 1) {
+                        const step = path[1];
+                        const newDistanceFromPlayer = getDistance(step.x, step.y, gameState.player.x, gameState.player.y);
+                        if (step.x >= 0 && step.x < gameState.dungeonSize &&
+                            step.y >= 0 && step.y < gameState.dungeonSize &&
+                            gameState.dungeon[step.y][step.x] !== 'wall' &&
+                            gameState.dungeon[step.y][step.x] !== 'monster' &&
+                            !(step.x === gameState.player.x && step.y === gameState.player.y) &&
+                            newDistanceFromPlayer <= maxDistanceFromPlayer) {
+                            mercenary.x = step.x;
+                            mercenary.y = step.y;
+                        }
                     }
                 }
             } else {
-                // 몬스터가 없거나 시야에 없으면 플레이어 근처에 머무름
-                if (playerDistance > 4) {
-                    const dx = Math.sign(gameState.player.x - mercenary.x);
-                    const dy = Math.sign(gameState.player.y - mercenary.y);
-                    
-                    let newX = mercenary.x;
-                    let newY = mercenary.y;
-                    
-                    if (Math.random() < 0.5) {
-                        if (dx !== 0) newX += dx;
-                        else if (dy !== 0) newY += dy;
-                    } else {
-                        if (dy !== 0) newY += dy;
-                        else if (dx !== 0) newX += dx;
-                    }
-                    
-                    if (newX >= 0 && newX < gameState.dungeonSize && 
-                        newY >= 0 && newY < gameState.dungeonSize &&
-                        gameState.dungeon[newY][newX] === 'empty' &&
-                        !(newX === gameState.player.x && newY === gameState.player.y) &&
-                        !gameState.monsters.some(m => m.x === newX && m.y === newY) &&
-                        !gameState.mercenaries.some(m => m.x === newX && m.y === newY && m.alive && m !== mercenary)) {
-
-                        mercenary.x = newX;
-                        mercenary.y = newY;
+                const path = findPath(mercenary.x, mercenary.y, gameState.player.x, gameState.player.y);
+                if (path && path.length > 1) {
+                    const step = path[1];
+                    if (step.x >= 0 && step.x < gameState.dungeonSize &&
+                        step.y >= 0 && step.y < gameState.dungeonSize &&
+                        gameState.dungeon[step.y][step.x] !== 'wall' &&
+                        gameState.dungeon[step.y][step.x] !== 'monster' &&
+                        !(step.x === gameState.player.x && step.y === gameState.player.y)) {
+                        mercenary.x = step.x;
+                        mercenary.y = step.y;
                     }
                 }
             }
