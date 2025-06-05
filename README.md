@@ -30,6 +30,14 @@ npm install
 node tests/mercenaryFollow.test.js
 ```
 
+## Testing
+
+Run the automated test suite with:
+
+```bash
+npm test
+```
+
 ## License
 
 This project is licensed under the MIT License. See [LICENSE](LICENSE) for details.
