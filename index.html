@@ -705,6 +705,16 @@
             }
         };
 
+        // 용병 이름 풀
+        const MERCENARY_NAMES = [
+            'Robin',
+            'Morgan',
+            'Taylor',
+            'Riley',
+            'Jordan',
+            'Casey'
+        ];
+
         // 용병 특성
         const POSITIVE_TRAITS = [
             '근면함',
@@ -1888,6 +1898,8 @@ function healTarget(healer, target) {
         // 용병 생성 함수
         function createMercenary(type, x, y) {
             const mercType = MERCENARY_TYPES[type];
+            const randomName = MERCENARY_NAMES[Math.floor(Math.random() * MERCENARY_NAMES.length)];
+            const job = type.charAt(0) + type.slice(1).toLowerCase();
             const allTraits = [...POSITIVE_TRAITS, ...NEGATIVE_TRAITS, ...TRADEOFF_TRAITS];
             const traits = [];
             while (traits.length < 2) {
@@ -1897,7 +1909,7 @@ function healTarget(healer, target) {
             return {
                 id: Math.random().toString(36).substr(2, 9),
                 type: type,
-                name: mercType.name,
+                name: `${randomName} (${job})`,
                 icon: mercType.icon,
                 role: mercType.role,
                 x: x,
