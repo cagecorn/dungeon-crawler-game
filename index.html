@@ -117,6 +117,12 @@
             background: radial-gradient(circle, #ff9800, #e65100);
             color: white;
         }
+        .projectile-fire {
+            background: radial-gradient(circle, #ff5722, #e64a19);
+        }
+        .projectile-ice {
+            background: radial-gradient(circle, #03a9f4, #0288d1);
+        }
         .exit {
             background: linear-gradient(45deg, #00BCD4, #00ACC1, #0097A7);
             color: white;
@@ -296,6 +302,34 @@
             background-color: #555;
             border-left: 3px solid #9575CD;
             transform: translateX(3px);
+        }
+        .skills-panel {
+            background: linear-gradient(135deg, #2a2a2a, #333);
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 0 15px rgba(0, 0, 0, 0.7);
+            border: 1px solid #555;
+            max-height: 150px;
+            overflow-y: auto;
+        }
+        .skills-panel h2 {
+            color: #FF9800;
+            margin: 0 0 12px 0;
+            border-bottom: 2px solid #FF9800;
+            padding-bottom: 8px;
+            text-align: center;
+            font-size: 16px;
+        }
+        .skill-item {
+            background-color: #444;
+            padding: 6px;
+            margin-bottom: 4px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 11px;
+        }
+        .skill-item:hover {
+            background-color: #555;
         }
         .equipped-slot {
             background-color: #444;
@@ -533,6 +567,10 @@
                 <h3>📦 보유 아이템</h3>
                 <div id="inventory-items"></div>
             </div>
+            <div class="skills-panel">
+                <h2>📚 스킬</h2>
+                <div id="learned-skills"></div>
+            </div>
         </div>
     </div>
 
@@ -546,7 +584,8 @@
             ACCESSORY: 'accessory',
             POTION: 'potion',
             REVIVE: 'revive',
-            SPELL: 'spell'
+            SPELL: 'spell',
+            SKILLBOOK: 'skillbook'
         };
 
         // 용병 타입 정의
@@ -781,6 +820,12 @@
             }
         };
 
+        // 스킬 정의
+        const SKILLS = {
+            fireball: { name: 'Fireball', element: 'fire', damage: 8, icon: '🔥' },
+            iceball: { name: 'Iceball', element: 'ice', damage: 8, icon: '❄️' }
+        };
+
         // 아이템 데이터베이스
         const ITEMS = {
             shortSword: {
@@ -885,6 +930,22 @@
                 price: 30,
                 level: 2,
                 icon: '🔥'
+            },
+            fireballBook: {
+                name: '📘 파이어볼 스킬북',
+                type: ITEM_TYPES.SKILLBOOK,
+                skill: 'fireball',
+                price: 0,
+                level: 1,
+                icon: '🔥'
+            },
+            iceballBook: {
+                name: '📘 아이스볼 스킬북',
+                type: ITEM_TYPES.SKILLBOOK,
+                skill: 'iceball',
+                price: 0,
+                level: 1,
+                icon: '❄️'
             }
         };
 
@@ -923,6 +984,9 @@
                 expNeeded: 20,
                 gold: 100,
                 inventory: [],
+                skills: [],
+                skill1: null,
+                skill2: null,
                 equipped: {
                     weapon: null,
                     armor: null,
@@ -1098,16 +1162,22 @@ function healTarget(healer, target) {
 
                 const monster = gameState.monsters.find(m => m.x === nx && m.y === ny);
                 if (monster) {
-                    let totalAttack = gameState.player.attack;
-                    if (gameState.player.equipped.weapon) {
-                        totalAttack += gameState.player.equipped.weapon.attack;
+                    let attackValue = proj.damage !== undefined ? proj.damage : gameState.player.attack;
+                    if (proj.damage === undefined && gameState.player.equipped.weapon) {
+                        attackValue += gameState.player.equipped.weapon.attack;
                     }
-                    const result = performAttack(gameState.player, monster, { attackValue: totalAttack });
+                    const options = { attackValue };
+                    if (proj.element) {
+                        options.magic = true;
+                        options.element = proj.element;
+                    }
+                    const result = performAttack(gameState.player, monster, options);
                     if (!result.hit) {
                         addMessage(`❌ ${monster.name}에게 원거리 공격이 빗나갔습니다!`, 'combat');
                     } else {
                         const critMsg = result.crit ? ' (치명타!)' : '';
-                        addMessage(`🏹 ${monster.name}에게 ${result.damage}의 피해를 입혔습니다${critMsg}!`, 'combat');
+                        const icon = proj.icon || '🏹';
+                        addMessage(`${icon} ${monster.name}에게 ${result.damage}의 피해를 입혔습니다${critMsg}!`, 'combat');
                     }
                     if (monster.health <= 0) {
                         addMessage(`💀 ${monster.name}을(를) 처치했습니다!`, 'combat');
@@ -1177,6 +1247,45 @@ function healTarget(healer, target) {
             } else {
                 acc2Slot.textContent = '악세서리2: 없음';
                 acc2Slot.onclick = null;
+            }
+        }
+
+        function updateSkillButtons() {
+            const btn1 = document.getElementById('skill1');
+            btn1.textContent = gameState.player.skill1 ? SKILLS[gameState.player.skill1].icon : 'Skill1';
+            const btn2 = document.getElementById('skill2');
+            btn2.textContent = gameState.player.skill2 ? SKILLS[gameState.player.skill2].icon : 'Skill2';
+        }
+
+        function updateSkillsDisplay() {
+            const container = document.getElementById('learned-skills');
+            if (!container) return;
+            container.innerHTML = '';
+            gameState.player.skills.forEach(key => {
+                const skill = SKILLS[key];
+                const div = document.createElement('div');
+                div.className = 'skill-item';
+                div.textContent = `${skill.icon} ${skill.name}`;
+                div.onclick = () => assignSkill(key);
+                container.appendChild(div);
+            });
+            updateSkillButtons();
+        }
+
+        function assignSkill(key) {
+            const choice = prompt(`${SKILLS[key].name} 스킬을 어느 슬롯에 배치할까요? (1/2)`);
+            if (choice === '1') gameState.player.skill1 = key;
+            else if (choice === '2') gameState.player.skill2 = key;
+            updateSkillButtons();
+        }
+
+        function learnSkill(key) {
+            if (!gameState.player.skills.includes(key)) {
+                gameState.player.skills.push(key);
+                addMessage(`📘 ${SKILLS[key].name} 스킬을 배웠습니다!`, 'info');
+                if (!gameState.player.skill1) gameState.player.skill1 = key;
+                else if (!gameState.player.skill2) gameState.player.skill2 = key;
+                updateSkillsDisplay();
             }
         }
 
@@ -1348,6 +1457,7 @@ function healTarget(healer, target) {
                 for (let x = 0; x < gameState.dungeonSize; x++) {
                     const div = document.createElement('div');
                     let cellType = gameState.dungeon[y][x];
+                    let extraClass = '';
 
                     if (x === gameState.player.x && y === gameState.player.y) {
                         cellType = 'player';
@@ -1357,6 +1467,9 @@ function healTarget(healer, target) {
                         if (proj) {
                             cellType = 'projectile';
                             div.textContent = proj.icon;
+                            if (proj.element) {
+                                extraClass = `projectile-${proj.element}`;
+                            }
                         } else {
                             const merc = gameState.mercenaries.find(m => m.x === x && m.y === y && m.alive);
                             if (merc) {
@@ -1376,7 +1489,7 @@ function healTarget(healer, target) {
                         }
                     }
 
-                    div.className = `cell ${cellType}`;
+                    div.className = `cell ${cellType} ${extraClass}`;
                     if (gameState.fogOfWar[y] && gameState.fogOfWar[y][x]) {
                         div.style.filter = 'brightness(0.2)';
                     }
@@ -1497,6 +1610,20 @@ function healTarget(healer, target) {
                 const key = itemKeys[Math.floor(Math.random() * itemKeys.length)];
                 const item = createItem(key, x, y);
                 gameState.items.push(item);
+                gameState.dungeon[y][x] = 'item';
+            }
+
+            const skillbookKeys = itemKeys.filter(k => ITEMS[k].type === ITEM_TYPES.SKILLBOOK);
+            const skillbookCount = Math.random() < 0.5 ? 1 : 0;
+            for (let i = 0; i < skillbookCount; i++) {
+                let x, y;
+                do {
+                    x = Math.floor(Math.random() * size);
+                    y = Math.floor(Math.random() * size);
+                } while (gameState.dungeon[y][x] !== 'empty');
+                const key = skillbookKeys[Math.floor(Math.random() * skillbookKeys.length)];
+                const sb = createItem(key, x, y);
+                gameState.items.push(sb);
                 gameState.dungeon[y][x] = 'item';
             }
 
@@ -2112,9 +2239,14 @@ function healTarget(healer, target) {
             if (cellType === 'item') {
                 const item = gameState.items.find(i => i.x === newX && i.y === newY);
                 if (item) {
-                    addToInventory(item);
-                    addMessage(`📦 ${item.name}을(를) 획득했습니다!`, "item");
-                    
+                    if (item.type === ITEM_TYPES.SKILLBOOK) {
+                        learnSkill(item.skill);
+                        addMessage(`📖 ${item.name}을 읽어 스킬을 배웠습니다!`, 'item');
+                    } else {
+                        addToInventory(item);
+                        addMessage(`📦 ${item.name}을(를) 획득했습니다!`, "item");
+                    }
+
                     const itemIndex = gameState.items.findIndex(i => i === item);
                     if (itemIndex !== -1) {
                         gameState.items.splice(itemIndex, 1);
@@ -2537,6 +2669,7 @@ function healTarget(healer, target) {
             updateStats();
             updateInventoryDisplay();
             updateMercenaryDisplay();
+            updateSkillsDisplay();
             renderDungeon();
             updateCamera();
             addMessage('📁 게임을 불러왔습니다.', 'info');
@@ -2561,14 +2694,51 @@ function healTarget(healer, target) {
 
             const dx = Math.sign(target.x - gameState.player.x);
             const dy = Math.sign(target.y - gameState.player.y);
-            gameState.projectiles.push({ x: gameState.player.x, y: gameState.player.y, dx, dy, rangeLeft: dist, icon: '➡️' });
+            let totalAttack = gameState.player.attack;
+            if (gameState.player.equipped.weapon) {
+                totalAttack += gameState.player.equipped.weapon.attack;
+            }
+            gameState.projectiles.push({ x: gameState.player.x, y: gameState.player.y, dx, dy, rangeLeft: dist, icon: '➡️', damage: totalAttack });
+            processTurn();
+        }
+
+        function useSkill(key) {
+            if (!key) {
+                addMessage('지정된 스킬이 없습니다.', 'info');
+                processTurn();
+                return;
+            }
+            const skill = SKILLS[key];
+            const range = 5;
+            let target = null;
+            let dist = Infinity;
+            for (const monster of gameState.monsters) {
+                const d = getDistance(gameState.player.x, gameState.player.y, monster.x, monster.y);
+                if (d <= range && d < dist && hasLineOfSight(gameState.player.x, gameState.player.y, monster.x, monster.y)) {
+                    target = monster;
+                    dist = d;
+                }
+            }
+
+            if (!target) {
+                addMessage('🎯 사거리 내에 몬스터가 없습니다.', 'info');
+                processTurn();
+                return;
+            }
+
+            const dx = Math.sign(target.x - gameState.player.x);
+            const dy = Math.sign(target.y - gameState.player.y);
+            const dmg = skill.damage + getStat(gameState.player, 'magicPower');
+            gameState.projectiles.push({ x: gameState.player.x, y: gameState.player.y, dx, dy, rangeLeft: dist, icon: skill.icon, element: skill.element, damage: dmg });
             processTurn();
         }
 
         function skill1Action() {
+            useSkill(gameState.player.skill1);
         }
 
         function skill2Action() {
+            useSkill(gameState.player.skill2);
         }
 
         function healAction() {
@@ -2619,6 +2789,7 @@ function healTarget(healer, target) {
         // 초기화 및 입력 처리
         generateDungeon();
         renderTraitInfo();
+        updateSkillsDisplay();
         document.getElementById('up').onclick = () => movePlayer(0, -1);
         document.getElementById('down').onclick = () => movePlayer(0, 1);
         document.getElementById('left').onclick = () => movePlayer(-1, 0);
