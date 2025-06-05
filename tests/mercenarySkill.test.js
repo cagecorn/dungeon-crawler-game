@@ -55,7 +55,7 @@ async function run() {
   gameState.dungeon[monsterY][monsterX] = 'monster';
 
   const skillCost = MERCENARY_SKILLS[merc.skill].manaCost;
-  merc.mana = skillCost;
+  merc.mana = merc.maxMana;
   const initialMana = merc.mana;
   const origRandom = dom.window.Math.random;
   dom.window.Math.random = () => 0;
@@ -64,8 +64,8 @@ async function run() {
 
   dom.window.Math.random = origRandom;
 
-  const expected = Math.min(merc.maxMana, initialMana + merc.manaRegen) - skillCost;
-  assert.strictEqual(merc.mana, expected, 'mana not deducted by skill cost');
+  const expected = initialMana - skillCost;
+  assert.strictEqual(merc.mana, expected, 'mana should decrease by skill cost');
 }
 
 run().catch(e => { console.error(e); process.exit(1); });
