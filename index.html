@@ -1547,21 +1547,21 @@ function healTarget(healer, target) {
                 return;
             }
 
-            const aliveMercs = gameState.mercenaries.filter(m => m.alive);
-            if (aliveMercs.length >= 3) {
-                const options = aliveMercs.map((m, i) => `${i + 1}: ${m.name}`).join('\n');
+            if (gameState.mercenaries.length >= 3) {
+                const allMercs = gameState.mercenaries;
+                const options = allMercs.map((m, i) => `${i + 1}: ${m.name}${m.alive ? '' : ' (dead)'}`).join('\n');
                 const choice = prompt(`👥 최대 3명의 용병을 보유 중입니다. 교체할 용병을 선택하세요:\n${options}`);
                 if (choice === null) {
                     addMessage('❌ 고용이 취소되었습니다.', 'info');
                     return;
                 }
                 const index = parseInt(choice, 10);
-                if (isNaN(index) || index < 1 || index > aliveMercs.length) {
+                if (isNaN(index) || index < 1 || index > allMercs.length) {
                     addMessage('❌ 고용이 취소되었습니다.', 'info');
                     return;
                 }
-                const toRemove = aliveMercs[index - 1];
-                const rmIndex = gameState.mercenaries.findIndex(m => m.id === toRemove.id);
+                const toRemove = allMercs[index - 1];
+                const rmIndex = gameState.mercenaries.indexOf(toRemove);
                 if (rmIndex !== -1) {
                     gameState.mercenaries.splice(rmIndex, 1);
                 }
