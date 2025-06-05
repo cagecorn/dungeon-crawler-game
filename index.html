@@ -1035,14 +1035,15 @@
             ChargeAttack: { name: 'Charge Attack', icon: '⚡', range: 2, manaCost: 2, multiplier: 1.5 },
             DoubleStrike: { name: 'Double Strike', icon: '🔪', range: 1, manaCost: 3 },
             Heal: { name: 'Heal', icon: '✨', range: 2, manaCost: 2 },
-            Fireball: { name: 'Fireball', icon: '🔥', range: 4, manaCost: 3, damage: 8, magic: true, element: 'fire' }
+            Fireball: { name: 'Fireball', icon: '🔥', range: 4, manaCost: 3, damage: 8, magic: true, element: 'fire' },
+            Iceball: { name: 'Iceball', icon: '❄️', range: 5, manaCost: 2, damage: 8, magic: true, element: 'ice' }
         };
 
         const MERCENARY_SKILL_SETS = {
             WARRIOR: ['ChargeAttack', 'DoubleStrike'],
             ARCHER: ['DoubleStrike'],
             HEALER: ['Heal'],
-            WIZARD: ['Fireball']
+            WIZARD: ['Fireball', 'Iceball']
         };
 
         const HEAL_MANA_COST = 2;
@@ -2908,7 +2909,7 @@ function healTarget(healer, target, skillInfo) {
                     }
                     if (skillKey === 'ChargeAttack') {
                         attackValue = Math.floor(attackValue * skillInfo.multiplier);
-                    } else if (skillKey === 'Fireball') {
+                    } else if (skillKey === 'Fireball' || skillKey === 'Iceball') {
                         attackValue = skillInfo.damage;
                     }
 
