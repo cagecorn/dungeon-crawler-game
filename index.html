@@ -1580,6 +1580,17 @@ function healTarget(healer, target) {
             };
         }
 
+        function setMercenaryLevel(mercenary, level) {
+            for (let i = 1; i < level; i++) {
+                mercenary.level += 1;
+                mercenary.maxHealth += 3;
+                mercenary.health = mercenary.maxHealth;
+                mercenary.attack += 1;
+                mercenary.defense += 1;
+                mercenary.expNeeded = Math.floor(mercenary.expNeeded * 1.5);
+            }
+        }
+
         function createTreasure(x, y, gold) {
             const floorBonus = Math.max(0, gameState.floor - 1) * 2;
             return { x, y, gold: gold + floorBonus };
@@ -1861,11 +1872,12 @@ function healTarget(healer, target) {
                     addMessage('❌ 용병을 배치할 공간이 없습니다.', 'info');
                     return;
                 }
+                setMercenaryLevel(mercenary, removed.level);
                 gameState.activeMercenaries[index] = mercenary;
                 removed.x = -1;
                 removed.y = -1;
                 gameState.player.gold -= mercType.cost;
-                addMessage(`🗑️ ${removed.name}을(를) 내보내고 ${mercType.name}을(를) 고용했습니다.`, 'mercenary');
+                addMessage(`🗑️ ${removed.name}을(를) 내보내고 ${mercType.name}을(를) 고용했습니다. 레벨 ${removed.level}을(를) 승계합니다.`, 'mercenary');
             }
 
             updateStats();
