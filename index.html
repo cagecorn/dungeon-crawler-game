@@ -2954,9 +2954,12 @@ function healTarget(healer, target, skillInfo) {
                             destX = step.x;
                             destY = step.y;
                         }
-                        mercenary.nextX = destX;
-                        mercenary.nextY = destY;
                     }
+                    // move first before attacking
+                    mercenary.x = destX;
+                    mercenary.y = destY;
+                    mercenary.nextX = destX;
+                    mercenary.nextY = destY;
 
                     const hits = 1;
                     const icon = skillInfo.icon;
