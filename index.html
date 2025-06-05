@@ -1948,7 +1948,9 @@ function healTarget(healer, target) {
                 const t = allTraits[Math.floor(Math.random() * allTraits.length)];
                 if (!traits.includes(t)) traits.push(t);
             }
-            const name = mercType.name + ' ' + MERCENARY_NAMES[Math.floor(Math.random() * MERCENARY_NAMES.length)];
+            const randomBaseName = MERCENARY_NAMES[Math.floor(Math.random() * MERCENARY_NAMES.length)];
+            const jobLabel = mercType.name.split(' ')[1] || mercType.name;
+            const name = `${randomBaseName} (${jobLabel})`;
             return {
                 id: Math.random().toString(36).substr(2, 9),
                 type: type,
