@@ -533,7 +533,7 @@
                 <h2>🛡️ 플레이어 정보</h2>
                 <div>📊 레벨: <span id="level">1</span></div>
                 <div>❤️ 체력: <span id="health">20</span>/<span id="maxHealth">20</span></div>
-                <div>⚔️ 공격력: <span id="attack">5</span> <span id="weaponBonus"></span></div>
+                <div>⚔️ 공격력: <span id="attackStat">5</span> <span id="weaponBonus"></span></div>
                 <div>🛡️ 방어력: <span id="defense">1</span> <span id="armorBonus"></span></div>
                 <div>🎯 명중률: <span id="accuracy">0.8</span></div>
                 <div>💨 회피율: <span id="evasion">0.1</span></div>
@@ -1321,7 +1321,7 @@ function healTarget(healer, target) {
             document.getElementById('level').textContent = gameState.player.level;
             document.getElementById('health').textContent = gameState.player.health;
             document.getElementById('maxHealth').textContent = gameState.player.maxHealth;
-            document.getElementById('attack').textContent = gameState.player.attack;
+            document.getElementById('attackStat').textContent = gameState.player.attack;
             document.getElementById('defense').textContent = gameState.player.defense;
             document.getElementById('accuracy').textContent = getStat(gameState.player, 'accuracy');
             document.getElementById('evasion').textContent = getStat(gameState.player, 'evasion');
