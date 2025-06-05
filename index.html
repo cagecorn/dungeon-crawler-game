@@ -1213,6 +1213,15 @@ function healTarget(healer, target) {
             return value;
         }
 
+        // 플레이어 체력 비율에 따른 표정 반환
+        function getPlayerEmoji() {
+            const ratio = gameState.player.health / gameState.player.maxHealth;
+            if (ratio >= 0.7) return '😀';
+            if (ratio >= 0.4) return '😐';
+            if (ratio >= 0.1) return '😟';
+            return '😢';
+        }
+
         function processProjectiles() {
             const remaining = [];
             for (const proj of gameState.projectiles) {
@@ -1587,7 +1596,7 @@ function healTarget(healer, target) {
 
                     if (x === gameState.player.x && y === gameState.player.y) {
                         cellType = 'player';
-                        div.textContent = '😀';
+                        div.textContent = getPlayerEmoji();
                     } else {
                         const proj = gameState.projectiles.find(p => p.x === x && p.y === y);
                         if (proj) {
