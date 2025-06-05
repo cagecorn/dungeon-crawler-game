@@ -1051,7 +1051,7 @@
                 statusResistances: {poison:0, bleed:0, burn:0, freeze:0},
                 exp: 0,
                 expNeeded: 20,
-                gold: 100,
+                gold: 1000,
                 inventory: [],
                 skills: [],
                 assignedSkills: {1: null, 2: null},
@@ -1743,6 +1743,24 @@ function healTarget(healer, target) {
             if (gameState.floor === 1 && gameState.player.inventory.length === 0) {
                 const starterPotion = createItem('healthPotion', 0, 0);
                 gameState.player.inventory.push(starterPotion);
+
+                const fireSword = createItem('shortSword', 0, 0);
+                const firePrefix = PREFIXES.find(p => p.name === 'Flaming');
+                if (firePrefix) {
+                    fireSword.prefix = firePrefix.name;
+                    fireSword.name = `${firePrefix.name} ${fireSword.name}`;
+                    for (const stat in firePrefix.modifiers) {
+                        fireSword[stat] = (fireSword[stat] || 0) + firePrefix.modifiers[stat];
+                    }
+                }
+                gameState.player.equipped.weapon = fireSword;
+
+                if (!gameState.player.skills.includes('Fireball')) {
+                    gameState.player.skills.push('Fireball');
+                }
+                if (!gameState.player.assignedSkills[1]) {
+                    gameState.player.assignedSkills[1] = 'Fireball';
+                }
             }
 
             let exitX, exitY;
