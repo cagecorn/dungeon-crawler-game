@@ -942,6 +942,7 @@
             camera: { x: 0, y: 0 },
             gameRunning: true
         };
+        window.gameState = gameState;
 
         // 거리 계산 (맨해튼 거리)
         function getDistance(x1, y1, x2, y2) {
@@ -2393,6 +2394,8 @@ function healTarget(healer, target) {
                             gameState.monsters.splice(monsterIndex, 1);
                         }
                     }
+                    mercenary.hasActed = true;
+                    return;
                 } else {
                     const path = findPath(mercenary.x, mercenary.y, nearestMonster.x, nearestMonster.y);
                     if (path && path.length > 1) {
@@ -2413,12 +2416,15 @@ function healTarget(healer, target) {
                                 mercenary.y = step.y;
                                 occupyingMerc.x = oldX;
                                 occupyingMerc.y = oldY;
+                                mercenary.hasActed = true;
                             } else if (mercenary.role === 'tank') {
                                 mercenary.x = step.x;
                                 mercenary.y = step.y;
+                                mercenary.hasActed = true;
                             } else if (newDistanceFromPlayer >= minDistanceFromPlayer && newDistanceFromPlayer <= maxDistanceFromPlayer) {
                                 mercenary.x = step.x;
                                 mercenary.y = step.y;
+                                mercenary.hasActed = true;
                             } else if (playerDistance > maxDistanceFromPlayer) {
                                 // too far from player, move toward player instead
                                 const backPath = findPath(mercenary.x, mercenary.y, gameState.player.x, gameState.player.y);
@@ -2444,7 +2450,35 @@ function healTarget(healer, target) {
                                             mercenary.x = backStep.x;
                                             mercenary.y = backStep.y;
                                         }
+                                        mercenary.hasActed = true;
                                     }
+                                }
+                            }
+                        } else if (playerDistance > maxDistanceFromPlayer) {
+                            const backPath = findPath(mercenary.x, mercenary.y, gameState.player.x, gameState.player.y);
+                            if (backPath && backPath.length > 1) {
+                                const backStep = backPath[1];
+                                const backDist = getDistance(backStep.x, backStep.y, gameState.player.x, gameState.player.y);
+                                const backOccupying = gameState.mercenaries.find(m => m !== mercenary && m.alive && m.x === backStep.x && m.y === backStep.y);
+                                const backValid = backStep.x >= 0 && backStep.x < gameState.dungeonSize &&
+                                    backStep.y >= 0 && backStep.y < gameState.dungeonSize &&
+                                    gameState.dungeon[backStep.y][backStep.x] !== 'wall' &&
+                                    gameState.dungeon[backStep.y][backStep.x] !== 'monster' &&
+                                    !(backStep.x === gameState.player.x && backStep.y === gameState.player.y) &&
+                                    backDist >= minDistanceFromPlayer && backDist <= maxDistanceFromPlayer;
+                                if (backValid) {
+                                    if (backOccupying) {
+                                        const bOldX = mercenary.x;
+                                        const bOldY = mercenary.y;
+                                        mercenary.x = backStep.x;
+                                        mercenary.y = backStep.y;
+                                        backOccupying.x = bOldX;
+                                        backOccupying.y = bOldY;
+                                    } else {
+                                        mercenary.x = backStep.x;
+                                        mercenary.y = backStep.y;
+                                    }
+                                    mercenary.hasActed = true;
                                 }
                             }
                         }
@@ -2472,9 +2506,11 @@ function healTarget(healer, target) {
                                 mercenary.y = step.y;
                                 occupyingMerc.x = oldX;
                                 occupyingMerc.y = oldY;
+                                mercenary.hasActed = true;
                             } else {
                                 mercenary.x = step.x;
                                 mercenary.y = step.y;
+                                mercenary.hasActed = true;
                             }
                         }
                     }
