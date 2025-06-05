@@ -1001,6 +1001,13 @@
             Iceball: { name: 'Iceball', icon: '❄️', damage: 8, range: 5, magic: true, element: 'ice', manaCost: 2 }
         };
 
+        const JOB_LEVEL_BONUS = {
+            Warrior: { maxHealth: 10, attack: 2, defense: 2 },
+            Archer:  { maxHealth: 5, attack: 2, accuracy: 0.05 },
+            Mage:    { maxMana: 5, magicPower: 2, attack: 1 },
+            Healer:  { maxHealth: 5, magicPower: 1, defense: 1 }
+        };
+
         const ELEMENT_EMOJI = { fire: '🔥', ice: '❄️', lightning: '⚡' };
 
         // 접두사/접미사 풀
@@ -1037,6 +1044,7 @@
                 magicResist: 0,
                 elementResistances: {fire:0, ice:0, lightning:0, earth:0, light:0, dark:0},
                 statusResistances: {poison:0, bleed:0, burn:0, freeze:0},
+                job: null,
                 exp: 0,
                 expNeeded: 20,
                 gold: 100,
@@ -1554,6 +1562,18 @@ function healTarget(healer, target) {
             document.getElementById('armorBonus').textContent = gameState.player.equipped.armor ? `(+${gameState.player.equipped.armor.defense})` : '';
         }
 
+        function updateActionButtons() {
+            const attackBtn = document.getElementById('attack');
+            const healBtn = document.getElementById('heal');
+            const skill1Btn = document.getElementById('skill1');
+            const skill2Btn = document.getElementById('skill2');
+            const job = gameState.player.job;
+            if (attackBtn) attackBtn.style.display = job === 'Healer' ? 'none' : '';
+            if (healBtn) healBtn.style.display = job === 'Healer' ? '' : 'none';
+            if (skill1Btn) skill1Btn.style.display = job === 'Mage' ? '' : 'none';
+            if (skill2Btn) skill2Btn.style.display = job === 'Mage' ? '' : 'none';
+        }
+
         // 안개 업데이트
         function updateFogOfWar() {
             for (let y = 0; y < gameState.dungeonSize; y++) {
@@ -1667,12 +1687,33 @@ function healTarget(healer, target) {
             while (gameState.player.exp >= gameState.player.expNeeded) {
                 gameState.player.exp -= gameState.player.expNeeded;
                 gameState.player.level += 1;
-                gameState.player.maxHealth += 5;
+
+                if (!gameState.player.job && gameState.player.level >= 5) {
+                    const choice = prompt('Choose your class: Warrior, Archer, Mage, Healer');
+                    if (['Warrior','Archer','Mage','Healer'].includes(choice)) {
+                        gameState.player.job = choice;
+                        addMessage(`🎉 직업으로 ${choice}을(를) 선택했습니다!`, 'level');
+                        updateActionButtons();
+                    }
+                }
+
+                const bonus = gameState.player.job ? JOB_LEVEL_BONUS[gameState.player.job] : null;
+                const gained = {};
+                if (bonus) {
+                    for (const [k,v] of Object.entries(bonus)) {
+                        gameState.player[k] = (gameState.player[k] || 0) + v;
+                        gained[k] = v;
+                    }
+                } else {
+                    gameState.player.maxHealth += 5; gained.maxHealth = 5;
+                    gameState.player.attack += 1; gained.attack = 1;
+                    gameState.player.defense += 1; gained.defense = 1;
+                }
                 gameState.player.health = gameState.player.maxHealth;
-                gameState.player.attack += 1;
-                gameState.player.defense += 1;
                 gameState.player.expNeeded = Math.floor(gameState.player.expNeeded * 1.5);
-                addMessage(`🎉 플레이어 레벨이 ${gameState.player.level}이(가) 되었습니다! (공격력 +1, 방어력 +1, 체력 +5)`, 'level');
+                const statNames = {maxHealth:'체력',maxMana:'마나',attack:'공격력',defense:'방어력',accuracy:'명중률',magicPower:'마법공격'};
+                const parts = Object.entries(gained).map(([k,v]) => `${statNames[k]||k} +${v}`);
+                addMessage(`🎉 플레이어 레벨이 ${gameState.player.level}이(가) 되었습니다! (${parts.join(', ')})`, 'level');
                 updateStats();
             }
         }
@@ -3055,6 +3096,7 @@ function healTarget(healer, target) {
         // 초기화 및 입력 처리
         generateDungeon();
         updateSkillDisplay();
+        updateActionButtons();
         renderTraitInfo();
         document.getElementById('up').onclick = () => movePlayer(0, -1);
         document.getElementById('down').onclick = () => movePlayer(0, 1);
