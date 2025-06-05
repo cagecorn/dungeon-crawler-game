@@ -1226,10 +1226,11 @@ function healTarget(healer, target, skillInfo) {
             if (healAmount > 0) {
                 target.health += healAmount;
                 const name = target === gameState.player ? '플레이어' : target.name;
+                const amountStr = formatNumber(healAmount);
                 if (skillInfo) {
-                    addMessage(`${skillInfo.icon} ${healer.name}의 ${skillInfo.name}이(가) ${name}을(를) ${healAmount} 회복했습니다.`, 'mercenary');
+                    addMessage(`${skillInfo.icon} ${healer.name}의 ${skillInfo.name}이(가) ${name}을(를) ${amountStr} 회복했습니다.`, 'mercenary');
                 } else {
-                    addMessage(`💚 ${healer.name}이(가) ${name}을(를) ${healAmount} 회복했습니다.`, 'mercenary');
+                    addMessage(`💚 ${healer.name}이(가) ${name}을(를) ${amountStr} 회복했습니다.`, 'mercenary');
                 }
                 return true;
             }
@@ -1306,22 +1307,29 @@ function healTarget(healer, target, skillInfo) {
             return { hit: true, crit, damage, baseDamage, elementDamage, element, statusApplied };
         }
 
+        function formatNumber(value) {
+            const num = Number(value);
+            if (Number.isNaN(num)) return value;
+            if (Number.isInteger(num)) return num.toString();
+            return parseFloat(num.toFixed(2)).toString();
+        }
+
         function formatItem(item) {
             const stats = [];
-            if (item.attack !== undefined) stats.push(`공격+${item.attack}`);
-            if (item.defense !== undefined) stats.push(`방어+${item.defense}`);
-            if (item.healing !== undefined) stats.push(`회복+${item.healing}`);
-            if (item.fireDamage !== undefined) stats.push(`🔥+${item.fireDamage}`);
-            if (item.iceDamage !== undefined) stats.push(`❄️+${item.iceDamage}`);
-            if (item.lightningDamage !== undefined) stats.push(`⚡+${item.lightningDamage}`);
-            if (item.maxHealth !== undefined && item.type !== ITEM_TYPES.POTION && item.type !== ITEM_TYPES.REVIVE) stats.push(`HP+${item.maxHealth}`);
-            if (item.healthRegen !== undefined) stats.push(`HP회복+${item.healthRegen}`);
-            if (item.accuracy !== undefined) stats.push(`명중+${item.accuracy}`);
-            if (item.evasion !== undefined) stats.push(`회피+${item.evasion}`);
-            if (item.critChance !== undefined) stats.push(`치명+${item.critChance}`);
-            if (item.magicPower !== undefined) stats.push(`마공+${item.magicPower}`);
-            if (item.magicResist !== undefined) stats.push(`마방+${item.magicResist}`);
-            if (item.manaRegen !== undefined) stats.push(`MP회복+${item.manaRegen}`);
+            if (item.attack !== undefined) stats.push(`공격+${formatNumber(item.attack)}`);
+            if (item.defense !== undefined) stats.push(`방어+${formatNumber(item.defense)}`);
+            if (item.healing !== undefined) stats.push(`회복+${formatNumber(item.healing)}`);
+            if (item.fireDamage !== undefined) stats.push(`🔥+${formatNumber(item.fireDamage)}`);
+            if (item.iceDamage !== undefined) stats.push(`❄️+${formatNumber(item.iceDamage)}`);
+            if (item.lightningDamage !== undefined) stats.push(`⚡+${formatNumber(item.lightningDamage)}`);
+            if (item.maxHealth !== undefined && item.type !== ITEM_TYPES.POTION && item.type !== ITEM_TYPES.REVIVE) stats.push(`HP+${formatNumber(item.maxHealth)}`);
+            if (item.healthRegen !== undefined) stats.push(`HP회복+${formatNumber(item.healthRegen)}`);
+            if (item.accuracy !== undefined) stats.push(`명중+${formatNumber(item.accuracy)}`);
+            if (item.evasion !== undefined) stats.push(`회피+${formatNumber(item.evasion)}`);
+            if (item.critChance !== undefined) stats.push(`치명+${formatNumber(item.critChance)}`);
+            if (item.magicPower !== undefined) stats.push(`마공+${formatNumber(item.magicPower)}`);
+            if (item.magicResist !== undefined) stats.push(`마방+${formatNumber(item.magicResist)}`);
+            if (item.manaRegen !== undefined) stats.push(`MP회복+${formatNumber(item.manaRegen)}`);
             return `${item.name}${stats.length ? ' (' + stats.join(', ') + ')' : ''}`;
         }
 
@@ -1391,10 +1399,10 @@ function healTarget(healer, target, skillInfo) {
                         addMessage(`❌ ${monster.name}에게 ${name}이 빗나갔습니다!`, 'combat');
                     } else {
                         const critMsg = result.crit ? ' (치명타!)' : '';
-                        let dmgStr = result.baseDamage;
+                        let dmgStr = formatNumber(result.baseDamage);
                         if (result.elementDamage) {
                             const emoji = ELEMENT_EMOJI[result.element] || '';
-                            dmgStr = `${result.baseDamage}+${emoji}${result.elementDamage}`;
+                            dmgStr = `${formatNumber(result.baseDamage)}+${emoji}${formatNumber(result.elementDamage)}`;
                         }
                         addMessage(`${icon} ${monster.name}에게 ${dmgStr}의 피해를 입혔습니다${critMsg}!`, 'combat');
                     }
@@ -1678,26 +1686,26 @@ function healTarget(healer, target, skillInfo) {
 
         // 플레이어 능력치 표시 업데이트
         function updateStats() {
-            document.getElementById('level').textContent = gameState.player.level;
-            document.getElementById('health').textContent = gameState.player.health;
-            document.getElementById('maxHealth').textContent = gameState.player.maxHealth;
-            document.getElementById('mana').textContent = gameState.player.mana;
-            document.getElementById('maxMana').textContent = gameState.player.maxMana;
-            document.getElementById('healthRegen').textContent = getStat(gameState.player, 'healthRegen');
-            document.getElementById('manaRegen').textContent = getStat(gameState.player, 'manaRegen');
-            document.getElementById('attackStat').textContent = gameState.player.attack;
-            document.getElementById('defense').textContent = gameState.player.defense;
-            document.getElementById('accuracy').textContent = getStat(gameState.player, 'accuracy');
-            document.getElementById('evasion').textContent = getStat(gameState.player, 'evasion');
-            document.getElementById('critChance').textContent = getStat(gameState.player, 'critChance');
-            document.getElementById('magicPower').textContent = getStat(gameState.player, 'magicPower');
-            document.getElementById('magicResist').textContent = getStat(gameState.player, 'magicResist');
-            document.getElementById('exp').textContent = gameState.player.exp;
-            document.getElementById('expNeeded').textContent = gameState.player.expNeeded;
-            document.getElementById('gold').textContent = gameState.player.gold;
-            document.getElementById('floor').textContent = gameState.floor;
-            document.getElementById('weaponBonus').textContent = gameState.player.equipped.weapon ? `(+${gameState.player.equipped.weapon.attack})` : '';
-            document.getElementById('armorBonus').textContent = gameState.player.equipped.armor ? `(+${gameState.player.equipped.armor.defense})` : '';
+            document.getElementById('level').textContent = formatNumber(gameState.player.level);
+            document.getElementById('health').textContent = formatNumber(gameState.player.health);
+            document.getElementById('maxHealth').textContent = formatNumber(gameState.player.maxHealth);
+            document.getElementById('mana').textContent = formatNumber(gameState.player.mana);
+            document.getElementById('maxMana').textContent = formatNumber(gameState.player.maxMana);
+            document.getElementById('healthRegen').textContent = formatNumber(getStat(gameState.player, 'healthRegen'));
+            document.getElementById('manaRegen').textContent = formatNumber(getStat(gameState.player, 'manaRegen'));
+            document.getElementById('attackStat').textContent = formatNumber(gameState.player.attack);
+            document.getElementById('defense').textContent = formatNumber(gameState.player.defense);
+            document.getElementById('accuracy').textContent = formatNumber(getStat(gameState.player, 'accuracy'));
+            document.getElementById('evasion').textContent = formatNumber(getStat(gameState.player, 'evasion'));
+            document.getElementById('critChance').textContent = formatNumber(getStat(gameState.player, 'critChance'));
+            document.getElementById('magicPower').textContent = formatNumber(getStat(gameState.player, 'magicPower'));
+            document.getElementById('magicResist').textContent = formatNumber(getStat(gameState.player, 'magicResist'));
+            document.getElementById('exp').textContent = formatNumber(gameState.player.exp);
+            document.getElementById('expNeeded').textContent = formatNumber(gameState.player.expNeeded);
+            document.getElementById('gold').textContent = formatNumber(gameState.player.gold);
+            document.getElementById('floor').textContent = formatNumber(gameState.floor);
+            document.getElementById('weaponBonus').textContent = gameState.player.equipped.weapon ? `(+${formatNumber(gameState.player.equipped.weapon.attack)})` : '';
+            document.getElementById('armorBonus').textContent = gameState.player.equipped.armor ? `(+${formatNumber(gameState.player.equipped.armor.defense)})` : '';
         }
 
         // 안개 업데이트
@@ -2067,7 +2075,7 @@ function healTarget(healer, target, skillInfo) {
             const mercType = MERCENARY_TYPES[type];
 
             if (gameState.player.gold < mercType.cost) {
-                addMessage(`💸 골드가 부족합니다. ${mercType.name} 고용에는 ${mercType.cost} 골드가 필요합니다.`, 'info');
+                addMessage(`💸 골드가 부족합니다. ${mercType.name} 고용에는 ${formatNumber(mercType.cost)} 골드가 필요합니다.`, 'info');
                 return;
             }
 
@@ -2254,7 +2262,7 @@ function healTarget(healer, target, skillInfo) {
             if (idx !== -1) {
                 gameState.player.inventory.splice(idx, 1);
                 gameState.player.gold += value;
-                addMessage(`💰 ${item.name}을(를) ${value}골드에 판매했습니다.`, 'item');
+                addMessage(`💰 ${item.name}을(를) ${formatNumber(value)}골드에 판매했습니다.`, 'item');
                 updateInventoryDisplay();
                 updateStats();
             }
@@ -2416,7 +2424,7 @@ function healTarget(healer, target, skillInfo) {
                     const healAmount = Math.min(item.healing, target.maxHealth - target.health);
                     target.health += healAmount;
                     const name = target === gameState.player ? '플레이어' : target.name;
-                    addMessage(`🩹 ${item.name}을(를) 사용하여 ${name}의 체력을 ${healAmount} 회복했습니다.`, 'item');
+                    addMessage(`🩹 ${item.name}을(를) 사용하여 ${name}의 체력을 ${formatNumber(healAmount)} 회복했습니다.`, 'item');
 
                     const index = gameState.player.inventory.findIndex(i => i.id === item.id);
                     if (index !== -1) {
@@ -2450,13 +2458,13 @@ function healTarget(healer, target, skillInfo) {
             } else {
                 const cost = 100;
                 if (gameState.player.gold < cost) {
-                    addMessage(`💸 골드가 부족합니다. 부활에는 ${cost} 골드가 필요합니다.`, 'info');
+                    addMessage(`💸 골드가 부족합니다. 부활에는 ${formatNumber(cost)} 골드가 필요합니다.`, 'info');
                     return;
                 }
                 gameState.player.gold -= cost;
                 mercenary.alive = true;
                 mercenary.health = mercenary.maxHealth;
-                addMessage(`💰 ${cost}골드를 사용해 ${mercenary.name}을(를) 부활시켰습니다.`, 'mercenary');
+                addMessage(`💰 ${formatNumber(cost)}골드를 사용해 ${mercenary.name}을(를) 부활시켰습니다.`, 'mercenary');
             }
 
             updateStats();
@@ -2559,9 +2567,9 @@ function healTarget(healer, target, skillInfo) {
             gameOverDiv.className = 'game-over';
             gameOverDiv.innerHTML = `
                 <h2 style="color: #f44336;">⚰️ 게임 오버</h2>
-                <p>🏰 던전 ${gameState.floor}층에서 전사했습니다.</p>
-                <p>👹 처치한 몬스터: ${gameState.floor * 3}마리</p>
-                <p>💰 획득한 골드: ${gameState.player.gold}</p>
+                <p>🏰 던전 ${formatNumber(gameState.floor)}층에서 전사했습니다.</p>
+                <p>👹 처치한 몬스터: ${formatNumber(gameState.floor * 3)}마리</p>
+                <p>💰 획득한 골드: ${formatNumber(gameState.player.gold)}</p>
                 <button onclick="location.reload()">🔄 다시 시작</button>
             `;
             document.body.appendChild(gameOverDiv);
@@ -2610,10 +2618,10 @@ function healTarget(healer, target, skillInfo) {
                         addMessage(`❌ ${monster.name}에게 공격이 빗나갔습니다!`, "combat");
                     } else {
                         const critMsg = result.crit ? ' (치명타!)' : '';
-                        let dmgStr = result.baseDamage;
+                        let dmgStr = formatNumber(result.baseDamage);
                         if (result.elementDamage) {
                             const emoji = ELEMENT_EMOJI[result.element] || '';
-                            dmgStr = `${result.baseDamage}+${emoji}${result.elementDamage}`;
+                            dmgStr = `${formatNumber(result.baseDamage)}+${emoji}${formatNumber(result.elementDamage)}`;
                         }
                         addMessage(`⚔️ ${monster.name}에게 ${dmgStr}의 피해를 입혔습니다${critMsg}!`, "combat");
                     }
@@ -2675,7 +2683,7 @@ function healTarget(healer, target, skillInfo) {
                         gold = Math.floor(gold * 1.5);
                     }
                     gameState.player.gold += gold;
-                    addMessage(`💎 보물을 발견했습니다! ${gold} 골드를 획득했습니다!`, "treasure");
+                    addMessage(`💎 보물을 발견했습니다! ${formatNumber(gold)} 골드를 획득했습니다!`, "treasure");
                     
                     const treasureIndex = gameState.treasures.findIndex(t => t === treasure);
                     if (treasureIndex !== -1) {
@@ -3462,7 +3470,7 @@ function healTarget(healer, target, skillInfo) {
                 }
                 gameState.player.mana -= skill.manaCost;
                 gameState.player.health += healAmount;
-                addMessage(`💚 ${skill.name}으로 ${healAmount} 체력을 회복했습니다.`, 'info');
+                addMessage(`💚 ${skill.name}으로 ${formatNumber(healAmount)} 체력을 회복했습니다.`, 'info');
                 updateStats();
                 processTurn();
                 return;
@@ -3492,7 +3500,7 @@ function healTarget(healer, target, skillInfo) {
             const healAmount = Math.min(Math.floor(gameState.player.maxHealth * 0.3), gameState.player.maxHealth - gameState.player.health);
             if (healAmount > 0) {
                 gameState.player.health += healAmount;
-                addMessage(`💚 플레이어가 휴식을 취해 ${healAmount} 체력을 회복했습니다.`, 'info');
+                addMessage(`💚 플레이어가 휴식을 취해 ${formatNumber(healAmount)} 체력을 회복했습니다.`, 'info');
                 updateStats();
             } else {
                 addMessage('❤️ 체력이 이미 가득 찼습니다.', 'info');
@@ -3539,7 +3547,7 @@ function healTarget(healer, target, skillInfo) {
             gameState.shopItems.forEach((item, i) => {
                 const div = document.createElement('div');
                 div.className = 'shop-item';
-                div.innerHTML = `<span>${item.icon} ${item.baseName}</span><span>${item.price}💰</span>`;
+                div.innerHTML = `<span>${item.icon} ${item.baseName}</span><span>${formatNumber(item.price)}💰</span>`;
                 div.onclick = () => buyShopItem(i);
                 list.appendChild(div);
             });
