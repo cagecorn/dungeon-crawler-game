@@ -1003,6 +1003,7 @@
         ];
 
         // 게임 상태
+        const MONSTER_VISION = 6;
         const gameState = {
             dungeon: [],
             fogOfWar: [],
@@ -1210,7 +1211,6 @@ function healTarget(healer, target) {
                     let magic = false;
                     if (proj.damage !== undefined) {
                         attackValue = proj.damage;
-                        magic = proj.magic;
                     } else {
                         attackValue = gameState.player.attack;
                         if (gameState.player.equipped.weapon) {
@@ -2446,7 +2446,7 @@ function healTarget(healer, target) {
                 
                 // 가장 가까운 대상 찾기
                 const playerDistance = getDistance(monster.x, monster.y, gameState.player.x, gameState.player.y);
-                if (playerDistance <= monster.range + 2) { // 이동 + 공격 범위
+                if (playerDistance <= MONSTER_VISION) { // 이동 + 공격 범위
                     nearestTarget = gameState.player;
                     nearestDistance = playerDistance;
                 }
@@ -2454,7 +2454,7 @@ function healTarget(healer, target) {
                 gameState.activeMercenaries.forEach(mercenary => {
                     if (mercenary.alive) {
                         const distance = getDistance(monster.x, monster.y, mercenary.x, mercenary.y);
-                        if (distance <= monster.range + 2 && distance < nearestDistance) {
+                        if (distance <= MONSTER_VISION && distance < nearestDistance) {
                             nearestTarget = mercenary;
                             nearestDistance = distance;
                         }
@@ -2486,25 +2486,50 @@ function healTarget(healer, target) {
                         }
                         
                         // 이동 가능한지 체크
-                        if (newX >= 0 && newX < gameState.dungeonSize && 
+                        if (newX >= 0 && newX < gameState.dungeonSize &&
                             newY >= 0 && newY < gameState.dungeonSize &&
                             gameState.dungeon[newY][newX] === 'empty' &&
                             !(newX === gameState.player.x && newY === gameState.player.y) &&
                             !gameState.monsters.some(m => m.x === newX && m.y === newY && m !== monster) &&
                             !gameState.activeMercenaries.some(m => m.x === newX && m.y === newY && m.alive)) {
-                            
+
                             // 몬스터 이동
                             gameState.dungeon[monster.y][monster.x] = 'empty';
                             monster.x = newX;
                             monster.y = newY;
                             gameState.dungeon[newY][newX] = 'monster';
-                            
+
                             // 이동 후 공격 가능한지 체크
                             const newDistance = getDistance(monster.x, monster.y, nearestTarget.x, nearestTarget.y);
-                            if (newDistance <= monster.range && 
+                            if (newDistance <= monster.range &&
                                 hasLineOfSight(monster.x, monster.y, nearestTarget.x, nearestTarget.y)) {
                                 if (monsterAttack(monster)) {
                                     return;
+                                }
+                            }
+                        } else {
+                            const path = findPath(monster.x, monster.y, nearestTarget.x, nearestTarget.y);
+                            if (path && path.length > 1) {
+                                const step = path[1];
+                                const valid = step.x >= 0 && step.x < gameState.dungeonSize &&
+                                    step.y >= 0 && step.y < gameState.dungeonSize &&
+                                    gameState.dungeon[step.y][step.x] === 'empty' &&
+                                    !(step.x === gameState.player.x && step.y === gameState.player.y) &&
+                                    !gameState.monsters.some(m => m.x === step.x && m.y === step.y && m !== monster) &&
+                                    !gameState.activeMercenaries.some(m => m.x === step.x && m.y === step.y && m.alive);
+                                if (valid) {
+                                    gameState.dungeon[monster.y][monster.x] = 'empty';
+                                    monster.x = step.x;
+                                    monster.y = step.y;
+                                    gameState.dungeon[step.y][step.x] = 'monster';
+
+                                    const newDistance = getDistance(monster.x, monster.y, nearestTarget.x, nearestTarget.y);
+                                    if (newDistance <= monster.range &&
+                                        hasLineOfSight(monster.x, monster.y, nearestTarget.x, nearestTarget.y)) {
+                                        if (monsterAttack(monster)) {
+                                            return;
+                                        }
+                                    }
                                 }
                             }
                         }
