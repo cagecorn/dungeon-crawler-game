@@ -997,9 +997,11 @@
         };
 
         const SKILL_DEFS = {
-            Fireball: { name: 'Fireball', icon: '🔥', damage: 10, range: 5, magic: true },
-            Iceball: { name: 'Iceball', icon: '❄️', damage: 8, range: 5, magic: true }
+            Fireball: { name: 'Fireball', icon: '🔥', damage: 10, range: 5, magic: true, element: 'fire' },
+            Iceball: { name: 'Iceball', icon: '❄️', damage: 8, range: 5, magic: true, element: 'ice' }
         };
+
+        const ELEMENT_EMOJI = { fire: '🔥', ice: '❄️', lightning: '⚡' };
 
         // 접두사/접미사 풀
         const PREFIXES = [
@@ -1150,19 +1152,24 @@ function healTarget(healer, target) {
                 return { hit: false };
             }
 
-            let damage = Math.max(1, attackStat - defenseStat);
+            let baseDamage = Math.max(1, attackStat - defenseStat);
             let crit = false;
             const critChance = getStat(attacker, 'critChance');
             if (Math.random() < critChance) {
-                damage = Math.floor(damage * 1.5);
+                baseDamage = Math.floor(baseDamage * 1.5);
                 crit = true;
             }
 
-            if (element && defender.elementResistances && defender.elementResistances[element] !== undefined) {
-                const resist = defender.elementResistances[element];
-                damage = Math.max(1, Math.floor(damage * (1 - resist)));
+            let elementDamage = 0;
+            if (element) {
+                elementDamage = getStat(attacker, `${element}Damage`);
+                if (defender.elementResistances && defender.elementResistances[element] !== undefined) {
+                    const resist = defender.elementResistances[element];
+                    elementDamage = Math.floor(elementDamage * (1 - resist));
+                }
             }
 
+            const damage = baseDamage + elementDamage;
             defender.health -= damage;
 
             let statusApplied = false;
@@ -1173,7 +1180,7 @@ function healTarget(healer, target) {
                 }
             }
 
-            return { hit: true, crit, damage, statusApplied };
+            return { hit: true, crit, damage, baseDamage, elementDamage, element, statusApplied };
         }
 
         function formatItem(item) {
@@ -1228,14 +1235,19 @@ function healTarget(healer, target) {
                             attackValue += gameState.player.equipped.weapon.attack;
                         }
                     }
-                    const result = performAttack(gameState.player, monster, { attackValue, magic });
+                    const result = performAttack(gameState.player, monster, { attackValue, magic, element: proj.element });
                     const icon = proj.icon || '➡️';
                     const name = proj.skill ? SKILL_DEFS[proj.skill].name : '원거리 공격';
                     if (!result.hit) {
                         addMessage(`❌ ${monster.name}에게 ${name}이 빗나갔습니다!`, 'combat');
                     } else {
                         const critMsg = result.crit ? ' (치명타!)' : '';
-                        addMessage(`${icon} ${monster.name}에게 ${result.damage}의 피해를 입혔습니다${critMsg}!`, 'combat');
+                        let dmgStr = result.baseDamage;
+                        if (result.elementDamage) {
+                            const emoji = ELEMENT_EMOJI[result.element] || '';
+                            dmgStr = `${result.baseDamage}+${emoji}${result.elementDamage}`;
+                        }
+                        addMessage(`${icon} ${monster.name}에게 ${dmgStr}의 피해를 입혔습니다${critMsg}!`, 'combat');
                     }
                     if (monster.health <= 0) {
                         addMessage(`💀 ${monster.name}을(를) 처치했습니다!`, 'combat');
@@ -2213,7 +2225,12 @@ function healTarget(healer, target) {
                     addMessage(`${monster.name}의 공격이 빗나갔습니다!`, "combat");
                 } else {
                     const critMsg = result.crit ? ' (치명타!)' : '';
-                    addMessage(`${monster.name}이(가) ${targetName}에게 ${attackType}으로 ${result.damage}의 피해를 입혔습니다${critMsg}!`, "combat");
+                    let dmgStr = result.baseDamage;
+                    if (result.elementDamage) {
+                        const emoji = ELEMENT_EMOJI[result.element] || '';
+                        dmgStr = `${result.baseDamage}+${emoji}${result.elementDamage}`;
+                    }
+                    addMessage(`${monster.name}이(가) ${targetName}에게 ${attackType}으로 ${dmgStr}의 피해를 입혔습니다${critMsg}!`, "combat");
                 }
                 
                 if (nearestTarget.health <= 0) {
@@ -2291,7 +2308,12 @@ function healTarget(healer, target) {
                         addMessage(`❌ ${monster.name}에게 공격이 빗나갔습니다!`, "combat");
                     } else {
                         const critMsg = result.crit ? ' (치명타!)' : '';
-                        addMessage(`⚔️ ${monster.name}에게 ${result.damage}의 피해를 입혔습니다${critMsg}!`, "combat");
+                        let dmgStr = result.baseDamage;
+                        if (result.elementDamage) {
+                            const emoji = ELEMENT_EMOJI[result.element] || '';
+                            dmgStr = `${result.baseDamage}+${emoji}${result.elementDamage}`;
+                        }
+                        addMessage(`⚔️ ${monster.name}에게 ${dmgStr}의 피해를 입혔습니다${critMsg}!`, "combat");
                     }
                     
                     if (monster.health <= 0) {
@@ -2648,7 +2670,12 @@ function healTarget(healer, target) {
                         addMessage(`❌ ${mercenary.name}의 공격이 빗나갔습니다!`, "mercenary");
                     } else {
                         const critMsg = result.crit ? ' (치명타!)' : '';
-                        addMessage(`⚔️ ${mercenary.name}이(가) ${nearestMonster.name}에게 ${result.damage}의 피해를 입혔습니다${critMsg}!`, "mercenary");
+                        let dmgStr = result.baseDamage;
+                        if (result.elementDamage) {
+                            const emoji = ELEMENT_EMOJI[result.element] || '';
+                            dmgStr = `${result.baseDamage}+${emoji}${result.elementDamage}`;
+                        }
+                        addMessage(`⚔️ ${mercenary.name}이(가) ${nearestMonster.name}에게 ${dmgStr}의 피해를 입혔습니다${critMsg}!`, "mercenary");
                     }
                     
                     if (nearestMonster.health <= 0) {
@@ -2823,7 +2850,7 @@ function healTarget(healer, target) {
 
             const dx = Math.sign(target.x - gameState.player.x);
             const dy = Math.sign(target.y - gameState.player.y);
-            gameState.projectiles.push({ x: gameState.player.x, y: gameState.player.y, dx, dy, rangeLeft: dist, icon: '➡️' });
+            gameState.projectiles.push({ x: gameState.player.x, y: gameState.player.y, dx, dy, rangeLeft: dist, icon: '➡️', element: null });
             processTurn();
         }
 
@@ -2860,7 +2887,7 @@ function healTarget(healer, target) {
             }
             const dx = Math.sign(target.x - gameState.player.x);
             const dy = Math.sign(target.y - gameState.player.y);
-            gameState.projectiles.push({ x: gameState.player.x, y: gameState.player.y, dx, dy, rangeLeft: dist, icon: skill.icon, damage: skill.damage, magic: skill.magic, skill: skillKey });
+            gameState.projectiles.push({ x: gameState.player.x, y: gameState.player.y, dx, dy, rangeLeft: dist, icon: skill.icon, damage: skill.damage, magic: skill.magic, skill: skillKey, element: skill.element });
             processTurn();
         }
 
