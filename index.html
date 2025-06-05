@@ -1053,7 +1053,7 @@
                 expNeeded: 20,
                 gold: 1000,
                 inventory: [],
-                skills: [],
+                skills: ['Fireball'],
                 assignedSkills: {1: null, 2: null},
                 equipped: {
                     weapon: null,
@@ -1744,15 +1744,7 @@ function healTarget(healer, target) {
                 const starterPotion = createItem('healthPotion', 0, 0);
                 gameState.player.inventory.push(starterPotion);
 
-                const fireSword = createItem('shortSword', 0, 0);
-                const firePrefix = PREFIXES.find(p => p.name === 'Flaming');
-                if (firePrefix) {
-                    fireSword.prefix = firePrefix.name;
-                    fireSword.name = `${firePrefix.name} ${fireSword.name}`;
-                    for (const stat in firePrefix.modifiers) {
-                        fireSword[stat] = (fireSword[stat] || 0) + firePrefix.modifiers[stat];
-                    }
-                }
+                const fireSword = createItem('shortSword', 0, 0, 'Flaming');
                 gameState.player.equipped.weapon = fireSword;
 
                 if (!gameState.player.skills.includes('Fireball')) {
@@ -1987,7 +1979,7 @@ function healTarget(healer, target) {
         }
 
         // 아이템 생성 함수
-        function createItem(itemKey, x, y) {
+        function createItem(itemKey, x, y, prefixName) {
             const itemData = ITEMS[itemKey];
             const item = {
                 id: Math.random().toString(36).substr(2, 9),
@@ -2001,7 +1993,16 @@ function healTarget(healer, target) {
             };
 
             if (item.type === ITEM_TYPES.WEAPON || item.type === ITEM_TYPES.ARMOR || item.type === ITEM_TYPES.ACCESSORY) {
-                if (Math.random() < 0.5) {
+                if (prefixName) {
+                    const prefix = PREFIXES.find(p => p.name === prefixName);
+                    if (prefix) {
+                        item.prefix = prefix.name;
+                        item.name = `${prefix.name} ${item.name}`;
+                        for (const stat in prefix.modifiers) {
+                            item[stat] = (item[stat] || 0) + prefix.modifiers[stat];
+                        }
+                    }
+                } else if (Math.random() < 0.5) {
                     const prefix = PREFIXES[Math.floor(Math.random() * PREFIXES.length)];
                     item.prefix = prefix.name;
                     item.name = `${prefix.name} ${item.name}`;
