@@ -2070,10 +2070,6 @@ function healTarget(healer, target) {
                 const idx = parseInt(choice, 10);
                 if (!isNaN(idx) && dead[idx]) {
                     const merc = dead[idx];
-                    const invIndex = gameState.player.inventory.findIndex(i => i.id === item.id);
-                    if (invIndex !== -1) {
-                        gameState.player.inventory.splice(invIndex, 1);
-                    }
                     reviveMercenary(merc);
                 }
                 return;
