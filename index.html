@@ -737,12 +737,21 @@
         const ABILITY_TRAITS = [ // 능력 강화형
             '철벽',
             '의지의 불꽃',
-            '마력 조율자'
+            '마력 조율자',
+            '오크의 피',
+            '돌주먹',
+            '책벌레',
+            '거산',
+            '장신',
+            '재빠름',
+            '불꽃의 혼',
+            '빙결의 혼'
         ];
 
         const REACTIVE_TRAITS = [ // 상태 반응형
             '복수의 피',
-            '도망자 감각'
+            '도망자 감각',
+            '조용함'
         ];
 
         const STATUS_TRAITS = [ // 상태 부여형
@@ -753,7 +762,8 @@
 
         const FIELD_TRAITS = [ // 필드 기반형
             '보물 감별사',
-            '공허 지식자'
+            '공허 지식자',
+            '재산 관리인'
         ];
 
         const SPECIAL_ACTION_TRAITS = [ // 특수 행동형
@@ -780,11 +790,21 @@
             '은밀한 칼날': '공격 시 일정 확률로 출혈 효과를 부여합니다.',
             '집요한 사냥꾼': '추적 중인 적에게 추가 피해를 입힙니다.',
             '공허 지식자': '어둠 속성 마법 피해가 증가합니다.',
-            '의지의 불꽃': '상태 이상에 걸렸을 때 저항력이 상승합니다.',
+            '의지의 불꽃': '상태 이상 시 공격력이 증가합니다.',
             '구호의 손길': '아군 치유 효과가 강화됩니다.',
             '보물 감별사': '상자에서 희귀 아이템을 발견할 확률이 높아집니다.',
             '마력 조율자': '마나 회복 속도가 증가합니다.',
-            '도발의 혼': '적을 도발하여 자신의 방향으로 끌어들입니다.'
+            '도발의 혼': '적을 도발하여 자신의 방향으로 끌어들입니다.',
+            '오크의 피': '체력 회복 속도가 증가합니다.',
+            '돌주먹': '공격력이 10% 증가합니다.',
+            '책벌레': '마법 공격력이 10% 증가합니다.',
+            '거산': '최대 체력이 15% 증가합니다.',
+            '조용함': '몬스터의 표적이 될 확률이 감소합니다.',
+            '재산 관리인': '획득 골드가 증가합니다.',
+            '장신': '기본 공격 사거리가 1칸 증가합니다.',
+            '재빠름': '한 턴에 두 칸 이동할 수 있습니다.',
+            '불꽃의 혼': '화염 피해가 15% 증가합니다.',
+            '빙결의 혼': '냉기 피해가 15% 증가합니다.'
         };
 
         // 특성 정보 영역 렌더링
@@ -1247,6 +1267,9 @@ function healTarget(healer, target, skillInfo) {
             if (attacker.vengeanceTurns && attacker.vengeanceTurns > 0) {
                 attackStat += 2;
             }
+            if (hasTrait(attacker, '의지의 불꽃') && (attacker.bleedTurns > 0 || attacker.poison || attacker.burn || attacker.freeze)) {
+                attackStat = Math.floor(attackStat * 1.2);
+            }
 
             const attackerAcc = getStat(attacker, 'accuracy');
             const defenderEva = getStat(defender, 'evasion');
@@ -1283,7 +1306,7 @@ function healTarget(healer, target, skillInfo) {
 
             let damage = baseDamage + elementDamage;
             if (hasTrait(defender, '철벽')) {
-                damage = Math.floor(damage * 0.8);
+                damage = Math.floor(damage * 0.9);
             }
             defender.health -= damage;
 
@@ -1338,15 +1361,43 @@ function healTarget(healer, target, skillInfo) {
             if (stat === 'manaRegen' && hasTrait(character, '마력 조율자')) {
                 value += 0.5;
             }
+            if (stat === 'healthRegen' && hasTrait(character, '오크의 피')) {
+                value += 0.3;
+            }
+            if (stat === 'attack' && hasTrait(character, '돌주먹')) {
+                value = Math.floor(value * 1.1);
+            }
+            if (stat === 'magicPower' && hasTrait(character, '책벌레')) {
+                value = Math.floor(value * 1.1);
+            }
+            if (stat === 'maxHealth' && hasTrait(character, '거산')) {
+                value = Math.floor(value * 1.15);
+            }
+            if (stat === 'fireDamage' && hasTrait(character, '불꽃의 혼')) {
+                value = Math.floor(value * 1.15);
+            }
+            if (stat === 'iceDamage' && hasTrait(character, '빙결의 혼')) {
+                value = Math.floor(value * 1.15);
+            }
             if (stat === 'evasion' && hasTrait(character, '도망자 감각')) {
                 const ratio = character.health / character.maxHealth;
                 if (ratio < 0.3) value += 0.2;
+            }
+            if ((stat === 'attack' || stat === 'magicPower') && hasTrait(character, '의지의 불꽃')) {
+                if (character.bleedTurns > 0 || character.poison || character.burn || character.freeze) {
+                    value = Math.floor(value * 1.2);
+                }
             }
             return value;
         }
 
         function hasTrait(entity, name) {
             return entity && Array.isArray(entity.traits) && entity.traits.includes(name);
+        }
+
+        function getGoldMultiplier() {
+            const count = gameState.activeMercenaries.filter(m => m.alive && hasTrait(m, '재산 관리인')).length;
+            return 1 + count * 0.05;
         }
 
         // 플레이어 체력 비율에 따른 표정 반환
@@ -1401,7 +1452,8 @@ function healTarget(healer, target, skillInfo) {
                     if (monster.health <= 0) {
                         addMessage(`💀 ${monster.name}을(를) 처치했습니다!`, 'combat');
                         gameState.player.exp += monster.exp;
-                        gameState.player.gold += monster.gold;
+                        const goldBonus = getGoldMultiplier();
+                        gameState.player.gold += Math.floor(monster.gold * goldBonus);
                         checkLevelUp();
                         updateStats();
                         gameState.dungeon[monster.y][monster.x] = 'empty';
@@ -2136,6 +2188,10 @@ function healTarget(healer, target, skillInfo) {
             const randomBaseName = MERCENARY_NAMES[Math.floor(Math.random() * MERCENARY_NAMES.length)];
             const jobLabel = mercType.name.split(' ')[1] || mercType.name;
             const name = `${randomBaseName} (${jobLabel})`;
+            let maxHealth = mercType.baseHealth;
+            if (traits.includes('거산')) {
+                maxHealth = Math.floor(maxHealth * 1.15);
+            }
             return {
                 id: Math.random().toString(36).substr(2, 9),
                 type: type,
@@ -2145,8 +2201,8 @@ function healTarget(healer, target, skillInfo) {
                 x: x,
                 y: y,
                 level: 1,
-                maxHealth: mercType.baseHealth,
-                health: mercType.baseHealth,
+                maxHealth: maxHealth,
+                health: maxHealth,
                 maxMana: mercType.baseMaxMana || 0,
                 mana: mercType.baseMaxMana || 0,
                 healthRegen: mercType.baseHealthRegen || 0,
@@ -2169,6 +2225,8 @@ function healTarget(healer, target, skillInfo) {
                 bleedTurns: 0,
                 vengeanceTurns: 0,
                 rushReady: traits.includes('맹공 돌진'),
+                moveDistance: traits.includes('재빠름') ? 2 : 1,
+                rangeBonus: traits.includes('장신') ? 1 : 0,
                 equipped: {
                     weapon: null,
                     armor: null,
@@ -2622,7 +2680,8 @@ function healTarget(healer, target, skillInfo) {
                         addMessage(`💀 ${monster.name}을(를) 처치했습니다!`, "combat");
                         
                         gameState.player.exp += monster.exp;
-                        gameState.player.gold += monster.gold;
+                        const goldBonus = getGoldMultiplier();
+                        gameState.player.gold += Math.floor(monster.gold * goldBonus);
                         
                         checkLevelUp();
                         updateStats();
@@ -2674,6 +2733,7 @@ function healTarget(healer, target, skillInfo) {
                     if (gameState.activeMercenaries.some(m => m.alive && hasTrait(m, '보물 감별사'))) {
                         gold = Math.floor(gold * 1.5);
                     }
+                    gold = Math.floor(gold * getGoldMultiplier());
                     gameState.player.gold += gold;
                     addMessage(`💎 보물을 발견했습니다! ${gold} 골드를 획득했습니다!`, "treasure");
                     
@@ -2820,6 +2880,9 @@ function healTarget(healer, target, skillInfo) {
                 
                 gameState.activeMercenaries.forEach(mercenary => {
                     if (mercenary.alive) {
+                        if (hasTrait(mercenary, '조용함') && Math.random() < 0.5) {
+                            return;
+                        }
                         const distance = getDistance(monster.x, monster.y, mercenary.x, mercenary.y);
                         if (distance <= MONSTER_VISION && distance < nearestDistance) {
                             nearestTarget = mercenary;
@@ -2948,8 +3011,8 @@ function healTarget(healer, target, skillInfo) {
             const minDistanceFromPlayer = 1;
             const maxDistanceFromPlayer = 3;
             const skillInfo = MERCENARY_SKILLS[mercenary.skill];
-            const baseAttackRange = mercenary.role === 'ranged' ? 3 :
-                                   mercenary.role === 'caster' ? 2 : 1;
+            const baseAttackRange = (mercenary.role === 'ranged' ? 3 :
+                                   mercenary.role === 'caster' ? 2 : 1) + mercenary.rangeBonus;
             
             // 힐러는 치료 우선
             if (mercenary.role === 'support') {
@@ -3085,7 +3148,8 @@ function healTarget(healer, target, skillInfo) {
 
                         mercenary.exp += mercExp;
                         gameState.player.exp += playerExp;
-                        gameState.player.gold += nearestMonster.gold;
+                        const goldBonus = getGoldMultiplier();
+                        gameState.player.gold += Math.floor(nearestMonster.gold * goldBonus);
 
                         checkMercenaryLevelUp(mercenary);
                         checkLevelUp();
@@ -3099,22 +3163,27 @@ function healTarget(healer, target, skillInfo) {
                             gameState.items.push(bossItem);
                             gameState.dungeon[nearestMonster.y][nearestMonster.x] = 'item';
                             addMessage(`🎁 ${nearestMonster.name}이(가) ${bossItem.name}을(를) 떨어뜨렸습니다!`, "treasure");
-                        } else if (Math.random() < nearestMonster.lootChance) {
-                            const itemKeys = Object.keys(ITEMS).filter(k => k !== 'reviveScroll');
-                            const availableItems = itemKeys.filter(key =>
-                                ITEMS[key].level <= Math.ceil(gameState.floor / 2 + 1)
-                            );
-                            let randomItemKey = availableItems[Math.floor(Math.random() * availableItems.length)];
-                            if (Math.random() < 0.1 && ITEMS.reviveScroll.level <= Math.ceil(gameState.floor / 2 + 1)) {
-                                randomItemKey = 'reviveScroll';
-                            }
-
-                            const droppedItem = createItem(randomItemKey, nearestMonster.x, nearestMonster.y);
-                            gameState.items.push(droppedItem);
-                            gameState.dungeon[nearestMonster.y][nearestMonster.x] = 'item';
-                            addMessage(`📦 ${nearestMonster.name}이(가) ${droppedItem.name}을(를) 떨어뜨렸습니다!`, "item");
                         } else {
-                            gameState.dungeon[nearestMonster.y][nearestMonster.x] = 'empty';
+                            let dropChance = nearestMonster.lootChance;
+                            if (hasTrait(mercenary, '보물 감별사')) dropChance *= 1.5;
+                            if (Math.random() < dropChance) {
+                                const itemKeys = Object.keys(ITEMS).filter(k => k !== 'reviveScroll');
+                                const maxTier = Math.ceil(gameState.floor / 2 + 1) + (hasTrait(mercenary, '보물 감별사') ? 1 : 0);
+                                const availableItems = itemKeys.filter(key =>
+                                    ITEMS[key].level <= maxTier
+                                );
+                                let randomItemKey = availableItems[Math.floor(Math.random() * availableItems.length)];
+                                if (Math.random() < 0.1 && ITEMS.reviveScroll.level <= maxTier) {
+                                    randomItemKey = 'reviveScroll';
+                                }
+
+                                const droppedItem = createItem(randomItemKey, nearestMonster.x, nearestMonster.y);
+                                gameState.items.push(droppedItem);
+                                gameState.dungeon[nearestMonster.y][nearestMonster.x] = 'item';
+                                addMessage(`📦 ${nearestMonster.name}이(가) ${droppedItem.name}을(를) 떨어뜨렸습니다!`, "item");
+                            } else {
+                                gameState.dungeon[nearestMonster.y][nearestMonster.x] = 'empty';
+                            }
                         }
 
                         const monsterIndex = gameState.monsters.findIndex(m => m === nearestMonster);
@@ -3164,7 +3233,8 @@ function healTarget(healer, target, skillInfo) {
 
                         mercenary.exp += mercExp;
                         gameState.player.exp += playerExp;
-                        gameState.player.gold += nearestMonster.gold;
+                        const goldBonus = getGoldMultiplier();
+                        gameState.player.gold += Math.floor(nearestMonster.gold * goldBonus);
 
                         checkMercenaryLevelUp(mercenary);
                         checkLevelUp();
@@ -3178,22 +3248,27 @@ function healTarget(healer, target, skillInfo) {
                             gameState.items.push(bossItem);
                             gameState.dungeon[nearestMonster.y][nearestMonster.x] = 'item';
                             addMessage(`🎁 ${nearestMonster.name}이(가) ${bossItem.name}을(를) 떨어뜨렸습니다!`, "treasure");
-                        } else if (Math.random() < nearestMonster.lootChance) {
-                            const itemKeys = Object.keys(ITEMS).filter(k => k !== 'reviveScroll');
-                            const availableItems = itemKeys.filter(key =>
-                                ITEMS[key].level <= Math.ceil(gameState.floor / 2 + 1)
-                            );
-                            let randomItemKey = availableItems[Math.floor(Math.random() * availableItems.length)];
-                            if (Math.random() < 0.1 && ITEMS.reviveScroll.level <= Math.ceil(gameState.floor / 2 + 1)) {
-                                randomItemKey = 'reviveScroll';
-                            }
-
-                            const droppedItem = createItem(randomItemKey, nearestMonster.x, nearestMonster.y);
-                            gameState.items.push(droppedItem);
-                            gameState.dungeon[nearestMonster.y][nearestMonster.x] = 'item';
-                            addMessage(`📦 ${nearestMonster.name}이(가) ${droppedItem.name}을(를) 떨어뜨렸습니다!`, "item");
                         } else {
-                            gameState.dungeon[nearestMonster.y][nearestMonster.x] = 'empty';
+                            let dropChance = nearestMonster.lootChance;
+                            if (hasTrait(mercenary, '보물 감별사')) dropChance *= 1.5;
+                            if (Math.random() < dropChance) {
+                                const itemKeys = Object.keys(ITEMS).filter(k => k !== 'reviveScroll');
+                                const maxTier = Math.ceil(gameState.floor / 2 + 1) + (hasTrait(mercenary, '보물 감별사') ? 1 : 0);
+                                const availableItems = itemKeys.filter(key =>
+                                    ITEMS[key].level <= maxTier
+                                );
+                                let randomItemKey = availableItems[Math.floor(Math.random() * availableItems.length)];
+                                if (Math.random() < 0.1 && ITEMS.reviveScroll.level <= maxTier) {
+                                    randomItemKey = 'reviveScroll';
+                                }
+
+                                const droppedItem = createItem(randomItemKey, nearestMonster.x, nearestMonster.y);
+                                gameState.items.push(droppedItem);
+                                gameState.dungeon[nearestMonster.y][nearestMonster.x] = 'item';
+                                addMessage(`📦 ${nearestMonster.name}이(가) ${droppedItem.name}을(를) 떨어뜨렸습니다!`, "item");
+                            } else {
+                                gameState.dungeon[nearestMonster.y][nearestMonster.x] = 'empty';
+                            }
                         }
 
                         const monsterIndex = gameState.monsters.findIndex(m => m === nearestMonster);
@@ -3237,7 +3312,8 @@ function healTarget(healer, target, skillInfo) {
                         
                         mercenary.exp += mercExp;
                         gameState.player.exp += playerExp;
-                        gameState.player.gold += nearestMonster.gold;
+                        const goldBonus = getGoldMultiplier();
+                        gameState.player.gold += Math.floor(nearestMonster.gold * goldBonus);
                         
                         checkMercenaryLevelUp(mercenary);
                         checkLevelUp();
@@ -3251,22 +3327,27 @@ function healTarget(healer, target, skillInfo) {
                             gameState.items.push(bossItem);
                             gameState.dungeon[nearestMonster.y][nearestMonster.x] = 'item';
                             addMessage(`🎁 ${nearestMonster.name}이(가) ${bossItem.name}을(를) 떨어뜨렸습니다!`, "treasure");
-                        } else if (Math.random() < nearestMonster.lootChance) {
-                            const itemKeys = Object.keys(ITEMS).filter(k => k !== 'reviveScroll');
-                            const availableItems = itemKeys.filter(key =>
-                                ITEMS[key].level <= Math.ceil(gameState.floor / 2 + 1)
-                            );
-                            let randomItemKey = availableItems[Math.floor(Math.random() * availableItems.length)];
-                            if (Math.random() < 0.1 && ITEMS.reviveScroll.level <= Math.ceil(gameState.floor / 2 + 1)) {
-                                randomItemKey = 'reviveScroll';
-                            }
-
-                            const droppedItem = createItem(randomItemKey, nearestMonster.x, nearestMonster.y);
-                            gameState.items.push(droppedItem);
-                            gameState.dungeon[nearestMonster.y][nearestMonster.x] = 'item';
-                            addMessage(`📦 ${nearestMonster.name}이(가) ${droppedItem.name}을(를) 떨어뜨렸습니다!`, "item");
                         } else {
-                            gameState.dungeon[nearestMonster.y][nearestMonster.x] = 'empty';
+                            let dropChance = nearestMonster.lootChance;
+                            if (hasTrait(mercenary, '보물 감별사')) dropChance *= 1.5;
+                            if (Math.random() < dropChance) {
+                                const itemKeys = Object.keys(ITEMS).filter(k => k !== 'reviveScroll');
+                                const maxTier = Math.ceil(gameState.floor / 2 + 1) + (hasTrait(mercenary, '보물 감별사') ? 1 : 0);
+                                const availableItems = itemKeys.filter(key =>
+                                    ITEMS[key].level <= maxTier
+                                );
+                                let randomItemKey = availableItems[Math.floor(Math.random() * availableItems.length)];
+                                if (Math.random() < 0.1 && ITEMS.reviveScroll.level <= maxTier) {
+                                    randomItemKey = 'reviveScroll';
+                                }
+
+                                const droppedItem = createItem(randomItemKey, nearestMonster.x, nearestMonster.y);
+                                gameState.items.push(droppedItem);
+                                gameState.dungeon[nearestMonster.y][nearestMonster.x] = 'item';
+                                addMessage(`📦 ${nearestMonster.name}이(가) ${droppedItem.name}을(를) 떨어뜨렸습니다!`, "item");
+                            } else {
+                                gameState.dungeon[nearestMonster.y][nearestMonster.x] = 'empty';
+                            }
                         }
                         
                         const monsterIndex = gameState.monsters.findIndex(m => m === nearestMonster);
@@ -3279,7 +3360,7 @@ function healTarget(healer, target, skillInfo) {
                 } else {
                     const path = findPath(mercenary.x, mercenary.y, nearestMonster.x, nearestMonster.y);
                     if (path && path.length > 1) {
-                        const step = path[1];
+                        const step = path[Math.min(mercenary.moveDistance, path.length - 1)];
                         const newDistanceFromPlayer = getDistance(step.x, step.y, gameState.player.x, gameState.player.y);
                         const stepMonsterDist = getDistance(step.x, step.y, nearestMonster.x, nearestMonster.y);
                         const stepValid = step.x >= 0 && step.x < gameState.dungeonSize &&
@@ -3301,7 +3382,7 @@ function healTarget(healer, target, skillInfo) {
                                 // too far from player, move toward player instead
                                 const backPath = findPath(mercenary.x, mercenary.y, gameState.player.x, gameState.player.y);
                                 if (backPath && backPath.length > 1) {
-                                    const backStep = backPath[1];
+                                    const backStep = backPath[Math.min(mercenary.moveDistance, backPath.length - 1)];
                                     const backDist = getDistance(backStep.x, backStep.y, gameState.player.x, gameState.player.y);
                                     const backValid = backStep.x >= 0 && backStep.x < gameState.dungeonSize &&
                                         backStep.y >= 0 && backStep.y < gameState.dungeonSize &&
@@ -3319,7 +3400,7 @@ function healTarget(healer, target, skillInfo) {
                         } else if (playerDistance > maxDistanceFromPlayer) {
                             const backPath = findPath(mercenary.x, mercenary.y, gameState.player.x, gameState.player.y);
                             if (backPath && backPath.length > 1) {
-                                const backStep = backPath[1];
+                                const backStep = backPath[Math.min(mercenary.moveDistance, backPath.length - 1)];
                                 const backDist = getDistance(backStep.x, backStep.y, gameState.player.x, gameState.player.y);
                                 const backValid = backStep.x >= 0 && backStep.x < gameState.dungeonSize &&
                                     backStep.y >= 0 && backStep.y < gameState.dungeonSize &&
@@ -3340,7 +3421,7 @@ function healTarget(healer, target, skillInfo) {
                 if (playerDistance > maxDistanceFromPlayer) {
                     const path = findPath(mercenary.x, mercenary.y, gameState.player.x, gameState.player.y);
                     if (path && path.length > 1) {
-                        const step = path[1];
+                        const step = path[Math.min(mercenary.moveDistance, path.length - 1)];
                         const distAfter = getDistance(step.x, step.y, gameState.player.x, gameState.player.y);
                         const stepValid = step.x >= 0 && step.x < gameState.dungeonSize &&
                             step.y >= 0 && step.y < gameState.dungeonSize &&
