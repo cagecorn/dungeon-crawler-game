@@ -597,6 +597,8 @@
                 <div>📊 레벨: <span id="level">1</span></div>
                 <div>❤️ 체력: <span id="health">20</span>/<span id="maxHealth">20</span></div>
                 <div>🔋 마나: <span id="mana">10</span>/<span id="maxMana">10</span></div>
+                <div>❤️ 회복속도: <span id="healthRegen">0</span></div>
+                <div>🔋 마나회복속도: <span id="manaRegen">1</span></div>
                 <div>⚔️ 공격력: <span id="attackStat">5</span> <span id="weaponBonus"></span></div>
                 <div>🛡️ 방어력: <span id="defense">1</span> <span id="armorBonus"></span></div>
                 <div>🎯 명중률: <span id="accuracy">0.8</span></div>
@@ -1028,6 +1030,8 @@
                 health: 20,
                 maxMana: 10,
                 mana: 10,
+                healthRegen: 0,
+                manaRegen: 1,
                 attack: 5,
                 defense: 1,
                 accuracy: 0.8,
@@ -1199,6 +1203,8 @@ function healTarget(healer, target) {
             if (item.critChance !== undefined) stats.push(`치명+${item.critChance}`);
             if (item.magicPower !== undefined) stats.push(`마공+${item.magicPower}`);
             if (item.magicResist !== undefined) stats.push(`마방+${item.magicResist}`);
+            if (item.healthRegen !== undefined) stats.push(`HP회복+${item.healthRegen}`);
+            if (item.manaRegen !== undefined) stats.push(`MP회복+${item.manaRegen}`);
             return `${item.name}${stats.length ? ' (' + stats.join(', ') + ')' : ''}`;
         }
 
@@ -1397,9 +1403,11 @@ function healTarget(healer, target) {
                 const defenseBonus = merc.equipped && merc.equipped.armor ? merc.equipped.armor.defense : 0;
                 const totalAttack = merc.attack + attackBonus;
                 const totalDefense = merc.defense + defenseBonus;
+                const hpRegen = getStat(merc, 'healthRegen');
+                const mpRegen = merc.mana !== undefined ? getStat(merc, 'manaRegen') : 0;
 
                 div.textContent = `${i + 1}. ${merc.icon} ${merc.name} Lv.${merc.level} (${hp}) ` +
-                    `[공격:${totalAttack}, 방어:${totalDefense}] ` +
+                    `[공격:${totalAttack}, 방어:${totalDefense}, HP회복:${hpRegen}, MP회복:${mpRegen}] ` +
                     `[무기:${weapon}, 방어구:${armor}, 악세1:${accessory1}, 악세2:${accessory2}] ` +
                     `[특성:${merc.traits.join(', ')}]`;
 
@@ -1472,6 +1480,8 @@ function healTarget(healer, target) {
             const totalDefense = merc.defense + defenseBonus;
 
             const traitInfo = merc.traits.map(t => `- ${t}: ${TRAIT_DETAILS[t] || ''}`).join('\n');
+            const hpRegen = getStat(merc, 'healthRegen');
+            const mpRegen = merc.mana !== undefined ? getStat(merc, 'manaRegen') : 0;
 
             const info = `${merc.icon} ${merc.name} Lv.${merc.level}\n` +
                 `HP: ${merc.health}/${merc.maxHealth}\n` +
@@ -1482,6 +1492,8 @@ function healTarget(healer, target) {
                 `치명타: ${getStat(merc, 'critChance')}\n` +
                 `마법공격: ${getStat(merc, 'magicPower')}\n` +
                 `마법방어: ${getStat(merc, 'magicResist')}\n` +
+                `HP회복: ${hpRegen}\n` +
+                (merc.mana !== undefined ? `MP회복: ${mpRegen}\n` : '') +
                 `무기: ${weapon}\n` +
                 `방어구: ${armor}\n` +
                 `악세서리1: ${accessory1}\n` +
@@ -1539,6 +1551,8 @@ function healTarget(healer, target) {
             document.getElementById('maxHealth').textContent = gameState.player.maxHealth;
             document.getElementById('mana').textContent = gameState.player.mana;
             document.getElementById('maxMana').textContent = gameState.player.maxMana;
+            document.getElementById('healthRegen').textContent = getStat(gameState.player, 'healthRegen');
+            document.getElementById('manaRegen').textContent = getStat(gameState.player, 'manaRegen');
             document.getElementById('attackStat').textContent = gameState.player.attack;
             document.getElementById('defense').textContent = gameState.player.defense;
             document.getElementById('accuracy').textContent = getStat(gameState.player, 'accuracy');
@@ -1926,6 +1940,8 @@ function healTarget(healer, target) {
                 level: 1,
                 maxHealth: mercType.baseHealth,
                 health: mercType.baseHealth,
+                healthRegen: 0,
+                manaRegen: 0,
                 attack: mercType.baseAttack,
                 defense: mercType.baseDefense,
                 accuracy: mercType.baseAccuracy,
@@ -2663,8 +2679,10 @@ function healTarget(healer, target) {
                 updateCamera();
                 renderDungeon();
             });
-            gameState.player.mana = Math.min(gameState.player.maxMana, gameState.player.mana + 1);
+            gameState.player.health = Math.min(gameState.player.maxHealth, gameState.player.health + getStat(gameState.player, 'healthRegen'));
+            gameState.player.mana = Math.min(gameState.player.maxMana, gameState.player.mana + getStat(gameState.player, 'manaRegen'));
             updateStats();
+            updateMercenaryDisplay();
         }
 
         // 용병 AI (개선됨 - 장비 보너스 적용, 안전성 체크 추가)
@@ -2873,6 +2891,11 @@ function healTarget(healer, target) {
                         }
                     }
                 }
+            }
+
+            mercenary.health = Math.min(mercenary.maxHealth, mercenary.health + getStat(mercenary, 'healthRegen'));
+            if (mercenary.maxMana !== undefined && mercenary.mana !== undefined) {
+                mercenary.mana = Math.min(mercenary.maxMana, mercenary.mana + getStat(mercenary, 'manaRegen'));
             }
         }
 
