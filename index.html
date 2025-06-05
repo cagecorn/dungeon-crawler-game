@@ -918,6 +918,15 @@
                 level: 3,
                 icon: '✨'
             },
+            magicStaff: {
+                name: '🔮 마법 지팡이',
+                type: ITEM_TYPES.WEAPON,
+                magicPower: 3,
+                manaRegen: 1,
+                price: 30,
+                level: 2,
+                icon: '🔮'
+            },
             leatherArmor: {
                 name: '🛡️ 가죽 갑옷',
                 type: ITEM_TYPES.ARMOR,
@@ -2486,7 +2495,7 @@ function healTarget(healer, target) {
                         updateStats();
                         
                         if (monster.special === 'boss') {
-                            const bossItems = ['magicSword', 'plateArmor', 'greaterHealthPotion'];
+                            const bossItems = ['magicSword', 'magicStaff', 'plateArmor', 'greaterHealthPotion'];
                             if (Math.random() < 0.2) bossItems.push('reviveScroll');
                             const bossItemKey = bossItems[Math.floor(Math.random() * bossItems.length)];
                             const bossItem = createItem(bossItemKey, newX, newY);
@@ -2865,7 +2874,7 @@ function healTarget(healer, target) {
                         updateStats();
                         
                         if (nearestMonster.special === 'boss') {
-                            const bossItems = ['magicSword', 'plateArmor', 'greaterHealthPotion'];
+                            const bossItems = ['magicSword', 'magicStaff', 'plateArmor', 'greaterHealthPotion'];
                             if (Math.random() < 0.2) bossItems.push('reviveScroll');
                             const bossItemKey = bossItems[Math.floor(Math.random() * bossItems.length)];
                             const bossItem = createItem(bossItemKey, nearestMonster.x, nearestMonster.y);
