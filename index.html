@@ -597,6 +597,8 @@
                 <div>📊 레벨: <span id="level">1</span></div>
                 <div>❤️ 체력: <span id="health">20</span>/<span id="maxHealth">20</span></div>
                 <div>🔋 마나: <span id="mana">10</span>/<span id="maxMana">10</span></div>
+                <div>❤️‍🩹 회복력: <span id="healthRegen">0</span></div>
+                <div>🔁 마나회복: <span id="manaRegen">1</span></div>
                 <div>⚔️ 공격력: <span id="attackStat">5</span> <span id="weaponBonus"></span></div>
                 <div>🛡️ 방어력: <span id="defense">1</span> <span id="armorBonus"></span></div>
                 <div>🎯 명중률: <span id="accuracy">0.8</span></div>
@@ -1040,6 +1042,8 @@
                 health: 20,
                 maxMana: 10,
                 mana: 10,
+                healthRegen: 0,
+                manaRegen: 1,
                 attack: 5,
                 defense: 1,
                 accuracy: 0.8,
@@ -1555,6 +1559,8 @@ function healTarget(healer, target) {
             document.getElementById('maxHealth').textContent = gameState.player.maxHealth;
             document.getElementById('mana').textContent = gameState.player.mana;
             document.getElementById('maxMana').textContent = gameState.player.maxMana;
+            document.getElementById('healthRegen').textContent = getStat(gameState.player, 'healthRegen');
+            document.getElementById('manaRegen').textContent = getStat(gameState.player, 'manaRegen');
             document.getElementById('attackStat').textContent = gameState.player.attack;
             document.getElementById('defense').textContent = gameState.player.defense;
             document.getElementById('accuracy').textContent = getStat(gameState.player, 'accuracy');
@@ -2696,7 +2702,10 @@ function healTarget(healer, target) {
                 updateCamera();
                 renderDungeon();
             });
-            gameState.player.mana = Math.min(gameState.player.maxMana, gameState.player.mana + 1);
+            const hpRegen = getStat(gameState.player, 'healthRegen');
+            const mpRegen = getStat(gameState.player, 'manaRegen');
+            gameState.player.health = Math.min(gameState.player.maxHealth, gameState.player.health + hpRegen);
+            gameState.player.mana = Math.min(gameState.player.maxMana, gameState.player.mana + mpRegen);
             updateStats();
         }
 
