@@ -1181,12 +1181,16 @@
         }
 
         // 간단한 치유 로직
-function healTarget(healer, target) {
+function healTarget(healer, target, skillInfo) {
             const healAmount = Math.min(3 + healer.level, target.maxHealth - target.health);
             if (healAmount > 0) {
                 target.health += healAmount;
                 const name = target === gameState.player ? '플레이어' : target.name;
-                addMessage(`💚 ${healer.name}이(가) ${name}을(를) ${healAmount} 회복했습니다.`, 'mercenary');
+                if (skillInfo) {
+                    addMessage(`${skillInfo.icon} ${healer.name}의 ${skillInfo.name}이(가) ${name}을(를) ${healAmount} 회복했습니다.`, 'mercenary');
+                } else {
+                    addMessage(`💚 ${healer.name}이(가) ${name}을(를) ${healAmount} 회복했습니다.`, 'mercenary');
+                }
                 return true;
             }
             return false;
@@ -2827,21 +2831,26 @@ function healTarget(healer, target) {
             
             // 힐러는 치료 우선
             if (mercenary.role === 'support') {
-                if (mercenary.mana >= HEAL_MANA_COST && gameState.player.health < gameState.player.maxHealth * 0.7) {
-                    if (getDistance(mercenary.x, mercenary.y, gameState.player.x, gameState.player.y) <= 2) {
-                        if (healTarget(mercenary, gameState.player)) {
-                            mercenary.mana -= HEAL_MANA_COST;
+                const skillInfo = MERCENARY_SKILLS[mercenary.skill];
+                const knowsHeal = mercenary.skill === 'Heal' && skillInfo;
+                const manaCost = knowsHeal ? skillInfo.manaCost : HEAL_MANA_COST;
+                const healRange = knowsHeal ? skillInfo.range : 2;
+
+                if (mercenary.mana >= manaCost && gameState.player.health < gameState.player.maxHealth * 0.7) {
+                    if (getDistance(mercenary.x, mercenary.y, gameState.player.x, gameState.player.y) <= healRange) {
+                        if (healTarget(mercenary, gameState.player, knowsHeal ? skillInfo : undefined)) {
+                            mercenary.mana -= manaCost;
                             mercenary.hasActed = true;
                             return;
                         }
                     }
                 }
-                
+
                 for (const otherMerc of gameState.activeMercenaries) {
                     if (otherMerc !== mercenary && otherMerc.alive && otherMerc.health < otherMerc.maxHealth * 0.5) {
-                        if (mercenary.mana >= HEAL_MANA_COST && getDistance(mercenary.x, mercenary.y, otherMerc.x, otherMerc.y) <= 2) {
-                            if (healTarget(mercenary, otherMerc)) {
-                                mercenary.mana -= HEAL_MANA_COST;
+                        if (mercenary.mana >= manaCost && getDistance(mercenary.x, mercenary.y, otherMerc.x, otherMerc.y) <= healRange) {
+                            if (healTarget(mercenary, otherMerc, knowsHeal ? skillInfo : undefined)) {
+                                mercenary.mana -= manaCost;
                                 mercenary.hasActed = true;
                                 return;
                             }
@@ -2883,7 +2892,7 @@ function healTarget(healer, target) {
                             }
                         }
                     }
-                    if (target && healTarget(mercenary, target)) {
+                    if (target && healTarget(mercenary, target, skillInfo)) {
                         mercenary.mana -= skillInfo.manaCost;
                         mercenary.hasActed = true;
                         return;
