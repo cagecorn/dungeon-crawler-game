@@ -2852,6 +2852,7 @@ function healTarget(healer, target, skillInfo) {
                             : healTarget(mercenary, gameState.player);
                         if (healed) {
                             mercenary.mana -= manaCost;
+                            updateMercenaryDisplay();
                             mercenary.hasActed = true;
                             return;
                         }
@@ -2866,6 +2867,7 @@ function healTarget(healer, target, skillInfo) {
                                 : healTarget(mercenary, otherMerc);
                             if (healed) {
                                 mercenary.mana -= manaCost;
+                                updateMercenaryDisplay();
                                 mercenary.hasActed = true;
                                 return;
                             }
@@ -2908,6 +2910,7 @@ function healTarget(healer, target, skillInfo) {
                     }
                     if (target && healTarget(mercenary, target, skillInfo)) {
                         mercenary.mana -= skillInfo.manaCost;
+                        updateMercenaryDisplay();
                         mercenary.hasActed = true;
                         return;
                     }
@@ -3001,6 +3004,7 @@ function healTarget(healer, target, skillInfo) {
                         }
                     }
                     mercenary.mana -= skillInfo.manaCost;
+                    updateMercenaryDisplay();
                     mercenary.hasActed = true;
                     return;
                 } else if (nearestMonster && nearestDistance <= skillInfo.range && hasLineOfSight(mercenary.x, mercenary.y, nearestMonster.x, nearestMonster.y)) {
@@ -3079,6 +3083,7 @@ function healTarget(healer, target, skillInfo) {
                         }
                     }
                     mercenary.mana -= skillInfo.manaCost;
+                    updateMercenaryDisplay();
                     mercenary.hasActed = true;
                     return;
                 }
