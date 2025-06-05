@@ -561,11 +561,12 @@
             <div id="actions">
                 <div class="actions-row">
                     <button id="attack">Attack</button>
-                    <button id="skill1">Skill1</button>
-                    <button id="skill2">Skill2</button>
+                    <button id="ranged">Ranged</button>
+                    <button id="heal">Heal</button>
                 </div>
                 <div class="actions-row">
-                    <button id="heal">Heal</button>
+                    <button id="skill1">Skill1</button>
+                    <button id="skill2">Skill2</button>
                     <button id="recall">Recall</button>
                     <button id="other">Other</button>
                 </div>
@@ -1053,6 +1054,7 @@
                 critChance: 0.05,
                 magicPower: 0,
                 magicResist: 0,
+                job: null,
                 elementResistances: {fire:0, ice:0, lightning:0, earth:0, light:0, dark:0},
                 statusResistances: {poison:0, bleed:0, burn:0, freeze:0},
                 exp: 0,
@@ -1686,17 +1688,70 @@ function healTarget(healer, target) {
             }
         }
 
+        function selectJob() {
+            let choice = null;
+            if (typeof window.prompt === 'function') {
+                try {
+                    choice = window.prompt('Choose your class: Warrior, Archer, Mage, Healer');
+                } catch(e) { choice = null; }
+            }
+            const options = ['Warrior','Archer','Mage','Healer'];
+            if (!options.includes(choice)) choice = 'Warrior';
+            return choice;
+        }
+
+        function updateActionButtons() {
+            const atk = document.getElementById('attack');
+            const rng = document.getElementById('ranged');
+            const heal = document.getElementById('heal');
+            const job = gameState.player.job;
+            atk.style.display = (!job || job === 'Warrior' || job === 'Mage') ? 'inline-block' : 'none';
+            rng.style.display = job === 'Archer' ? 'inline-block' : 'none';
+            heal.style.display = job === 'Healer' ? 'inline-block' : 'none';
+        }
+
         // 플레이어 레벨업 체크
         function checkLevelUp() {
             while (gameState.player.exp >= gameState.player.expNeeded) {
                 gameState.player.exp -= gameState.player.expNeeded;
                 gameState.player.level += 1;
-                gameState.player.maxHealth += 5;
+
+                switch (gameState.player.job) {
+                    case 'Warrior':
+                        gameState.player.maxHealth += 5;
+                        gameState.player.attack += 2;
+                        gameState.player.defense += 2;
+                        break;
+                    case 'Archer':
+                        gameState.player.maxHealth += 4;
+                        gameState.player.attack += 2;
+                        gameState.player.accuracy += 0.05;
+                        break;
+                    case 'Mage':
+                        gameState.player.maxHealth += 3;
+                        gameState.player.magicPower += 2;
+                        gameState.player.maxMana += 2;
+                        break;
+                    case 'Healer':
+                        gameState.player.maxHealth += 3;
+                        gameState.player.magicPower += 1;
+                        gameState.player.maxMana += 3;
+                        gameState.player.defense += 1;
+                        break;
+                    default:
+                        gameState.player.maxHealth += 5;
+                        gameState.player.attack += 1;
+                        gameState.player.defense += 1;
+                }
+
                 gameState.player.health = gameState.player.maxHealth;
-                gameState.player.attack += 1;
-                gameState.player.defense += 1;
                 gameState.player.expNeeded = Math.floor(gameState.player.expNeeded * 1.5);
-                addMessage(`🎉 플레이어 레벨이 ${gameState.player.level}이(가) 되었습니다! (공격력 +1, 방어력 +1, 체력 +5)`, 'level');
+                addMessage(`🎉 플레이어 레벨이 ${gameState.player.level}이(가) 되었습니다!`, 'level');
+                if (!gameState.player.job && gameState.player.level >= 5) {
+                    gameState.player.job = selectJob();
+                    addMessage(`🆕 직업 ${gameState.player.job} 선택!`, 'level');
+                    updateActionButtons();
+                }
                 updateStats();
             }
         }
@@ -2948,9 +3003,10 @@ function healTarget(healer, target) {
             updateMercenaryDisplay();
             renderDungeon();
             updateCamera();
+            updateActionButtons();
             addMessage('📁 게임을 불러왔습니다.', 'info');
         }
-        function attackAction() {
+        function rangedAction() {
             const range = 5;
             let target = null;
             let dist = Infinity;
@@ -2972,6 +3028,27 @@ function healTarget(healer, target) {
             const dy = Math.sign(target.y - gameState.player.y);
             gameState.projectiles.push({ x: gameState.player.x, y: gameState.player.y, dx, dy, rangeLeft: dist, icon: '➡️', element: null });
             processTurn();
+        }
+
+        function meleeAttackAction() {
+            let targetPos = null;
+            const dirs = [
+                {x:1,y:0}, {x:-1,y:0}, {x:0,y:1}, {x:0,y:-1}
+            ];
+            for (const d of dirs) {
+                const nx = gameState.player.x + d.x;
+                const ny = gameState.player.y + d.y;
+                if (gameState.dungeon[ny] && gameState.dungeon[ny][nx] === 'monster') {
+                    targetPos = {x:nx, y:ny};
+                    break;
+                }
+            }
+            if (!targetPos) {
+                addMessage('⚔️ 근처에 몬스터가 없습니다.', 'info');
+                processTurn();
+                return;
+            }
+            movePlayer(targetPos.x - gameState.player.x, targetPos.y - gameState.player.y);
         }
 
         function skill1Action() {
@@ -3104,13 +3181,15 @@ function healTarget(healer, target) {
         generateDungeon();
         updateSkillDisplay();
         renderTraitInfo();
+        updateActionButtons();
         document.getElementById('up').onclick = () => movePlayer(0, -1);
         document.getElementById('down').onclick = () => movePlayer(0, 1);
         document.getElementById('left').onclick = () => movePlayer(-1, 0);
         document.getElementById('right').onclick = () => movePlayer(1, 0);
         document.getElementById('save-game').onclick = saveGame;
         document.getElementById('load-game').onclick = loadGame;
-        document.getElementById('attack').onclick = attackAction;
+        document.getElementById('attack').onclick = meleeAttackAction;
+        document.getElementById('ranged').onclick = rangedAction;
         document.getElementById('skill1').onclick = skill1Action;
         document.getElementById('skill2').onclick = skill2Action;
         document.getElementById('heal').onclick = healAction;
@@ -3137,7 +3216,9 @@ function healTarget(healer, target) {
             }
             else if (e.key.toLowerCase() === 'f') {
                 e.preventDefault();
-                attackAction();
+                if (gameState.player.job === 'Archer') rangedAction();
+                else if (gameState.player.job === 'Healer') healAction();
+                else meleeAttackAction();
             }
             else if (/^[1-9]$/.test(e.key)) {
                 const idx = parseInt(e.key) - 1;
