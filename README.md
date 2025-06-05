@@ -23,20 +23,15 @@ Spend collected gold in the shop to purchase items. Bought gear is placed in you
 
 ## Development
 
-Install dependencies and run tests with:
+Install dependencies with:
 
 ```bash
 npm install
-node tests/mercenaryFollow.test.js
 ```
 
 ## Testing
 
-Run the automated test suite with:
-
-```bash
-npm test
-```
+Run `npm install` once, then `npm test` to execute `tests/mercenaryFollow.test.js`.
 
 ## License
 
