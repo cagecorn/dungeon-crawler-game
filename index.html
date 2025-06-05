@@ -1030,6 +1030,21 @@
             Healing: { name: 'Healing', icon: '💖', heal: 10, manaCost: 3 }
         };
 
+        // 용병 전용 스킬 정의
+        const MERCENARY_SKILLS = {
+            ChargeAttack: { name: 'Charge Attack', icon: '⚡', range: 2, manaCost: 2, multiplier: 1.5 },
+            DoubleStrike: { name: 'Double Strike', icon: '🔪', range: 1, manaCost: 3 },
+            Heal: { name: 'Heal', icon: '✨', range: 2, manaCost: 2 },
+            Fireball: { name: 'Fireball', icon: '🔥', range: 4, manaCost: 3, damage: 8, magic: true, element: 'fire' }
+        };
+
+        const MERCENARY_SKILL_SETS = {
+            WARRIOR: ['ChargeAttack', 'DoubleStrike'],
+            ARCHER: ['DoubleStrike'],
+            HEALER: ['Heal'],
+            WIZARD: ['Fireball']
+        };
+
         const HEAL_MANA_COST = 2;
 
         const ELEMENT_EMOJI = { fire: '🔥', ice: '❄️', lightning: '⚡' };
@@ -2000,6 +2015,8 @@ function healTarget(healer, target) {
                     return;
                 }
                 setMercenaryLevel(mercenary, removed.level);
+                mercenary.maxMana = MERCENARY_TYPES[type].baseMaxMana || 0;
+                mercenary.mana = mercenary.maxMana;
                 gameState.activeMercenaries[index] = mercenary;
                 removed.x = -1;
                 removed.y = -1;
@@ -2015,6 +2032,8 @@ function healTarget(healer, target) {
         // 용병 생성 함수
         function createMercenary(type, x, y) {
             const mercType = MERCENARY_TYPES[type];
+            const skillPool = MERCENARY_SKILL_SETS[type] || [];
+            const assignedSkill = skillPool[Math.floor(Math.random() * skillPool.length)] || null;
             const allTraits = [...POSITIVE_TRAITS, ...NEGATIVE_TRAITS, ...TRADEOFF_TRAITS];
             const traits = [];
             while (traits.length < 2) {
@@ -2036,6 +2055,7 @@ function healTarget(healer, target) {
                 maxMana: mercType.baseMaxMana || 0,
                 mana: mercType.baseMaxMana || 0,
                 manaRegen: mercType.baseManaRegen || 1,
+                skill: assignedSkill,
                 attack: mercType.baseAttack,
                 defense: mercType.baseDefense,
                 accuracy: mercType.baseAccuracy,
@@ -2844,6 +2864,108 @@ function healTarget(healer, target) {
                     nearestMonster = monster;
                 }
             });
+
+            const skillKey = mercenary.skill;
+            const skillInfo = MERCENARY_SKILLS[skillKey];
+            if (skillInfo && mercenary.mana >= skillInfo.manaCost && Math.random() < 0.5) {
+                if (skillKey === 'Heal') {
+                    let target = null;
+                    if (gameState.player.health < gameState.player.maxHealth && getDistance(mercenary.x, mercenary.y, gameState.player.x, gameState.player.y) <= skillInfo.range) {
+                        target = gameState.player;
+                    }
+                    if (!target) {
+                        for (const m of gameState.activeMercenaries) {
+                            if (m !== mercenary && m.alive && m.health < m.maxHealth && getDistance(mercenary.x, mercenary.y, m.x, m.y) <= skillInfo.range) {
+                                target = m;
+                                break;
+                            }
+                        }
+                    }
+                    if (target && healTarget(mercenary, target)) {
+                        mercenary.mana -= skillInfo.manaCost;
+                        mercenary.hasActed = true;
+                        return;
+                    }
+                } else if (nearestMonster && nearestDistance <= skillInfo.range && hasLineOfSight(mercenary.x, mercenary.y, nearestMonster.x, nearestMonster.y)) {
+                    let attackValue = mercenary.attack;
+                    if (mercenary.equipped && mercenary.equipped.weapon) {
+                        attackValue += mercenary.equipped.weapon.attack;
+                    }
+                    if (skillKey === 'ChargeAttack') {
+                        attackValue = Math.floor(attackValue * skillInfo.multiplier);
+                    } else if (skillKey === 'Fireball') {
+                        attackValue = skillInfo.damage;
+                    }
+
+                    const hits = skillKey === 'DoubleStrike' ? 2 : 1;
+                    const icon = skillInfo.icon;
+                    for (let i = 0; i < hits; i++) {
+                        const result = performAttack(mercenary, nearestMonster, { attackValue, magic: skillInfo.magic, element: skillInfo.element });
+                        if (!result.hit) {
+                            addMessage(`❌ ${mercenary.name}의 ${skillInfo.name}이 빗나갔습니다!`, "mercenary");
+                        } else {
+                            const critMsg = result.crit ? ' (치명타!)' : '';
+                            let dmgStr = result.baseDamage;
+                            if (result.elementDamage) {
+                                const emoji = ELEMENT_EMOJI[result.element] || '';
+                                dmgStr = `${result.baseDamage}+${emoji}${result.elementDamage}`;
+                            }
+                            addMessage(`${icon} ${mercenary.name}이(가) ${nearestMonster.name}에게 ${dmgStr}의 피해를 입혔습니다${critMsg}!`, "mercenary");
+                        }
+
+                        if (nearestMonster.health <= 0) break;
+                    }
+
+                    if (nearestMonster.health <= 0) {
+                        addMessage(`💀 ${mercenary.name}이(가) ${nearestMonster.name}을(를) 처치했습니다!`, "mercenary");
+
+                        const mercExp = Math.floor(nearestMonster.exp * 0.6);
+                        const playerExp = Math.floor(nearestMonster.exp * 0.4);
+
+                        mercenary.exp += mercExp;
+                        gameState.player.exp += playerExp;
+                        gameState.player.gold += nearestMonster.gold;
+
+                        checkMercenaryLevelUp(mercenary);
+                        checkLevelUp();
+                        updateStats();
+
+                        if (nearestMonster.special === 'boss') {
+                            const bossItems = ['magicSword', 'plateArmor', 'greaterHealthPotion'];
+                            if (Math.random() < 0.2) bossItems.push('reviveScroll');
+                            const bossItemKey = bossItems[Math.floor(Math.random() * bossItems.length)];
+                            const bossItem = createItem(bossItemKey, nearestMonster.x, nearestMonster.y);
+                            gameState.items.push(bossItem);
+                            gameState.dungeon[nearestMonster.y][nearestMonster.x] = 'item';
+                            addMessage(`🎁 ${nearestMonster.name}이(가) ${bossItem.name}을(를) 떨어뜨렸습니다!`, "treasure");
+                        } else if (Math.random() < nearestMonster.lootChance) {
+                            const itemKeys = Object.keys(ITEMS).filter(k => k !== 'reviveScroll');
+                            const availableItems = itemKeys.filter(key =>
+                                ITEMS[key].level <= Math.ceil(gameState.floor / 2 + 1)
+                            );
+                            let randomItemKey = availableItems[Math.floor(Math.random() * availableItems.length)];
+                            if (Math.random() < 0.1 && ITEMS.reviveScroll.level <= Math.ceil(gameState.floor / 2 + 1)) {
+                                randomItemKey = 'reviveScroll';
+                            }
+
+                            const droppedItem = createItem(randomItemKey, nearestMonster.x, nearestMonster.y);
+                            gameState.items.push(droppedItem);
+                            gameState.dungeon[nearestMonster.y][nearestMonster.x] = 'item';
+                            addMessage(`📦 ${nearestMonster.name}이(가) ${droppedItem.name}을(를) 떨어뜨렸습니다!`, "item");
+                        } else {
+                            gameState.dungeon[nearestMonster.y][nearestMonster.x] = 'empty';
+                        }
+
+                        const monsterIndex = gameState.monsters.findIndex(m => m === nearestMonster);
+                        if (monsterIndex !== -1) {
+                            gameState.monsters.splice(monsterIndex, 1);
+                        }
+                    }
+                    mercenary.mana -= skillInfo.manaCost;
+                    mercenary.hasActed = true;
+                    return;
+                }
+            }
             
             if (nearestMonster) {
                 const attackRange = mercenary.role === 'ranged' ? 3 :
