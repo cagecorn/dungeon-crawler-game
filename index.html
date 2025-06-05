@@ -666,6 +666,7 @@
                 baseMagicPower: 0,
                 baseMagicResist: 0,
                 baseMaxMana: 5,
+                baseHealthRegen: 0,
                 baseManaRegen: 1,
                 role: 'tank',
                 description: '높은 체력과 방어력을 가진 근접 전투 용병',
@@ -683,6 +684,7 @@
                 baseMagicPower: 0,
                 baseMagicResist: 0,
                 baseMaxMana: 5,
+                baseHealthRegen: 0,
                 baseManaRegen: 1,
                 role: 'ranged',
                 description: '원거리에서 적을 공격하는 용병',
@@ -700,6 +702,7 @@
                 baseMagicPower: 2,
                 baseMagicResist: 1,
                 baseMaxMana: 10,
+                baseHealthRegen: 0,
                 baseManaRegen: 2,
                 role: 'support',
                 description: '아군을 치료하는 지원 용병',
@@ -717,6 +720,7 @@
                 baseMagicPower: 5,
                 baseMagicResist: 2,
                 baseMaxMana: 12,
+                baseHealthRegen: 0,
                 baseManaRegen: 2,
                 role: 'caster',
                 description: '마법 공격에 특화된 용병',
@@ -2069,6 +2073,7 @@ function healTarget(healer, target, skillInfo) {
                 health: mercType.baseHealth,
                 maxMana: mercType.baseMaxMana || 0,
                 mana: mercType.baseMaxMana || 0,
+                healthRegen: mercType.baseHealthRegen || 0,
                 manaRegen: mercType.baseManaRegen || 1,
                 skill: assignedSkill,
                 attack: mercType.baseAttack,
@@ -2827,7 +2832,10 @@ function healTarget(healer, target, skillInfo) {
             mercenary.nextX = mercenary.x;
             mercenary.nextY = mercenary.y;
 
-            mercenary.mana = Math.min(mercenary.maxMana, mercenary.mana + (mercenary.manaRegen || 1));
+            const hpRegen = getStat(mercenary, 'healthRegen');
+            const mpRegen = getStat(mercenary, 'manaRegen');
+            mercenary.health = Math.min(mercenary.maxHealth, mercenary.health + hpRegen);
+            mercenary.mana = Math.min(mercenary.maxMana, mercenary.mana + mpRegen);
             
             // 장비 초기화 확인
             if (!mercenary.equipped) {
