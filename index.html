@@ -2816,6 +2816,7 @@ function healTarget(healer, target, skillInfo) {
             gameState.player.health = Math.min(gameState.player.maxHealth, gameState.player.health + hpRegen);
             gameState.player.mana = Math.min(gameState.player.maxMana, gameState.player.mana + mpRegen);
             updateStats();
+            updateMercenaryDisplay();
         }
 
         // 용병 AI (개선됨 - 장비 보너스 적용, 안전성 체크 추가)
