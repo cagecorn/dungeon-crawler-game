@@ -526,6 +526,11 @@
         .shop-item:hover {
             background-color: #555;
         }
+        .sell-button {
+            margin-left: 4px;
+            font-size: 10px;
+            cursor: pointer;
+        }
     </style>
 </head>
 <body>
@@ -970,14 +975,6 @@
                 level: 2,
                 icon: '✨'
             },
-            fireballScroll: {
-                name: '🔥 파이어볼 스크롤',
-                type: ITEM_TYPES.SPELL,
-                damage: 8,
-                price: 30,
-                level: 2,
-                icon: '🔥'
-            },
             fireballBook: {
                 name: '📘 파이어볼 서적',
                 type: ITEM_TYPES.SKILLBOOK,
@@ -1294,8 +1291,18 @@ function healTarget(healer, target) {
             gameState.player.inventory.forEach(item => {
                 const div = document.createElement('div');
                 div.className = 'inventory-item';
-                div.textContent = formatItem(item);
+                const span = document.createElement('span');
+                span.textContent = formatItem(item);
+                div.appendChild(span);
+                const sellBtn = document.createElement('button');
+                sellBtn.textContent = '판매';
+                sellBtn.className = 'sell-button';
+                sellBtn.onclick = (e) => {
+                    e.stopPropagation();
+                    sellItem(item);
+                };
                 div.onclick = () => handleItemClick(item);
+                div.appendChild(sellBtn);
                 container.appendChild(div);
             });
 
@@ -1576,6 +1583,7 @@ function healTarget(healer, target) {
                 range: data.range,
                 speed: data.speed,
                 special: data.special,
+                lootChance: 0.3,
                 hasActed: false
             };
         }
@@ -1748,15 +1756,16 @@ function healTarget(healer, target) {
             }
 
             const itemKeys = Object.keys(ITEMS);
-            // 아이템 또한 던전 크기와 층수의 영향을 받음
-            const itemCount = Math.floor(size * 0.1) + Math.floor(gameState.floor * 0.5);
+            // 맵에 떨어지는 아이템 수를 줄임
+            const itemCount = Math.floor(size * 0.05) + Math.floor(gameState.floor * 0.25);
+            const spawnKeys = itemKeys.filter(k => k !== 'reviveScroll');
             for (let i = 0; i < itemCount; i++) {
                 let x, y;
                 do {
                     x = Math.floor(Math.random() * size);
                     y = Math.floor(Math.random() * size);
                 } while (gameState.dungeon[y][x] !== 'empty');
-                const key = itemKeys[Math.floor(Math.random() * itemKeys.length)];
+                const key = spawnKeys[Math.floor(Math.random() * spawnKeys.length)];
                 const item = createItem(key, x, y);
                 gameState.items.push(item);
                 gameState.dungeon[y][x] = 'item';
@@ -1978,6 +1987,18 @@ function healTarget(healer, target) {
         function addToInventory(item) {
             gameState.player.inventory.push(item);
             updateInventoryDisplay();
+        }
+
+        function sellItem(item) {
+            const value = Math.floor((item.price || 0) * 0.5);
+            const idx = gameState.player.inventory.findIndex(i => i.id === item.id);
+            if (idx !== -1) {
+                gameState.player.inventory.splice(idx, 1);
+                gameState.player.gold += value;
+                addMessage(`💰 ${item.name}을(를) ${value}골드에 판매했습니다.`, 'item');
+                updateInventoryDisplay();
+                updateStats();
+            }
         }
 
         // 아이템 클릭 시 대상 선택
@@ -2347,18 +2368,22 @@ function healTarget(healer, target) {
                         updateStats();
                         
                         if (monster.special === 'boss') {
-                            const bossItems = ['magicSword', 'plateArmor', 'greaterHealthPotion', 'reviveScroll'];
+                            const bossItems = ['magicSword', 'plateArmor', 'greaterHealthPotion'];
+                            if (Math.random() < 0.2) bossItems.push('reviveScroll');
                             const bossItemKey = bossItems[Math.floor(Math.random() * bossItems.length)];
                             const bossItem = createItem(bossItemKey, newX, newY);
                             gameState.items.push(bossItem);
                             gameState.dungeon[newY][newX] = 'item';
                             addMessage(`🎁 ${monster.name}이(가) ${bossItem.name}을(를) 떨어뜨렸습니다!`, "treasure");
                         } else if (Math.random() < monster.lootChance) {
-                            const itemKeys = Object.keys(ITEMS);
-                            const availableItems = itemKeys.filter(key => 
+                            const itemKeys = Object.keys(ITEMS).filter(k => k !== 'reviveScroll');
+                            const availableItems = itemKeys.filter(key =>
                                 ITEMS[key].level <= Math.ceil(gameState.floor / 2 + 1)
                             );
-                            const randomItemKey = availableItems[Math.floor(Math.random() * availableItems.length)];
+                            let randomItemKey = availableItems[Math.floor(Math.random() * availableItems.length)];
+                            if (Math.random() < 0.1 && ITEMS.reviveScroll.level <= Math.ceil(gameState.floor / 2 + 1)) {
+                                randomItemKey = 'reviveScroll';
+                            }
                             
                             const droppedItem = createItem(randomItemKey, newX, newY);
                             gameState.items.push(droppedItem);
@@ -2714,18 +2739,22 @@ function healTarget(healer, target) {
                         updateStats();
                         
                         if (nearestMonster.special === 'boss') {
-                            const bossItems = ['magicSword', 'plateArmor', 'greaterHealthPotion', 'reviveScroll'];
+                            const bossItems = ['magicSword', 'plateArmor', 'greaterHealthPotion'];
+                            if (Math.random() < 0.2) bossItems.push('reviveScroll');
                             const bossItemKey = bossItems[Math.floor(Math.random() * bossItems.length)];
                             const bossItem = createItem(bossItemKey, nearestMonster.x, nearestMonster.y);
                             gameState.items.push(bossItem);
                             gameState.dungeon[nearestMonster.y][nearestMonster.x] = 'item';
                             addMessage(`🎁 ${nearestMonster.name}이(가) ${bossItem.name}을(를) 떨어뜨렸습니다!`, "treasure");
                         } else if (Math.random() < nearestMonster.lootChance) {
-                            const itemKeys = Object.keys(ITEMS);
+                            const itemKeys = Object.keys(ITEMS).filter(k => k !== 'reviveScroll');
                             const availableItems = itemKeys.filter(key =>
                                 ITEMS[key].level <= Math.ceil(gameState.floor / 2 + 1)
                             );
-                            const randomItemKey = availableItems[Math.floor(Math.random() * availableItems.length)];
+                            let randomItemKey = availableItems[Math.floor(Math.random() * availableItems.length)];
+                            if (Math.random() < 0.1 && ITEMS.reviveScroll.level <= Math.ceil(gameState.floor / 2 + 1)) {
+                                randomItemKey = 'reviveScroll';
+                            }
 
                             const droppedItem = createItem(randomItemKey, nearestMonster.x, nearestMonster.y);
                             gameState.items.push(droppedItem);
