@@ -1457,10 +1457,13 @@ function healTarget(healer, target, skillInfo) {
                 const defenseBonus = merc.equipped && merc.equipped.armor ? merc.equipped.armor.defense : 0;
                 const totalAttack = merc.attack + attackBonus;
                 const totalDefense = merc.defense + defenseBonus;
+                const skillInfo = MERCENARY_SKILLS[merc.skill];
+                const skillText = skillInfo ? `스킬:${skillInfo.name}(MP ${skillInfo.manaCost})` : '스킬: 없음';
 
                 div.textContent = `${i + 1}. ${merc.icon} ${merc.name} Lv.${merc.level} (HP:${hp}, MP:${mp}) ` +
                     `[공격:${totalAttack}, 방어:${totalDefense}] ` +
                     `[무기:${weapon}, 방어구:${armor}, 악세1:${accessory1}, 악세2:${accessory2}] ` +
+                    `[${skillText}] ` +
                     `[특성:${merc.traits.join(', ')}]`;
 
                 if (merc.alive) {
@@ -1530,6 +1533,8 @@ function healTarget(healer, target, skillInfo) {
             const defenseBonus = merc.equipped && merc.equipped.armor ? merc.equipped.armor.defense : 0;
             const totalAttack = merc.attack + attackBonus;
             const totalDefense = merc.defense + defenseBonus;
+            const skillInfo = MERCENARY_SKILLS[merc.skill];
+            const skillText = skillInfo ? `${skillInfo.name} (MP ${skillInfo.manaCost})` : '없음';
 
             const traitInfo = merc.traits.map(t => `- ${t}: ${TRAIT_DETAILS[t] || ''}`).join('\n');
 
@@ -1547,6 +1552,7 @@ function healTarget(healer, target, skillInfo) {
                 `방어구: ${armor}\n` +
                 `악세서리1: ${accessory1}\n` +
                 `악세서리2: ${accessory2}\n` +
+                `스킬: ${skillText}\n` +
                 `특성:\n${traitInfo}`;
 
             alert(info);
