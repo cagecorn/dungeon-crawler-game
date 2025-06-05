@@ -1,0 +1,16 @@
+{
+  "name": "dungeon-crawler-game",
+  "version": "1.0.0",
+  "description": "This project is a lightweight browser-based dungeon crawler. It lets players explore levels, battle enemies and gather loot directly in the browser.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "devDependencies": {
+    "jsdom": "^26.1.0"
+  }
+}
