@@ -1007,12 +1007,14 @@
         const PREFIXES = [
             { name: 'Flaming', modifiers: { fireDamage: 2 } },
             { name: 'Sharp', modifiers: { attack: 1 } },
-            { name: 'Sturdy', modifiers: { defense: 1 } }
+            { name: 'Sturdy', modifiers: { defense: 1 } },
+            { name: 'Refreshing', modifiers: { healthRegen: 1 } }
         ];
         const SUFFIXES = [
             { name: 'of Protection', modifiers: { defense: 2 } },
             { name: 'of Fury', modifiers: { attack: 2 } },
-            { name: 'of Vitality', modifiers: { maxHealth: 5 } }
+            { name: 'of Vitality', modifiers: { maxHealth: 5 } },
+            { name: 'of Wisdom', modifiers: { manaRegen: 1 } }
         ];
 
         // 게임 상태
@@ -1194,11 +1196,13 @@ function healTarget(healer, target) {
             if (item.iceDamage !== undefined) stats.push(`❄️+${item.iceDamage}`);
             if (item.lightningDamage !== undefined) stats.push(`⚡+${item.lightningDamage}`);
             if (item.maxHealth !== undefined && item.type !== ITEM_TYPES.POTION && item.type !== ITEM_TYPES.REVIVE) stats.push(`HP+${item.maxHealth}`);
+            if (item.healthRegen !== undefined) stats.push(`HP회복+${item.healthRegen}`);
             if (item.accuracy !== undefined) stats.push(`명중+${item.accuracy}`);
             if (item.evasion !== undefined) stats.push(`회피+${item.evasion}`);
             if (item.critChance !== undefined) stats.push(`치명+${item.critChance}`);
             if (item.magicPower !== undefined) stats.push(`마공+${item.magicPower}`);
             if (item.magicResist !== undefined) stats.push(`마방+${item.magicResist}`);
+            if (item.manaRegen !== undefined) stats.push(`마나회복+${item.manaRegen}`);
             return `${item.name}${stats.length ? ' (' + stats.join(', ') + ')' : ''}`;
         }
 
