@@ -40,11 +40,18 @@ async function run() {
   }
 
   assignSkill(1, 'Fireball');
+  const manaBefore = gameState.player.mana;
   skill1Action();
+
+  const expectedMana = manaBefore - dom.window.SKILL_DEFS.Fireball.manaCost;
 
   const proj = gameState.projectiles[0];
   if (!proj || proj.skill !== 'Fireball' || proj.icon !== '🔥') {
     console.error('skill projectile not created correctly');
+    process.exit(1);
+  }
+  if (gameState.player.mana !== expectedMana) {
+    console.error('mana not deducted');
     process.exit(1);
   }
 }

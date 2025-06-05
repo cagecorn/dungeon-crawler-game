@@ -997,9 +997,10 @@
         };
 
         const SKILL_DEFS = {
-            Fireball: { name: 'Fireball', icon: '🔥', damage: 10, range: 5, magic: true, element: 'fire' },
-            Iceball: { name: 'Iceball', icon: '❄️', damage: 8, range: 5, magic: true, element: 'ice' }
+            Fireball: { name: 'Fireball', icon: '🔥', damage: 10, range: 5, magic: true, element: 'fire', manaCost: 3 },
+            Iceball: { name: 'Iceball', icon: '❄️', damage: 8, range: 5, magic: true, element: 'ice', manaCost: 2 }
         };
+        window.SKILL_DEFS = SKILL_DEFS;
 
         const ELEMENT_EMOJI = { fire: '🔥', ice: '❄️', lightning: '⚡' };
 
@@ -1026,6 +1027,8 @@
                 level: 1,
                 maxHealth: 20,
                 health: 20,
+                maxMana: 10,
+                mana: 10,
                 attack: 5,
                 defense: 1,
                 accuracy: 0.8,
@@ -1521,6 +1524,11 @@ function healTarget(healer, target) {
             document.getElementById('level').textContent = gameState.player.level;
             document.getElementById('health').textContent = gameState.player.health;
             document.getElementById('maxHealth').textContent = gameState.player.maxHealth;
+            const manaEl = document.getElementById('mana');
+            if (manaEl) {
+                manaEl.textContent = gameState.player.mana;
+                document.getElementById('maxMana').textContent = gameState.player.maxMana;
+            }
             document.getElementById('attackStat').textContent = gameState.player.attack;
             document.getElementById('defense').textContent = gameState.player.defense;
             document.getElementById('accuracy').textContent = getStat(gameState.player, 'accuracy');
@@ -2892,6 +2900,11 @@ function healTarget(healer, target) {
                 return;
             }
             const skill = SKILL_DEFS[skillKey];
+            if (gameState.player.mana < skill.manaCost) {
+                addMessage('마나가 부족합니다.', 'info');
+                processTurn();
+                return;
+            }
             let target = null;
             let dist = Infinity;
             for (const monster of gameState.monsters) {
@@ -2909,6 +2922,8 @@ function healTarget(healer, target) {
             const dx = Math.sign(target.x - gameState.player.x);
             const dy = Math.sign(target.y - gameState.player.y);
             gameState.projectiles.push({ x: gameState.player.x, y: gameState.player.y, dx, dy, rangeLeft: dist, icon: skill.icon, damage: skill.damage, magic: skill.magic, skill: skillKey, element: skill.element });
+            gameState.player.mana -= skill.manaCost;
+            updateStats();
             processTurn();
         }
 
