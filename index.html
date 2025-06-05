@@ -2832,17 +2832,20 @@ function healTarget(healer, target, skillInfo) {
             const playerDistance = getDistance(mercenary.x, mercenary.y, gameState.player.x, gameState.player.y);
             const minDistanceFromPlayer = 1;
             const maxDistanceFromPlayer = 3;
+            const skillInfo = MERCENARY_SKILLS[mercenary.skill];
             
             // 힐러는 치료 우선
             if (mercenary.role === 'support') {
-                const skillInfo = MERCENARY_SKILLS[mercenary.skill];
-                const knowsHeal = mercenary.skill === 'Heal' && skillInfo;
+                const knowsHeal = skillInfo && mercenary.skill === 'Heal';
                 const manaCost = knowsHeal ? skillInfo.manaCost : HEAL_MANA_COST;
                 const healRange = knowsHeal ? skillInfo.range : 2;
 
                 if (mercenary.mana >= manaCost && gameState.player.health < gameState.player.maxHealth * 0.7) {
                     if (getDistance(mercenary.x, mercenary.y, gameState.player.x, gameState.player.y) <= healRange) {
-                        if (healTarget(mercenary, gameState.player, knowsHeal ? skillInfo : undefined)) {
+                        const healed = knowsHeal
+                            ? healTarget(mercenary, gameState.player, skillInfo)
+                            : healTarget(mercenary, gameState.player);
+                        if (healed) {
                             mercenary.mana -= manaCost;
                             mercenary.hasActed = true;
                             return;
@@ -2853,7 +2856,10 @@ function healTarget(healer, target, skillInfo) {
                 for (const otherMerc of gameState.activeMercenaries) {
                     if (otherMerc !== mercenary && otherMerc.alive && otherMerc.health < otherMerc.maxHealth * 0.5) {
                         if (mercenary.mana >= manaCost && getDistance(mercenary.x, mercenary.y, otherMerc.x, otherMerc.y) <= healRange) {
-                            if (healTarget(mercenary, otherMerc, knowsHeal ? skillInfo : undefined)) {
+                            const healed = knowsHeal
+                                ? healTarget(mercenary, otherMerc, skillInfo)
+                                : healTarget(mercenary, otherMerc);
+                            if (healed) {
                                 mercenary.mana -= manaCost;
                                 mercenary.hasActed = true;
                                 return;
@@ -2881,7 +2887,6 @@ function healTarget(healer, target, skillInfo) {
             });
 
             const skillKey = mercenary.skill;
-            const skillInfo = MERCENARY_SKILLS[skillKey];
             if (skillInfo && mercenary.mana >= skillInfo.manaCost && Math.random() < 0.5) {
                 if (skillKey === 'Heal') {
                     let target = null;
