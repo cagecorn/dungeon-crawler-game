@@ -591,6 +591,7 @@
                 <h2>🛡️ 플레이어 정보</h2>
                 <div>📊 레벨: <span id="level">1</span></div>
                 <div>❤️ 체력: <span id="health">20</span>/<span id="maxHealth">20</span></div>
+                <div>🔋 마나: <span id="mana">10</span>/<span id="maxMana">10</span></div>
                 <div>⚔️ 공격력: <span id="attackStat">5</span> <span id="weaponBonus"></span></div>
                 <div>🛡️ 방어력: <span id="defense">1</span> <span id="armorBonus"></span></div>
                 <div>🎯 명중률: <span id="accuracy">0.8</span></div>
@@ -640,6 +641,8 @@
             SPELL: 'spell',
             SKILLBOOK: 'skillbook'
         };
+
+        const MERCENARY_NAMES = ['Aldo', 'Borin', 'Cara', 'Dain', 'Elin', 'Faris'];
 
         // 용병 타입 정의
         const MERCENARY_TYPES = {
@@ -997,8 +1000,8 @@
         };
 
         const SKILL_DEFS = {
-            Fireball: { name: 'Fireball', icon: '🔥', damage: 10, range: 5, magic: true, element: 'fire' },
-            Iceball: { name: 'Iceball', icon: '❄️', damage: 8, range: 5, magic: true, element: 'ice' }
+            Fireball: { name: 'Fireball', icon: '🔥', damage: 10, range: 5, magic: true, element: 'fire', manaCost: 3 },
+            Iceball: { name: 'Iceball', icon: '❄️', damage: 8, range: 5, magic: true, element: 'ice', manaCost: 2 }
         };
 
         const ELEMENT_EMOJI = { fire: '🔥', ice: '❄️', lightning: '⚡' };
@@ -1026,6 +1029,8 @@
                 level: 1,
                 maxHealth: 20,
                 health: 20,
+                maxMana: 10,
+                mana: 10,
                 attack: 5,
                 defense: 1,
                 accuracy: 0.8,
@@ -1225,6 +1230,10 @@ function healTarget(healer, target) {
         function processProjectiles() {
             const remaining = [];
             for (const proj of gameState.projectiles) {
+                if (proj.homing && proj.target) {
+                    proj.dx = Math.sign(proj.target.x - proj.x);
+                    proj.dy = Math.sign(proj.target.y - proj.y);
+                }
                 let nx = proj.x + proj.dx;
                 let ny = proj.y + proj.dy;
 
@@ -1521,6 +1530,8 @@ function healTarget(healer, target) {
             document.getElementById('level').textContent = gameState.player.level;
             document.getElementById('health').textContent = gameState.player.health;
             document.getElementById('maxHealth').textContent = gameState.player.maxHealth;
+            document.getElementById('mana').textContent = gameState.player.mana;
+            document.getElementById('maxMana').textContent = gameState.player.maxMana;
             document.getElementById('attackStat').textContent = gameState.player.attack;
             document.getElementById('defense').textContent = gameState.player.defense;
             document.getElementById('accuracy').textContent = getStat(gameState.player, 'accuracy');
@@ -1894,10 +1905,11 @@ function healTarget(healer, target) {
                 const t = allTraits[Math.floor(Math.random() * allTraits.length)];
                 if (!traits.includes(t)) traits.push(t);
             }
+            const name = mercType.name + ' ' + MERCENARY_NAMES[Math.floor(Math.random() * MERCENARY_NAMES.length)];
             return {
                 id: Math.random().toString(36).substr(2, 9),
                 type: type,
-                name: mercType.name,
+                name: name,
                 icon: mercType.icon,
                 role: mercType.role,
                 x: x,
@@ -1962,6 +1974,15 @@ function healTarget(healer, target) {
             }
 
             return item;
+        }
+
+        function createHomingProjectile(x, y, target) {
+            const dx = Math.sign(target.x - x);
+            const dy = Math.sign(target.y - y);
+            const dist = getDistance(x, y, target.x, target.y);
+            const proj = { x, y, dx, dy, rangeLeft: dist, icon: '🔺', homing: true, target };
+            gameState.projectiles.push(proj);
+            return proj;
         }
 
         // 메시지 로그 추가
@@ -2617,6 +2638,7 @@ function healTarget(healer, target) {
                 updateCamera();
                 renderDungeon();
             });
+            gameState.player.mana = Math.min(gameState.player.maxMana, gameState.player.mana + 1);
             updateStats();
         }
 
@@ -2892,6 +2914,11 @@ function healTarget(healer, target) {
                 return;
             }
             const skill = SKILL_DEFS[skillKey];
+            if (gameState.player.mana < skill.manaCost) {
+                addMessage('마나가 부족합니다.', 'info');
+                processTurn();
+                return;
+            }
             let target = null;
             let dist = Infinity;
             for (const monster of gameState.monsters) {
@@ -2908,6 +2935,7 @@ function healTarget(healer, target) {
             }
             const dx = Math.sign(target.x - gameState.player.x);
             const dy = Math.sign(target.y - gameState.player.y);
+            gameState.player.mana -= skill.manaCost;
             gameState.projectiles.push({ x: gameState.player.x, y: gameState.player.y, dx, dy, rangeLeft: dist, icon: skill.icon, damage: skill.damage, magic: skill.magic, skill: skillKey, element: skill.element });
             processTurn();
         }
