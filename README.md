@@ -23,11 +23,12 @@ Spend collected gold in the shop to purchase items. Bought gear is placed in you
 
 ### Mercenary Skills
 
-Each mercenary is granted a single random skill when hired. Activating that skill
-consumes the mercenary's mana. Whenever a skill is used, its name and icon appear
-in the combat log so you can easily follow the action. To view which skill a
-mercenary has, open their detail panel with the corresponding number key
-(`1`-`9`) or by clicking their portrait in the UI.
+Each mercenary receives one random skill upon hiring. Using that skill costs the
+mercenary's mana, and the skill's name and icon show up in the combat log when
+activated. You can see the assigned skill and its mana cost in the mercenary's
+detail panel and in the side list by their portrait. Open a mercenary's detail
+panel with the corresponding number key (`1`-`9`) or by clicking their portrait
+in the UI.
 
 ## Development
 
