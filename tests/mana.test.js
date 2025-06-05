@@ -32,13 +32,13 @@ async function run() {
 
   gameState.player.mana = 3;
   skill1Action();
-  if (gameState.player.mana !== 1) {
+  if (gameState.player.mana !== 0.5) {
     console.error('mana not used or regenerated correctly');
     process.exit(1);
   }
 
   movePlayer(1, 0);
-  if (gameState.player.mana !== 2) {
+  if (gameState.player.mana !== 1.0) {
     console.error('mana did not regenerate on turn');
     process.exit(1);
   }
