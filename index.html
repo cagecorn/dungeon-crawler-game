@@ -1034,13 +1034,14 @@
         const MERCENARY_SKILLS = {
             ChargeAttack: { name: 'Charge Attack', icon: '⚡', range: 2, manaCost: 2, multiplier: 1.5 },
             DoubleStrike: { name: 'Double Strike', icon: '🔪', range: 1, manaCost: 3 },
+            HawkEye: { name: 'HawkEye', icon: '🎯', range: 5, manaCost: 3 },
             Heal: { name: 'Heal', icon: '✨', range: 2, manaCost: 2 },
             Fireball: { name: 'Fireball', icon: '🔥', range: 4, manaCost: 3, damage: 8, magic: true, element: 'fire' }
         };
 
         const MERCENARY_SKILL_SETS = {
             WARRIOR: ['ChargeAttack', 'DoubleStrike'],
-            ARCHER: ['DoubleStrike'],
+            ARCHER: ['DoubleStrike', 'HawkEye'],
             HEALER: ['Heal'],
             WIZARD: ['Fireball']
         };
@@ -2882,7 +2883,12 @@ function healTarget(healer, target, skillInfo) {
 
             const skillKey = mercenary.skill;
             const skillInfo = MERCENARY_SKILLS[skillKey];
-            if (skillInfo && mercenary.mana >= skillInfo.manaCost && Math.random() < 0.5) {
+            const baseAttackRange = mercenary.role === 'ranged' ? 3 :
+                                    mercenary.role === 'caster' ? 2 : 1;
+            const forceSkill = skillKey === 'HawkEye' && nearestMonster &&
+                nearestDistance > baseAttackRange &&
+                nearestDistance <= (skillInfo ? skillInfo.range : 0);
+            if (skillInfo && mercenary.mana >= skillInfo.manaCost && (Math.random() < 0.5 || forceSkill)) {
                 if (skillKey === 'Heal') {
                     let target = null;
                     if (gameState.player.health < gameState.player.maxHealth && getDistance(mercenary.x, mercenary.y, gameState.player.x, gameState.player.y) <= skillInfo.range) {
@@ -2983,8 +2989,7 @@ function healTarget(healer, target, skillInfo) {
             }
             
             if (nearestMonster) {
-                const attackRange = mercenary.role === 'ranged' ? 3 :
-                                    mercenary.role === 'caster' ? 2 : 1;
+                const attackRange = baseAttackRange;
                 if (nearestDistance <= attackRange) {
                     // 공격 (장비 보너스 적용)
                     let totalAttack = mercenary.attack;
