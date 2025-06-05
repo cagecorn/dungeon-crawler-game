@@ -1504,7 +1504,9 @@ function healTarget(healer, target, skillInfo) {
             gameState.standbyMercenaries.forEach((merc, i) => {
                 const div = document.createElement('div');
                 div.className = 'mercenary-info alive';
-                div.textContent = `${merc.icon} ${merc.name} (대기)`;
+                const skillInfo = MERCENARY_SKILLS[merc.skill];
+                const skillText = skillInfo ? `스킬:${skillInfo.name}(MP ${skillInfo.manaCost})` : '스킬: 없음';
+                div.textContent = `${merc.icon} ${merc.name} (대기) [${skillText}]`;
 
                 const swapBtn = document.createElement('button');
                 swapBtn.textContent = '배치';
