@@ -1142,8 +1142,13 @@ function healTarget(healer, target) {
             const magic = options.magic || false;
             const element = options.element;
             const status = options.status;
-            const attackStat = options.attackValue !== undefined ? options.attackValue : (magic ? attacker.magicPower : attacker.attack);
-            const defenseStat = options.defenseValue !== undefined ? options.defenseValue : (magic ? defender.magicResist : defender.defense);
+            const elementalBonus = element ? getStat(attacker, `${element}Damage`) : 0;
+            const attackStat = options.attackValue !== undefined ?
+                options.attackValue + (magic ? elementalBonus : 0) :
+                (magic ? attacker.magicPower : attacker.attack);
+            const defenseStat = options.defenseValue !== undefined ?
+                options.defenseValue :
+                (magic ? defender.magicResist : defender.defense);
 
             const attackerAcc = getStat(attacker, 'accuracy');
             const defenderEva = getStat(defender, 'evasion');
@@ -1162,7 +1167,7 @@ function healTarget(healer, target) {
 
             let elementDamage = 0;
             if (element) {
-                elementDamage = getStat(attacker, `${element}Damage`);
+                elementDamage = magic ? 0 : elementalBonus;
                 if (defender.elementResistances && defender.elementResistances[element] !== undefined) {
                     const resist = defender.elementResistances[element];
                     elementDamage = Math.floor(elementDamage * (1 - resist));
@@ -1234,17 +1239,18 @@ function healTarget(healer, target) {
 
                 const monster = gameState.monsters.find(m => m.x === nx && m.y === ny);
                 if (monster) {
+                    const caster = proj.caster || gameState.player;
                     let attackValue;
-                    let magic = false;
+                    let magic = proj.magic || false;
                     if (proj.damage !== undefined) {
                         attackValue = proj.damage;
                     } else {
-                        attackValue = gameState.player.attack;
-                        if (gameState.player.equipped.weapon) {
-                            attackValue += gameState.player.equipped.weapon.attack;
+                        attackValue = caster.attack;
+                        if (caster.equipped && caster.equipped.weapon) {
+                            attackValue += caster.equipped.weapon.attack;
                         }
                     }
-                    const result = performAttack(gameState.player, monster, { attackValue, magic, element: proj.element });
+                    const result = performAttack(caster, monster, { attackValue, magic, element: proj.element });
                     const icon = proj.icon || '➡️';
                     const name = proj.skill ? SKILL_DEFS[proj.skill].name : '원거리 공격';
                     if (!result.hit) {
@@ -2871,7 +2877,7 @@ function healTarget(healer, target) {
 
             const dx = Math.sign(target.x - gameState.player.x);
             const dy = Math.sign(target.y - gameState.player.y);
-            gameState.projectiles.push({ x: gameState.player.x, y: gameState.player.y, dx, dy, rangeLeft: dist, icon: '➡️', element: null });
+            gameState.projectiles.push({ x: gameState.player.x, y: gameState.player.y, dx, dy, rangeLeft: dist, icon: '➡️', element: null, caster: gameState.player, magic: false });
             processTurn();
         }
 
@@ -2908,7 +2914,7 @@ function healTarget(healer, target) {
             }
             const dx = Math.sign(target.x - gameState.player.x);
             const dy = Math.sign(target.y - gameState.player.y);
-            gameState.projectiles.push({ x: gameState.player.x, y: gameState.player.y, dx, dy, rangeLeft: dist, icon: skill.icon, damage: skill.damage, magic: skill.magic, skill: skillKey, element: skill.element });
+            gameState.projectiles.push({ x: gameState.player.x, y: gameState.player.y, dx, dy, rangeLeft: dist, icon: skill.icon, damage: skill.damage, magic: skill.magic, skill: skillKey, element: skill.element, caster: gameState.player });
             processTurn();
         }
 
