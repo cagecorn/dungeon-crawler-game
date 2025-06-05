@@ -2663,6 +2663,7 @@ function healTarget(healer, target) {
                     if (path && path.length > 1) {
                         const step = path[1];
                         const newDistanceFromPlayer = getDistance(step.x, step.y, gameState.player.x, gameState.player.y);
+                        const stepMonsterDist = getDistance(step.x, step.y, nearestMonster.x, nearestMonster.y);
                         const stepValid = step.x >= 0 && step.x < gameState.dungeonSize &&
                             step.y >= 0 && step.y < gameState.dungeonSize &&
                             gameState.dungeon[step.y][step.x] !== 'wall' &&
@@ -2674,7 +2675,7 @@ function healTarget(healer, target) {
                                 mercenary.nextX = step.x;
                                 mercenary.nextY = step.y;
                                 mercenary.hasActed = true;
-                            } else if (newDistanceFromPlayer >= minDistanceFromPlayer && newDistanceFromPlayer <= maxDistanceFromPlayer) {
+                            } else if (newDistanceFromPlayer >= minDistanceFromPlayer && stepMonsterDist < nearestDistance) {
                                 mercenary.nextX = step.x;
                                 mercenary.nextY = step.y;
                                 mercenary.hasActed = true;
