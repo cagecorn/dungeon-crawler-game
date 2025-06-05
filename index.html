@@ -1499,8 +1499,12 @@ function healTarget(healer, target) {
                 gameState.player.inventory.push(starterPotion);
             }
 
-            const exitX = size - 2;
-            const exitY = size - 2;
+            let exitX, exitY;
+            do {
+                exitX = Math.floor(Math.random() * size);
+                exitY = Math.floor(Math.random() * size);
+            } while (gameState.dungeon[exitY][exitX] !== 'empty' || (exitX === 1 && exitY === 1));
+
             gameState.exitLocation = { x: exitX, y: exitY };
             gameState.dungeon[exitY][exitX] = 'exit';
 
