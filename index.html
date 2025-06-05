@@ -1312,7 +1312,7 @@ function healTarget(healer, target, skillInfo) {
                     } else {
                         attackValue = gameState.player.attack;
                         if (gameState.player.equipped.weapon) {
-                            attackValue += gameState.player.equipped.weapon.attack;
+                            attackValue += gameState.player.equipped.weapon.attack || 0;
                         }
                     }
                     const result = performAttack(gameState.player, monster, { attackValue, magic, element: proj.element });
@@ -1459,7 +1459,7 @@ function healTarget(healer, target, skillInfo) {
                 const armor = merc.equipped && merc.equipped.armor ? merc.equipped.armor.name : '없음';
                 const accessory1 = merc.equipped && merc.equipped.accessory1 ? merc.equipped.accessory1.name : '없음';
                 const accessory2 = merc.equipped && merc.equipped.accessory2 ? merc.equipped.accessory2.name : '없음';
-                const attackBonus = merc.equipped && merc.equipped.weapon ? merc.equipped.weapon.attack : 0;
+                const attackBonus = merc.equipped && merc.equipped.weapon ? (merc.equipped.weapon.attack || 0) : 0;
                 const defenseBonus = merc.equipped && merc.equipped.armor ? merc.equipped.armor.defense : 0;
                 const totalAttack = merc.attack + attackBonus;
                 const totalDefense = merc.defense + defenseBonus;
@@ -1537,7 +1537,7 @@ function healTarget(healer, target, skillInfo) {
             const armor = merc.equipped && merc.equipped.armor ? merc.equipped.armor.name : '없음';
             const accessory1 = merc.equipped && merc.equipped.accessory1 ? merc.equipped.accessory1.name : '없음';
             const accessory2 = merc.equipped && merc.equipped.accessory2 ? merc.equipped.accessory2.name : '없음';
-            const attackBonus = merc.equipped && merc.equipped.weapon ? merc.equipped.weapon.attack : 0;
+            const attackBonus = merc.equipped && merc.equipped.weapon ? (merc.equipped.weapon.attack || 0) : 0;
             const defenseBonus = merc.equipped && merc.equipped.armor ? merc.equipped.armor.defense : 0;
             const totalAttack = merc.attack + attackBonus;
             const totalDefense = merc.defense + defenseBonus;
@@ -1627,7 +1627,7 @@ function healTarget(healer, target, skillInfo) {
             document.getElementById('expNeeded').textContent = gameState.player.expNeeded;
             document.getElementById('gold').textContent = gameState.player.gold;
             document.getElementById('floor').textContent = gameState.floor;
-            document.getElementById('weaponBonus').textContent = gameState.player.equipped.weapon ? `(+${gameState.player.equipped.weapon.attack})` : '';
+            document.getElementById('weaponBonus').textContent = gameState.player.equipped.weapon && gameState.player.equipped.weapon.attack !== undefined ? `(+${gameState.player.equipped.weapon.attack})` : '';
             document.getElementById('armorBonus').textContent = gameState.player.equipped.armor ? `(+${gameState.player.equipped.armor.defense})` : '';
         }
 
@@ -2518,7 +2518,7 @@ function healTarget(healer, target, skillInfo) {
                 if (monster) {
                     let totalAttack = gameState.player.attack;
                     if (gameState.player.equipped.weapon) {
-                        totalAttack += gameState.player.equipped.weapon.attack;
+                        totalAttack += gameState.player.equipped.weapon.attack || 0;
                     }
 
                     const result = performAttack(gameState.player, monster, { attackValue: totalAttack });
@@ -2932,7 +2932,7 @@ function healTarget(healer, target, skillInfo) {
                 } else if (skillKey === 'ChargeAttack' && nearestMonster && nearestDistance <= skillInfo.dashRange && hasLineOfSight(mercenary.x, mercenary.y, nearestMonster.x, nearestMonster.y)) {
                     let attackValue = mercenary.attack;
                     if (mercenary.equipped && mercenary.equipped.weapon) {
-                        attackValue += mercenary.equipped.weapon.attack;
+                        attackValue += mercenary.equipped.weapon.attack || 0;
                     }
                     attackValue = Math.floor(attackValue * skillInfo.multiplier);
 
@@ -3028,7 +3028,7 @@ function healTarget(healer, target, skillInfo) {
                 } else if (nearestMonster && nearestDistance <= skillInfo.range && hasLineOfSight(mercenary.x, mercenary.y, nearestMonster.x, nearestMonster.y)) {
                     let attackValue = mercenary.attack;
                     if (mercenary.equipped && mercenary.equipped.weapon) {
-                        attackValue += mercenary.equipped.weapon.attack;
+                        attackValue += mercenary.equipped.weapon.attack || 0;
                     }
                     if (skillKey === 'ChargeAttack') {
                         attackValue = Math.floor(attackValue * skillInfo.multiplier);
@@ -3112,7 +3112,7 @@ function healTarget(healer, target, skillInfo) {
                     // 공격 (장비 보너스 적용)
                     let totalAttack = mercenary.attack;
                     if (mercenary.equipped && mercenary.equipped.weapon) {
-                        totalAttack += mercenary.equipped.weapon.attack;
+                        totalAttack += mercenary.equipped.weapon.attack || 0;
                     }
                     
                     const result = performAttack(mercenary, nearestMonster, { attackValue: totalAttack });
