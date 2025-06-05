@@ -2427,10 +2427,28 @@ function healTarget(healer, target) {
             // 용병 턴 처리
             gameState.activeMercenaries.forEach(mercenary => {
                 mercenary.hasActed = false;
+                mercenary.nextX = mercenary.x;
+                mercenary.nextY = mercenary.y;
+            });
+
+            gameState.activeMercenaries.sort((a, b) => {
+                const da = getDistance(a.x, a.y, gameState.player.x, gameState.player.y);
+                const db = getDistance(b.x, b.y, gameState.player.x, gameState.player.y);
+                return db - da; // farthest first
             });
 
             gameState.activeMercenaries.forEach(mercenary => {
                 processMercenaryTurn(mercenary);
+            });
+
+            const occupied = new Set();
+            gameState.activeMercenaries.forEach(mercenary => {
+                const key = `${mercenary.nextX},${mercenary.nextY}`;
+                if (!occupied.has(key)) {
+                    mercenary.x = mercenary.nextX;
+                    mercenary.y = mercenary.nextY;
+                    occupied.add(key);
+                }
             });
             
             // 몬스터 턴 처리
@@ -2526,6 +2544,8 @@ function healTarget(healer, target) {
         // 용병 AI (개선됨 - 장비 보너스 적용, 안전성 체크 추가)
         function processMercenaryTurn(mercenary) {
             if (!mercenary.alive || mercenary.hasActed) return;
+            mercenary.nextX = mercenary.x;
+            mercenary.nextY = mercenary.y;
             
             // 장비 초기화 확인
             if (!mercenary.equipped) {
@@ -2643,7 +2663,6 @@ function healTarget(healer, target) {
                     if (path && path.length > 1) {
                         const step = path[1];
                         const newDistanceFromPlayer = getDistance(step.x, step.y, gameState.player.x, gameState.player.y);
-                        const occupyingMerc = gameState.activeMercenaries.find(m => m !== mercenary && m.alive && m.x === step.x && m.y === step.y);
                         const stepValid = step.x >= 0 && step.x < gameState.dungeonSize &&
                             step.y >= 0 && step.y < gameState.dungeonSize &&
                             gameState.dungeon[step.y][step.x] !== 'wall' &&
@@ -2651,21 +2670,13 @@ function healTarget(healer, target) {
                             !(step.x === gameState.player.x && step.y === gameState.player.y);
 
                         if (stepValid) {
-                            if (occupyingMerc) {
-                                const oldX = mercenary.x;
-                                const oldY = mercenary.y;
-                                mercenary.x = step.x;
-                                mercenary.y = step.y;
-                                occupyingMerc.x = oldX;
-                                occupyingMerc.y = oldY;
-                                mercenary.hasActed = true;
-                            } else if (mercenary.role === 'tank') {
-                                mercenary.x = step.x;
-                                mercenary.y = step.y;
+                            if (mercenary.role === 'tank') {
+                                mercenary.nextX = step.x;
+                                mercenary.nextY = step.y;
                                 mercenary.hasActed = true;
                             } else if (newDistanceFromPlayer >= minDistanceFromPlayer && newDistanceFromPlayer <= maxDistanceFromPlayer) {
-                                mercenary.x = step.x;
-                                mercenary.y = step.y;
+                                mercenary.nextX = step.x;
+                                mercenary.nextY = step.y;
                                 mercenary.hasActed = true;
                             } else if (playerDistance > maxDistanceFromPlayer) {
                                 // too far from player, move toward player instead
@@ -2673,7 +2684,6 @@ function healTarget(healer, target) {
                                 if (backPath && backPath.length > 1) {
                                     const backStep = backPath[1];
                                     const backDist = getDistance(backStep.x, backStep.y, gameState.player.x, gameState.player.y);
-                                    const backOccupying = gameState.activeMercenaries.find(m => m !== mercenary && m.alive && m.x === backStep.x && m.y === backStep.y);
                                     const backValid = backStep.x >= 0 && backStep.x < gameState.dungeonSize &&
                                         backStep.y >= 0 && backStep.y < gameState.dungeonSize &&
                                         gameState.dungeon[backStep.y][backStep.x] !== 'wall' &&
@@ -2681,17 +2691,8 @@ function healTarget(healer, target) {
                                         !(backStep.x === gameState.player.x && backStep.y === gameState.player.y) &&
                                         backDist >= minDistanceFromPlayer && backDist < playerDistance;
                                     if (backValid) {
-                                        if (backOccupying) {
-                                            const bOldX = mercenary.x;
-                                            const bOldY = mercenary.y;
-                                            mercenary.x = backStep.x;
-                                            mercenary.y = backStep.y;
-                                            backOccupying.x = bOldX;
-                                            backOccupying.y = bOldY;
-                                        } else {
-                                            mercenary.x = backStep.x;
-                                            mercenary.y = backStep.y;
-                                        }
+                                        mercenary.nextX = backStep.x;
+                                        mercenary.nextY = backStep.y;
                                         mercenary.hasActed = true;
                                     }
                                 }
@@ -2701,7 +2702,6 @@ function healTarget(healer, target) {
                             if (backPath && backPath.length > 1) {
                                 const backStep = backPath[1];
                                 const backDist = getDistance(backStep.x, backStep.y, gameState.player.x, gameState.player.y);
-                                const backOccupying = gameState.activeMercenaries.find(m => m !== mercenary && m.alive && m.x === backStep.x && m.y === backStep.y);
                                 const backValid = backStep.x >= 0 && backStep.x < gameState.dungeonSize &&
                                     backStep.y >= 0 && backStep.y < gameState.dungeonSize &&
                                     gameState.dungeon[backStep.y][backStep.x] !== 'wall' &&
@@ -2709,17 +2709,8 @@ function healTarget(healer, target) {
                                     !(backStep.x === gameState.player.x && backStep.y === gameState.player.y) &&
                                     backDist >= minDistanceFromPlayer && backDist < playerDistance;
                                 if (backValid) {
-                                    if (backOccupying) {
-                                        const bOldX = mercenary.x;
-                                        const bOldY = mercenary.y;
-                                        mercenary.x = backStep.x;
-                                        mercenary.y = backStep.y;
-                                        backOccupying.x = bOldX;
-                                        backOccupying.y = bOldY;
-                                    } else {
-                                        mercenary.x = backStep.x;
-                                        mercenary.y = backStep.y;
-                                    }
+                                    mercenary.nextX = backStep.x;
+                                    mercenary.nextY = backStep.y;
                                     mercenary.hasActed = true;
                                 }
                             }
@@ -2732,7 +2723,6 @@ function healTarget(healer, target) {
                     if (path && path.length > 1) {
                         const step = path[1];
                         const distAfter = getDistance(step.x, step.y, gameState.player.x, gameState.player.y);
-                        const occupyingMerc = gameState.activeMercenaries.find(m => m !== mercenary && m.alive && m.x === step.x && m.y === step.y);
                         const stepValid = step.x >= 0 && step.x < gameState.dungeonSize &&
                             step.y >= 0 && step.y < gameState.dungeonSize &&
                             gameState.dungeon[step.y][step.x] !== 'wall' &&
@@ -2741,19 +2731,9 @@ function healTarget(healer, target) {
                             distAfter >= minDistanceFromPlayer && distAfter < playerDistance;
 
                         if (stepValid) {
-                            if (occupyingMerc) {
-                                const oldX = mercenary.x;
-                                const oldY = mercenary.y;
-                                mercenary.x = step.x;
-                                mercenary.y = step.y;
-                                occupyingMerc.x = oldX;
-                                occupyingMerc.y = oldY;
-                                mercenary.hasActed = true;
-                            } else {
-                                mercenary.x = step.x;
-                                mercenary.y = step.y;
-                                mercenary.hasActed = true;
-                            }
+                            mercenary.nextX = step.x;
+                            mercenary.nextY = step.y;
+                            mercenary.hasActed = true;
                         }
                     }
                 }
