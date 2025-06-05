@@ -2025,8 +2025,6 @@ function healTarget(healer, target, skillInfo) {
                     return;
                 }
                 setMercenaryLevel(mercenary, removed.level);
-                mercenary.maxMana = MERCENARY_TYPES[type].baseMaxMana || 0;
-                mercenary.mana = mercenary.maxMana;
                 gameState.activeMercenaries[index] = mercenary;
                 removed.x = -1;
                 removed.y = -1;
