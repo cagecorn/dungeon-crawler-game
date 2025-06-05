@@ -1026,6 +1026,14 @@
                 level: 2,
                 icon: '💊'
             },
+            smallExpScroll: {
+                name: '📜 작은 경험치 스크롤',
+                type: ITEM_TYPES.POTION,
+                expGain: 10,
+                price: 20,
+                level: 1,
+                icon: '📜'
+            },
             reviveScroll: {
                 name: '✨ 부활 스크롤',
                 type: ITEM_TYPES.REVIVE,
@@ -1110,7 +1118,7 @@
             player: {
                 x: 0,
                 y: 0,
-                level: 1,
+                level: 4,
                 maxHealth: 20,
                 health: 20,
                 maxMana: 10,
@@ -1130,7 +1138,19 @@
                 exp: 0,
                 expNeeded: 20,
                 gold: 1000,
-                inventory: [],
+                inventory: Array.from({length: 5}, () => {
+                    const data = ITEMS.smallExpScroll;
+                    return {
+                        id: Math.random().toString(36).substr(2, 9),
+                        key: 'smallExpScroll',
+                        baseName: data.name,
+                        name: data.name,
+                        type: data.type,
+                        x: 0,
+                        y: 0,
+                        ...data
+                    };
+                }),
                 skills: ['Fireball'],
                 assignedSkills: {1: null, 2: null},
                 equipped: {
@@ -1322,6 +1342,7 @@ function healTarget(healer, target, skillInfo) {
             if (item.magicPower !== undefined) stats.push(`마공+${item.magicPower}`);
             if (item.magicResist !== undefined) stats.push(`마방+${item.magicResist}`);
             if (item.manaRegen !== undefined) stats.push(`MP회복+${item.manaRegen}`);
+            if (item.expGain !== undefined) stats.push(`EXP+${item.expGain}`);
             return `${item.name}${stats.length ? ' (' + stats.join(', ') + ')' : ''}`;
         }
 
@@ -2020,6 +2041,9 @@ function healTarget(healer, target, skillInfo) {
             for (let i = 0; i < 3; i++) {
                 const k = availableItems[Math.floor(Math.random() * availableItems.length)];
                 const shopItem = createItem(k, 0, 0);
+                if (shopItem.price !== undefined) {
+                    shopItem.price *= 3;
+                }
                 gameState.shopItems.push(shopItem);
             }
 
@@ -2411,7 +2435,26 @@ function healTarget(healer, target, skillInfo) {
 
         // 아이템 사용 (대상 지정)
         function useItemOnTarget(item, target) {
-            if (item.type === ITEM_TYPES.POTION) {
+            if (item.expGain !== undefined) {
+                const name = target === gameState.player ? '플레이어' : target.name;
+                target.exp += item.expGain;
+                addMessage(`📜 ${item.name}을(를) 사용하여 ${name}이(가) 경험치 ${item.expGain}을 획득했습니다.`, 'item');
+
+                const index = gameState.player.inventory.findIndex(i => i.id === item.id);
+                if (index !== -1) {
+                    gameState.player.inventory.splice(index, 1);
+                }
+
+                if (target === gameState.player) {
+                    checkLevelUp();
+                    updateStats();
+                } else {
+                    checkMercenaryLevelUp(target);
+                    updateMercenaryDisplay();
+                }
+
+                updateInventoryDisplay();
+            } else if (item.type === ITEM_TYPES.POTION) {
                 if (target.health < target.maxHealth) {
                     const healAmount = Math.min(item.healing, target.maxHealth - target.health);
                     target.health += healAmount;
