@@ -705,6 +705,19 @@
             }
         };
 
+        // 클래스별 성장 수치
+        const CLASS_GROWTH = {
+            Novice: { maxHealth: 5, attack: 1, defense: 1 },
+            Warrior: { maxHealth: 7, attack: 2, defense: 2 },
+            Archer: { maxHealth: 4, attack: 2, defense: 1 },
+            Wizard: { maxHealth: 3, attack: 1, defense: 1, magicPower: 2 },
+            Healer: { maxHealth: 4, attack: 1, defense: 1, magicResist: 2 },
+            WARRIOR: { maxHealth: 7, attack: 2, defense: 2 },
+            ARCHER: { maxHealth: 4, attack: 2, defense: 1 },
+            WIZARD: { maxHealth: 3, attack: 1, defense: 1, magicPower: 2 },
+            HEALER: { maxHealth: 4, attack: 1, defense: 1, magicResist: 2 }
+        };
+
         // 용병 특성
         const POSITIVE_TRAITS = [
             '근면함',
@@ -1024,6 +1037,7 @@
                 x: 0,
                 y: 0,
                 level: 1,
+                class: 'Novice',
                 maxHealth: 20,
                 health: 20,
                 attack: 5,
@@ -1220,6 +1234,18 @@ function healTarget(healer, target) {
             if (ratio >= 0.4) return '😐';
             if (ratio >= 0.1) return '😟';
             return '😢';
+        }
+
+        function applyGrowth(entity, growth) {
+            if (!growth) return;
+            if (growth.maxHealth) {
+                entity.maxHealth += growth.maxHealth;
+                entity.health = entity.maxHealth;
+            }
+            if (growth.attack) entity.attack += growth.attack;
+            if (growth.defense) entity.defense += growth.defense;
+            if (growth.magicPower) entity.magicPower += growth.magicPower;
+            if (growth.magicResist) entity.magicResist += growth.magicResist;
         }
 
         function processProjectiles() {
@@ -1583,10 +1609,7 @@ function healTarget(healer, target) {
         function setMercenaryLevel(mercenary, level) {
             for (let i = 1; i < level; i++) {
                 mercenary.level += 1;
-                mercenary.maxHealth += 3;
-                mercenary.health = mercenary.maxHealth;
-                mercenary.attack += 1;
-                mercenary.defense += 1;
+                applyGrowth(mercenary, CLASS_GROWTH[mercenary.type] || CLASS_GROWTH.Novice);
                 mercenary.expNeeded = Math.floor(mercenary.expNeeded * 1.5);
             }
         }
@@ -1644,17 +1667,30 @@ function healTarget(healer, target) {
         }
 
         // 플레이어 레벨업 체크
+        function chooseClass() {
+            const input = prompt('직업을 선택하세요: Warrior, Archer, Wizard, Healer');
+            if (!input) return;
+            const map = { warrior: 'Warrior', archer: 'Archer', wizard: 'Wizard', healer: 'Healer' };
+            const key = input.trim().toLowerCase();
+            if (map[key]) {
+                gameState.player.class = map[key];
+                addMessage(`🎉 당신은 이제 ${map[key]}입니다!`, 'level');
+            } else {
+                addMessage('❌ 올바르지 않은 직업입니다.', 'info');
+            }
+        }
+
         function checkLevelUp() {
             while (gameState.player.exp >= gameState.player.expNeeded) {
                 gameState.player.exp -= gameState.player.expNeeded;
                 gameState.player.level += 1;
-                gameState.player.maxHealth += 5;
-                gameState.player.health = gameState.player.maxHealth;
-                gameState.player.attack += 1;
-                gameState.player.defense += 1;
+                applyGrowth(gameState.player, CLASS_GROWTH[gameState.player.class]);
                 gameState.player.expNeeded = Math.floor(gameState.player.expNeeded * 1.5);
-                addMessage(`🎉 플레이어 레벨이 ${gameState.player.level}이(가) 되었습니다! (공격력 +1, 방어력 +1, 체력 +5)`, 'level');
+                addMessage(`🎉 플레이어 레벨이 ${gameState.player.level}이(가) 되었습니다!`, 'level');
                 updateStats();
+                if (gameState.player.level >= 5 && gameState.player.class === 'Novice') {
+                    chooseClass();
+                }
             }
         }
 
@@ -1662,10 +1698,7 @@ function healTarget(healer, target) {
             while (mercenary.exp >= mercenary.expNeeded) {
                 mercenary.exp -= mercenary.expNeeded;
                 mercenary.level += 1;
-                mercenary.maxHealth += 3;
-                mercenary.health = mercenary.maxHealth;
-                mercenary.attack += 1;
-                mercenary.defense += 1;
+                applyGrowth(mercenary, CLASS_GROWTH[mercenary.type] || CLASS_GROWTH.Novice);
                 mercenary.expNeeded = Math.floor(mercenary.expNeeded * 1.5);
                 addMessage(`🎉 ${mercenary.name}의 레벨이 ${mercenary.level}이(가) 되었습니다!`, 'mercenary');
             }
