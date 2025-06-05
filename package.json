@@ -4,7 +4,7 @@
   "description": "This project is a lightweight browser-based dungeon crawler. It lets players explore levels, battle enemies and gather loot directly in the browser.",
   "main": "index.js",
   "scripts": {
-    "test": "node tests/mercenaryFollow.test.js"
+    "test": "node tests/mercenaryFollow.test.js && node tests/skillbook.test.js"
   },
   "keywords": [],
   "author": "",

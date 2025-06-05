@@ -289,6 +289,30 @@
             margin: 0 0 8px 0;
             font-size: 14px;
         }
+        .skills-panel {
+            background: linear-gradient(135deg, #2a2a2a, #333);
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 0 15px rgba(0, 0, 0, 0.7);
+            border: 1px solid #555;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        .skills-panel h2 {
+            color: #ff6600;
+            margin: 0 0 12px 0;
+            border-bottom: 2px solid #ff6600;
+            padding-bottom: 8px;
+            text-align: center;
+            font-size: 16px;
+        }
+        .skill-item {
+            background-color: #444;
+            padding: 6px;
+            margin-bottom: 4px;
+            border-radius: 4px;
+            font-size: 11px;
+        }
         .inventory-slot {
             background-color: #444;
             padding: 6px;
@@ -577,6 +601,12 @@
                 <h3>📦 보유 아이템</h3>
                 <div id="inventory-items"></div>
             </div>
+            <div class="skills-panel">
+                <h2>📚 스킬</h2>
+                <div id="skill-list"></div>
+                <div>1번 슬롯: <span id="skill1-name">없음</span></div>
+                <div>2번 슬롯: <span id="skill2-name">없음</span></div>
+            </div>
         </div>
     </div>
 
@@ -596,7 +626,8 @@
             ACCESSORY: 'accessory',
             POTION: 'potion',
             REVIVE: 'revive',
-            SPELL: 'spell'
+            SPELL: 'spell',
+            SKILLBOOK: 'skillbook'
         };
 
         // 용병 타입 정의
@@ -935,7 +966,28 @@
                 price: 30,
                 level: 2,
                 icon: '🔥'
+            },
+            fireballBook: {
+                name: '📘 파이어볼 서적',
+                type: ITEM_TYPES.SKILLBOOK,
+                skill: 'Fireball',
+                price: 0,
+                level: 1,
+                icon: '📘'
+            },
+            iceballBook: {
+                name: '📘 아이스볼 서적',
+                type: ITEM_TYPES.SKILLBOOK,
+                skill: 'Iceball',
+                price: 0,
+                level: 1,
+                icon: '📘'
             }
+        };
+
+        const SKILL_DEFS = {
+            Fireball: { name: 'Fireball', icon: '🔥', damage: 10, range: 5, magic: true },
+            Iceball: { name: 'Iceball', icon: '❄️', damage: 8, range: 5, magic: true }
         };
 
         // 접두사/접미사 풀
@@ -973,6 +1025,8 @@
                 expNeeded: 20,
                 gold: 100,
                 inventory: [],
+                skills: [],
+                assignedSkills: {1: null, 2: null},
                 equipped: {
                     weapon: null,
                     armor: null,
@@ -1152,16 +1206,25 @@ function healTarget(healer, target) {
 
                 const monster = gameState.monsters.find(m => m.x === nx && m.y === ny);
                 if (monster) {
-                    let totalAttack = gameState.player.attack;
-                    if (gameState.player.equipped.weapon) {
-                        totalAttack += gameState.player.equipped.weapon.attack;
+                    let attackValue;
+                    let magic = false;
+                    if (proj.damage !== undefined) {
+                        attackValue = proj.damage;
+                        magic = proj.magic;
+                    } else {
+                        attackValue = gameState.player.attack;
+                        if (gameState.player.equipped.weapon) {
+                            attackValue += gameState.player.equipped.weapon.attack;
+                        }
                     }
-                    const result = performAttack(gameState.player, monster, { attackValue: totalAttack });
+                    const result = performAttack(gameState.player, monster, { attackValue, magic });
+                    const icon = proj.icon || '➡️';
+                    const name = proj.skill ? SKILL_DEFS[proj.skill].name : '원거리 공격';
                     if (!result.hit) {
-                        addMessage(`❌ ${monster.name}에게 원거리 공격이 빗나갔습니다!`, 'combat');
+                        addMessage(`❌ ${monster.name}에게 ${name}이 빗나갔습니다!`, 'combat');
                     } else {
                         const critMsg = result.crit ? ' (치명타!)' : '';
-                        addMessage(`🏹 ${monster.name}에게 ${result.damage}의 피해를 입혔습니다${critMsg}!`, 'combat');
+                        addMessage(`${icon} ${monster.name}에게 ${result.damage}의 피해를 입혔습니다${critMsg}!`, 'combat');
                     }
                     if (monster.health <= 0) {
                         addMessage(`💀 ${monster.name}을(를) 처치했습니다!`, 'combat');
@@ -1231,6 +1294,38 @@ function healTarget(healer, target) {
             } else {
                 acc2Slot.textContent = '악세서리2: 없음';
                 acc2Slot.onclick = null;
+            }
+        }
+
+        function updateSkillDisplay() {
+            const list = document.getElementById('skill-list');
+            if (!list) return;
+            list.innerHTML = '';
+            gameState.player.skills.forEach(skill => {
+                const div = document.createElement('div');
+                div.className = 'skill-item';
+                const info = SKILL_DEFS[skill];
+                div.textContent = `${info.icon} ${info.name}`;
+                div.onclick = () => {
+                    const slot = prompt('Assign to slot (1 or 2)?');
+                    if (slot === '1' || slot === '2') assignSkill(parseInt(slot,10), skill);
+                };
+                list.appendChild(div);
+            });
+            document.getElementById('skill1-name').textContent = gameState.player.assignedSkills[1] ? SKILL_DEFS[gameState.player.assignedSkills[1]].name : '없음';
+            document.getElementById('skill2-name').textContent = gameState.player.assignedSkills[2] ? SKILL_DEFS[gameState.player.assignedSkills[2]].name : '없음';
+        }
+
+        function assignSkill(slot, skill) {
+            gameState.player.assignedSkills[slot] = skill;
+            updateSkillDisplay();
+        }
+
+        function learnSkill(skill) {
+            if (!gameState.player.skills.includes(skill)) {
+                gameState.player.skills.push(skill);
+                addMessage(`📚 ${skill} 스킬을 배웠습니다!`, 'info');
+                updateSkillDisplay();
             }
         }
 
@@ -1624,6 +1719,19 @@ function healTarget(healer, target) {
                 gameState.dungeon[y][x] = 'item';
             }
 
+            const skillbookKeys = itemKeys.filter(k => ITEMS[k].type === ITEM_TYPES.SKILLBOOK);
+            if (skillbookKeys.length && Math.random() < 0.5) {
+                let sx, sy;
+                do {
+                    sx = Math.floor(Math.random() * size);
+                    sy = Math.floor(Math.random() * size);
+                } while (gameState.dungeon[sy][sx] !== 'empty');
+                const sk = skillbookKeys[Math.floor(Math.random() * skillbookKeys.length)];
+                const sb = createItem(sk, sx, sy);
+                gameState.items.push(sb);
+                gameState.dungeon[sy][sx] = 'item';
+            }
+
             // 상점 위치 및 아이템 설정
             let sx, sy;
             do {
@@ -1644,6 +1752,7 @@ function healTarget(healer, target) {
             updateFogOfWar();
             updateStats();
             updateInventoryDisplay();
+            updateSkillDisplay();
             updateMercenaryDisplay();
             renderDungeon();
             updateCamera();
@@ -2236,9 +2345,13 @@ function healTarget(healer, target) {
             if (cellType === 'item') {
                 const item = gameState.items.find(i => i.x === newX && i.y === newY);
                 if (item) {
-                    addToInventory(item);
-                    addMessage(`📦 ${item.name}을(를) 획득했습니다!`, "item");
-                    
+                    if (item.type === ITEM_TYPES.SKILLBOOK) {
+                        learnSkill(item.skill);
+                    } else {
+                        addToInventory(item);
+                        addMessage(`📦 ${item.name}을(를) 획득했습니다!`, 'item');
+                    }
+
                     const itemIndex = gameState.items.findIndex(i => i === item);
                     if (itemIndex !== -1) {
                         gameState.items.splice(itemIndex, 1);
@@ -2698,9 +2811,40 @@ function healTarget(healer, target) {
         }
 
         function skill1Action() {
+            const skill = gameState.player.assignedSkills[1];
+            useSkill(skill);
         }
 
         function skill2Action() {
+            const skill = gameState.player.assignedSkills[2];
+            useSkill(skill);
+        }
+
+        function useSkill(skillKey) {
+            if (!skillKey) {
+                addMessage('스킬이 설정되어 있지 않습니다.', 'info');
+                processTurn();
+                return;
+            }
+            const skill = SKILL_DEFS[skillKey];
+            let target = null;
+            let dist = Infinity;
+            for (const monster of gameState.monsters) {
+                const d = getDistance(gameState.player.x, gameState.player.y, monster.x, monster.y);
+                if (d <= skill.range && d < dist && hasLineOfSight(gameState.player.x, gameState.player.y, monster.x, monster.y)) {
+                    target = monster;
+                    dist = d;
+                }
+            }
+            if (!target) {
+                addMessage('🎯 사거리 내에 몬스터가 없습니다.', 'info');
+                processTurn();
+                return;
+            }
+            const dx = Math.sign(target.x - gameState.player.x);
+            const dy = Math.sign(target.y - gameState.player.y);
+            gameState.projectiles.push({ x: gameState.player.x, y: gameState.player.y, dx, dy, rangeLeft: dist, icon: skill.icon, damage: skill.damage, magic: skill.magic, skill: skillKey });
+            processTurn();
         }
 
         function healAction() {
@@ -2788,6 +2932,7 @@ function healTarget(healer, target) {
 
         // 초기화 및 입력 처리
         generateDungeon();
+        updateSkillDisplay();
         renderTraitInfo();
         document.getElementById('up').onclick = () => movePlayer(0, -1);
         document.getElementById('down').onclick = () => movePlayer(0, 1);
