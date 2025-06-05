@@ -173,6 +173,14 @@
             min-width: 280px;
             max-width: 300px;
         }
+        .middle-panel {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            min-width: 250px;
+            max-width: 280px;
+        }
+
         .stats {
             background: linear-gradient(135deg, #2a2a2a, #333);
             padding: 15px;
@@ -398,9 +406,9 @@
         #actions {
             display: flex;
             flex-direction: column;
-            align-items: center;
             gap: 8px;
             margin-top: 15px;
+            width: 100%;
         }
         .actions-row {
             display: flex;
@@ -544,20 +552,41 @@
                 </div>
             </div>
         </div>
-        <div id="actions">
-            <div class="actions-row">
-                <button id="attack">Attack</button>
-                <button id="skill1">Skill1</button>
-                <button id="skill2">Skill2</button>
+        <div class="middle-panel">
+            <div id="actions">
+                <div class="actions-row">
+                    <button id="attack">Attack</button>
+                    <button id="skill1">Skill1</button>
+                    <button id="skill2">Skill2</button>
+                </div>
+                <div class="actions-row">
+                    <button id="heal">Heal</button>
+                    <button id="recall">Recall</button>
+                    <button id="other">Other</button>
+                </div>
             </div>
-            <div class="actions-row">
-                <button id="heal">Heal</button>
-                <button id="recall">Recall</button>
-                <button id="other">Other</button>
+            <div class="inventory">
+                <h2>🎒 인벤토리</h2>
+                <div class="equipped-items">
+                    <h3>✨ 장착 중인 아이템</h3>
+                    <div class="equipped-slot" id="equipped-weapon">무기: 없음</div>
+                    <div class="equipped-slot" id="equipped-armor">방어구: 없음</div>
+                    <div class="equipped-slot" id="equipped-accessory1">악세서리1: 없음</div>
+                    <div class="equipped-slot" id="equipped-accessory2">악세서리2: 없음</div>
+                </div>
+                <h3>📦 보유 아이템</h3>
+                <div id="inventory-items"></div>
+            </div>
+            <div class="skills-panel">
+                <h2>📚 스킬</h2>
+                <div id="skill-list"></div>
+                <div>1번 슬롯: <span id="skill1-name">없음</span></div>
+                <div>2번 슬롯: <span id="skill2-name">없음</span></div>
             </div>
         </div>
-        
+
         <div class="side-panel">
+
             <div class="stats">
                 <h2>🛡️ 플레이어 정보</h2>
                 <div>📊 레벨: <span id="level">1</span></div>
@@ -589,24 +618,6 @@
                 <button class="hire-button" onclick="hireMercenary('WIZARD')">🔮 마법사 고용 (80💰)</button>
             </div>
             
-            <div class="inventory">
-                <h2>🎒 인벤토리</h2>
-                <div class="equipped-items">
-                    <h3>✨ 장착 중인 아이템</h3>
-                    <div class="equipped-slot" id="equipped-weapon">무기: 없음</div>
-                    <div class="equipped-slot" id="equipped-armor">방어구: 없음</div>
-                    <div class="equipped-slot" id="equipped-accessory1">악세서리1: 없음</div>
-                    <div class="equipped-slot" id="equipped-accessory2">악세서리2: 없음</div>
-                </div>
-                <h3>📦 보유 아이템</h3>
-                <div id="inventory-items"></div>
-            </div>
-            <div class="skills-panel">
-                <h2>📚 스킬</h2>
-                <div id="skill-list"></div>
-                <div>1번 슬롯: <span id="skill1-name">없음</span></div>
-                <div>2번 슬롯: <span id="skill2-name">없음</span></div>
-            </div>
         </div>
     </div>
 
