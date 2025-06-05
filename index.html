@@ -993,12 +993,21 @@
                 price: 0,
                 level: 1,
                 icon: '📘'
+            },
+            healingBook: {
+                name: '📘 힐링 서적',
+                type: ITEM_TYPES.SKILLBOOK,
+                skill: 'Healing',
+                price: 0,
+                level: 1,
+                icon: '📘'
             }
         };
 
         const SKILL_DEFS = {
             Fireball: { name: 'Fireball', icon: '🔥', damage: 10, range: 5, magic: true, element: 'fire', manaCost: 3 },
-            Iceball: { name: 'Iceball', icon: '❄️', damage: 8, range: 5, magic: true, element: 'ice', manaCost: 2 }
+            Iceball: { name: 'Iceball', icon: '❄️', damage: 8, range: 5, magic: true, element: 'ice', manaCost: 2 },
+            Healing: { name: 'Healing', icon: '💖', heal: 10, manaCost: 3 }
         };
 
         const ELEMENT_EMOJI = { fire: '🔥', ice: '❄️', lightning: '⚡' };
@@ -2945,6 +2954,19 @@ function healTarget(healer, target) {
             const skill = SKILL_DEFS[skillKey];
             if (gameState.player.mana < skill.manaCost) {
                 addMessage('마나가 부족합니다.', 'info');
+                processTurn();
+                return;
+            }
+            if (skill.heal) {
+                const healAmount = Math.min(skill.heal, gameState.player.maxHealth - gameState.player.health);
+                if (healAmount > 0) {
+                    gameState.player.health += healAmount;
+                    addMessage(`💚 ${skill.name} 스킬로 ${healAmount} 체력을 회복했습니다.`, 'info');
+                    updateStats();
+                } else {
+                    addMessage('❤️ 체력이 이미 가득 찼습니다.', 'info');
+                }
+                gameState.player.mana -= skill.manaCost;
                 processTurn();
                 return;
             }
