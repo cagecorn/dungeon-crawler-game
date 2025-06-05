@@ -761,6 +761,16 @@
             '집요한 사냥꾼'
         ];
 
+        const POSITIVE_TRAITS = [
+            ...ABILITY_TRAITS,
+            ...REACTIVE_TRAITS,
+            ...STATUS_TRAITS,
+            ...FIELD_TRAITS,
+            ...SPECIAL_ACTION_TRAITS
+        ];
+        const NEGATIVE_TRAITS = [];
+        const TRADEOFF_TRAITS = [];
+
         // 특성 상세 설명
         const TRAIT_DETAILS = {
             '철벽': '방어력이 크게 증가하여 받는 피해를 감소시킵니다.',
@@ -1209,7 +1219,10 @@
 
         // 간단한 치유 로직
 function healTarget(healer, target, skillInfo) {
-            const healAmount = Math.min(3 + healer.level, target.maxHealth - target.health);
+            let healAmount = Math.min(3 + healer.level, target.maxHealth - target.health);
+            if (hasTrait(healer, '구호의 손길')) {
+                healAmount = Math.floor(healAmount * 1.2);
+            }
             if (healAmount > 0) {
                 target.health += healAmount;
                 const name = target === gameState.player ? '플레이어' : target.name;
@@ -1228,8 +1241,12 @@ function healTarget(healer, target, skillInfo) {
             const magic = options.magic || false;
             const element = options.element;
             const status = options.status;
-            const attackStat = options.attackValue !== undefined ? options.attackValue : (magic ? attacker.magicPower : attacker.attack);
-            const defenseStat = options.defenseValue !== undefined ? options.defenseValue : (magic ? defender.magicResist : defender.defense);
+            let attackStat = options.attackValue !== undefined ? options.attackValue : (magic ? attacker.magicPower : attacker.attack);
+            let defenseStat = options.defenseValue !== undefined ? options.defenseValue : (magic ? defender.magicResist : defender.defense);
+
+            if (attacker.vengeanceTurns && attacker.vengeanceTurns > 0) {
+                attackStat += 2;
+            }
 
             const attackerAcc = getStat(attacker, 'accuracy');
             const defenderEva = getStat(defender, 'evasion');
@@ -1239,6 +1256,11 @@ function healTarget(healer, target, skillInfo) {
             }
 
             let baseDamage = Math.max(1, attackStat - defenseStat);
+
+            if (hasTrait(attacker, '맹공 돌진') && attacker.rushReady) {
+                baseDamage = Math.floor(baseDamage * 1.5);
+                attacker.rushReady = false;
+            }
             let crit = false;
             const critChance = getStat(attacker, 'critChance');
             if (Math.random() < critChance) {
@@ -1255,12 +1277,27 @@ function healTarget(healer, target, skillInfo) {
                 }
             }
 
-            const damage = baseDamage + elementDamage;
+            if (hasTrait(attacker, '집요한 사냥꾼') && (defender.bleedTurns > 0 || defender.poison || defender.burn || defender.freeze)) {
+                baseDamage = Math.floor(baseDamage * 1.25);
+            }
+
+            let damage = baseDamage + elementDamage;
+            if (hasTrait(defender, '철벽')) {
+                damage = Math.floor(damage * 0.8);
+            }
             defender.health -= damage;
 
             let statusApplied = false;
+            if (hasTrait(attacker, '은밀한 칼날') && Math.random() < 0.3) {
+                defender.bleedTurns = Math.max(defender.bleedTurns || 0, 3);
+                statusApplied = true;
+            }
             if (status && defender.statusResistances && defender.statusResistances[status] !== undefined) {
-                if (Math.random() > defender.statusResistances[status]) {
+                let resist = defender.statusResistances[status];
+                if (hasTrait(defender, '의지의 불꽃')) {
+                    resist += 0.5;
+                }
+                if (Math.random() > resist) {
                     defender[status] = true;
                     statusApplied = true;
                 }
@@ -1298,7 +1335,18 @@ function healTarget(healer, target, skillInfo) {
                     }
                 });
             }
+            if (stat === 'manaRegen' && hasTrait(character, '마력 조율자')) {
+                value += 0.5;
+            }
+            if (stat === 'evasion' && hasTrait(character, '도망자 감각')) {
+                const ratio = character.health / character.maxHealth;
+                if (ratio < 0.3) value += 0.2;
+            }
             return value;
+        }
+
+        function hasTrait(entity, name) {
+            return entity && Array.isArray(entity.traits) && entity.traits.includes(name);
         }
 
         // 플레이어 체력 비율에 따른 표정 반환
@@ -1687,6 +1735,7 @@ function healTarget(healer, target, skillInfo) {
                 magicResist: data.baseMagicResist,
                 elementResistances: {fire:0, ice:0, lightning:0, earth:0, light:0, dark:0},
                 statusResistances: {poison:0, bleed:0, burn:0, freeze:0},
+                bleedTurns: 0,
                 exp: data.baseExp,
                 gold: data.baseGold,
                 range: data.range,
@@ -2117,6 +2166,9 @@ function healTarget(healer, target, skillInfo) {
                 alive: true,
                 hasActed: false,
                 traits: traits,
+                bleedTurns: 0,
+                vengeanceTurns: 0,
+                rushReady: traits.includes('맹공 돌진'),
                 equipped: {
                     weapon: null,
                     armor: null,
@@ -2486,6 +2538,11 @@ function healTarget(healer, target, skillInfo) {
                         nearestTarget.alive = false;
                         nearestTarget.health = 0;
                         addMessage(`💀 ${nearestTarget.name}이(가) 전사했습니다...`, "mercenary");
+                        gameState.activeMercenaries.forEach(m => {
+                            if (m.alive && hasTrait(m, '복수의 피')) {
+                                m.vengeanceTurns = 3;
+                            }
+                        });
                         updateMercenaryDisplay();
                     }
                 }
@@ -2613,8 +2670,12 @@ function healTarget(healer, target, skillInfo) {
             if (cellType === 'treasure') {
                 const treasure = gameState.treasures.find(t => t.x === newX && t.y === newY);
                 if (treasure) {
-                    gameState.player.gold += treasure.gold;
-                    addMessage(`💎 보물을 발견했습니다! ${treasure.gold} 골드를 획득했습니다!`, "treasure");
+                    let gold = treasure.gold;
+                    if (gameState.activeMercenaries.some(m => m.alive && hasTrait(m, '보물 감별사'))) {
+                        gold = Math.floor(gold * 1.5);
+                    }
+                    gameState.player.gold += gold;
+                    addMessage(`💎 보물을 발견했습니다! ${gold} 골드를 획득했습니다!`, "treasure");
                     
                     const treasureIndex = gameState.treasures.findIndex(t => t === treasure);
                     if (treasureIndex !== -1) {
@@ -2705,6 +2766,12 @@ function healTarget(healer, target, skillInfo) {
         function processTurn() {
             if (!gameState.gameRunning) return;
             processProjectiles();
+
+            gameState.monsters.forEach(m => {
+                if (m.bleedTurns && m.bleedTurns > 0) {
+                    m.bleedTurns--;
+                }
+            });
             
             // 용병 턴 처리
             gameState.activeMercenaries.forEach(mercenary => {
@@ -2858,6 +2925,13 @@ function healTarget(healer, target, skillInfo) {
             if (!mercenary.alive || mercenary.hasActed) return;
             mercenary.nextX = mercenary.x;
             mercenary.nextY = mercenary.y;
+
+            if (mercenary.bleedTurns && mercenary.bleedTurns > 0) {
+                mercenary.bleedTurns--;
+            }
+            if (mercenary.vengeanceTurns && mercenary.vengeanceTurns > 0) {
+                mercenary.vengeanceTurns--;
+            }
 
             const hpRegen = getStat(mercenary, 'healthRegen');
             const mpRegen = getStat(mercenary, 'manaRegen');
