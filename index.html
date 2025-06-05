@@ -1812,6 +1812,7 @@ function healTarget(healer, target, skillInfo) {
                 mercenary.defense += 1;
                 mercenary.expNeeded = Math.floor(mercenary.expNeeded * 1.5);
                 addMessage(`🎉 ${mercenary.name}의 레벨이 ${mercenary.level}이(가) 되었습니다!`, 'mercenary');
+                updateMercenaryDisplay();
             }
         }
 
