@@ -1,3 +1,4 @@
+const assert = require('assert');
 const { JSDOM } = require('jsdom');
 const path = require('path');
 
@@ -44,10 +45,7 @@ async function run() {
   hireMercenary('WIZARD');
   const merc = gameState.activeMercenaries[0];
 
-  if (!MERCENARY_SKILLS[merc.skill]) {
-    console.error('invalid mercenary skill');
-    process.exit(1);
-  }
+  assert.ok(MERCENARY_SKILLS[merc.skill], 'invalid mercenary skill');
 
   const monsterX = merc.x + 1 < size ? merc.x + 1 : merc.x - 1;
   const monsterY = merc.y;
@@ -67,10 +65,7 @@ async function run() {
   dom.window.Math.random = origRandom;
 
   const expected = Math.min(merc.maxMana, initialMana + merc.manaRegen) - skillCost;
-  if (merc.mana !== expected) {
-    console.error('mana not deducted by skill cost');
-    process.exit(1);
-  }
+  assert.strictEqual(merc.mana, expected, 'mana not deducted by skill cost');
 }
 
 run().catch(e => { console.error(e); process.exit(1); });
