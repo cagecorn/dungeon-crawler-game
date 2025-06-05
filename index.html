@@ -207,6 +207,11 @@
             text-align: center;
             font-size: 16px;
         }
+        .mercenary-panel h3 {
+            margin: 8px 0 4px;
+            font-size: 14px;
+            color: #ddd;
+        }
         .mercenary-info {
             background-color: #444;
             padding: 8px;
@@ -547,7 +552,9 @@
             
             <div class="mercenary-panel">
                 <h2>🤝 용병 부대</h2>
-                <div id="mercenary-list"></div>
+                <div id="active-mercenary-list"></div>
+                <h3>대기 중</h3>
+                <div id="standby-mercenary-list"></div>
             </div>
             
             <div class="hire-panel">
@@ -973,7 +980,9 @@
                     accessory2: null
                 }
             },
-            mercenaries: [],
+            activeMercenaries: [],
+            standbyMercenaries: [],
+            get mercenaries() { return this.activeMercenaries; },
             monsters: [],
             treasures: [],
             items: [],
@@ -1227,9 +1236,11 @@ function healTarget(healer, target) {
 
         // 용병 목록 갱신
         function updateMercenaryDisplay() {
-            const list = document.getElementById('mercenary-list');
-            list.innerHTML = '';
-            gameState.mercenaries.forEach((merc, i) => {
+            const activeList = document.getElementById('active-mercenary-list');
+            const standbyList = document.getElementById('standby-mercenary-list');
+            activeList.innerHTML = '';
+            standbyList.innerHTML = '';
+            gameState.activeMercenaries.forEach((merc, i) => {
                 const div = document.createElement('div');
                 const statusClass = merc.alive ? 'alive' : 'dead';
                 div.className = `mercenary-info ${statusClass}`;
@@ -1281,7 +1292,28 @@ function healTarget(healer, target) {
                     div.appendChild(reviveBtn);
                 }
 
-                list.appendChild(div);
+                activeList.appendChild(div);
+            });
+
+            gameState.standbyMercenaries.forEach((merc, i) => {
+                const div = document.createElement('div');
+                div.className = 'mercenary-info alive';
+                div.textContent = `${merc.icon} ${merc.name} (대기)`;
+
+                const swapBtn = document.createElement('button');
+                swapBtn.textContent = '배치';
+                swapBtn.style.marginLeft = '5px';
+                swapBtn.onclick = () => {
+                    const options = gameState.activeMercenaries.map((m, idx) => `${idx + 1}: ${m.name}`);
+                    const choice = prompt(`교체할 활동 용병을 선택하세요:\n${options.join('\n')}`);
+                    if (choice === null) return;
+                    const idx = parseInt(choice, 10) - 1;
+                    if (idx >= 0 && idx < gameState.activeMercenaries.length) {
+                        swapActiveAndStandby(idx, i);
+                    }
+                };
+                div.appendChild(swapBtn);
+                standbyList.appendChild(div);
             });
         }
 
@@ -1314,6 +1346,47 @@ function healTarget(healer, target) {
                 `특성:\n${traitInfo}`;
 
             alert(info);
+        }
+
+        function spawnMercenaryNearPlayer(mercenary) {
+            const positions = [
+                {x: gameState.player.x + 1, y: gameState.player.y},
+                {x: gameState.player.x - 1, y: gameState.player.y},
+                {x: gameState.player.x, y: gameState.player.y + 1},
+                {x: gameState.player.x, y: gameState.player.y - 1},
+                {x: gameState.player.x + 1, y: gameState.player.y + 1},
+                {x: gameState.player.x - 1, y: gameState.player.y - 1},
+                {x: gameState.player.x + 1, y: gameState.player.y - 1},
+                {x: gameState.player.x - 1, y: gameState.player.y + 1}
+            ];
+            for (const pos of positions) {
+                if (pos.x >= 0 && pos.x < gameState.dungeonSize &&
+                    pos.y >= 0 && pos.y < gameState.dungeonSize &&
+                    gameState.dungeon[pos.y][pos.x] === 'empty' &&
+                    !gameState.activeMercenaries.some(m => m.x === pos.x && m.y === pos.y && m.alive) &&
+                    !gameState.monsters.some(m => m.x === pos.x && m.y === pos.y)) {
+                    mercenary.x = pos.x;
+                    mercenary.y = pos.y;
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        function swapActiveAndStandby(activeIndex, standbyIndex) {
+            const active = gameState.activeMercenaries[activeIndex];
+            const standby = gameState.standbyMercenaries[standbyIndex];
+            if (!spawnMercenaryNearPlayer(standby)) {
+                addMessage('❌ 용병을 배치할 공간이 없습니다.', 'info');
+                return;
+            }
+            gameState.activeMercenaries[activeIndex] = standby;
+            gameState.standbyMercenaries[standbyIndex] = active;
+            active.x = -1;
+            active.y = -1;
+            addMessage(`🔄 ${standby.name}과 ${active.name}을 교체했습니다.`, 'mercenary');
+            updateMercenaryDisplay();
+            renderDungeon();
         }
 
         // 플레이어 능력치 표시 업데이트
@@ -1403,7 +1476,7 @@ function healTarget(healer, target) {
                             cellType = 'projectile';
                             div.textContent = proj.icon;
                         } else {
-                            const merc = gameState.mercenaries.find(m => m.x === x && m.y === y && m.alive);
+                            const merc = gameState.activeMercenaries.find(m => m.x === x && m.y === y && m.alive);
                             if (merc) {
                                 cellType = 'mercenary';
                                 div.textContent = merc.icon;
@@ -1615,65 +1688,48 @@ function healTarget(healer, target) {
                 return;
             }
 
-            const aliveMercs = gameState.mercenaries.filter(m => m.alive);
-            if (aliveMercs.length >= 3) {
-                const options = aliveMercs.map((m, i) => `${i + 1}: ${m.name}`).join('\n');
-                const choice = prompt(`👥 최대 3명의 용병을 보유 중입니다. 교체할 용병을 선택하세요:\n${options}`);
+            const mercenary = createMercenary(type, -1, -1);
+
+            const activeCount = gameState.activeMercenaries.filter(m => m.alive).length;
+            if (activeCount < 3) {
+                if (!spawnMercenaryNearPlayer(mercenary)) {
+                    addMessage('❌ 용병을 배치할 공간이 없습니다.', 'info');
+                    return;
+                }
+                gameState.player.gold -= mercType.cost;
+                gameState.activeMercenaries.push(mercenary);
+                addMessage(`🎉 ${mercType.name}을(를) 고용했습니다!`, 'mercenary');
+            } else if (gameState.standbyMercenaries.length < 2) {
+                gameState.player.gold -= mercType.cost;
+                gameState.standbyMercenaries.push(mercenary);
+                addMessage(`📋 ${mercType.name}을(를) 대기열에 추가했습니다.`, 'mercenary');
+            } else {
+                const options = gameState.activeMercenaries.map((m, i) => `${i + 1}: ${m.name}`).join('\n');
+                const choice = prompt(`👥 용병이 가득 찼습니다. 교체할 용병을 선택하세요:\n${options}`);
                 if (choice === null) {
                     addMessage('❌ 고용이 취소되었습니다.', 'info');
                     return;
                 }
-                const index = parseInt(choice, 10);
-                if (isNaN(index) || index < 1 || index > aliveMercs.length) {
+                const index = parseInt(choice, 10) - 1;
+                if (index < 0 || index >= gameState.activeMercenaries.length) {
                     addMessage('❌ 고용이 취소되었습니다.', 'info');
                     return;
                 }
-                const toRemove = aliveMercs[index - 1];
-                const rmIndex = gameState.mercenaries.findIndex(m => m.id === toRemove.id);
-                if (rmIndex !== -1) {
-                    gameState.mercenaries.splice(rmIndex, 1);
+                const removed = gameState.activeMercenaries[index];
+                if (!spawnMercenaryNearPlayer(mercenary)) {
+                    addMessage('❌ 용병을 배치할 공간이 없습니다.', 'info');
+                    return;
                 }
-                addMessage(`🗑️ ${toRemove.name}을(를) 내보냈습니다.`, 'mercenary');
-                updateMercenaryDisplay();
+                gameState.activeMercenaries[index] = mercenary;
+                removed.x = -1;
+                removed.y = -1;
+                gameState.player.gold -= mercType.cost;
+                addMessage(`🗑️ ${removed.name}을(를) 내보내고 ${mercType.name}을(를) 고용했습니다.`, 'mercenary');
             }
 
-            gameState.player.gold -= mercType.cost;
-            
-            // 플레이어 근처의 빈 공간 찾기
-            const positions = [
-                {x: gameState.player.x + 1, y: gameState.player.y},
-                {x: gameState.player.x - 1, y: gameState.player.y},
-                {x: gameState.player.x, y: gameState.player.y + 1},
-                {x: gameState.player.x, y: gameState.player.y - 1},
-                {x: gameState.player.x + 1, y: gameState.player.y + 1},
-                {x: gameState.player.x - 1, y: gameState.player.y - 1},
-                {x: gameState.player.x + 1, y: gameState.player.y - 1},
-                {x: gameState.player.x - 1, y: gameState.player.y + 1}
-            ];
-            
-            let spawnPos = null;
-            for (const pos of positions) {
-                if (pos.x >= 0 && pos.x < gameState.dungeonSize && 
-                    pos.y >= 0 && pos.y < gameState.dungeonSize && 
-                    gameState.dungeon[pos.y][pos.x] === 'empty' &&
-                    !gameState.mercenaries.some(m => m.x === pos.x && m.y === pos.y && m.alive) &&
-                    !gameState.monsters.some(m => m.x === pos.x && m.y === pos.y)) {
-                    spawnPos = pos;
-                    break;
-                }
-            }
-            
-            if (spawnPos) {
-                const mercenary = createMercenary(type, spawnPos.x, spawnPos.y);
-                gameState.mercenaries.push(mercenary);
-                addMessage(`🎉 ${mercType.name}을(를) 고용했습니다!`, 'mercenary');
-                updateStats();
-                updateMercenaryDisplay();
-                renderDungeon();
-            } else {
-                gameState.player.gold += mercType.cost;
-                addMessage('❌ 용병을 배치할 공간이 없습니다.', 'info');
-            }
+            updateStats();
+            updateMercenaryDisplay();
+            renderDungeon();
         }
 
         // 용병 생성 함수
@@ -1774,7 +1830,7 @@ function healTarget(healer, target) {
         // 아이템 클릭 시 대상 선택
         function handleItemClick(item) {
             const options = ['0: 플레이어'];
-            gameState.mercenaries.forEach((m, i) => {
+            gameState.activeMercenaries.forEach((m, i) => {
                 options.push(`${i + 1}: ${m.name}`);
             });
 
@@ -1783,13 +1839,13 @@ function healTarget(healer, target) {
                 if (choice === null) return;
                 const index = parseInt(choice, 10);
                 let target = gameState.player;
-                if (!isNaN(index) && index > 0 && gameState.mercenaries[index - 1]) {
-                    target = gameState.mercenaries[index - 1];
+                if (!isNaN(index) && index > 0 && gameState.activeMercenaries[index - 1]) {
+                    target = gameState.activeMercenaries[index - 1];
                 }
                 useItemOnTarget(item, target);
                 return;
             } else if (item.type === ITEM_TYPES.REVIVE) {
-                const dead = gameState.mercenaries.filter(m => !m.alive);
+                const dead = gameState.activeMercenaries.filter(m => !m.alive);
                 if (dead.length === 0) {
                     addMessage('부활할 용병이 없습니다.', 'info');
                     return;
@@ -1814,8 +1870,8 @@ function healTarget(healer, target) {
             const index = parseInt(choice, 10);
             if (index === 0 || isNaN(index)) {
                 equipItem(item);
-            } else if (gameState.mercenaries[index - 1]) {
-                equipItemToMercenary(item, gameState.mercenaries[index - 1]);
+            } else if (gameState.activeMercenaries[index - 1]) {
+                equipItemToMercenary(item, gameState.activeMercenaries[index - 1]);
             }
         }
 
@@ -1911,7 +1967,7 @@ function healTarget(healer, target) {
 
         // 용병 장비 해제
         function unequipItemFromMercenary(mercenaryId, slotType) {
-            const mercenary = gameState.mercenaries.find(m => m.id === mercenaryId);
+            const mercenary = gameState.activeMercenaries.find(m => m.id === mercenaryId);
             if (!mercenary || !mercenary.equipped) return;
             
             const item = mercenary.equipped[slotType];
@@ -1995,7 +2051,7 @@ function healTarget(healer, target) {
                 nearestDistance = playerDistance;
             }
             
-            gameState.mercenaries.forEach(mercenary => {
+            gameState.activeMercenaries.forEach(mercenary => {
                 if (mercenary.alive) {
                     const distance = getDistance(monster.x, monster.y, mercenary.x, mercenary.y);
                     if (distance <= monster.range && distance < nearestDistance && 
@@ -2090,7 +2146,7 @@ function healTarget(healer, target) {
                 return;
             }
             
-            const blockingMercenary = gameState.mercenaries.find(m => m.x === newX && m.y === newY && m.alive);
+            const blockingMercenary = gameState.activeMercenaries.find(m => m.x === newX && m.y === newY && m.alive);
             if (blockingMercenary) {
                 const oldX = gameState.player.x;
                 const oldY = gameState.player.y;
@@ -2210,7 +2266,7 @@ function healTarget(healer, target) {
             addMessage(`🌀 던전 ${gameState.floor}층으로 내려갑니다...`, "level");
             
             // 용병들 체력 약간 회복
-            gameState.mercenaries.forEach(mercenary => {
+            gameState.activeMercenaries.forEach(mercenary => {
                 if (mercenary.alive) {
                     mercenary.health = Math.min(mercenary.maxHealth, mercenary.health + Math.floor(mercenary.maxHealth * 0.2));
                 }
@@ -2219,7 +2275,7 @@ function healTarget(healer, target) {
             generateDungeon();
 
             // 새 층에서 살아있는 용병들을 플레이어 근처로 이동
-            gameState.mercenaries.forEach(mercenary => {
+            gameState.activeMercenaries.forEach(mercenary => {
                 if (!mercenary.alive) return;
 
                 const positions = [
@@ -2237,7 +2293,7 @@ function healTarget(healer, target) {
                     if (pos.x >= 0 && pos.x < gameState.dungeonSize &&
                         pos.y >= 0 && pos.y < gameState.dungeonSize &&
                         gameState.dungeon[pos.y][pos.x] === 'empty' &&
-                        !gameState.mercenaries.some(m => m !== mercenary && m.alive && m.x === pos.x && m.y === pos.y) &&
+                        !gameState.activeMercenaries.some(m => m !== mercenary && m.alive && m.x === pos.x && m.y === pos.y) &&
                         !gameState.monsters.some(m => m.x === pos.x && m.y === pos.y)) {
                         mercenary.x = pos.x;
                         mercenary.y = pos.y;
@@ -2256,11 +2312,11 @@ function healTarget(healer, target) {
             processProjectiles();
             
             // 용병 턴 처리
-            gameState.mercenaries.forEach(mercenary => {
+            gameState.activeMercenaries.forEach(mercenary => {
                 mercenary.hasActed = false;
             });
-            
-            gameState.mercenaries.forEach(mercenary => {
+
+            gameState.activeMercenaries.forEach(mercenary => {
                 processMercenaryTurn(mercenary);
             });
             
@@ -2282,7 +2338,7 @@ function healTarget(healer, target) {
                     nearestDistance = playerDistance;
                 }
                 
-                gameState.mercenaries.forEach(mercenary => {
+                gameState.activeMercenaries.forEach(mercenary => {
                     if (mercenary.alive) {
                         const distance = getDistance(monster.x, monster.y, mercenary.x, mercenary.y);
                         if (distance <= monster.range + 2 && distance < nearestDistance) {
@@ -2322,7 +2378,7 @@ function healTarget(healer, target) {
                             gameState.dungeon[newY][newX] === 'empty' &&
                             !(newX === gameState.player.x && newY === gameState.player.y) &&
                             !gameState.monsters.some(m => m.x === newX && m.y === newY && m !== monster) &&
-                            !gameState.mercenaries.some(m => m.x === newX && m.y === newY && m.alive)) {
+                            !gameState.activeMercenaries.some(m => m.x === newX && m.y === newY && m.alive)) {
                             
                             // 몬스터 이동
                             gameState.dungeon[monster.y][monster.x] = 'empty';
@@ -2379,7 +2435,7 @@ function healTarget(healer, target) {
                     }
                 }
                 
-                for (const otherMerc of gameState.mercenaries) {
+                for (const otherMerc of gameState.activeMercenaries) {
                     if (otherMerc !== mercenary && otherMerc.alive && otherMerc.health < otherMerc.maxHealth * 0.5) {
                         if (getDistance(mercenary.x, mercenary.y, otherMerc.x, otherMerc.y) <= 2) {
                             if (healTarget(mercenary, otherMerc)) {
@@ -2474,7 +2530,7 @@ function healTarget(healer, target) {
                     if (path && path.length > 1) {
                         const step = path[1];
                         const newDistanceFromPlayer = getDistance(step.x, step.y, gameState.player.x, gameState.player.y);
-                        const occupyingMerc = gameState.mercenaries.find(m => m !== mercenary && m.alive && m.x === step.x && m.y === step.y);
+                        const occupyingMerc = gameState.activeMercenaries.find(m => m !== mercenary && m.alive && m.x === step.x && m.y === step.y);
                         const stepValid = step.x >= 0 && step.x < gameState.dungeonSize &&
                             step.y >= 0 && step.y < gameState.dungeonSize &&
                             gameState.dungeon[step.y][step.x] !== 'wall' &&
@@ -2504,7 +2560,7 @@ function healTarget(healer, target) {
                                 if (backPath && backPath.length > 1) {
                                     const backStep = backPath[1];
                                     const backDist = getDistance(backStep.x, backStep.y, gameState.player.x, gameState.player.y);
-                                    const backOccupying = gameState.mercenaries.find(m => m !== mercenary && m.alive && m.x === backStep.x && m.y === backStep.y);
+                                    const backOccupying = gameState.activeMercenaries.find(m => m !== mercenary && m.alive && m.x === backStep.x && m.y === backStep.y);
                                     const backValid = backStep.x >= 0 && backStep.x < gameState.dungeonSize &&
                                         backStep.y >= 0 && backStep.y < gameState.dungeonSize &&
                                         gameState.dungeon[backStep.y][backStep.x] !== 'wall' &&
@@ -2532,7 +2588,7 @@ function healTarget(healer, target) {
                             if (backPath && backPath.length > 1) {
                                 const backStep = backPath[1];
                                 const backDist = getDistance(backStep.x, backStep.y, gameState.player.x, gameState.player.y);
-                                const backOccupying = gameState.mercenaries.find(m => m !== mercenary && m.alive && m.x === backStep.x && m.y === backStep.y);
+                                const backOccupying = gameState.activeMercenaries.find(m => m !== mercenary && m.alive && m.x === backStep.x && m.y === backStep.y);
                                 const backValid = backStep.x >= 0 && backStep.x < gameState.dungeonSize &&
                                     backStep.y >= 0 && backStep.y < gameState.dungeonSize &&
                                     gameState.dungeon[backStep.y][backStep.x] !== 'wall' &&
@@ -2563,7 +2619,7 @@ function healTarget(healer, target) {
                     if (path && path.length > 1) {
                         const step = path[1];
                         const distAfter = getDistance(step.x, step.y, gameState.player.x, gameState.player.y);
-                        const occupyingMerc = gameState.mercenaries.find(m => m !== mercenary && m.alive && m.x === step.x && m.y === step.y);
+                        const occupyingMerc = gameState.activeMercenaries.find(m => m !== mercenary && m.alive && m.x === step.x && m.y === step.y);
                         const stepValid = step.x >= 0 && step.x < gameState.dungeonSize &&
                             step.y >= 0 && step.y < gameState.dungeonSize &&
                             gameState.dungeon[step.y][step.x] !== 'wall' &&
@@ -2606,6 +2662,9 @@ function healTarget(healer, target) {
             }
             const saved = JSON.parse(data);
             Object.assign(gameState, saved);
+            if (saved.activeMercenaries) gameState.activeMercenaries = saved.activeMercenaries;
+            else if (saved.mercenaries) gameState.activeMercenaries = saved.mercenaries;
+            if (saved.standbyMercenaries) gameState.standbyMercenaries = saved.standbyMercenaries;
             updateFogOfWar();
             updateStats();
             updateInventoryDisplay();
@@ -2667,13 +2726,13 @@ function healTarget(healer, target) {
                 {x: gameState.player.x + 1, y: gameState.player.y - 1},
                 {x: gameState.player.x - 1, y: gameState.player.y + 1}
             ];
-            gameState.mercenaries.forEach(mercenary => {
+            gameState.activeMercenaries.forEach(mercenary => {
                 if (!mercenary.alive) return;
                 for (const pos of positions) {
                     if (pos.x >= 0 && pos.x < gameState.dungeonSize &&
                         pos.y >= 0 && pos.y < gameState.dungeonSize &&
                         gameState.dungeon[pos.y][pos.x] === 'empty' &&
-                        !gameState.mercenaries.some(m => m !== mercenary && m.alive && m.x === pos.x && m.y === pos.y) &&
+                        !gameState.activeMercenaries.some(m => m !== mercenary && m.alive && m.x === pos.x && m.y === pos.y) &&
                         !gameState.monsters.some(m => m.x === pos.x && m.y === pos.y)) {
                         mercenary.x = pos.x;
                         mercenary.y = pos.y;
@@ -2767,9 +2826,9 @@ function healTarget(healer, target) {
             }
             else if (/^[1-9]$/.test(e.key)) {
                 const idx = parseInt(e.key) - 1;
-                if (gameState.mercenaries[idx]) {
+                if (gameState.activeMercenaries[idx]) {
                     e.preventDefault();
-                    showMercenaryDetails(gameState.mercenaries[idx]);
+                    showMercenaryDetails(gameState.activeMercenaries[idx]);
                 }
             }
         });

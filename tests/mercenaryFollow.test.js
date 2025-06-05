@@ -31,7 +31,7 @@ async function run() {
 
   saveGame();
   let state = JSON.parse(localStorage.getItem('dungeonCrawlerSave'));
-  if (state.mercenaries.length !== 2) {
+  if (state.activeMercenaries.length !== 2) {
     console.error('expected 2 mercenaries');
     process.exit(1);
   }
@@ -42,7 +42,7 @@ async function run() {
 
   saveGame();
   state = JSON.parse(localStorage.getItem('dungeonCrawlerSave'));
-  const distances = state.mercenaries.map(m =>
+  const distances = state.activeMercenaries.map(m =>
     Math.abs(m.x - state.player.x) + Math.abs(m.y - state.player.y)
   );
   console.log('distances from player:', distances.join(','));
