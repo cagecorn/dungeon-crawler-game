@@ -993,12 +993,21 @@
                 price: 0,
                 level: 1,
                 icon: '📘'
+            },
+            healingBook: {
+                name: '📘 힐링 서적',
+                type: ITEM_TYPES.SKILLBOOK,
+                skill: 'Healing',
+                price: 0,
+                level: 1,
+                icon: '📘'
             }
         };
 
         const SKILL_DEFS = {
             Fireball: { name: 'Fireball', icon: '🔥', damage: 10, range: 5, magic: true, element: 'fire' },
-            Iceball: { name: 'Iceball', icon: '❄️', damage: 8, range: 5, magic: true, element: 'ice' }
+            Iceball: { name: 'Iceball', icon: '❄️', damage: 8, range: 5, magic: true, element: 'ice' },
+            Healing: { name: 'Healing', icon: '💖', heal: 10, range: 3, manaCost: 5 }
         };
 
         const ELEMENT_EMOJI = { fire: '🔥', ice: '❄️', lightning: '⚡' };
@@ -2892,6 +2901,37 @@ function healTarget(healer, target) {
                 return;
             }
             const skill = SKILL_DEFS[skillKey];
+            if (skill.heal) {
+                let target = null;
+                if (gameState.player.health < gameState.player.maxHealth) {
+                    target = gameState.player;
+                } else {
+                    for (const merc of gameState.activeMercenaries) {
+                        if (!merc.alive) continue;
+                        const d = getDistance(gameState.player.x, gameState.player.y, merc.x, merc.y);
+                        if (d <= skill.range && merc.health < merc.maxHealth) {
+                            target = merc;
+                            break;
+                        }
+                    }
+                }
+                if (!target) {
+                    addMessage('🎯 치유할 대상이 없습니다.', 'info');
+                    processTurn();
+                    return;
+                }
+                const healAmount = Math.min(skill.heal, target.maxHealth - target.health);
+                target.health += healAmount;
+                const name = target === gameState.player ? '플레이어' : target.name;
+                addMessage(`💖 ${name}을(를) ${healAmount} 회복했습니다.`, 'info');
+                if (target === gameState.player) {
+                    updateStats();
+                } else {
+                    updateMercenaryDisplay();
+                }
+                processTurn();
+                return;
+            }
             let target = null;
             let dist = Infinity;
             for (const monster of gameState.monsters) {
