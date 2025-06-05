@@ -1036,12 +1036,13 @@
             DoubleStrike: { name: 'Double Strike', icon: '🔪', range: 1, manaCost: 3 },
             Heal: { name: 'Heal', icon: '✨', range: 2, manaCost: 2 },
             Fireball: { name: 'Fireball', icon: '🔥', range: 4, manaCost: 3, damage: 8, magic: true, element: 'fire' },
-            Iceball: { name: 'Iceball', icon: '❄️', range: 5, manaCost: 2, damage: 8, magic: true, element: 'ice' }
+            Iceball: { name: 'Iceball', icon: '❄️', range: 5, manaCost: 2, damage: 8, magic: true, element: 'ice' },
+            HawkEye: { name: 'Hawk Eye', icon: '🦅', range: 5, manaCost: 2 }
         };
 
         const MERCENARY_SKILL_SETS = {
             WARRIOR: ['ChargeAttack', 'DoubleStrike'],
-            ARCHER: ['DoubleStrike'],
+            ARCHER: ['DoubleStrike', 'HawkEye'],
             HEALER: ['Heal'],
             WIZARD: ['Fireball', 'Iceball']
         };
@@ -2838,6 +2839,8 @@ function healTarget(healer, target, skillInfo) {
             const minDistanceFromPlayer = 1;
             const maxDistanceFromPlayer = 3;
             const skillInfo = MERCENARY_SKILLS[mercenary.skill];
+            const baseAttackRange = mercenary.role === 'ranged' ? 3 :
+                                   mercenary.role === 'caster' ? 2 : 1;
             
             // 힐러는 치료 우선
             if (mercenary.role === 'support') {
@@ -2894,7 +2897,11 @@ function healTarget(healer, target, skillInfo) {
             });
 
             const skillKey = mercenary.skill;
-            if (skillInfo && mercenary.mana >= skillInfo.manaCost && Math.random() < 0.5) {
+            let forceSkill = false;
+            if (skillKey === 'HawkEye' && nearestMonster && nearestDistance > baseAttackRange && nearestDistance <= skillInfo.range) {
+                forceSkill = true;
+            }
+            if (skillInfo && mercenary.mana >= skillInfo.manaCost && (forceSkill || Math.random() < 0.5)) {
                 if (skillKey === 'Heal') {
                     let target = null;
                     if (gameState.player.health < gameState.player.maxHealth && getDistance(mercenary.x, mercenary.y, gameState.player.x, gameState.player.y) <= skillInfo.range) {
@@ -3090,9 +3097,7 @@ function healTarget(healer, target, skillInfo) {
             }
             
             if (nearestMonster) {
-                const attackRange = mercenary.role === 'ranged' ? 3 :
-                                    mercenary.role === 'caster' ? 2 : 1;
-                if (nearestDistance <= attackRange) {
+                if (nearestDistance <= baseAttackRange) {
                     // 공격 (장비 보너스 적용)
                     let totalAttack = mercenary.attack;
                     if (mercenary.equipped && mercenary.equipped.weapon) {
