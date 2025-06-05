@@ -23,11 +23,19 @@ async function run() {
 
   const hireMercenary = dom.window.hireMercenary;
   const gameState = dom.window.gameState;
-  const POSITIVE_TRAITS = dom.window.eval('POSITIVE_TRAITS');
-  const NEGATIVE_TRAITS = dom.window.eval('NEGATIVE_TRAITS');
-  const TRADEOFF_TRAITS = dom.window.eval('TRADEOFF_TRAITS');
+  const ABILITY_TRAITS = dom.window.eval('ABILITY_TRAITS');
+  const REACTIVE_TRAITS = dom.window.eval('REACTIVE_TRAITS');
+  const STATUS_TRAITS = dom.window.eval('STATUS_TRAITS');
+  const FIELD_TRAITS = dom.window.eval('FIELD_TRAITS');
+  const SPECIAL_ACTION_TRAITS = dom.window.eval('SPECIAL_ACTION_TRAITS');
 
-  const allTraits = [...POSITIVE_TRAITS, ...NEGATIVE_TRAITS, ...TRADEOFF_TRAITS];
+  const allTraits = [
+    ...ABILITY_TRAITS,
+    ...REACTIVE_TRAITS,
+    ...STATUS_TRAITS,
+    ...FIELD_TRAITS,
+    ...SPECIAL_ACTION_TRAITS
+  ];
   // hire a mercenary and verify its traits
   gameState.player.gold = 1000; // ensure enough gold
   hireMercenary('WARRIOR');
