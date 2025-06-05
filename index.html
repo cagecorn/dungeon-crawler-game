@@ -2437,7 +2437,7 @@ function healTarget(healer, target) {
                                         gameState.dungeon[backStep.y][backStep.x] !== 'wall' &&
                                         gameState.dungeon[backStep.y][backStep.x] !== 'monster' &&
                                         !(backStep.x === gameState.player.x && backStep.y === gameState.player.y) &&
-                                        backDist >= minDistanceFromPlayer && backDist <= maxDistanceFromPlayer;
+                                        backDist >= minDistanceFromPlayer && backDist < playerDistance;
                                     if (backValid) {
                                         if (backOccupying) {
                                             const bOldX = mercenary.x;
@@ -2465,7 +2465,7 @@ function healTarget(healer, target) {
                                     gameState.dungeon[backStep.y][backStep.x] !== 'wall' &&
                                     gameState.dungeon[backStep.y][backStep.x] !== 'monster' &&
                                     !(backStep.x === gameState.player.x && backStep.y === gameState.player.y) &&
-                                    backDist >= minDistanceFromPlayer && backDist <= maxDistanceFromPlayer;
+                                    backDist >= minDistanceFromPlayer && backDist < playerDistance;
                                 if (backValid) {
                                     if (backOccupying) {
                                         const bOldX = mercenary.x;
@@ -2496,7 +2496,7 @@ function healTarget(healer, target) {
                             gameState.dungeon[step.y][step.x] !== 'wall' &&
                             gameState.dungeon[step.y][step.x] !== 'monster' &&
                             !(step.x === gameState.player.x && step.y === gameState.player.y) &&
-                            distAfter >= minDistanceFromPlayer && distAfter <= maxDistanceFromPlayer;
+                            distAfter >= minDistanceFromPlayer && distAfter < playerDistance;
 
                         if (stepValid) {
                             if (occupyingMerc) {
