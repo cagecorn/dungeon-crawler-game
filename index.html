@@ -641,6 +641,14 @@
             SKILLBOOK: 'skillbook'
         };
 
+        // 용병 클래스별 스킬
+        const MERCENARY_SKILLS = {
+            WARRIOR: [ { name: 'chargeAttack', manaCost: 3 } ],
+            ARCHER: [ { name: 'doubleStrike', manaCost: 2 } ],
+            HEALER: [ { name: 'greaterHeal', manaCost: 3 } ],
+            WIZARD: [ { name: 'magicBolt', manaCost: 2 } ]
+        };
+
         // 용병 타입 정의
         const MERCENARY_TYPES = {
             WARRIOR: {
@@ -654,6 +662,8 @@
                 baseCritChance: 0.05,
                 baseMagicPower: 0,
                 baseMagicResist: 0,
+                baseMana: 5,
+                baseManaRegen: 1,
                 role: 'tank',
                 description: '높은 체력과 방어력을 가진 근접 전투 용병',
                 cost: 50
@@ -669,6 +679,8 @@
                 baseCritChance: 0.1,
                 baseMagicPower: 0,
                 baseMagicResist: 0,
+                baseMana: 6,
+                baseManaRegen: 1,
                 role: 'ranged',
                 description: '원거리에서 적을 공격하는 용병',
                 cost: 60
@@ -684,6 +696,8 @@
                 baseCritChance: 0.05,
                 baseMagicPower: 2,
                 baseMagicResist: 1,
+                baseMana: 8,
+                baseManaRegen: 2,
                 role: 'support',
                 description: '아군을 치료하는 지원 용병',
                 cost: 70
@@ -699,6 +713,8 @@
                 baseCritChance: 0.1,
                 baseMagicPower: 5,
                 baseMagicResist: 2,
+                baseMana: 10,
+                baseManaRegen: 2,
                 role: 'caster',
                 description: '마법 공격에 특화된 용병',
                 cost: 80
@@ -1137,6 +1153,31 @@ function healTarget(healer, target) {
             return false;
         }
 
+        function useMercenarySkill(mercenary, target) {
+            if (!mercenary.skill || mercenary.mana < mercenary.skill.manaCost) return false;
+            const skill = mercenary.skill.name;
+            if (skill === 'chargeAttack') {
+                performAttack(mercenary, target, { attackValue: mercenary.attack + 2 });
+                addMessage(`💥 ${mercenary.name}이(가) 돌진 공격을 사용했습니다!`, 'mercenary');
+            } else if (skill === 'doubleStrike') {
+                performAttack(mercenary, target);
+                if (target.health > 0) performAttack(mercenary, target);
+                addMessage(`🏹 ${mercenary.name}이(가) 연속 사격을 사용했습니다!`, 'mercenary');
+            } else if (skill === 'greaterHeal') {
+                if (!healTarget(mercenary, target)) return false;
+                healTarget(mercenary, target);
+                addMessage(`✨ ${mercenary.name}이(가) 강화 치유를 사용했습니다!`, 'mercenary');
+            } else if (skill === 'magicBolt') {
+                performAttack(mercenary, target, { magic: true, element: 'fire' });
+                addMessage(`🔮 ${mercenary.name}이(가) 마법 화살을 사용했습니다!`, 'mercenary');
+            } else {
+                return false;
+            }
+            mercenary.mana -= mercenary.skill.manaCost;
+            mercenary.hasActed = true;
+            return true;
+        }
+
         // 통합 공격 처리
         function performAttack(attacker, defender, options = {}) {
             const magic = options.magic || false;
@@ -1373,6 +1414,7 @@ function healTarget(healer, target) {
                 div.className = `mercenary-info ${statusClass}`;
 
                 const hp = `${merc.health}/${merc.maxHealth}`;
+                const mp = `${merc.mana}/${merc.maxMana}`;
                 const weapon = merc.equipped && merc.equipped.weapon ? merc.equipped.weapon.name : '없음';
                 const armor = merc.equipped && merc.equipped.armor ? merc.equipped.armor.name : '없음';
                 const accessory1 = merc.equipped && merc.equipped.accessory1 ? merc.equipped.accessory1.name : '없음';
@@ -1382,7 +1424,7 @@ function healTarget(healer, target) {
                 const totalAttack = merc.attack + attackBonus;
                 const totalDefense = merc.defense + defenseBonus;
 
-                div.textContent = `${i + 1}. ${merc.icon} ${merc.name} Lv.${merc.level} (${hp}) ` +
+                div.textContent = `${i + 1}. ${merc.icon} ${merc.name} Lv.${merc.level} (${hp} MP:${mp}) ` +
                     `[공격:${totalAttack}, 방어:${totalDefense}] ` +
                     `[무기:${weapon}, 방어구:${armor}, 악세1:${accessory1}, 악세2:${accessory2}] ` +
                     `[특성:${merc.traits.join(', ')}]`;
@@ -1459,6 +1501,7 @@ function healTarget(healer, target) {
 
             const info = `${merc.icon} ${merc.name} Lv.${merc.level}\n` +
                 `HP: ${merc.health}/${merc.maxHealth}\n` +
+                `MP: ${merc.mana}/${merc.maxMana}\n` +
                 `공격력: ${totalAttack}\n` +
                 `방어력: ${totalDefense}\n` +
                 `명중률: ${getStat(merc, 'accuracy')}\n` +
@@ -1470,6 +1513,7 @@ function healTarget(healer, target) {
                 `방어구: ${armor}\n` +
                 `악세서리1: ${accessory1}\n` +
                 `악세서리2: ${accessory2}\n` +
+                `스킬: ${merc.skill ? merc.skill.name : '없음'}\n` +
                 `특성:\n${traitInfo}`;
 
             alert(info);
@@ -1912,12 +1956,16 @@ function healTarget(healer, target) {
                 critChance: mercType.baseCritChance,
                 magicPower: mercType.baseMagicPower,
                 magicResist: mercType.baseMagicResist,
+                maxMana: mercType.baseMana || 5,
+                mana: mercType.baseMana || 5,
+                manaRegen: mercType.baseManaRegen || 1,
                 elementResistances: {fire:0, ice:0, lightning:0, earth:0, light:0, dark:0},
                 statusResistances: {poison:0, bleed:0, burn:0, freeze:0},
                 exp: 0,
                 expNeeded: 15,
                 alive: true,
                 hasActed: false,
+                skill: MERCENARY_SKILLS[type][Math.floor(Math.random()*MERCENARY_SKILLS[type].length)],
                 traits: traits,
                 equipped: {
                     weapon: null,
@@ -2625,6 +2673,7 @@ function healTarget(healer, target) {
             if (!mercenary.alive || mercenary.hasActed) return;
             mercenary.nextX = mercenary.x;
             mercenary.nextY = mercenary.y;
+            mercenary.mana = Math.min(mercenary.maxMana, mercenary.mana + mercenary.manaRegen);
             
             // 장비 초기화 확인
             if (!mercenary.equipped) {
@@ -2640,6 +2689,7 @@ function healTarget(healer, target) {
             if (mercenary.role === 'support') {
                 if (gameState.player.health < gameState.player.maxHealth * 0.7) {
                     if (getDistance(mercenary.x, mercenary.y, gameState.player.x, gameState.player.y) <= 2) {
+                        if (useMercenarySkill(mercenary, gameState.player)) return;
                         if (healTarget(mercenary, gameState.player)) {
                             mercenary.hasActed = true;
                             return;
@@ -2650,6 +2700,7 @@ function healTarget(healer, target) {
                 for (const otherMerc of gameState.activeMercenaries) {
                     if (otherMerc !== mercenary && otherMerc.alive && otherMerc.health < otherMerc.maxHealth * 0.5) {
                         if (getDistance(mercenary.x, mercenary.y, otherMerc.x, otherMerc.y) <= 2) {
+                            if (useMercenarySkill(mercenary, otherMerc)) return;
                             if (healTarget(mercenary, otherMerc)) {
                                 mercenary.hasActed = true;
                                 return;
@@ -2680,23 +2731,30 @@ function healTarget(healer, target) {
                 const attackRange = mercenary.role === 'ranged' ? 3 :
                                     mercenary.role === 'caster' ? 2 : 1;
                 if (nearestDistance <= attackRange) {
-                    // 공격 (장비 보너스 적용)
-                    let totalAttack = mercenary.attack;
-                    if (mercenary.equipped && mercenary.equipped.weapon) {
-                        totalAttack += mercenary.equipped.weapon.attack;
+                    let used = false;
+                    if (mercenary.skill && mercenary.skill.name !== 'greaterHeal') {
+                        used = useMercenarySkill(mercenary, nearestMonster);
                     }
-                    
-                    const result = performAttack(mercenary, nearestMonster, { attackValue: totalAttack });
-                    if (!result.hit) {
-                        addMessage(`❌ ${mercenary.name}의 공격이 빗나갔습니다!`, "mercenary");
-                    } else {
-                        const critMsg = result.crit ? ' (치명타!)' : '';
-                        let dmgStr = result.baseDamage;
-                        if (result.elementDamage) {
-                            const emoji = ELEMENT_EMOJI[result.element] || '';
-                            dmgStr = `${result.baseDamage}+${emoji}${result.elementDamage}`;
+
+                    if (!used) {
+                        // 공격 (장비 보너스 적용)
+                        let totalAttack = mercenary.attack;
+                        if (mercenary.equipped && mercenary.equipped.weapon) {
+                            totalAttack += mercenary.equipped.weapon.attack;
                         }
-                        addMessage(`⚔️ ${mercenary.name}이(가) ${nearestMonster.name}에게 ${dmgStr}의 피해를 입혔습니다${critMsg}!`, "mercenary");
+
+                        const result = performAttack(mercenary, nearestMonster, { attackValue: totalAttack });
+                        if (!result.hit) {
+                            addMessage(`❌ ${mercenary.name}의 공격이 빗나갔습니다!`, "mercenary");
+                        } else {
+                            const critMsg = result.crit ? ' (치명타!)' : '';
+                            let dmgStr = result.baseDamage;
+                            if (result.elementDamage) {
+                                const emoji = ELEMENT_EMOJI[result.element] || '';
+                                dmgStr = `${result.baseDamage}+${emoji}${result.elementDamage}`;
+                            }
+                            addMessage(`⚔️ ${mercenary.name}이(가) ${nearestMonster.name}에게 ${dmgStr}의 피해를 입혔습니다${critMsg}!`, "mercenary");
+                        }
                     }
                     
                     if (nearestMonster.health <= 0) {
