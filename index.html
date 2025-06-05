@@ -662,6 +662,8 @@
                 baseCritChance: 0.05,
                 baseMagicPower: 0,
                 baseMagicResist: 0,
+                baseMaxMana: 5,
+                baseManaRegen: 1,
                 role: 'tank',
                 description: '높은 체력과 방어력을 가진 근접 전투 용병',
                 cost: 50
@@ -677,6 +679,8 @@
                 baseCritChance: 0.1,
                 baseMagicPower: 0,
                 baseMagicResist: 0,
+                baseMaxMana: 5,
+                baseManaRegen: 1,
                 role: 'ranged',
                 description: '원거리에서 적을 공격하는 용병',
                 cost: 60
@@ -692,6 +696,8 @@
                 baseCritChance: 0.05,
                 baseMagicPower: 2,
                 baseMagicResist: 1,
+                baseMaxMana: 10,
+                baseManaRegen: 2,
                 role: 'support',
                 description: '아군을 치료하는 지원 용병',
                 cost: 70
@@ -707,6 +713,8 @@
                 baseCritChance: 0.1,
                 baseMagicPower: 5,
                 baseMagicResist: 2,
+                baseMaxMana: 12,
+                baseManaRegen: 2,
                 role: 'caster',
                 description: '마법 공격에 특화된 용병',
                 cost: 80
@@ -1000,6 +1008,8 @@
             Fireball: { name: 'Fireball', icon: '🔥', damage: 10, range: 5, magic: true, element: 'fire', manaCost: 3 },
             Iceball: { name: 'Iceball', icon: '❄️', damage: 8, range: 5, magic: true, element: 'ice', manaCost: 2 }
         };
+
+        const HEAL_MANA_COST = 2;
 
         const ELEMENT_EMOJI = { fire: '🔥', ice: '❄️', lightning: '⚡' };
 
@@ -1389,6 +1399,7 @@ function healTarget(healer, target) {
                 div.className = `mercenary-info ${statusClass}`;
 
                 const hp = `${merc.health}/${merc.maxHealth}`;
+                const mp = `${merc.mana}/${merc.maxMana}`;
                 const weapon = merc.equipped && merc.equipped.weapon ? merc.equipped.weapon.name : '없음';
                 const armor = merc.equipped && merc.equipped.armor ? merc.equipped.armor.name : '없음';
                 const accessory1 = merc.equipped && merc.equipped.accessory1 ? merc.equipped.accessory1.name : '없음';
@@ -1398,7 +1409,7 @@ function healTarget(healer, target) {
                 const totalAttack = merc.attack + attackBonus;
                 const totalDefense = merc.defense + defenseBonus;
 
-                div.textContent = `${i + 1}. ${merc.icon} ${merc.name} Lv.${merc.level} (${hp}) ` +
+                div.textContent = `${i + 1}. ${merc.icon} ${merc.name} Lv.${merc.level} (HP:${hp}, MP:${mp}) ` +
                     `[공격:${totalAttack}, 방어:${totalDefense}] ` +
                     `[무기:${weapon}, 방어구:${armor}, 악세1:${accessory1}, 악세2:${accessory2}] ` +
                     `[특성:${merc.traits.join(', ')}]`;
@@ -1475,6 +1486,7 @@ function healTarget(healer, target) {
 
             const info = `${merc.icon} ${merc.name} Lv.${merc.level}\n` +
                 `HP: ${merc.health}/${merc.maxHealth}\n` +
+                `MP: ${merc.mana}/${merc.maxMana}\n` +
                 `공격력: ${totalAttack}\n` +
                 `방어력: ${totalDefense}\n` +
                 `명중률: ${getStat(merc, 'accuracy')}\n` +
@@ -1926,6 +1938,9 @@ function healTarget(healer, target) {
                 level: 1,
                 maxHealth: mercType.baseHealth,
                 health: mercType.baseHealth,
+                maxMana: mercType.baseMaxMana || 0,
+                mana: mercType.baseMaxMana || 0,
+                manaRegen: mercType.baseManaRegen || 1,
                 attack: mercType.baseAttack,
                 defense: mercType.baseDefense,
                 accuracy: mercType.baseAccuracy,
@@ -2672,6 +2687,8 @@ function healTarget(healer, target) {
             if (!mercenary.alive || mercenary.hasActed) return;
             mercenary.nextX = mercenary.x;
             mercenary.nextY = mercenary.y;
+
+            mercenary.mana = Math.min(mercenary.maxMana, mercenary.mana + (mercenary.manaRegen || 1));
             
             // 장비 초기화 확인
             if (!mercenary.equipped) {
@@ -2685,9 +2702,10 @@ function healTarget(healer, target) {
             
             // 힐러는 치료 우선
             if (mercenary.role === 'support') {
-                if (gameState.player.health < gameState.player.maxHealth * 0.7) {
+                if (mercenary.mana >= HEAL_MANA_COST && gameState.player.health < gameState.player.maxHealth * 0.7) {
                     if (getDistance(mercenary.x, mercenary.y, gameState.player.x, gameState.player.y) <= 2) {
                         if (healTarget(mercenary, gameState.player)) {
+                            mercenary.mana -= HEAL_MANA_COST;
                             mercenary.hasActed = true;
                             return;
                         }
@@ -2696,8 +2714,9 @@ function healTarget(healer, target) {
                 
                 for (const otherMerc of gameState.activeMercenaries) {
                     if (otherMerc !== mercenary && otherMerc.alive && otherMerc.health < otherMerc.maxHealth * 0.5) {
-                        if (getDistance(mercenary.x, mercenary.y, otherMerc.x, otherMerc.y) <= 2) {
+                        if (mercenary.mana >= HEAL_MANA_COST && getDistance(mercenary.x, mercenary.y, otherMerc.x, otherMerc.y) <= 2) {
                             if (healTarget(mercenary, otherMerc)) {
+                                mercenary.mana -= HEAL_MANA_COST;
                                 mercenary.hasActed = true;
                                 return;
                             }
