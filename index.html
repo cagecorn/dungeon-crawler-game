@@ -1239,6 +1239,16 @@ function healTarget(healer, target) {
                 }
 
                 const monster = gameState.monsters.find(m => m.x === nx && m.y === ny);
+                const merc = gameState.activeMercenaries.find(m => m.x === nx && m.y === ny && m.alive);
+                if (merc) {
+                    proj.x = nx;
+                    proj.y = ny;
+                    proj.rangeLeft--;
+                    if (proj.rangeLeft > 0) {
+                        remaining.push(proj);
+                    }
+                    continue;
+                }
                 if (monster) {
                     let attackValue;
                     let magic = false;
@@ -2922,7 +2932,11 @@ function healTarget(healer, target) {
 
             const dx = Math.sign(target.x - gameState.player.x);
             const dy = Math.sign(target.y - gameState.player.y);
-            gameState.projectiles.push({ x: gameState.player.x, y: gameState.player.y, dx, dy, rangeLeft: dist, icon: '➡️', element: null });
+            if (gameState.player.job === 'Archer') {
+                createHomingProjectile(gameState.player.x, gameState.player.y, target);
+            } else {
+                gameState.projectiles.push({ x: gameState.player.x, y: gameState.player.y, dx, dy, rangeLeft: dist, icon: '➡️', element: null });
+            }
             processTurn();
         }
 
