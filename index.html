@@ -734,7 +734,17 @@
             '용감함',
             '민첩함',
             '강인함',
-            '행운아'
+            '행운아',
+            '철벽',
+            '은밀한 칼날',
+            '집요한 사냥꾼',
+            '맹공 돌진',
+            '의지의 불꽃',
+            '복수의 피',
+            '구호의 손길',
+            '보물 감별사',
+            '도망자 감각',
+            '공허 지식자'
         ];
 
         const NEGATIVE_TRAITS = [
@@ -767,7 +777,17 @@
             '공격형(방어↓)': '공격력 증가, 방어력 감소.',
             '방어형(공격↓)': '방어력 증가, 공격력 감소.',
             '신속(체력↓)': '이동 속도 증가, 체력 감소.',
-            '치유 전문(공격↓)': '치유 능력 향상, 공격력 감소.'
+            '치유 전문(공격↓)': '치유 능력 향상, 공격력 감소.',
+            '철벽': '받는 피해가 20% 감소합니다.',
+            '은밀한 칼날': '공격 시 30% 확률로 3턴간 출혈 부여.',
+            '집요한 사냥꾼': '상태 이상 적에게 25% 추가 피해.',
+            '맹공 돌진': '첫 근접 공격 피해 50% 증가.',
+            '의지의 불꽃': '체력이 25% 이하일 때 매 턴 3 회복.',
+            '복수의 피': '아군 사망 시 공격력 10% 증가(최대 3중첩).',
+            '구호의 손길': '전투 종료 후 파티 체력 10% 회복.',
+            '보물 감별사': '전리품 획득 확률 증가.',
+            '도망자 감각': '수적으로 열세일 때 회피율 +30%.',
+            '공허 지식자': '특정 적에게 명중률 +40%.'
         };
 
         // 특성 정보 영역 렌더링
@@ -1096,6 +1116,7 @@
                 job: null,
                 elementResistances: {fire:0, ice:0, lightning:0, earth:0, light:0, dark:0},
                 statusResistances: {poison:0, bleed:0, burn:0, freeze:0},
+                status: { bleed: 0 },
                 exp: 0,
                 expNeeded: 20,
                 gold: 1000,
@@ -1210,19 +1231,44 @@ function healTarget(healer, target, skillInfo) {
             const attackStat = options.attackValue !== undefined ? options.attackValue : (magic ? attacker.magicPower : attacker.attack);
             const defenseStat = options.defenseValue !== undefined ? options.defenseValue : (magic ? defender.magicResist : defender.defense);
 
-            const attackerAcc = getStat(attacker, 'accuracy');
-            const defenderEva = getStat(defender, 'evasion');
+            let attackerAcc = getStat(attacker, 'accuracy');
+            let defenderEva = getStat(defender, 'evasion');
+
+            if (hasTrait(attacker, '공허 지식자') && attacker.voidSpecial && defender.special === attacker.voidSpecial) {
+                attackerAcc *= 1.4;
+            }
+
+            if (hasTrait(defender, '도망자 감각') && isOutnumbered(defender)) {
+                defenderEva *= 1.3;
+            }
+
             const hitChance = attackerAcc / (attackerAcc + defenderEva);
             if (Math.random() > hitChance) {
                 return { hit: false };
             }
 
-            let baseDamage = Math.max(1, attackStat - defenseStat);
+            let modifiedAttack = attackStat;
+            if (attacker.vengeanceStacks) {
+                modifiedAttack = Math.floor(modifiedAttack * (1 + attacker.vengeanceStacks * 0.1));
+            }
+
+            let baseDamage = Math.max(1, modifiedAttack - defenseStat);
             let crit = false;
             const critChance = getStat(attacker, 'critChance');
             if (Math.random() < critChance) {
                 baseDamage = Math.floor(baseDamage * 1.5);
                 crit = true;
+            }
+
+            if (hasTrait(attacker, '맹공 돌진') && !magic && !attacker.chargeUsed) {
+                baseDamage = Math.floor(baseDamage * 1.5);
+                attacker.chargeUsed = true;
+            }
+
+            if (hasTrait(attacker, '집요한 사냥꾼')) {
+                if (defender.status && Object.values(defender.status).some(v => v > 0)) {
+                    baseDamage = Math.floor(baseDamage * 1.25);
+                }
             }
 
             let elementDamage = 0;
@@ -1234,15 +1280,23 @@ function healTarget(healer, target, skillInfo) {
                 }
             }
 
-            const damage = baseDamage + elementDamage;
+            let damage = baseDamage + elementDamage;
+            if (hasTrait(defender, '철벽')) {
+                damage = Math.floor(damage * 0.8);
+            }
             defender.health -= damage;
 
             let statusApplied = false;
             if (status && defender.statusResistances && defender.statusResistances[status] !== undefined) {
                 if (Math.random() > defender.statusResistances[status]) {
-                    defender[status] = true;
+                    defender.status[status] = 3;
                     statusApplied = true;
                 }
+            }
+
+            if (hasTrait(attacker, '은밀한 칼날') && Math.random() < 0.3) {
+                defender.status.bleed = 3;
+                statusApplied = true;
             }
 
             return { hit: true, crit, damage, baseDamage, elementDamage, element, statusApplied };
@@ -1278,6 +1332,47 @@ function healTarget(healer, target, skillInfo) {
                 });
             }
             return value;
+        }
+
+        function hasTrait(character, name) {
+            return character.traits && character.traits.includes(name);
+        }
+
+        function isOutnumbered(character) {
+            const allies = 1 + gameState.activeMercenaries.filter(m => m.alive).length;
+            const enemies = gameState.monsters.length;
+            return enemies > allies;
+        }
+
+        function processStatuses(character) {
+            if (!character.status) return;
+            if (character.status.bleed && character.status.bleed > 0) {
+                character.health = Math.max(0, character.health - 1);
+                character.status.bleed -= 1;
+            }
+        }
+
+        function onAllyDeath(dead) {
+            gameState.activeMercenaries.forEach(m => {
+                if (m.alive && hasTrait(m, '복수의 피')) {
+                    m.vengeanceStacks = Math.min(3, (m.vengeanceStacks || 0) + 1);
+                }
+            });
+        }
+
+        function afterMonsterDefeated() {
+            const healer = gameState.activeMercenaries.find(m => m.alive && hasTrait(m, '구호의 손길'));
+            if (healer) {
+                const hpP = Math.ceil(gameState.player.maxHealth * 0.1);
+                gameState.player.health = Math.min(gameState.player.maxHealth, gameState.player.health + hpP);
+                gameState.activeMercenaries.forEach(m => {
+                    if (m.alive) {
+                        const heal = Math.ceil(m.maxHealth * 0.1);
+                        m.health = Math.min(m.maxHealth, m.health + heal);
+                    }
+                });
+                addMessage('🩹 구호의 손길로 파티가 회복되었습니다.', 'mercenary');
+            }
         }
 
         // 플레이어 체력 비율에 따른 표정 반환
@@ -1338,6 +1433,7 @@ function healTarget(healer, target, skillInfo) {
                         gameState.dungeon[monster.y][monster.x] = 'empty';
                         const idx = gameState.monsters.findIndex(m => m === monster);
                         if (idx !== -1) gameState.monsters.splice(idx, 1);
+                        afterMonsterDefeated();
                     }
                     continue;
                 }
@@ -1666,6 +1762,7 @@ function healTarget(healer, target, skillInfo) {
                 magicResist: data.baseMagicResist,
                 elementResistances: {fire:0, ice:0, lightning:0, earth:0, light:0, dark:0},
                 statusResistances: {poison:0, bleed:0, burn:0, freeze:0},
+                status: { bleed: 0 },
                 exp: data.baseExp,
                 gold: data.baseGold,
                 range: data.range,
@@ -2057,6 +2154,11 @@ function healTarget(healer, target, skillInfo) {
                 const t = allTraits[Math.floor(Math.random() * allTraits.length)];
                 if (!traits.includes(t)) traits.push(t);
             }
+            let voidSpecial = null;
+            if (traits.includes('공허 지식자')) {
+                const specials = ['slow','fast','ranged','magic','strong','boss'];
+                voidSpecial = specials[Math.floor(Math.random() * specials.length)];
+            }
             const randomBaseName = MERCENARY_NAMES[Math.floor(Math.random() * MERCENARY_NAMES.length)];
             const jobLabel = mercType.name.split(' ')[1] || mercType.name;
             const name = `${randomBaseName} (${jobLabel})`;
@@ -2085,10 +2187,14 @@ function healTarget(healer, target, skillInfo) {
                 magicResist: mercType.baseMagicResist,
                 elementResistances: {fire:0, ice:0, lightning:0, earth:0, light:0, dark:0},
                 statusResistances: {poison:0, bleed:0, burn:0, freeze:0},
+                status: { bleed: 0 },
                 exp: 0,
                 expNeeded: 15,
                 alive: true,
                 hasActed: false,
+                vengeanceStacks: 0,
+                chargeUsed: false,
+                voidSpecial: voidSpecial,
                 traits: traits,
                 equipped: {
                     weapon: null,
@@ -2459,6 +2565,7 @@ function healTarget(healer, target, skillInfo) {
                         nearestTarget.alive = false;
                         nearestTarget.health = 0;
                         addMessage(`💀 ${nearestTarget.name}이(가) 전사했습니다...`, "mercenary");
+                        onAllyDeath(nearestTarget);
                         updateMercenaryDisplay();
                     }
                 }
@@ -2468,6 +2575,7 @@ function healTarget(healer, target, skillInfo) {
 
         // 플레이어 사망 처리
         function handlePlayerDeath() {
+            onAllyDeath(gameState.player);
             gameState.gameRunning = false;
             addMessage("💀 플레이어가 사망했습니다...", "combat");
             
@@ -2551,28 +2659,35 @@ function healTarget(healer, target, skillInfo) {
                             gameState.items.push(bossItem);
                             gameState.dungeon[newY][newX] = 'item';
                             addMessage(`🎁 ${monster.name}이(가) ${bossItem.name}을(를) 떨어뜨렸습니다!`, "treasure");
-                        } else if (Math.random() < monster.lootChance) {
-                            const itemKeys = Object.keys(ITEMS).filter(k => k !== 'reviveScroll');
-                            const availableItems = itemKeys.filter(key =>
-                                ITEMS[key].level <= Math.ceil(gameState.floor / 2 + 1)
-                            );
-                            let randomItemKey = availableItems[Math.floor(Math.random() * availableItems.length)];
-                            if (Math.random() < 0.1 && ITEMS.reviveScroll.level <= Math.ceil(gameState.floor / 2 + 1)) {
-                                randomItemKey = 'reviveScroll';
-                            }
-                            
-                            const droppedItem = createItem(randomItemKey, newX, newY);
-                            gameState.items.push(droppedItem);
-                            gameState.dungeon[newY][newX] = 'item';
-                            addMessage(`📦 ${monster.name}이(가) ${droppedItem.name}을(를) 떨어뜨렸습니다!`, "item");
                         } else {
-                            gameState.dungeon[newY][newX] = 'empty';
+                            let lootChance = monster.lootChance;
+                            if (gameState.activeMercenaries.some(m => m.alive && hasTrait(m, '보물 감별사'))) {
+                                lootChance += 0.2;
+                            }
+                            if (Math.random() < lootChance) {
+                                const itemKeys = Object.keys(ITEMS).filter(k => k !== 'reviveScroll');
+                                const availableItems = itemKeys.filter(key =>
+                                    ITEMS[key].level <= Math.ceil(gameState.floor / 2 + 1)
+                                );
+                                let randomItemKey = availableItems[Math.floor(Math.random() * availableItems.length)];
+                                if (Math.random() < 0.1 && ITEMS.reviveScroll.level <= Math.ceil(gameState.floor / 2 + 1)) {
+                                    randomItemKey = 'reviveScroll';
+                                }
+
+                                const droppedItem = createItem(randomItemKey, newX, newY);
+                                gameState.items.push(droppedItem);
+                                gameState.dungeon[newY][newX] = 'item';
+                                addMessage(`📦 ${monster.name}이(가) ${droppedItem.name}을(를) 떨어뜨렸습니다!`, "item");
+                            } else {
+                                gameState.dungeon[newY][newX] = 'empty';
+                            }
                         }
-                        
+
                         const monsterIndex = gameState.monsters.findIndex(m => m === monster);
                         if (monsterIndex !== -1) {
                             gameState.monsters.splice(monsterIndex, 1);
                         }
+                        afterMonsterDefeated();
                     }
                     
                     processTurn();
@@ -2678,6 +2793,10 @@ function healTarget(healer, target, skillInfo) {
         function processTurn() {
             if (!gameState.gameRunning) return;
             processProjectiles();
+
+            processStatuses(gameState.player);
+            gameState.activeMercenaries.forEach(m => processStatuses(m));
+            gameState.monsters.forEach(m => processStatuses(m));
             
             // 용병 턴 처리
             gameState.activeMercenaries.forEach(mercenary => {
@@ -2836,6 +2955,10 @@ function healTarget(healer, target, skillInfo) {
             const mpRegen = getStat(mercenary, 'manaRegen');
             mercenary.health = Math.min(mercenary.maxHealth, mercenary.health + hpRegen);
             mercenary.mana = Math.min(mercenary.maxMana, mercenary.mana + mpRegen);
+
+            if (hasTrait(mercenary, '의지의 불꽃') && mercenary.health <= mercenary.maxHealth * 0.25) {
+                mercenary.health = Math.min(mercenary.maxHealth, mercenary.health + 3);
+            }
             
             // 장비 초기화 확인
             if (!mercenary.equipped) {
@@ -2998,28 +3121,35 @@ function healTarget(healer, target, skillInfo) {
                             gameState.items.push(bossItem);
                             gameState.dungeon[nearestMonster.y][nearestMonster.x] = 'item';
                             addMessage(`🎁 ${nearestMonster.name}이(가) ${bossItem.name}을(를) 떨어뜨렸습니다!`, "treasure");
-                        } else if (Math.random() < nearestMonster.lootChance) {
-                            const itemKeys = Object.keys(ITEMS).filter(k => k !== 'reviveScroll');
-                            const availableItems = itemKeys.filter(key =>
-                                ITEMS[key].level <= Math.ceil(gameState.floor / 2 + 1)
-                            );
-                            let randomItemKey = availableItems[Math.floor(Math.random() * availableItems.length)];
-                            if (Math.random() < 0.1 && ITEMS.reviveScroll.level <= Math.ceil(gameState.floor / 2 + 1)) {
-                                randomItemKey = 'reviveScroll';
-                            }
-
-                            const droppedItem = createItem(randomItemKey, nearestMonster.x, nearestMonster.y);
-                            gameState.items.push(droppedItem);
-                            gameState.dungeon[nearestMonster.y][nearestMonster.x] = 'item';
-                            addMessage(`📦 ${nearestMonster.name}이(가) ${droppedItem.name}을(를) 떨어뜨렸습니다!`, "item");
                         } else {
-                            gameState.dungeon[nearestMonster.y][nearestMonster.x] = 'empty';
+                            let lootChance = nearestMonster.lootChance;
+                            if (gameState.activeMercenaries.some(m => m.alive && hasTrait(m, '보물 감별사'))) {
+                                lootChance += 0.2;
+                            }
+                            if (Math.random() < lootChance) {
+                                const itemKeys = Object.keys(ITEMS).filter(k => k !== 'reviveScroll');
+                                const availableItems = itemKeys.filter(key =>
+                                    ITEMS[key].level <= Math.ceil(gameState.floor / 2 + 1)
+                                );
+                                let randomItemKey = availableItems[Math.floor(Math.random() * availableItems.length)];
+                                if (Math.random() < 0.1 && ITEMS.reviveScroll.level <= Math.ceil(gameState.floor / 2 + 1)) {
+                                    randomItemKey = 'reviveScroll';
+                                }
+
+                                const droppedItem = createItem(randomItemKey, nearestMonster.x, nearestMonster.y);
+                                gameState.items.push(droppedItem);
+                                gameState.dungeon[nearestMonster.y][nearestMonster.x] = 'item';
+                                addMessage(`📦 ${nearestMonster.name}이(가) ${droppedItem.name}을(를) 떨어뜨렸습니다!`, "item");
+                            } else {
+                                gameState.dungeon[nearestMonster.y][nearestMonster.x] = 'empty';
+                            }
                         }
 
                         const monsterIndex = gameState.monsters.findIndex(m => m === nearestMonster);
                         if (monsterIndex !== -1) {
                             gameState.monsters.splice(monsterIndex, 1);
                         }
+                        afterMonsterDefeated();
                     }
                     mercenary.mana -= skillInfo.manaCost;
                     updateMercenaryDisplay();
@@ -3150,28 +3280,35 @@ function healTarget(healer, target, skillInfo) {
                             gameState.items.push(bossItem);
                             gameState.dungeon[nearestMonster.y][nearestMonster.x] = 'item';
                             addMessage(`🎁 ${nearestMonster.name}이(가) ${bossItem.name}을(를) 떨어뜨렸습니다!`, "treasure");
-                        } else if (Math.random() < nearestMonster.lootChance) {
-                            const itemKeys = Object.keys(ITEMS).filter(k => k !== 'reviveScroll');
-                            const availableItems = itemKeys.filter(key =>
-                                ITEMS[key].level <= Math.ceil(gameState.floor / 2 + 1)
-                            );
-                            let randomItemKey = availableItems[Math.floor(Math.random() * availableItems.length)];
-                            if (Math.random() < 0.1 && ITEMS.reviveScroll.level <= Math.ceil(gameState.floor / 2 + 1)) {
-                                randomItemKey = 'reviveScroll';
-                            }
-
-                            const droppedItem = createItem(randomItemKey, nearestMonster.x, nearestMonster.y);
-                            gameState.items.push(droppedItem);
-                            gameState.dungeon[nearestMonster.y][nearestMonster.x] = 'item';
-                            addMessage(`📦 ${nearestMonster.name}이(가) ${droppedItem.name}을(를) 떨어뜨렸습니다!`, "item");
                         } else {
-                            gameState.dungeon[nearestMonster.y][nearestMonster.x] = 'empty';
+                            let lootChance = nearestMonster.lootChance;
+                            if (gameState.activeMercenaries.some(m => m.alive && hasTrait(m, '보물 감별사'))) {
+                                lootChance += 0.2;
+                            }
+                            if (Math.random() < lootChance) {
+                                const itemKeys = Object.keys(ITEMS).filter(k => k !== 'reviveScroll');
+                                const availableItems = itemKeys.filter(key =>
+                                    ITEMS[key].level <= Math.ceil(gameState.floor / 2 + 1)
+                                );
+                                let randomItemKey = availableItems[Math.floor(Math.random() * availableItems.length)];
+                                if (Math.random() < 0.1 && ITEMS.reviveScroll.level <= Math.ceil(gameState.floor / 2 + 1)) {
+                                    randomItemKey = 'reviveScroll';
+                                }
+
+                                const droppedItem = createItem(randomItemKey, nearestMonster.x, nearestMonster.y);
+                                gameState.items.push(droppedItem);
+                                gameState.dungeon[nearestMonster.y][nearestMonster.x] = 'item';
+                                addMessage(`📦 ${nearestMonster.name}이(가) ${droppedItem.name}을(를) 떨어뜨렸습니다!`, "item");
+                            } else {
+                                gameState.dungeon[nearestMonster.y][nearestMonster.x] = 'empty';
+                            }
                         }
-                        
+
                         const monsterIndex = gameState.monsters.findIndex(m => m === nearestMonster);
                         if (monsterIndex !== -1) {
                             gameState.monsters.splice(monsterIndex, 1);
                         }
+                        afterMonsterDefeated();
                     }
                     mercenary.hasActed = true;
                     return;
