@@ -21,6 +21,10 @@ Click the buttons in the *Hire Mercenary* panel to recruit warriors, archers, he
 
 Spend collected gold in the shop to purchase items. Bought gear is placed in your inventory and can boost your stats when equipped. As you gain experience you can unlock new skills and activate them with the **Skill1** and **Skill2** buttons.
 
+### Mercenary Skills
+
+When you hire a mercenary, they receive a random skill unique to their type. Using a skill consumes mana, and the skill's icon and name are shown in the combat log when activated.
+
 ## Development
 
 Install dependencies with:
