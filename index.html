@@ -113,6 +113,10 @@
             color: white;
             box-shadow: 0 0 6px rgba(149, 117, 205, 0.5);
         }
+        .projectile {
+            background: radial-gradient(circle, #ff9800, #e65100);
+            color: white;
+        }
         .exit {
             background: linear-gradient(45deg, #00BCD4, #00ACC1, #0097A7);
             color: white;
@@ -541,7 +545,8 @@
             ARMOR: 'armor',
             ACCESSORY: 'accessory',
             POTION: 'potion',
-            REVIVE: 'revive'
+            REVIVE: 'revive',
+            SPELL: 'spell'
         };
 
         // 용병 타입 정의
@@ -872,6 +877,14 @@
                 price: 0,
                 level: 2,
                 icon: '✨'
+            },
+            fireballScroll: {
+                name: '🔥 파이어볼 스크롤',
+                type: ITEM_TYPES.SPELL,
+                damage: 8,
+                price: 30,
+                level: 2,
+                icon: '🔥'
             }
         };
 
@@ -921,6 +934,7 @@
             monsters: [],
             treasures: [],
             items: [],
+            projectiles: [],
             exitLocation: { x: 0, y: 0 },
             floor: 1,
             dungeonSize: 80,
@@ -1069,6 +1083,56 @@ function healTarget(healer, target) {
                 });
             }
             return value;
+        }
+
+        function processProjectiles() {
+            const remaining = [];
+            for (const proj of gameState.projectiles) {
+                let nx = proj.x + proj.dx;
+                let ny = proj.y + proj.dy;
+
+                if (nx < 0 || ny < 0 || nx >= gameState.dungeonSize || ny >= gameState.dungeonSize) {
+                    continue;
+                }
+
+                const monster = gameState.monsters.find(m => m.x === nx && m.y === ny);
+                if (monster) {
+                    let totalAttack = gameState.player.attack;
+                    if (gameState.player.equipped.weapon) {
+                        totalAttack += gameState.player.equipped.weapon.attack;
+                    }
+                    const result = performAttack(gameState.player, monster, { attackValue: totalAttack });
+                    if (!result.hit) {
+                        addMessage(`❌ ${monster.name}에게 원거리 공격이 빗나갔습니다!`, 'combat');
+                    } else {
+                        const critMsg = result.crit ? ' (치명타!)' : '';
+                        addMessage(`🏹 ${monster.name}에게 ${result.damage}의 피해를 입혔습니다${critMsg}!`, 'combat');
+                    }
+                    if (monster.health <= 0) {
+                        addMessage(`💀 ${monster.name}을(를) 처치했습니다!`, 'combat');
+                        gameState.player.exp += monster.exp;
+                        gameState.player.gold += monster.gold;
+                        checkLevelUp();
+                        updateStats();
+                        gameState.dungeon[monster.y][monster.x] = 'empty';
+                        const idx = gameState.monsters.findIndex(m => m === monster);
+                        if (idx !== -1) gameState.monsters.splice(idx, 1);
+                    }
+                    continue;
+                }
+
+                if (gameState.dungeon[ny][nx] === 'wall') {
+                    continue;
+                }
+
+                proj.x = nx;
+                proj.y = ny;
+                proj.rangeLeft--;
+                if (proj.rangeLeft > 0) {
+                    remaining.push(proj);
+                }
+            }
+            gameState.projectiles = remaining;
         }
         // 인벤토리 UI 갱신
         function updateInventoryDisplay() {
@@ -1288,21 +1352,27 @@ function healTarget(healer, target) {
                         cellType = 'player';
                         div.textContent = '😀';
                     } else {
-                        const merc = gameState.mercenaries.find(m => m.x === x && m.y === y && m.alive);
-                        if (merc) {
-                            cellType = 'mercenary';
-                            div.textContent = merc.icon;
-                        } else if (cellType === 'monster') {
-                            const m = gameState.monsters.find(mon => mon.x === x && mon.y === y);
-                            if (m) div.textContent = m.icon;
-                    } else if (cellType === 'item') {
-                        const it = gameState.items.find(it => it.x === x && it.y === y);
-                        if (it) div.textContent = it.icon;
-                    } else if (cellType === 'treasure') {
-                        div.textContent = '💰';
-                    } else if (cellType === 'exit') {
-                        div.textContent = '🚪';
-                    }
+                        const proj = gameState.projectiles.find(p => p.x === x && p.y === y);
+                        if (proj) {
+                            cellType = 'projectile';
+                            div.textContent = proj.icon;
+                        } else {
+                            const merc = gameState.mercenaries.find(m => m.x === x && m.y === y && m.alive);
+                            if (merc) {
+                                cellType = 'mercenary';
+                                div.textContent = merc.icon;
+                            } else if (cellType === 'monster') {
+                                const m = gameState.monsters.find(mon => mon.x === x && mon.y === y);
+                                if (m) div.textContent = m.icon;
+                            } else if (cellType === 'item') {
+                                const it = gameState.items.find(it => it.x === x && it.y === y);
+                                if (it) div.textContent = it.icon;
+                            } else if (cellType === 'treasure') {
+                                div.textContent = '💰';
+                            } else if (cellType === 'exit') {
+                                div.textContent = '🚪';
+                            }
+                        }
                     }
 
                     div.className = `cell ${cellType}`;
@@ -2109,6 +2179,7 @@ function healTarget(healer, target) {
         // 턴 처리 (최적화됨)
         function processTurn() {
             if (!gameState.gameRunning) return;
+            processProjectiles();
             
             // 용병 턴 처리
             gameState.mercenaries.forEach(mercenary => {
@@ -2435,7 +2506,27 @@ function healTarget(healer, target) {
             addMessage('📁 게임을 불러왔습니다.', 'info');
         }
         function attackAction() {
-            // Reserved for future ranged attack logic
+            const range = 5;
+            let target = null;
+            let dist = Infinity;
+            for (const monster of gameState.monsters) {
+                const d = getDistance(gameState.player.x, gameState.player.y, monster.x, monster.y);
+                if (d <= range && d < dist && hasLineOfSight(gameState.player.x, gameState.player.y, monster.x, monster.y)) {
+                    target = monster;
+                    dist = d;
+                }
+            }
+
+            if (!target) {
+                addMessage('🎯 사거리 내에 몬스터가 없습니다.', 'info');
+                processTurn();
+                return;
+            }
+
+            const dx = Math.sign(target.x - gameState.player.x);
+            const dy = Math.sign(target.y - gameState.player.y);
+            gameState.projectiles.push({ x: gameState.player.x, y: gameState.player.y, dx, dy, rangeLeft: dist, icon: '➡️' });
+            processTurn();
         }
 
         function skill1Action() {
@@ -2521,6 +2612,10 @@ function healTarget(healer, target) {
             else if (e.key === 'ArrowRight') {
                 e.preventDefault();
                 movePlayer(1, 0);
+            }
+            else if (e.key.toLowerCase() === 'f') {
+                e.preventDefault();
+                attackAction();
             }
             else if (/^[1-9]$/.test(e.key)) {
                 const idx = parseInt(e.key) - 1;
