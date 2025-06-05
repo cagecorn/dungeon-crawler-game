@@ -1212,7 +1212,7 @@ function healTarget(healer, target) {
             if (item.critChance !== undefined) stats.push(`치명+${item.critChance}`);
             if (item.magicPower !== undefined) stats.push(`마공+${item.magicPower}`);
             if (item.magicResist !== undefined) stats.push(`마방+${item.magicResist}`);
-            if (item.manaRegen !== undefined) stats.push(`마나회복+${item.manaRegen}`);
+            if (item.manaRegen !== undefined) stats.push(`MP회복+${item.manaRegen}`);
             return `${item.name}${stats.length ? ' (' + stats.join(', ') + ')' : ''}`;
         }
 

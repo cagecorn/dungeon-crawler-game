@@ -39,7 +39,7 @@ async function run() {
     process.exit(1);
   }
   const desc = formatItem(item);
-  if (!desc.includes('HP') || !desc.includes('마나')) {
+  if (!desc.includes('HP회복+') || !desc.includes('MP회복+')) {
     console.error('formatItem missing regen info');
     process.exit(1);
   }
