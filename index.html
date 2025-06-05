@@ -1387,7 +1387,8 @@ function healTarget(healer, target) {
             gameState.dungeon[exitY][exitX] = 'exit';
 
             const monsterTypes = Object.keys(MONSTER_TYPES);
-            const monsterCount = gameState.floor === 1 ? 5 : 8;
+            // 몬스터는 던전 크기와 층수에 비례해 등장 수를 결정
+            const monsterCount = Math.floor(size * 0.2) + gameState.floor;
             for (let i = 0; i < monsterCount; i++) {
                 let x, y;
                 do {
@@ -1400,7 +1401,8 @@ function healTarget(healer, target) {
                 gameState.dungeon[y][x] = 'monster';
             }
 
-            const treasureCount = gameState.floor === 1 ? 5 : 8;
+            // 보물은 던전 크기와 층수에 따라 적당히 배치
+            const treasureCount = Math.floor(size * 0.1) + Math.floor(gameState.floor * 0.5);
             for (let i = 0; i < treasureCount; i++) {
                 let x, y;
                 do {
@@ -1413,7 +1415,8 @@ function healTarget(healer, target) {
             }
 
             const itemKeys = Object.keys(ITEMS);
-            const itemCount = gameState.floor === 1 ? 5 : 8;
+            // 아이템 또한 던전 크기와 층수의 영향을 받음
+            const itemCount = Math.floor(size * 0.1) + Math.floor(gameState.floor * 0.5);
             for (let i = 0; i < itemCount; i++) {
                 let x, y;
                 do {
