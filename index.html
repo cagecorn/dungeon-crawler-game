@@ -752,6 +752,30 @@
             '치유 전문(공격↓)'
         ];
 
+        // 개별 특성 데이터 (상태 초기화용)
+        const POSITIVE_TRAIT_DATA = [
+            { name: '근면함', initialState: { stacks: 0, firstAttackUsed: false } },
+            { name: '용감함', initialState: { stacks: 0, firstAttackUsed: false } },
+            { name: '민첩함', initialState: { stacks: 0, firstAttackUsed: false } },
+            { name: '강인함', initialState: { stacks: 0, firstAttackUsed: false } },
+            { name: '행운아', initialState: { stacks: 0, firstAttackUsed: false } }
+        ];
+
+        const NEGATIVE_TRAIT_DATA = [
+            { name: '겁쟁이', initialState: { stacks: 0, firstAttackUsed: false } },
+            { name: '둔함', initialState: { stacks: 0, firstAttackUsed: false } },
+            { name: '허약함', initialState: { stacks: 0, firstAttackUsed: false } },
+            { name: '나태함', initialState: { stacks: 0, firstAttackUsed: false } },
+            { name: '불운', initialState: { stacks: 0, firstAttackUsed: false } }
+        ];
+
+        const TRADEOFF_TRAIT_DATA = [
+            { name: '공격형(방어↓)', initialState: { stacks: 0, firstAttackUsed: false } },
+            { name: '방어형(공격↓)', initialState: { stacks: 0, firstAttackUsed: false } },
+            { name: '신속(체력↓)', initialState: { stacks: 0, firstAttackUsed: false } },
+            { name: '치유 전문(공격↓)', initialState: { stacks: 0, firstAttackUsed: false } }
+        ];
+
         // 특성 상세 설명
         const TRAIT_DETAILS = {
             '근면함': '경험치 획득량이 증가합니다.',
@@ -1470,7 +1494,7 @@ function healTarget(healer, target, skillInfo) {
                     `[공격:${totalAttack}, 방어:${totalDefense}] ` +
                     `[무기:${weapon}, 방어구:${armor}, 악세1:${accessory1}, 악세2:${accessory2}] ` +
                     `[${skillText}] ` +
-                    `[특성:${merc.traits.join(', ')}]`;
+                    `[특성:${merc.traits.map(t => t.name).join(', ')}]`;
 
                 if (merc.alive) {
                     div.onclick = () => {
@@ -1544,7 +1568,7 @@ function healTarget(healer, target, skillInfo) {
             const skillInfo = MERCENARY_SKILLS[merc.skill];
             const skillText = skillInfo ? `${skillInfo.name} (MP ${skillInfo.manaCost})` : '없음';
 
-            const traitInfo = merc.traits.map(t => `- ${t}: ${TRAIT_DETAILS[t] || ''}`).join('\n');
+            const traitInfo = merc.traits.map(tr => `- ${tr.name}: ${TRAIT_DETAILS[tr.name] || ''}`).join('\n');
 
             const info = `${merc.icon} ${merc.name} Lv.${merc.level}\n` +
                 `HP: ${merc.health}/${merc.maxHealth}\n` +
@@ -2051,11 +2075,13 @@ function healTarget(healer, target, skillInfo) {
             const mercType = MERCENARY_TYPES[type];
             const skillPool = MERCENARY_SKILL_SETS[type] || [];
             const assignedSkill = skillPool[Math.floor(Math.random() * skillPool.length)] || null;
-            const allTraits = [...POSITIVE_TRAITS, ...NEGATIVE_TRAITS, ...TRADEOFF_TRAITS];
+            const allTraitData = [...POSITIVE_TRAIT_DATA, ...NEGATIVE_TRAIT_DATA, ...TRADEOFF_TRAIT_DATA];
             const traits = [];
             while (traits.length < 2) {
-                const t = allTraits[Math.floor(Math.random() * allTraits.length)];
-                if (!traits.includes(t)) traits.push(t);
+                const t = allTraitData[Math.floor(Math.random() * allTraitData.length)];
+                if (!traits.some(tr => tr.name === t.name)) {
+                    traits.push({ name: t.name, stacks: t.initialState.stacks, firstAttackUsed: t.initialState.firstAttackUsed });
+                }
             }
             const randomBaseName = MERCENARY_NAMES[Math.floor(Math.random() * MERCENARY_NAMES.length)];
             const jobLabel = mercType.name.split(' ')[1] || mercType.name;
@@ -3276,6 +3302,16 @@ function healTarget(healer, target, skillInfo) {
             if (saved.activeMercenaries) gameState.activeMercenaries = saved.activeMercenaries;
             else if (saved.mercenaries) gameState.activeMercenaries = saved.mercenaries;
             if (saved.standbyMercenaries) gameState.standbyMercenaries = saved.standbyMercenaries;
+
+            const normalizeTraits = list => {
+                for (const m of list) {
+                    if (m.traits && typeof m.traits[0] === 'string') {
+                        m.traits = m.traits.map(name => ({ name, stacks: 0, firstAttackUsed: false }));
+                    }
+                }
+            };
+            normalizeTraits(gameState.activeMercenaries);
+            normalizeTraits(gameState.standbyMercenaries);
             updateFogOfWar();
             updateStats();
             updateInventoryDisplay();
