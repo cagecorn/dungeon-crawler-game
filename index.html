@@ -485,6 +485,11 @@
             text-align: center;
             font-size: 16px;
         }
+        .trait-info h3 {
+            margin: 8px 0 4px 0;
+            color: #ffcc00;
+            font-size: 14px;
+        }
         .trait-info ul {
             list-style: none;
             padding: 0;
@@ -728,46 +733,48 @@
             }
         };
 
-        // 용병 특성
-        const POSITIVE_TRAITS = [
-            '근면함',
-            '용감함',
-            '민첩함',
-            '강인함',
-            '행운아'
+        // 용병 특성 - 카테고리별 배열
+        const ABILITY_TRAITS = [ // 능력 강화형
+            '철벽',
+            '의지의 불꽃',
+            '마력 조율자'
         ];
 
-        const NEGATIVE_TRAITS = [
-            '겁쟁이',
-            '둔함',
-            '허약함',
-            '나태함',
-            '불운'
+        const REACTIVE_TRAITS = [ // 상태 반응형
+            '복수의 피',
+            '도망자 감각'
         ];
 
-        const TRADEOFF_TRAITS = [
-            '공격형(방어↓)',
-            '방어형(공격↓)',
-            '신속(체력↓)',
-            '치유 전문(공격↓)'
+        const STATUS_TRAITS = [ // 상태 부여형
+            '은밀한 칼날',
+            '구호의 손길',
+            '도발의 혼'
+        ];
+
+        const FIELD_TRAITS = [ // 필드 기반형
+            '보물 감별사',
+            '공허 지식자'
+        ];
+
+        const SPECIAL_ACTION_TRAITS = [ // 특수 행동형
+            '맹공 돌진',
+            '집요한 사냥꾼'
         ];
 
         // 특성 상세 설명
         const TRAIT_DETAILS = {
-            '근면함': '경험치 획득량이 증가합니다.',
-            '용감함': '전투 시 공격력이 소폭 증가합니다.',
-            '민첩함': '이동 속도와 회피율이 향상됩니다.',
-            '강인함': '최대 체력과 방어력이 증가합니다.',
-            '행운아': '아이템 발견 확률이 높아집니다.',
-            '겁쟁이': '체력이 낮을 때 도망칠 확률이 높습니다.',
-            '둔함': '공격 속도와 이동 속도가 감소합니다.',
-            '허약함': '최대 체력이 감소합니다.',
-            '나태함': '행동 속도가 느려집니다.',
-            '불운': '아이템 발견 확률이 낮아집니다.',
-            '공격형(방어↓)': '공격력 증가, 방어력 감소.',
-            '방어형(공격↓)': '방어력 증가, 공격력 감소.',
-            '신속(체력↓)': '이동 속도 증가, 체력 감소.',
-            '치유 전문(공격↓)': '치유 능력 향상, 공격력 감소.'
+            '철벽': '방어력이 크게 증가하여 받는 피해를 감소시킵니다.',
+            '복수의 피': '동료가 쓰러지면 공격력이 일시적으로 증가합니다.',
+            '도망자 감각': '체력이 낮을 때 회피율이 상승합니다.',
+            '맹공 돌진': '전투 시작 시 적에게 돌진하여 추가 피해를 줍니다.',
+            '은밀한 칼날': '공격 시 일정 확률로 출혈 효과를 부여합니다.',
+            '집요한 사냥꾼': '추적 중인 적에게 추가 피해를 입힙니다.',
+            '공허 지식자': '어둠 속성 마법 피해가 증가합니다.',
+            '의지의 불꽃': '상태 이상에 걸렸을 때 저항력이 상승합니다.',
+            '구호의 손길': '아군 치유 효과가 강화됩니다.',
+            '보물 감별사': '상자에서 희귀 아이템을 발견할 확률이 높아집니다.',
+            '마력 조율자': '마나 회복 속도가 증가합니다.',
+            '도발의 혼': '적을 도발하여 자신의 방향으로 끌어들입니다.'
         };
 
         // 특성 정보 영역 렌더링
@@ -775,13 +782,27 @@
             const container = document.getElementById('trait-info');
             if (!container) return;
             container.innerHTML = '<h2>📜 특성 정보</h2>';
-            const ul = document.createElement('ul');
-            for (const [name, desc] of Object.entries(TRAIT_DETAILS)) {
-                const li = document.createElement('li');
-                li.innerHTML = `<strong>${name}</strong>: ${desc}`;
-                ul.appendChild(li);
+
+            const categories = {
+                '능력 강화형': ABILITY_TRAITS,
+                '상태 반응형': REACTIVE_TRAITS,
+                '상태 부여형': STATUS_TRAITS,
+                '필드 기반형': FIELD_TRAITS,
+                '특수 행동형': SPECIAL_ACTION_TRAITS
+            };
+
+            for (const [cat, traits] of Object.entries(categories)) {
+                const h3 = document.createElement('h3');
+                h3.textContent = cat;
+                container.appendChild(h3);
+                const ul = document.createElement('ul');
+                for (const t of traits) {
+                    const li = document.createElement('li');
+                    li.innerHTML = `<strong>${t}</strong>: ${TRAIT_DETAILS[t] || ''}`;
+                    ul.appendChild(li);
+                }
+                container.appendChild(ul);
             }
-            container.appendChild(ul);
         }
 
         // 몬스터 타입 정의
@@ -2051,7 +2072,13 @@ function healTarget(healer, target, skillInfo) {
             const mercType = MERCENARY_TYPES[type];
             const skillPool = MERCENARY_SKILL_SETS[type] || [];
             const assignedSkill = skillPool[Math.floor(Math.random() * skillPool.length)] || null;
-            const allTraits = [...POSITIVE_TRAITS, ...NEGATIVE_TRAITS, ...TRADEOFF_TRAITS];
+            const allTraits = [
+                ...ABILITY_TRAITS,
+                ...REACTIVE_TRAITS,
+                ...STATUS_TRAITS,
+                ...FIELD_TRAITS,
+                ...SPECIAL_ACTION_TRAITS
+            ];
             const traits = [];
             while (traits.length < 2) {
                 const t = allTraits[Math.floor(Math.random() * allTraits.length)];
