@@ -4,7 +4,7 @@ This project is a lightweight browser-based dungeon crawler. It lets players exp
 
 ## Playing
 
-Open `index.html` in a modern web browser to start the game.
+Open `index.html` in a modern web browser to start playing.
 
 ### Controls
 
@@ -29,6 +29,10 @@ Install dependencies and run tests with:
 npm install
 node tests/mercenaryFollow.test.js
 ```
+
+## Testing
+
+Run `npm test` to execute `tests/mercenaryFollow.test.js`.
 
 ## License
 
