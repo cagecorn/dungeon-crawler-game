@@ -30,6 +30,48 @@ detail panel and in the side list by their portrait. Open a mercenary's detail
 panel with the corresponding number key (`1`-`9`) or by clicking their portrait
 in the UI.
 
+### Mercenary Traits
+
+Every hired companion also receives two random traits. Traits fall into five
+categories and their descriptions appear in the information panel at the bottom
+of the screen.
+
+#### Ability Traits
+
+- **철벽**: 방어력이 크게 증가하여 받는 피해를 감소시킵니다.
+- **의지의 불꽃**: 상태 이상에 걸렸을 때 저항력이 상승합니다.
+- **마력 조율자**: 마나 회복 속도가 증가합니다.
+- **오크의 피**: 오크의 강인한 체질로 최대 체력이 증가합니다.
+- **돌주먹**: 주먹 공격 시 추가 피해를 줍니다.
+- **거산**: 거대한 체구로 인해 최대 체력이 크게 증가합니다.
+- **장신**: 키가 커 사정거리가 약간 늘어납니다.
+- **재빠름**: 이동 속도와 회피율이 상승합니다.
+
+#### Reactive Traits
+
+- **복수의 피**: 동료가 쓰러지면 공격력이 일시적으로 증가합니다.
+- **도망자 감각**: 체력이 낮을 때 회피율이 상승합니다.
+- **조용함**: 전투에서 적의 표적이 되기 어려워집니다.
+
+#### Status Traits
+
+- **은밀한 칼날**: 공격 시 일정 확률로 출혈 효과를 부여합니다.
+- **구호의 손길**: 아군 치유 효과가 강화됩니다.
+- **도발의 혼**: 적을 도발하여 자신의 방향으로 끌어들입니다.
+- **불꽃의 혼**: 공격 시 일정 확률로 화상 효과를 부여합니다.
+- **빙결의 혼**: 공격 시 일정 확률로 빙결 효과를 부여합니다.
+
+#### Field Traits
+
+- **보물 감별사**: 상자에서 희귀 아이템을 발견할 확률이 높아집니다.
+- **재산 관리인**: 획득하는 골드가 증가합니다.
+- **책벌레**: 지식에 밝아 마법 공격력이 조금 증가합니다.
+
+#### Special Action Traits
+
+This category grants unique abilities, though no such traits are currently
+implemented.
+
 ## Development
 
 Install dependencies with:
