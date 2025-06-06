@@ -33,28 +33,21 @@ async function run() {
     '철벽',
     '의지의 불꽃',
     '마력 조율자',
-    '오크의 피',
-    '돌주먹',
-    '거산',
-    '장신',
-    '재빠름'
+    '맹공 돌진',
+    '집요한 사냥꾼',
+    '공허 지식자'
   ]);
   assert.deepStrictEqual(REACTIVE_TRAITS, [
     '복수의 피',
-    '도망자 감각',
-    '조용함'
+    '도망자 감각'
   ]);
   assert.deepStrictEqual(STATUS_TRAITS, [
     '은밀한 칼날',
     '구호의 손길',
-    '도발의 혼',
-    '불꽃의 혼',
-    '빙결의 혼'
+    '도발의 혼'
   ]);
   assert.deepStrictEqual(FIELD_TRAITS, [
-    '보물 감별사',
-    '재산 관리인',
-    '책벌레'
+    '보물 감별사'
   ]);
   assert.deepStrictEqual(SPECIAL_ACTION_TRAITS, []);
 
