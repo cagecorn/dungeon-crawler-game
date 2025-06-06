@@ -651,9 +651,12 @@
             ACCESSORY: 'accessory',
             POTION: 'potion',
             REVIVE: 'revive',
+            EXP_SCROLL: 'expScroll',
             SPELL: 'spell',
             SKILLBOOK: 'skillbook'
         };
+
+        const SHOP_PRICE_MULTIPLIER = 3;
 
         const MERCENARY_NAMES = ['Aldo', 'Borin', 'Cara', 'Dain', 'Elin', 'Faris'];
 
@@ -1033,6 +1036,14 @@
                 level: 2,
                 icon: '✨'
             },
+            smallExpScroll: {
+                name: '📜 작은 경험치 스크롤',
+                type: ITEM_TYPES.EXP_SCROLL,
+                expGain: 5,
+                price: 10,
+                level: 1,
+                icon: '📜'
+            },
             fireballBook: {
                 name: '📘 파이어볼 서적',
                 type: ITEM_TYPES.SKILLBOOK,
@@ -1110,7 +1121,7 @@
             player: {
                 x: 0,
                 y: 0,
-                level: 1,
+                level: 4,
                 maxHealth: 20,
                 health: 20,
                 maxMana: 10,
@@ -2531,6 +2542,25 @@ function killMonster(monster) {
                     const name = target === gameState.player ? '플레이어' : target.name;
                     addMessage(`❤️ ${name}의 체력이 이미 가득 찼습니다.`, 'info');
                 }
+            } else if (item.type === ITEM_TYPES.EXP_SCROLL) {
+                const expAmount = item.expGain || 0;
+                target.exp += expAmount;
+                const name = target === gameState.player ? '플레이어' : target.name;
+                addMessage(`📜 ${item.name}을(를) 사용하여 ${name}의 경험치를 ${formatNumber(expAmount)} 획득했습니다.`, 'item');
+
+                const index = gameState.player.inventory.findIndex(i => i.id === item.id);
+                if (index !== -1) {
+                    gameState.player.inventory.splice(index, 1);
+                }
+
+                updateInventoryDisplay();
+                if (target === gameState.player) {
+                    checkLevelUp();
+                    updateStats();
+                } else {
+                    checkMercenaryLevelUp(target);
+                    updateMercenaryDisplay();
+                }
             }
         }
 
@@ -3660,7 +3690,8 @@ function killMonster(monster) {
             gameState.shopItems.forEach((item, i) => {
                 const div = document.createElement('div');
                 div.className = 'shop-item';
-                div.innerHTML = `<span>${item.icon} ${item.baseName}</span><span>${formatNumber(item.price)}💰</span>`;
+                const cost = item.price * SHOP_PRICE_MULTIPLIER;
+                div.innerHTML = `<span>${item.icon} ${item.baseName}</span><span>${formatNumber(cost)}💰</span>`;
                 div.onclick = () => buyShopItem(i);
                 list.appendChild(div);
             });
@@ -3680,11 +3711,12 @@ function killMonster(monster) {
         function buyShopItem(index) {
             const item = gameState.shopItems[index];
             if (!item) return;
-            if (gameState.player.gold < item.price) {
+            const cost = item.price * SHOP_PRICE_MULTIPLIER;
+            if (gameState.player.gold < cost) {
                 addMessage('💸 골드가 부족합니다.', 'info');
                 return;
             }
-            gameState.player.gold -= item.price;
+            gameState.player.gold -= cost;
             addToInventory(item);
             addMessage(`🛒 ${item.name}을(를) 구입했습니다!`, 'item');
             gameState.shopItems.splice(index, 1);
@@ -3694,6 +3726,10 @@ function killMonster(monster) {
 
         // 초기화 및 입력 처리
         generateDungeon();
+        for (let i = 0; i < 5; i++) {
+            gameState.player.inventory.push(createItem('smallExpScroll', 0, 0));
+        }
+        updateInventoryDisplay();
         updateSkillDisplay();
         renderTraitInfo();
         updateActionButtons();
