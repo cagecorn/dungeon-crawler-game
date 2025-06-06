@@ -23,11 +23,40 @@ async function run() {
 
   const hireMercenary = dom.window.hireMercenary;
   const gameState = dom.window.gameState;
-  const ABILITY_TRAITS = dom.window.eval('ABILITY_TRAITS');
-  const REACTIVE_TRAITS = dom.window.eval('REACTIVE_TRAITS');
-  const STATUS_TRAITS = dom.window.eval('STATUS_TRAITS');
-  const FIELD_TRAITS = dom.window.eval('FIELD_TRAITS');
-  const SPECIAL_ACTION_TRAITS = dom.window.eval('SPECIAL_ACTION_TRAITS');
+  const ABILITY_TRAITS = Array.from(dom.window.eval('ABILITY_TRAITS'));
+  const REACTIVE_TRAITS = Array.from(dom.window.eval('REACTIVE_TRAITS'));
+  const STATUS_TRAITS = Array.from(dom.window.eval('STATUS_TRAITS'));
+  const FIELD_TRAITS = Array.from(dom.window.eval('FIELD_TRAITS'));
+  const SPECIAL_ACTION_TRAITS = Array.from(dom.window.eval('SPECIAL_ACTION_TRAITS'));
+
+  assert.deepStrictEqual(ABILITY_TRAITS, [
+    '철벽',
+    '의지의 불꽃',
+    '마력 조율자',
+    '오크의 피',
+    '돌주먹',
+    '거산',
+    '장신',
+    '재빠름'
+  ]);
+  assert.deepStrictEqual(REACTIVE_TRAITS, [
+    '복수의 피',
+    '도망자 감각',
+    '조용함'
+  ]);
+  assert.deepStrictEqual(STATUS_TRAITS, [
+    '은밀한 칼날',
+    '구호의 손길',
+    '도발의 혼',
+    '불꽃의 혼',
+    '빙결의 혼'
+  ]);
+  assert.deepStrictEqual(FIELD_TRAITS, [
+    '보물 감별사',
+    '재산 관리인',
+    '책벌레'
+  ]);
+  assert.deepStrictEqual(SPECIAL_ACTION_TRAITS, []);
 
   const allTraits = [
     ...ABILITY_TRAITS,
