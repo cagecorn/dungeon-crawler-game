@@ -44,35 +44,16 @@ async function run() {
   let result = performAttack(attacker, defender);
   assert.strictEqual(result.damage, 8);
 
-  // Relentless Hunter bonus damage when target bleeding
-  attacker = { attack: 10, critChance: 0, accuracy: 1, traits: ['집요한 사냥꾼'] };
-  defender = {
-    defense: 0,
-    evasion: 0,
-    traits: [],
-    bleedTurns: 2,
-    health: 20,
-    statusResistances: { poison:0, bleed:0, burn:0, freeze:0 },
-    elementResistances: { fire:0, ice:0, lightning:0, earth:0, light:0, dark:0 }
-  };
-  result = performAttack(attacker, defender);
-  assert.strictEqual(result.damage, 12);
+  // Mana Attunement boosts mana regeneration
+  const getStat = dom.window.getStat;
+  let character = { manaRegen: 1, traits: ['마력 조율자'], maxHealth: 10, health: 10 };
+  let regen = getStat(character, 'manaRegen');
+  assert.strictEqual(regen, 1.5);
 
-  // Stealth Blade inflicts bleed
-  attacker = { attack: 5, critChance: 0, accuracy: 1, traits: ['은밀한 칼날'] };
-  defender = {
-    defense: 0,
-    evasion: 0,
-    traits: [],
-    health: 20,
-    statusResistances: { poison:0, bleed:0, burn:0, freeze:0 },
-    elementResistances: { fire:0, ice:0, lightning:0, earth:0, light:0, dark:0 }
-  };
-  const origRandom = dom.window.Math.random;
-  dom.window.Math.random = () => 0;
-  result = performAttack(attacker, defender);
-  dom.window.Math.random = origRandom;
-  assert.ok(result.statusApplied && defender.bleedTurns === 3);
+  // Escapee's Sense raises evasion at low health
+  character = { evasion: 0, traits: ['도망자 감각'], maxHealth: 10, health: 2 };
+  let evasion = getStat(character, 'evasion');
+  assert.strictEqual(evasion, 0.2);
 
   // Mercenaries heal after moving to the next floor
   const merc = { maxHealth: 50, health: 25, alive: true, traits: [] };
