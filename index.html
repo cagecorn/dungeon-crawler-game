@@ -741,6 +741,11 @@
             '철벽',
             '의지의 불꽃',
             '마력 조율자',
+            '오크의 피',
+            '돌주먹',
+            '거산',
+            '장신',
+            '재빠름',
             '맹공 돌진',
             '집요한 사냥꾼',
             '공허 지식자'
@@ -748,17 +753,22 @@
 
         const REACTIVE_TRAITS = [ // 상태 반응형
             '복수의 피',
-            '도망자 감각'
+            '도망자 감각',
+            '조용함'
         ];
 
         const STATUS_TRAITS = [ // 상태 부여형
             '은밀한 칼날',
             '구호의 손길',
-            '도발의 혼'
+            '도발의 혼',
+            '불꽃의 혼',
+            '빙결의 혼'
         ];
 
         const FIELD_TRAITS = [ // 필드 기반형
-            '보물 감별사'
+            '보물 감별사',
+            '재산 관리인',
+            '책벌레'
         ];
 
         const SPECIAL_ACTION_TRAITS = [ // 특수 행동형
@@ -779,15 +789,25 @@
             '철벽': '방어력이 크게 증가하여 받는 피해를 감소시킵니다.',
             '의지의 불꽃': '상태 이상에 걸렸을 때 저항력이 상승합니다.',
             '마력 조율자': '마나 회복 속도가 증가합니다.',
+            '오크의 피': '최대 체력이 증가합니다.',
+            '돌주먹': '무기를 들지 않았을 때 추가 피해를 줍니다.',
+            '거산': '최대 체력이 크게 증가합니다.',
+            '장신': '근접 사거리가 약간 늘어납니다.',
+            '재빠름': '이동 속도와 회피율이 상승합니다.',
             '맹공 돌진': '전투 시작 후 첫 공격의 피해가 크게 증가합니다.',
             '집요한 사냥꾼': '상태 이상에 걸린 적에게 추가 피해를 입힙니다.',
             '공허 지식자': '어둠 속성 공격력이 증가합니다.',
             '복수의 피': '동료가 쓰러지면 공격력이 일시적으로 증가합니다.',
-            '도망자 감각': '체력이 낮을 때 회피율이 상승합니다.',
-            '은밀한 칼날': '공격 시 일정 확률로 출혈 효과를 부여합니다.',
-            '구호의 손길': '아군 치유 효과가 강화됩니다.',
+            '도망자 감각': '적 수가 아군보다 많을 때 회피율이 상승합니다.',
+            '조용함': '적의 표적이 되기 어려워집니다.',
+            '은밀한 칼날': '공격 시 일정 확률로 출혈을 부여합니다.',
+            '구호의 손길': '전투 종료 후 파티의 체력을 회복합니다.',
             '도발의 혼': '적을 도발하여 자신의 방향으로 끌어들입니다.',
-            '보물 감별사': '상자에서 희귀 아이템을 발견할 확률이 높아집니다.'
+            '불꽃의 혼': '공격 시 일정 확률로 화상을 부여합니다.',
+            '빙결의 혼': '공격 시 일정 확률로 빙결을 부여합니다.',
+            '보물 감별사': '아이템 드랍과 골드 획득량이 증가합니다.',
+            '재산 관리인': '획득 골드가 증가합니다.',
+            '책벌레': '마법 공격력이 약간 증가합니다.'
         };
 
         // 특성 정보 영역 렌더링
@@ -1237,9 +1257,6 @@
         // 간단한 치유 로직
         function healTarget(healer, target, skillInfo) {
             let healAmount = Math.min(3 + healer.level, target.maxHealth - target.health);
-            if (hasTrait(healer, '구호의 손길')) {
-                healAmount = Math.floor(healAmount * 1.2);
-            }
             if (healAmount > 0) {
                 target.health += healAmount;
                 const name = target === gameState.player ? '플레이어' : target.name;
@@ -1378,9 +1395,15 @@
             if (stat === 'manaRegen' && hasTrait(character, '마력 조율자')) {
                 value += 0.5;
             }
-            if (stat === 'evasion' && hasTrait(character, '도망자 감각')) {
-                const ratio = character.health / character.maxHealth;
-                if (ratio < 0.3) value += 0.2;
+            if (stat === 'evasion') {
+                if (hasTrait(character, '재빠름')) value += 0.1;
+                if (hasTrait(character, '도망자 감각')) {
+                    const allies = 1 + gameState.activeMercenaries.filter(m => m.alive).length;
+                    if (gameState.monsters.length > allies) value += 0.3;
+                }
+            }
+            if (stat === 'magicPower' && hasTrait(character, '책벌레')) {
+                value += 2;
             }
             return value;
         }
