@@ -82,7 +82,7 @@ npm install
 
 ## Testing
 
-Run `npm install` once, then `npm test` to execute `tests/mercenaryFollow.test.js`.
+Run `npm install` to install **jsdom** and other dependencies, then execute `npm test` to run the test suite.
 
 ## License
 
