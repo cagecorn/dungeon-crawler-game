@@ -47,12 +47,10 @@ async function run() {
   assert.deepStrictEqual(STATUS_TRAITS, [
     '은밀한 칼날',
     '구호의 손길',
-    '도발의 혼',
     '불꽃의 혼',
     '빙결의 혼'
   ]);
   assert.deepStrictEqual(FIELD_TRAITS, [
-    '보물 감별사',
     '재산 관리인',
     '책벌레'
   ]);

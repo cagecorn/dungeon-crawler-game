@@ -741,24 +741,29 @@
             '철벽',
             '의지의 불꽃',
             '마력 조율자',
-            '맹공 돌진',
-            '집요한 사냥꾼',
-            '공허 지식자'
+            '오크의 피',
+            '돌주먹',
+            '거산',
+            '장신',
+            '재빠름'
         ];
 
         const REACTIVE_TRAITS = [ // 상태 반응형
             '복수의 피',
-            '도망자 감각'
+            '도망자 감각',
+            '조용함'
         ];
 
         const STATUS_TRAITS = [ // 상태 부여형
             '은밀한 칼날',
             '구호의 손길',
-            '도발의 혼'
+            '불꽃의 혼',
+            '빙결의 혼'
         ];
 
         const FIELD_TRAITS = [ // 필드 기반형
-            '보물 감별사'
+            '재산 관리인',
+            '책벌레'
         ];
 
         const SPECIAL_ACTION_TRAITS = [ // 특수 행동형
@@ -779,15 +784,20 @@
             '철벽': '방어력이 크게 증가하여 받는 피해를 감소시킵니다.',
             '의지의 불꽃': '상태 이상에 걸렸을 때 저항력이 상승합니다.',
             '마력 조율자': '마나 회복 속도가 증가합니다.',
-            '맹공 돌진': '전투 시작 후 첫 공격의 피해가 크게 증가합니다.',
-            '집요한 사냥꾼': '상태 이상에 걸린 적에게 추가 피해를 줍니다.',
-            '공허 지식자': '어둠 속성에 대한 지식으로 관련 능력이 강화됩니다.',
+            '오크의 피': '오크의 강인한 체질로 최대 체력이 증가합니다.',
+            '돌주먹': '주먹 공격 시 추가 피해를 줍니다.',
+            '거산': '거대한 체구로 인해 최대 체력이 크게 증가합니다.',
+            '장신': '키가 커 사정거리가 약간 늘어납니다.',
+            '재빠름': '이동 속도와 회피율이 상승합니다.',
             '복수의 피': '동료가 쓰러지면 공격력이 일시적으로 증가합니다.',
             '도망자 감각': '체력이 낮을 때 회피율이 상승합니다.',
+            '조용함': '전투에서 적의 표적이 되기 어려워집니다.',
             '은밀한 칼날': '공격 시 일정 확률로 출혈 효과를 부여합니다.',
             '구호의 손길': '아군 치유 효과가 강화됩니다.',
-            '도발의 혼': '적을 도발하여 자신의 방향으로 끌어들입니다.',
-            '보물 감별사': '상자에서 희귀 아이템을 발견할 확률이 높아집니다.',
+            '불꽃의 혼': '공격 시 일정 확률로 화상 효과를 부여합니다.',
+            '빙결의 혼': '공격 시 일정 확률로 빙결 효과를 부여합니다.',
+            '재산 관리인': '획득하는 골드가 증가합니다.',
+            '책벌레': '지식에 밝아 마법 공격력이 조금 증가합니다.',
         };
 
         // 특성 정보 영역 렌더링
@@ -1311,8 +1321,8 @@
                 }
             }
 
-            if (hasTrait(attacker, '집요한 사냥꾼') && (defender.bleedTurns > 0 || defender.poison || defender.burn || defender.freeze)) {
-                baseDamage = Math.floor(baseDamage * 1.25);
+            if (hasTrait(attacker, '돌주먹')) {
+                baseDamage = Math.floor(baseDamage * 1.2);
             }
 
             let damage = baseDamage + elementDamage;
@@ -1328,6 +1338,12 @@
             }
             if (status) {
                 if (tryApplyStatus(defender, status, 3)) statusApplied = true;
+            }
+            if (hasTrait(attacker, '불꽃의 혼') && Math.random() < 0.2) {
+                if (tryApplyStatus(defender, 'burn', 2)) statusApplied = true;
+            }
+            if (hasTrait(attacker, '빙결의 혼') && Math.random() < 0.2) {
+                if (tryApplyStatus(defender, 'freeze', 2)) statusApplied = true;
             }
             if (crit && element === 'fire') {
                 if (tryApplyStatus(defender, 'burn', 2)) statusApplied = true;
@@ -1381,6 +1397,15 @@
             if (stat === 'evasion' && hasTrait(character, '도망자 감각')) {
                 const ratio = character.health / character.maxHealth;
                 if (ratio < 0.3) value += 0.2;
+            }
+            if (stat === 'evasion' && hasTrait(character, '재빠름')) {
+                value += 0.1;
+            }
+            if (stat === 'evasion' && hasTrait(character, '조용함')) {
+                value += 0.05;
+            }
+            if (stat === 'magicPower' && hasTrait(character, '책벌레')) {
+                value += 1;
             }
             return value;
         }
@@ -1811,7 +1836,11 @@ function createTreasure(x, y, gold) {
 function killMonster(monster) {
             addMessage(`💀 ${monster.name}을(를) 처치했습니다!`, 'combat');
             gameState.player.exp += monster.exp;
-            gameState.player.gold += monster.gold;
+            let goldGain = monster.gold;
+            if (gameState.activeMercenaries.some(m => m.alive && hasTrait(m, '재산 관리인'))) {
+                goldGain = Math.floor(goldGain * 1.25);
+            }
+            gameState.player.gold += goldGain;
             checkLevelUp();
             updateStats();
             if (monster.special === 'boss') {
@@ -2239,6 +2268,9 @@ function killMonster(monster) {
             const randomBaseName = MERCENARY_NAMES[Math.floor(Math.random() * MERCENARY_NAMES.length)];
             const jobLabel = mercType.name.split(' ')[1] || mercType.name;
             const name = `${randomBaseName} (${jobLabel})`;
+            let maxHealth = mercType.baseHealth;
+            if (traits.includes('오크의 피')) maxHealth = Math.floor(maxHealth * 1.2);
+            if (traits.includes('거산')) maxHealth = Math.floor(maxHealth * 1.5);
             return {
                 id: Math.random().toString(36).substr(2, 9),
                 type: type,
@@ -2248,8 +2280,8 @@ function killMonster(monster) {
                 x: x,
                 y: y,
                 level: 1,
-                maxHealth: mercType.baseHealth,
-                health: mercType.baseHealth,
+                maxHealth: maxHealth,
+                health: maxHealth,
                 maxMana: mercType.baseMaxMana || 0,
                 mana: mercType.baseMaxMana || 0,
                 healthRegen: mercType.baseHealthRegen || 0,
@@ -2798,12 +2830,8 @@ function killMonster(monster) {
             if (cellType === 'treasure') {
                 const treasure = gameState.treasures.find(t => t.x === newX && t.y === newY);
                 if (treasure) {
-                    let gold = treasure.gold;
-                    if (gameState.activeMercenaries.some(m => m.alive && hasTrait(m, '보물 감별사'))) {
-                        gold = Math.floor(gold * 1.5);
-                    }
-                    gameState.player.gold += gold;
-                    addMessage(`💎 보물을 발견했습니다! ${formatNumber(gold)} 골드를 획득했습니다!`, "treasure");
+                    gameState.player.gold += treasure.gold;
+                    addMessage(`💎 보물을 발견했습니다! ${formatNumber(treasure.gold)} 골드를 획득했습니다!`, "treasure");
                     
                     const treasureIndex = gameState.treasures.findIndex(t => t === treasure);
                     if (treasureIndex !== -1) {
@@ -3101,6 +3129,8 @@ function killMonster(monster) {
             const skillInfo = MERCENARY_SKILLS[mercenary.skill];
             const baseAttackRange = mercenary.role === 'ranged' ? 3 :
                                    mercenary.role === 'caster' ? 2 : 1;
+            let attackRange = baseAttackRange;
+            if (hasTrait(mercenary, '장신')) attackRange += 1;
             
             // 힐러는 치료 우선
             if (mercenary.role === 'support') {
@@ -3158,7 +3188,7 @@ function killMonster(monster) {
 
             const skillKey = mercenary.skill;
             let forceSkill = false;
-            if (skillKey === 'HawkEye' && nearestMonster && nearestDistance > baseAttackRange && nearestDistance <= skillInfo.range) {
+            if (skillKey === 'HawkEye' && nearestMonster && nearestDistance > attackRange && nearestDistance <= skillInfo.range) {
                 forceSkill = true;
             }
             if (skillInfo && mercenary.mana >= skillInfo.manaCost && (forceSkill || Math.random() < 0.5)) {
@@ -3360,7 +3390,7 @@ function killMonster(monster) {
             }
             
             if (nearestMonster) {
-                if (nearestDistance <= baseAttackRange) {
+                if (nearestDistance <= attackRange) {
                     // 공격 (장비 보너스 적용)
                     let totalAttack = mercenary.attack;
                     if (mercenary.equipped && mercenary.equipped.weapon) {
