@@ -1127,6 +1127,12 @@
                 job: null,
                 elementResistances: {fire:0, ice:0, lightning:0, earth:0, light:0, dark:0},
                 statusResistances: {poison:0, bleed:0, burn:0, freeze:0},
+                poison: false,
+                burn: false,
+                freeze: false,
+                poisonTurns: 0,
+                burnTurns: 0,
+                freezeTurns: 0,
                 exp: 0,
                 expNeeded: 20,
                 gold: 1000,
@@ -1218,7 +1224,7 @@
         }
 
         // 간단한 치유 로직
-function healTarget(healer, target, skillInfo) {
+        function healTarget(healer, target, skillInfo) {
             let healAmount = Math.min(3 + healer.level, target.maxHealth - target.health);
             if (hasTrait(healer, '구호의 손길')) {
                 healAmount = Math.floor(healAmount * 1.2);
@@ -1232,6 +1238,22 @@ function healTarget(healer, target, skillInfo) {
                 } else {
                     addMessage(`💚 ${healer.name}이(가) ${name}을(를) ${amountStr} 회복했습니다.`, 'mercenary');
                 }
+                return true;
+            }
+            return false;
+        }
+
+        function tryApplyStatus(target, status, turns) {
+            if (!target.statusResistances || target.statusResistances[status] === undefined) return false;
+            let resist = target.statusResistances[status];
+            if (hasTrait(target, '의지의 불꽃')) {
+                resist += 0.5;
+            }
+            if (Math.random() > resist) {
+                target[status] = true;
+                const key = status + 'Turns';
+                if (target[key] === undefined) target[key] = 0;
+                target[key] = Math.max(target[key], turns);
                 return true;
             }
             return false;
@@ -1293,15 +1315,14 @@ function healTarget(healer, target, skillInfo) {
                 defender.bleedTurns = Math.max(defender.bleedTurns || 0, 3);
                 statusApplied = true;
             }
-            if (status && defender.statusResistances && defender.statusResistances[status] !== undefined) {
-                let resist = defender.statusResistances[status];
-                if (hasTrait(defender, '의지의 불꽃')) {
-                    resist += 0.5;
-                }
-                if (Math.random() > resist) {
-                    defender[status] = true;
-                    statusApplied = true;
-                }
+            if (status) {
+                if (tryApplyStatus(defender, status, 3)) statusApplied = true;
+            }
+            if (crit && element === 'fire') {
+                if (tryApplyStatus(defender, 'burn', 2)) statusApplied = true;
+            }
+            if (crit && element === 'ice') {
+                if (tryApplyStatus(defender, 'freeze', 2)) statusApplied = true;
             }
 
             return { hit: true, crit, damage, baseDamage, elementDamage, element, statusApplied };
@@ -1743,6 +1764,12 @@ function healTarget(healer, target, skillInfo) {
                 magicResist: data.baseMagicResist,
                 elementResistances: {fire:0, ice:0, lightning:0, earth:0, light:0, dark:0},
                 statusResistances: {poison:0, bleed:0, burn:0, freeze:0},
+                poison: false,
+                burn: false,
+                freeze: false,
+                poisonTurns: 0,
+                burnTurns: 0,
+                freezeTurns: 0,
                 bleedTurns: 0,
                 exp: data.baseExp,
                 gold: data.baseGold,
@@ -1765,9 +1792,66 @@ function healTarget(healer, target, skillInfo) {
             }
         }
 
-        function createTreasure(x, y, gold) {
+function createTreasure(x, y, gold) {
             const floorBonus = Math.max(0, gameState.floor - 1) * 2;
             return { x, y, gold: gold + floorBonus };
+        }
+
+function killMonster(monster) {
+            addMessage(`💀 ${monster.name}을(를) 처치했습니다!`, 'combat');
+            gameState.player.exp += monster.exp;
+            gameState.player.gold += monster.gold;
+            checkLevelUp();
+            updateStats();
+            if (monster.special === 'boss') {
+                const bossItems = ['magicSword', 'magicStaff', 'plateArmor', 'greaterHealthPotion'];
+                if (Math.random() < 0.2) bossItems.push('reviveScroll');
+                const bossItemKey = bossItems[Math.floor(Math.random() * bossItems.length)];
+                const bossItem = createItem(bossItemKey, monster.x, monster.y);
+                gameState.items.push(bossItem);
+                gameState.dungeon[monster.y][monster.x] = 'item';
+                addMessage(`🎁 ${monster.name}이(가) ${bossItem.name}을(를) 떨어뜨렸습니다!`, 'treasure');
+            } else if (Math.random() < monster.lootChance) {
+                const itemKeys = Object.keys(ITEMS).filter(k => k !== 'reviveScroll');
+                const availableItems = itemKeys.filter(key => ITEMS[key].level <= Math.ceil(gameState.floor / 2 + 1));
+                let randomItemKey = availableItems[Math.floor(Math.random() * availableItems.length)];
+                if (Math.random() < 0.1 && ITEMS.reviveScroll.level <= Math.ceil(gameState.floor / 2 + 1)) {
+                    randomItemKey = 'reviveScroll';
+                }
+                const droppedItem = createItem(randomItemKey, monster.x, monster.y);
+                gameState.items.push(droppedItem);
+                gameState.dungeon[monster.y][monster.x] = 'item';
+                addMessage(`📦 ${monster.name}이(가) ${droppedItem.name}을(를) 떨어뜨렸습니다!`, 'item');
+            } else {
+                gameState.dungeon[monster.y][monster.x] = 'empty';
+            }
+            const idx = gameState.monsters.findIndex(m => m === monster);
+            if (idx !== -1) gameState.monsters.splice(idx, 1);
+        }
+
+        function applyStatusEffects(entity) {
+            const name = entity === gameState.player ? '플레이어' : entity.name;
+            let died = false;
+            if (entity.poison && entity.poisonTurns > 0) {
+                entity.health -= 2;
+                entity.poisonTurns--;
+                addMessage(`☠️ ${name}이(가) 독으로 2의 피해를 입었습니다.`, 'combat');
+                if (entity.poisonTurns <= 0) entity.poison = false;
+            }
+            if (entity.burn && entity.burnTurns > 0) {
+                entity.health -= 3;
+                entity.burnTurns--;
+                addMessage(`🔥 ${name}이(가) 화상으로 3의 피해를 입었습니다.`, 'combat');
+                if (entity.burnTurns <= 0) entity.burn = false;
+            }
+            if (entity.freeze && entity.freezeTurns > 0) {
+                entity.health -= 1;
+                entity.freezeTurns--;
+                addMessage(`❄️ ${name}이(가) 빙결로 1의 피해를 입었습니다.`, 'combat');
+                if (entity.freezeTurns <= 0) entity.freeze = false;
+            }
+            if (entity.health <= 0) died = true;
+            return died;
         }
 
         // 던전 렌더링
@@ -2169,6 +2253,12 @@ function healTarget(healer, target, skillInfo) {
                 magicResist: mercType.baseMagicResist,
                 elementResistances: {fire:0, ice:0, lightning:0, earth:0, light:0, dark:0},
                 statusResistances: {poison:0, bleed:0, burn:0, freeze:0},
+                poison: false,
+                burn: false,
+                freeze: false,
+                poisonTurns: 0,
+                burnTurns: 0,
+                freezeTurns: 0,
                 exp: 0,
                 expNeeded: 15,
                 alive: true,
@@ -2774,6 +2864,29 @@ function healTarget(healer, target, skillInfo) {
         function processTurn() {
             if (!gameState.gameRunning) return;
             processProjectiles();
+
+            if (applyStatusEffects(gameState.player)) {
+                handlePlayerDeath();
+                return;
+            }
+            gameState.activeMercenaries.forEach(mercenary => {
+                if (!mercenary.alive) return;
+                if (applyStatusEffects(mercenary)) {
+                    mercenary.alive = false;
+                    mercenary.health = 0;
+                    addMessage(`💀 ${mercenary.name}이(가) 전사했습니다...`, 'mercenary');
+                    gameState.activeMercenaries.forEach(m => {
+                        if (m.alive && hasTrait(m, '복수의 피')) {
+                            m.vengeanceTurns = 3;
+                        }
+                    });
+                }
+            });
+            gameState.monsters.slice().forEach(monster => {
+                if (applyStatusEffects(monster)) {
+                    killMonster(monster);
+                }
+            });
 
             gameState.monsters.forEach(m => {
                 if (m.bleedTurns && m.bleedTurns > 0) {
