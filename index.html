@@ -739,21 +739,24 @@
         // 용병 특성 - 카테고리별 배열
         const ABILITY_TRAITS = [ // 능력 강화형
             '철벽',
-            '맹공 돌진',
-            '마력 조율자'
+            '돌주먹',
+            '거산',
+            '마력 조율자',
+            '장신',
+            '재빠름',
+            '오크의 피',
+            '빙결의 혼'
         ];
 
         const REACTIVE_TRAITS = [ // 상태 반응형
-            '복수의 피',
-            '도망자 감각',
-            '의지의 불꽃'
         ];
 
         const STATUS_TRAITS = [ // 상태 부여형
-            '은밀한 칼날'
         ];
 
         const FIELD_TRAITS = [ // 필드 기반형
+            '재산 관리인',
+            '책벌레',
             '공허 지식자',
             '도발의 혼'
         ];
@@ -775,13 +778,17 @@
 
         // 특성 상세 설명
         const TRAIT_DETAILS = {
-            '철벽': '받는 피해 20% 감소',
-            '맹공 돌진': '첫 공격 시 피해 1.5배',
-            '마력 조율자': '마나 회복 속도 +0.5',
-            '복수의 피': '동료 전사 시 3턴 동안 공격력 +2',
-            '도망자 감각': '체력 30% 미만일 때 회피율 +0.2',
-            '의지의 불꽃': '상태 이상 저항 +50%',
+            '철벽': '받는 피해 10% 감소',
+            '돌주먹': '공격력 10% 증가',
+            '거산': '최대 체력 15% 증가',
+            '마력 조율자': '마나 능력치 10% 증가',
+            '장신': '근접 사거리 +1',
+            '재빠름': '한 번에 두 칸 이동',
+            '오크의 피': '체력 재생 10% 증가',
+            '빙결의 혼': '빙결 피해 15% 증가',
             '은밀한 칼날': '공격 시 30% 확률로 3턴 출혈',
+            '재산 관리인': '몬스터 골드 20% 증가',
+            '책벌레': '마법 공격력 10% 증가',
             '공허 지식자': '마법 공격력 +1',
             '도발의 혼': '적이 우선적으로 자신을 노림',
             '구호의 손길': '치유 효과 20% 증가',
@@ -1255,9 +1262,7 @@
         function tryApplyStatus(target, status, turns) {
             if (!target.statusResistances || target.statusResistances[status] === undefined) return false;
             let resist = target.statusResistances[status];
-            if (hasTrait(target, '의지의 불꽃')) {
-                resist += 0.5;
-            }
+            // removed obsolete trait check
             if (Math.random() > resist) {
                 target[status] = true;
                 const key = status + 'Turns';
@@ -1276,9 +1281,6 @@
             let attackStat = options.attackValue !== undefined ? options.attackValue : (magic ? attacker.magicPower : attacker.attack);
             let defenseStat = options.defenseValue !== undefined ? options.defenseValue : (magic ? defender.magicResist : defender.defense);
 
-            if (attacker.vengeanceTurns && attacker.vengeanceTurns > 0) {
-                attackStat += 2;
-            }
 
             const attackerAcc = getStat(attacker, 'accuracy');
             const defenderEva = getStat(defender, 'evasion');
@@ -1289,10 +1291,6 @@
 
             let baseDamage = Math.max(1, attackStat - defenseStat);
 
-            if (hasTrait(attacker, '맹공 돌진') && attacker.rushReady) {
-                baseDamage = Math.floor(baseDamage * 1.5);
-                attacker.rushReady = false;
-            }
             let crit = false;
             const critChance = getStat(attacker, 'critChance');
             if (Math.random() < critChance) {
@@ -1309,13 +1307,10 @@
                 }
             }
 
-            if (hasTrait(attacker, '집요한 사냥꾼') && (defender.bleedTurns > 0 || defender.poison || defender.burn || defender.freeze)) {
-                baseDamage = Math.floor(baseDamage * 1.25);
-            }
 
             let damage = baseDamage + elementDamage;
             if (hasTrait(defender, '철벽')) {
-                damage = Math.floor(damage * 0.8);
+                damage = Math.floor(damage * 0.9);
             }
             defender.health -= damage;
 
@@ -1373,12 +1368,23 @@
                     }
                 });
             }
-            if (stat === 'manaRegen' && hasTrait(character, '마력 조율자')) {
-                value += 0.5;
+            if (stat === 'attack' && hasTrait(character, '돌주먹')) {
+                value *= 1.1;
             }
-            if (stat === 'evasion' && hasTrait(character, '도망자 감각')) {
-                const ratio = character.health / character.maxHealth;
-                if (ratio < 0.3) value += 0.2;
+            if (stat === 'magicPower' && hasTrait(character, '책벌레')) {
+                value *= 1.1;
+            }
+            if (stat === 'maxHealth' && hasTrait(character, '거산')) {
+                value *= 1.15;
+            }
+            if (stat === 'healthRegen' && hasTrait(character, '오크의 피')) {
+                value *= 1.1;
+            }
+            if ((stat === 'manaRegen' || stat === 'maxMana') && hasTrait(character, '마력 조율자')) {
+                value *= 1.1;
+            }
+            if (stat === 'iceDamage' && hasTrait(character, '빙결의 혼')) {
+                value *= 1.15;
             }
             return value;
         }
@@ -1809,7 +1815,14 @@ function createTreasure(x, y, gold) {
 function killMonster(monster) {
             addMessage(`💀 ${monster.name}을(를) 처치했습니다!`, 'combat');
             gameState.player.exp += monster.exp;
-            gameState.player.gold += monster.gold;
+            let goldGain = monster.gold;
+            if (gameState.activeMercenaries.some(m => m.alive && hasTrait(m, '재산 관리인'))) {
+                goldGain = Math.floor(goldGain * 1.2);
+            }
+            if (gameState.activeMercenaries.some(m => m.alive && hasTrait(m, '보물 감별사'))) {
+                goldGain = Math.floor(goldGain * 1.5);
+            }
+            gameState.player.gold += goldGain;
             checkLevelUp();
             updateStats();
             if (monster.special === 'boss') {
@@ -1820,19 +1833,25 @@ function killMonster(monster) {
                 gameState.items.push(bossItem);
                 gameState.dungeon[monster.y][monster.x] = 'item';
                 addMessage(`🎁 ${monster.name}이(가) ${bossItem.name}을(를) 떨어뜨렸습니다!`, 'treasure');
-            } else if (Math.random() < monster.lootChance) {
-                const itemKeys = Object.keys(ITEMS).filter(k => k !== 'reviveScroll');
-                const availableItems = itemKeys.filter(key => ITEMS[key].level <= Math.ceil(gameState.floor / 2 + 1));
-                let randomItemKey = availableItems[Math.floor(Math.random() * availableItems.length)];
-                if (Math.random() < 0.1 && ITEMS.reviveScroll.level <= Math.ceil(gameState.floor / 2 + 1)) {
-                    randomItemKey = 'reviveScroll';
-                }
-                const droppedItem = createItem(randomItemKey, monster.x, monster.y);
-                gameState.items.push(droppedItem);
-                gameState.dungeon[monster.y][monster.x] = 'item';
-                addMessage(`📦 ${monster.name}이(가) ${droppedItem.name}을(를) 떨어뜨렸습니다!`, 'item');
             } else {
-                gameState.dungeon[monster.y][monster.x] = 'empty';
+                let lootChance = monster.lootChance;
+                if (gameState.activeMercenaries.some(m => m.alive && hasTrait(m, '보물 감별사'))) {
+                    lootChance *= 1.5;
+                }
+                if (Math.random() < lootChance) {
+                    const itemKeys = Object.keys(ITEMS).filter(k => k !== 'reviveScroll');
+                    const availableItems = itemKeys.filter(key => ITEMS[key].level <= Math.ceil(gameState.floor / 2 + 1));
+                    let randomItemKey = availableItems[Math.floor(Math.random() * availableItems.length)];
+                    if (Math.random() < 0.1 && ITEMS.reviveScroll.level <= Math.ceil(gameState.floor / 2 + 1)) {
+                        randomItemKey = 'reviveScroll';
+                    }
+                    const droppedItem = createItem(randomItemKey, monster.x, monster.y);
+                    gameState.items.push(droppedItem);
+                    gameState.dungeon[monster.y][monster.x] = 'item';
+                    addMessage(`📦 ${monster.name}이(가) ${droppedItem.name}을(를) 떨어뜨렸습니다!`, 'item');
+                } else {
+                    gameState.dungeon[monster.y][monster.x] = 'empty';
+                }
             }
             const idx = gameState.monsters.findIndex(m => m === monster);
             if (idx !== -1) gameState.monsters.splice(idx, 1);
@@ -2274,8 +2293,6 @@ function killMonster(monster) {
                 hasActed: false,
                 traits: traits,
                 bleedTurns: 0,
-                vengeanceTurns: 0,
-                rushReady: traits.includes('맹공 돌진'),
                 equipped: {
                     weapon: null,
                     armor: null,
@@ -2664,11 +2681,6 @@ function killMonster(monster) {
                         nearestTarget.alive = false;
                         nearestTarget.health = 0;
                         addMessage(`💀 ${nearestTarget.name}이(가) 전사했습니다...`, "mercenary");
-                        gameState.activeMercenaries.forEach(m => {
-                            if (m.alive && hasTrait(m, '복수의 피')) {
-                                m.vengeanceTurns = 3;
-                            }
-                        });
                         updateMercenaryDisplay();
                     }
                 }
@@ -2903,11 +2915,6 @@ function killMonster(monster) {
                     mercenary.alive = false;
                     mercenary.health = 0;
                     addMessage(`💀 ${mercenary.name}이(가) 전사했습니다...`, 'mercenary');
-                    gameState.activeMercenaries.forEach(m => {
-                        if (m.alive && hasTrait(m, '복수의 피')) {
-                            m.vengeanceTurns = 3;
-                        }
-                    });
                 }
             });
             gameState.monsters.slice().forEach(monster => {
@@ -3074,12 +3081,10 @@ function killMonster(monster) {
             if (!mercenary.alive || mercenary.hasActed) return;
             mercenary.nextX = mercenary.x;
             mercenary.nextY = mercenary.y;
+            const moveTiles = hasTrait(mercenary, '재빠름') ? 2 : 1;
 
             if (mercenary.bleedTurns && mercenary.bleedTurns > 0) {
                 mercenary.bleedTurns--;
-            }
-            if (mercenary.vengeanceTurns && mercenary.vengeanceTurns > 0) {
-                mercenary.vengeanceTurns--;
             }
 
             const hpRegen = getStat(mercenary, 'healthRegen');
@@ -3099,6 +3104,8 @@ function killMonster(monster) {
             const skillInfo = MERCENARY_SKILLS[mercenary.skill];
             const baseAttackRange = mercenary.role === 'ranged' ? 3 :
                                    mercenary.role === 'caster' ? 2 : 1;
+            let attackRange = baseAttackRange;
+            if (hasTrait(mercenary, '장신')) attackRange += 1;
             
             // 힐러는 치료 우선
             if (mercenary.role === 'support') {
@@ -3156,7 +3163,7 @@ function killMonster(monster) {
 
             const skillKey = mercenary.skill;
             let forceSkill = false;
-            if (skillKey === 'HawkEye' && nearestMonster && nearestDistance > baseAttackRange && nearestDistance <= skillInfo.range) {
+            if (skillKey === 'HawkEye' && nearestMonster && nearestDistance > attackRange && nearestDistance <= skillInfo.range) {
                 forceSkill = true;
             }
             if (skillInfo && mercenary.mana >= skillInfo.manaCost && (forceSkill || Math.random() < 0.5)) {
@@ -3358,7 +3365,7 @@ function killMonster(monster) {
             }
             
             if (nearestMonster) {
-                if (nearestDistance <= baseAttackRange) {
+                if (nearestDistance <= attackRange) {
                     // 공격 (장비 보너스 적용)
                     let totalAttack = mercenary.attack;
                     if (mercenary.equipped && mercenary.equipped.weapon) {
@@ -3428,7 +3435,7 @@ function killMonster(monster) {
                 } else {
                     const path = findPath(mercenary.x, mercenary.y, nearestMonster.x, nearestMonster.y);
                     if (path && path.length > 1) {
-                        const step = path[1];
+                        const step = path[Math.min(moveTiles, path.length - 1)];
                         const newDistanceFromPlayer = getDistance(step.x, step.y, gameState.player.x, gameState.player.y);
                         const stepMonsterDist = getDistance(step.x, step.y, nearestMonster.x, nearestMonster.y);
                         const stepValid = step.x >= 0 && step.x < gameState.dungeonSize &&
@@ -3450,7 +3457,7 @@ function killMonster(monster) {
                                 // too far from player, move toward player instead
                                 const backPath = findPath(mercenary.x, mercenary.y, gameState.player.x, gameState.player.y);
                                 if (backPath && backPath.length > 1) {
-                                    const backStep = backPath[1];
+                                    const backStep = backPath[Math.min(moveTiles, backPath.length - 1)];
                                     const backDist = getDistance(backStep.x, backStep.y, gameState.player.x, gameState.player.y);
                                     const backValid = backStep.x >= 0 && backStep.x < gameState.dungeonSize &&
                                         backStep.y >= 0 && backStep.y < gameState.dungeonSize &&
@@ -3468,7 +3475,7 @@ function killMonster(monster) {
                         } else if (playerDistance > maxDistanceFromPlayer) {
                             const backPath = findPath(mercenary.x, mercenary.y, gameState.player.x, gameState.player.y);
                             if (backPath && backPath.length > 1) {
-                                const backStep = backPath[1];
+                                const backStep = backPath[Math.min(moveTiles, backPath.length - 1)];
                                 const backDist = getDistance(backStep.x, backStep.y, gameState.player.x, gameState.player.y);
                                 const backValid = backStep.x >= 0 && backStep.x < gameState.dungeonSize &&
                                     backStep.y >= 0 && backStep.y < gameState.dungeonSize &&
@@ -3489,7 +3496,7 @@ function killMonster(monster) {
                 if (playerDistance > maxDistanceFromPlayer) {
                     const path = findPath(mercenary.x, mercenary.y, gameState.player.x, gameState.player.y);
                     if (path && path.length > 1) {
-                        const step = path[1];
+                        const step = path[Math.min(moveTiles, path.length - 1)];
                         const distAfter = getDistance(step.x, step.y, gameState.player.x, gameState.player.y);
                         const stepValid = step.x >= 0 && step.x < gameState.dungeonSize &&
                             step.y >= 0 && step.y < gameState.dungeonSize &&

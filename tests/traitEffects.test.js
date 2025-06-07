@@ -42,21 +42,7 @@ async function run() {
     elementResistances: { fire:0, ice:0, lightning:0, earth:0, light:0, dark:0 }
   };
   let result = performAttack(attacker, defender);
-  assert.strictEqual(result.damage, 8);
-
-  // Relentless Hunter bonus damage when target bleeding
-  attacker = { attack: 10, critChance: 0, accuracy: 1, traits: ['집요한 사냥꾼'] };
-  defender = {
-    defense: 0,
-    evasion: 0,
-    traits: [],
-    bleedTurns: 2,
-    health: 20,
-    statusResistances: { poison:0, bleed:0, burn:0, freeze:0 },
-    elementResistances: { fire:0, ice:0, lightning:0, earth:0, light:0, dark:0 }
-  };
-  result = performAttack(attacker, defender);
-  assert.strictEqual(result.damage, 12);
+  assert.strictEqual(result.damage, 9);
 
   // Stealth Blade inflicts bleed
   attacker = { attack: 5, critChance: 0, accuracy: 1, traits: ['은밀한 칼날'] };
