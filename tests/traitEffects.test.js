@@ -29,7 +29,7 @@ async function run() {
     dom.window.gameState.monsters = [];
   };
 
-  const { performAttack, nextFloor, gameState } = dom.window;
+  const { performAttack, nextFloor, killMonster, gameState } = dom.window;
 
   // Iron Wall reduces incoming damage
   let attacker = { attack: 10, critChance: 0, accuracy: 1, traits: [] };
@@ -44,35 +44,25 @@ async function run() {
   let result = performAttack(attacker, defender);
   assert.strictEqual(result.damage, 8);
 
-  // Relentless Hunter bonus damage when target bleeding
-  attacker = { attack: 10, critChance: 0, accuracy: 1, traits: ['집요한 사냥꾼'] };
+  // Stone Fists grants +2 attack
+  attacker = { attack: 5, critChance: 0, accuracy: 1, traits: ['돌주먹'] };
   defender = {
     defense: 0,
     evasion: 0,
     traits: [],
-    bleedTurns: 2,
     health: 20,
     statusResistances: { poison:0, bleed:0, burn:0, freeze:0 },
     elementResistances: { fire:0, ice:0, lightning:0, earth:0, light:0, dark:0 }
   };
   result = performAttack(attacker, defender);
-  assert.strictEqual(result.damage, 12);
+  assert.strictEqual(result.damage, 7);
 
-  // Stealth Blade inflicts bleed
-  attacker = { attack: 5, critChance: 0, accuracy: 1, traits: ['은밀한 칼날'] };
-  defender = {
-    defense: 0,
-    evasion: 0,
-    traits: [],
-    health: 20,
-    statusResistances: { poison:0, bleed:0, burn:0, freeze:0 },
-    elementResistances: { fire:0, ice:0, lightning:0, earth:0, light:0, dark:0 }
-  };
-  const origRandom = dom.window.Math.random;
-  dom.window.Math.random = () => 0;
-  result = performAttack(attacker, defender);
-  dom.window.Math.random = origRandom;
-  assert.ok(result.statusApplied && defender.bleedTurns === 3);
+  // Gold bonus from Treasurer applies when killing monsters
+  gameState.player.gold = 0;
+  gameState.activeMercenaries = [{ alive: true, traits: ['재산 관리인'] }];
+  const monster = { name: 'Slime', exp: 0, gold: 10, lootChance: 0, x:0, y:0 };
+  killMonster(monster);
+  assert.strictEqual(gameState.player.gold, 12);
 
   // Mercenaries heal after moving to the next floor
   const merc = { maxHealth: 50, health: 25, alive: true, traits: [] };

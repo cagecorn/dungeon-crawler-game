@@ -739,28 +739,26 @@
         // 용병 특성 - 카테고리별 배열
         const ABILITY_TRAITS = [ // 능력 강화형
             '철벽',
-            '맹공 돌진',
-            '마력 조율자'
+            '돌주먹',
+            '거산',
+            '마력 조율자',
+            '장신',
+            '재빠름',
+            '오크의 피'
         ];
 
         const REACTIVE_TRAITS = [ // 상태 반응형
-            '복수의 피',
-            '도망자 감각',
-            '의지의 불꽃'
         ];
 
         const STATUS_TRAITS = [ // 상태 부여형
-            '은밀한 칼날'
         ];
 
         const FIELD_TRAITS = [ // 필드 기반형
-            '공허 지식자',
-            '도발의 혼'
+            '재산 관리인',
+            '책벌레'
         ];
 
         const SPECIAL_ACTION_TRAITS = [ // 특수 행동형
-            '구호의 손길',
-            '보물 감별사'
         ];
 
         const POSITIVE_TRAITS = [
@@ -776,16 +774,14 @@
         // 특성 상세 설명
         const TRAIT_DETAILS = {
             '철벽': '받는 피해 20% 감소',
-            '맹공 돌진': '첫 공격 시 피해 1.5배',
+            '돌주먹': '공격력 +2',
+            '거산': '최대 체력 +5',
             '마력 조율자': '마나 회복 속도 +0.5',
-            '복수의 피': '동료 전사 시 3턴 동안 공격력 +2',
-            '도망자 감각': '체력 30% 미만일 때 회피율 +0.2',
-            '의지의 불꽃': '상태 이상 저항 +50%',
-            '은밀한 칼날': '공격 시 30% 확률로 3턴 출혈',
-            '공허 지식자': '마법 공격력 +1',
-            '도발의 혼': '적이 우선적으로 자신을 노림',
-            '구호의 손길': '치유 효과 20% 증가',
-            '보물 감별사': '보물 골드 50% 증가'
+            '장신': '명중률 +0.1',
+            '재빠름': '회피율 +0.1',
+            '오크의 피': '공격력 +1, 체력 +3',
+            '재산 관리인': '획득 골드 +20%',
+            '책벌레': '경험치 획득량 +20%'
         };
 
         // 특성 정보 영역 렌더링
@@ -1277,6 +1273,9 @@
             let defenseStat = options.defenseValue !== undefined ? options.defenseValue : (magic ? defender.magicResist : defender.defense);
 
             if (attacker.vengeanceTurns && attacker.vengeanceTurns > 0) {
+                attackStat += 2;
+            }
+            if (hasTrait(attacker, '돌주먹')) {
                 attackStat += 2;
             }
 
@@ -1809,7 +1808,11 @@ function createTreasure(x, y, gold) {
 function killMonster(monster) {
             addMessage(`💀 ${monster.name}을(를) 처치했습니다!`, 'combat');
             gameState.player.exp += monster.exp;
-            gameState.player.gold += monster.gold;
+            let gain = monster.gold;
+            if (gameState.activeMercenaries.some(m => m.alive && hasTrait(m, '재산 관리인'))) {
+                gain = Math.floor(gain * 1.2);
+            }
+            gameState.player.gold += gain;
             checkLevelUp();
             updateStats();
             if (monster.special === 'boss') {
@@ -2797,8 +2800,8 @@ function killMonster(monster) {
                 const treasure = gameState.treasures.find(t => t.x === newX && t.y === newY);
                 if (treasure) {
                     let gold = treasure.gold;
-                    if (gameState.activeMercenaries.some(m => m.alive && hasTrait(m, '보물 감별사'))) {
-                        gold = Math.floor(gold * 1.5);
+                    if (gameState.activeMercenaries.some(m => m.alive && hasTrait(m, '재산 관리인'))) {
+                        gold = Math.floor(gold * 1.2);
                     }
                     gameState.player.gold += gold;
                     addMessage(`💎 보물을 발견했습니다! ${formatNumber(gold)} 골드를 획득했습니다!`, "treasure");
