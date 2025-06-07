@@ -31,9 +31,25 @@ async function run() {
 
   const { performAttack, nextFloor, gameState } = dom.window;
 
-  // Iron Wall reduces incoming damage
-  let attacker = { attack: 10, critChance: 0, accuracy: 1, traits: [] };
+  // Rush Attack first hit bonus
+  let attacker = { attack: 10, critChance: 0, accuracy: 1, traits: ['맹공 돌진'], rushReady: true };
   let defender = {
+    defense: 0,
+    evasion: 0,
+    traits: [],
+    health: 20,
+    statusResistances: { poison:0, bleed:0, burn:0, freeze:0 },
+    elementResistances: { fire:0, ice:0, lightning:0, earth:0, light:0, dark:0 }
+  };
+  let result = performAttack(attacker, defender);
+  assert.strictEqual(result.damage, 15);
+  assert.strictEqual(attacker.rushReady, false);
+  result = performAttack(attacker, defender);
+  assert.strictEqual(result.damage, 10);
+
+  // Iron Wall reduces incoming damage
+  attacker = { attack: 10, critChance: 0, accuracy: 1, traits: [] };
+  defender = {
     defense: 0,
     evasion: 0,
     traits: ['철벽'],
@@ -41,7 +57,7 @@ async function run() {
     statusResistances: { poison:0, bleed:0, burn:0, freeze:0 },
     elementResistances: { fire:0, ice:0, lightning:0, earth:0, light:0, dark:0 }
   };
-  let result = performAttack(attacker, defender);
+  result = performAttack(attacker, defender);
   assert.strictEqual(result.damage, 8);
 
   // Relentless Hunter bonus damage when target bleeding
@@ -73,6 +89,28 @@ async function run() {
   result = performAttack(attacker, defender);
   dom.window.Math.random = origRandom;
   assert.ok(result.statusApplied && defender.bleedTurns === 3);
+
+  // Vengeance stack increases attack when ally dies
+  const avenger = { attack: 10, critChance: 0, accuracy: 1, traits: ['복수의 피'], vengeanceTurns: 0, alive: true };
+  const ally = { alive: true };
+  gameState.activeMercenaries = [avenger, ally];
+  ally.alive = false;
+  gameState.activeMercenaries.forEach(m => {
+    if (m.alive && dom.window.hasTrait(m, '복수의 피')) {
+      m.vengeanceTurns = 3;
+    }
+  });
+  assert.strictEqual(avenger.vengeanceTurns, 3);
+  defender = {
+    defense: 0,
+    evasion: 0,
+    traits: [],
+    health: 20,
+    statusResistances: { poison:0, bleed:0, burn:0, freeze:0 },
+    elementResistances: { fire:0, ice:0, lightning:0, earth:0, light:0, dark:0 }
+  };
+  result = performAttack(avenger, defender);
+  assert.strictEqual(result.damage, 12);
 
   // Mercenaries heal after moving to the next floor
   const merc = { maxHealth: 50, health: 25, alive: true, traits: [] };
