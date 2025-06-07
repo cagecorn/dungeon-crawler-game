@@ -31,20 +31,25 @@ async function run() {
 
   assert.deepStrictEqual(ABILITY_TRAITS, [
     '철벽',
-    '돌주먹',
-    '거산',
-    '마력 조율자',
-    '장신',
-    '재빠름',
-    '오크의 피'
+    '맹공 돌진',
+    '마력 조율자'
   ]);
-  assert.deepStrictEqual(REACTIVE_TRAITS, []);
-  assert.deepStrictEqual(STATUS_TRAITS, []);
+  assert.deepStrictEqual(REACTIVE_TRAITS, [
+    '복수의 피',
+    '도망자 감각',
+    '의지의 불꽃'
+  ]);
+  assert.deepStrictEqual(STATUS_TRAITS, [
+    '은밀한 칼날'
+  ]);
   assert.deepStrictEqual(FIELD_TRAITS, [
-    '재산 관리인',
-    '책벌레'
+    '공허 지식자',
+    '도발의 혼'
   ]);
-  assert.deepStrictEqual(SPECIAL_ACTION_TRAITS, []);
+  assert.deepStrictEqual(SPECIAL_ACTION_TRAITS, [
+    '구호의 손길',
+    '보물 감별사'
+  ]);
 
   const allTraits = [
     ...ABILITY_TRAITS,
