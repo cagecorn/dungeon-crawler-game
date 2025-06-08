@@ -922,10 +922,6 @@
                 name: '🛡️ 가죽 갑옷',
                 type: ITEM_TYPES.ARMOR,
                 defense: 2,
-                poisonResist: 0.1,
-                bleedResist: 0.1,
-                burnResist: 0.1,
-                freezeResist: 0.1,
                 price: 15,
                 level: 1,
                 icon: '🛡️'
@@ -934,10 +930,6 @@
                 name: '🔗 사슬 갑옷',
                 type: ITEM_TYPES.ARMOR,
                 defense: 4,
-                poisonResist: 0.1,
-                bleedResist: 0.1,
-                burnResist: 0.1,
-                freezeResist: 0.1,
                 price: 35,
                 level: 2,
                 icon: '🔗'
@@ -946,10 +938,6 @@
                 name: '🛡️ 판금 갑옷',
                 type: ITEM_TYPES.ARMOR,
                 defense: 6,
-                poisonResist: 0.1,
-                bleedResist: 0.1,
-                burnResist: 0.1,
-                freezeResist: 0.1,
                 price: 60,
                 level: 3,
                 icon: '🛡️'
@@ -958,10 +946,6 @@
                 name: '💎 치명 부적',
                 type: ITEM_TYPES.ACCESSORY,
                 critChance: 0.05,
-                poisonResist: 0.1,
-                bleedResist: 0.1,
-                burnResist: 0.1,
-                freezeResist: 0.1,
                 price: 20,
                 level: 1,
                 icon: '💎'
@@ -970,10 +954,6 @@
                 name: '🍀 회피 부적',
                 type: ITEM_TYPES.ACCESSORY,
                 evasion: 0.05,
-                poisonResist: 0.1,
-                bleedResist: 0.1,
-                burnResist: 0.1,
-                freezeResist: 0.1,
                 price: 20,
                 level: 1,
                 icon: '🍀'
@@ -982,10 +962,6 @@
                 name: '🎯 명중 반지',
                 type: ITEM_TYPES.ACCESSORY,
                 accuracy: 0.05,
-                poisonResist: 0.1,
-                bleedResist: 0.1,
-                burnResist: 0.1,
-                freezeResist: 0.1,
                 price: 25,
                 level: 2,
                 icon: '🎯'
@@ -1086,7 +1062,11 @@
             { name: 'Venomous', modifiers: { status: 'poison' } },
             { name: 'Serrated', modifiers: { status: 'bleed' } },
             { name: 'Smoldering', modifiers: { status: 'burn' } },
-            { name: 'Frosted', modifiers: { status: 'freeze' } }
+            { name: 'Frosted', modifiers: { status: 'freeze' } },
+            { name: 'Poison Resistant', modifiers: { poisonResist: 0.3 } },
+            { name: 'Bleed Resistant', modifiers: { bleedResist: 0.3 } },
+            { name: 'Burn Resistant', modifiers: { burnResist: 0.3 } },
+            { name: 'Freeze Resistant', modifiers: { freezeResist: 0.3 } }
         ];
         const SUFFIXES = [
             { name: 'of Protection', modifiers: { defense: 2 } },
@@ -1097,7 +1077,11 @@
             { name: 'of Venom', modifiers: { status: 'poison' } },
             { name: 'of Bleeding', modifiers: { status: 'bleed' } },
             { name: 'of Burning', modifiers: { status: 'burn' } },
-            { name: 'of Frost', modifiers: { status: 'freeze' } }
+            { name: 'of Frost', modifiers: { status: 'freeze' } },
+            { name: 'of Poison Resistance', modifiers: { poisonResist: 0.3 } },
+            { name: 'of Bleed Resistance', modifiers: { bleedResist: 0.3 } },
+            { name: 'of Burn Resistance', modifiers: { burnResist: 0.3 } },
+            { name: 'of Frost Resistance', modifiers: { freezeResist: 0.3 } }
         ];
 
         // 게임 상태
@@ -1427,10 +1411,10 @@
             if (item.magicPower !== undefined) stats.push(`마공+${formatNumber(item.magicPower)}`);
             if (item.magicResist !== undefined) stats.push(`마방+${formatNumber(item.magicResist)}`);
             if (item.manaRegen !== undefined) stats.push(`MP회복+${formatNumber(item.manaRegen)}`);
-            if (item.poisonResist !== undefined) stats.push(`독저항+${formatNumber(item.poisonResist)}`);
-            if (item.bleedResist !== undefined) stats.push(`출혈저항+${formatNumber(item.bleedResist)}`);
-            if (item.burnResist !== undefined) stats.push(`화상저항+${formatNumber(item.burnResist)}`);
-            if (item.freezeResist !== undefined) stats.push(`동결저항+${formatNumber(item.freezeResist)}`);
+            if (item.poisonResist !== undefined) stats.push(`독저항+${formatNumber(item.poisonResist * 100)}%`);
+            if (item.bleedResist !== undefined) stats.push(`출혈저항+${formatNumber(item.bleedResist * 100)}%`);
+            if (item.burnResist !== undefined) stats.push(`화상저항+${formatNumber(item.burnResist * 100)}%`);
+            if (item.freezeResist !== undefined) stats.push(`동결저항+${formatNumber(item.freezeResist * 100)}%`);
             if (item.status) stats.push(`${item.status} 부여`);
             return `${item.name}${stats.length ? ' (' + stats.join(', ') + ')' : ''}`;
         }
