@@ -23,16 +23,17 @@ async function run() {
   win.requestAnimationFrame = fn => fn();
 
   const { startGame, gameState } = win;
-  const PLAYER_JOB_SKILLS = win.eval('PLAYER_JOB_SKILLS');
+  const SKILL_DEFS = win.eval('SKILL_DEFS');
+  const keys = Object.keys(SKILL_DEFS);
 
-  for (const [job, skills] of Object.entries(PLAYER_JOB_SKILLS)) {
-    startGame(job);
-    if (gameState.player.job !== job ||
-        gameState.player.assignedSkills[1] !== skills[0] ||
-        gameState.player.assignedSkills[2] !== skills[1]) {
-      console.error(`skills mismatch for ${job}`);
-      process.exit(1);
-    }
+  startGame();
+  if (gameState.player.skills.length !== keys.length || !keys.every(k => gameState.player.skills.includes(k))) {
+    console.error('startGame did not grant all skills');
+    process.exit(1);
+  }
+  if (gameState.player.assignedSkills[1] !== keys[0] || gameState.player.assignedSkills[2] !== keys[1]) {
+    console.error('skill slots not assigned correctly');
+    process.exit(1);
   }
 }
 

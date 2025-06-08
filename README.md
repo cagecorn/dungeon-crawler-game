@@ -4,8 +4,7 @@ This project is a lightweight browser-based dungeon crawler. It lets players exp
 
 ## Playing
 
-Open `index.html` in a modern web browser to start the game.
-When the page loads you will be asked to choose a job by clicking one of the emoji options and then pressing the [선택] button. Available jobs are **Warrior**, **Archer**, **Healer**, **Fire Mage** and **Ice Mage**. Each job starts with two unique skills already slotted for you.
+Open `index.html` in a modern web browser to start the game. The player now begins with every available skill already learned, so no class selection is required.
 
 
 ### Controls
@@ -21,7 +20,7 @@ Click the buttons in the *Hire Mercenary* panel to recruit warriors, archers, he
 
 ### Shop and Skill System
 
-Spend collected gold in the shop to purchase items. Bought gear is placed in your inventory and can boost your stats when equipped. Each chosen job automatically grants two starting skills that you can assign to the **Skill1** and **Skill2** slots.
+Spend collected gold in the shop to purchase items. Bought gear is placed in your inventory and can boost your stats when equipped. All skills are unlocked from the start and can be assigned to the **Skill1** and **Skill2** slots.
 
 ### Mercenary Skills
 

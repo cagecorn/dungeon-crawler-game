@@ -24,14 +24,16 @@ async function run() {
   dom.window.requestAnimationFrame = fn => fn();
 
   const { gameState } = dom.window;
+  const SKILL_DEFS = dom.window.eval('SKILL_DEFS');
 
-  if (gameState.player.job !== 'Warrior') {
-    console.error('default job not Warrior');
+  const keys = Object.keys(SKILL_DEFS);
+  if (gameState.player.skills.length !== keys.length || !keys.every(k => gameState.player.skills.includes(k))) {
+    console.error('player does not start with all skills');
     process.exit(1);
   }
 
-  if (gameState.player.assignedSkills[1] !== 'DoubleStrike' || gameState.player.assignedSkills[2] !== 'ChargeAttack') {
-    console.error('job skills not assigned');
+  if (gameState.player.assignedSkills[1] !== keys[0] || gameState.player.assignedSkills[2] !== keys[1]) {
+    console.error('default skill slots not assigned');
     process.exit(1);
   }
 }

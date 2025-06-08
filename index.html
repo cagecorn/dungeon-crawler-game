@@ -1040,13 +1040,7 @@
             WIZARD: ['Fireball', 'Iceball']
         };
 
-        const PLAYER_JOB_SKILLS = {
-            Warrior: ['DoubleStrike', 'ChargeAttack'],
-            Archer: ['DoubleStrike', 'HawkEye'],
-            Healer: ['Heal', 'Purify'],
-            FireMage: ['Fireball', 'FireNova'],
-            IceMage: ['Iceball', 'IceNova']
-        };
+
 
         const HEAL_MANA_COST = 2;
 
@@ -2067,27 +2061,15 @@ function killMonster(monster) {
             }
         }
 
-        function selectJob() {
-            let choice = null;
-            if (typeof window.prompt === 'function' && !navigator.userAgent.includes('jsdom')) {
-                try {
-                    choice = window.prompt('Choose your class: Warrior, Archer, Healer, FireMage, IceMage');
-                } catch(e) { choice = null; }
-            }
-            const options = ['Warrior','Archer','Healer','FireMage','IceMage'];
-            if (!options.includes(choice)) choice = 'Warrior';
-            return choice;
-        }
+
 
         function updateActionButtons() {
             const atk = document.getElementById('attack');
             const rng = document.getElementById('ranged');
             const heal = document.getElementById('heal');
-            const job = gameState.player.job;
-            atk.style.display = (!job || job === 'Warrior' ||
-                    job === 'FireMage' || job === 'IceMage') ? 'inline-block' : 'none';
-            rng.style.display = job === 'Archer' ? 'inline-block' : 'none';
-            heal.style.display = job === 'Healer' ? 'inline-block' : 'none';
+            atk.style.display = 'inline-block';
+            rng.style.display = 'inline-block';
+            heal.style.display = 'inline-block';
         }
 
         // 플레이어 레벨업 체크
@@ -2096,32 +2078,9 @@ function killMonster(monster) {
                 gameState.player.exp -= gameState.player.expNeeded;
                 gameState.player.level += 1;
 
-                switch (gameState.player.job) {
-                    case 'Warrior':
-                        gameState.player.endurance += 3;
-                        gameState.player.strength += 2;
-                        break;
-                    case 'Archer':
-                        gameState.player.endurance += 2;
-                        gameState.player.strength += 2;
-                        gameState.player.agility += 1;
-                        break;
-                    case 'FireMage':
-                    case 'IceMage':
-                        gameState.player.endurance += 1;
-                        gameState.player.intelligence += 2;
-                        gameState.player.focus += 2;
-                        break;
-                    case 'Healer':
-                        gameState.player.endurance += 1;
-                        gameState.player.intelligence += 1;
-                        gameState.player.focus += 3;
-                        break;
-                    default:
-                        gameState.player.endurance += 2;
-                        gameState.player.strength += 1;
-                        gameState.player.agility += 1;
-                }
+                gameState.player.endurance += 2;
+                gameState.player.strength += 1;
+                gameState.player.agility += 1;
 
                 gameState.player.health = getStat(gameState.player, 'maxHealth');
                 gameState.player.mana = getStat(gameState.player, 'maxMana');
@@ -4106,16 +4065,16 @@ function killMonster(monster) {
             updateShopDisplay();
         }
 
-        function startGame(job) {
-            gameState.player.job = job || selectJob();
-            const jobSkills = PLAYER_JOB_SKILLS[gameState.player.job] || [];
-            jobSkills.forEach(s => {
+        function startGame() {
+            gameState.player.job = null;
+            const allSkills = Object.keys(SKILL_DEFS);
+            allSkills.forEach(s => {
                 if (!gameState.player.skills.includes(s)) {
                     gameState.player.skills.push(s);
                 }
             });
-            if (jobSkills[0]) gameState.player.assignedSkills[1] = jobSkills[0];
-            if (jobSkills[1]) gameState.player.assignedSkills[2] = jobSkills[1];
+            if (allSkills[0]) gameState.player.assignedSkills[1] = allSkills[0];
+            if (allSkills[1]) gameState.player.assignedSkills[2] = allSkills[1];
 
             generateDungeon();
             for (let i = 0; i < 5; i++) {
@@ -4165,9 +4124,7 @@ function killMonster(monster) {
             }
             else if (e.key.toLowerCase() === 'f' || e.key.toLowerCase() === 'z') {
                 e.preventDefault();
-                if (gameState.player.job === 'Archer') rangedAction();
-                else if (gameState.player.job === 'Healer') healAction();
-                else meleeAttackAction();
+                meleeAttackAction();
             }
             else if (e.key.toLowerCase() === 'x') {
                 e.preventDefault();
