@@ -761,7 +761,6 @@
                 baseExp: 6,
                 damageDice: "1d4",
                 baseGold: 3,
-                speed: 0.5,
                 range: 1,
                 special: 'slow'
             },
@@ -780,7 +779,6 @@
                 baseExp: 4,
                 baseGold: 5,
                 damageDice: "1d4",
-                speed: 1.5,
                 range: 1,
                 special: 'fast'
             },
@@ -799,7 +797,6 @@
                 baseExp: 8,
                 damageDice: "1d6",
                 baseGold: 7,
-                speed: 1,
                 range: 3,
                 special: 'ranged',
                 statusEffect: 'poison'
@@ -819,7 +816,6 @@
                 baseExp: 10,
                 damageDice: "1d6",
                 baseGold: 10,
-                speed: 1,
                 range: 4,
                 special: 'magic',
                 statusEffect: 'freeze'
@@ -839,7 +835,6 @@
                 baseExp: 15,
                 baseGold: 12,
                 damageDice: "1d8",
-                speed: 0.8,
                 range: 1,
                 special: 'strong',
                 statusEffect: 'bleed'
@@ -859,7 +854,6 @@
                 baseExp: 50,
                 damageDice: "1d10",
                 baseGold: 50,
-                speed: 1,
                 range: 2,
                 special: 'boss',
                 statusEffect: 'burn'
@@ -1766,7 +1760,7 @@
 
         function showMonsterDetails(monster) {
             const html = `
-                <h3>${monster.icon} ${monster.name}</h3>
+                <h3>${monster.icon} ${monster.name} (Lv.${monster.level})</h3>
                 <div>❤️ HP: ${monster.health}/${monster.maxHealth}</div>
                 <div>⚔️ 공격력: ${monster.attack}</div>
                 <div>🛡️ 방어력: ${monster.defense}</div>
@@ -1775,7 +1769,11 @@
                 <div>💥 치명타: ${monster.critChance}</div>
                 <div>🔮 마법공격: ${monster.magicPower}</div>
                 <div>✨ 마법방어: ${monster.magicResist}</div>
-                <div>🏃 속도: ${monster.speed}</div>
+                <div>💪 힘: ${monster.strength}</div>
+                <div>🏃 민첩: ${monster.agility}</div>
+                <div>🛡 체력: ${monster.endurance}</div>
+                <div>🔮 집중: ${monster.focus}</div>
+                <div>📖 지능: ${monster.intelligence}</div>
                 <div>📏 사거리: ${monster.range}</div>
                 <div>특수: ${monster.special || '없음'}</div>
             `;
@@ -1800,7 +1798,6 @@
                 <div>💥 치명타: ${champion.critChance}</div>
                 <div>🔮 마법공격: ${champion.magicPower}</div>
                 <div>✨ 마법방어: ${champion.magicResist}</div>
-                <div>🏃 속도: ${champion.speed}</div>
                 <div>📏 사거리: ${champion.range}</div>
                 <div>무기: ${weapon}</div>
                 <div>방어구: ${armor}</div>
@@ -1904,17 +1901,28 @@
         }
 
         // 몬스터 생성
-        function createMonster(type, x, y) {
+        function createMonster(type, x, y, level = 1) {
             const data = MONSTER_TYPES[type];
-            return {
+            const endurance = data.baseHealth / 2;
+            const agility = Math.max(0, Math.round((data.baseAccuracy - 0.7) / 0.02));
+            const monster = {
                 id: Math.random().toString(36).substr(2, 9),
                 type,
                 name: data.name,
                 icon: data.icon,
                 x,
                 y,
+                level: 1,
+                endurance: endurance,
+                focus: 0,
+                strength: data.baseAttack,
+                agility: agility,
+                intelligence: data.baseMagicPower,
+                baseDefense: data.baseDefense - Math.floor(endurance * 0.1),
                 maxHealth: data.baseHealth,
                 health: data.baseHealth,
+                maxMana: 0,
+                mana: 0,
                 attack: data.baseAttack,
                 defense: data.baseDefense,
                 accuracy: data.baseAccuracy,
@@ -1935,12 +1943,13 @@
                 exp: data.baseExp,
                 gold: data.baseGold,
                 range: data.range,
-                speed: data.speed,
                 special: data.special,
                 statusEffect: data.statusEffect,
                 lootChance: 0.3,
                 hasActed: false
             };
+            setMonsterLevel(monster, level);
+            return monster;
         }
 
         function setMercenaryLevel(mercenary, level) {
@@ -1951,6 +1960,21 @@
                 mercenary.health = getStat(mercenary, 'maxHealth');
                 mercenary.mana = getStat(mercenary, 'maxMana');
                 mercenary.expNeeded = Math.floor(mercenary.expNeeded * 1.5);
+            }
+        }
+
+        function setMonsterLevel(monster, level) {
+            for (let i = 1; i < level; i++) {
+                monster.level += 1;
+                monster.endurance += 2;
+                monster.strength += 1;
+                monster.agility += 1;
+                monster.focus += 1;
+                monster.intelligence += 1;
+                monster.maxHealth = getStat(monster, 'maxHealth');
+                monster.health = monster.maxHealth;
+                monster.maxMana = getStat(monster, 'maxMana');
+                monster.mana = monster.maxMana;
             }
         }
 
@@ -2229,7 +2253,7 @@ function killMonster(monster) {
                     y = Math.floor(Math.random() * size);
                 } while (gameState.dungeon[y][x] !== 'empty' || (x === 1 && y === 1));
                 const type = monsterTypes[Math.floor(Math.random() * (monsterTypes.length - 1))];
-                const monster = createMonster(type, x, y);
+                const monster = createMonster(type, x, y, gameState.floor);
                 gameState.monsters.push(monster);
                 gameState.dungeon[y][x] = 'monster';
             }
@@ -2562,7 +2586,6 @@ function killMonster(monster) {
                 maxHealth: base.baseHealth,
                 health: base.baseHealth,
                 range: base.range || 1,
-                speed: base.speed || 1,
                 exp: level * 10,
                 gold: level * 10,
                 lootChance: 1,
