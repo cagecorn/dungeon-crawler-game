@@ -643,22 +643,11 @@
         <div id="monster-detail-content"></div>
         <button id="close-monster-detail">닫기</button>
     </div>
+    <script src="dice.js"></script>
     <script>
-(function(global){
-  function rollDice(notation){
-    if(typeof notation!=="string") throw new Error("notation must be a string");
-    const m=notation.trim().match(/^(\d*)d(\d+)([+-]\d+)?$/i);
-    if(!m) throw new Error("invalid dice notation");
-    const c=parseInt(m[1]||"1",10);
-    const s=parseInt(m[2],10);
-    const mod=m[3]?parseInt(m[3],10):0;
-    let t=0;
-    for(let i=0;i<c;i++){t+=Math.floor(Math.random()*s)+1;}
-    t+=mod;
-    return t;
-  }
-  global.rollDice=rollDice;
-})(this);
+        if (typeof window.rollDice === "undefined" && typeof require === "function") {
+            window.rollDice = require("./dice.js").rollDice;
+        }
     </script>
     <script>
         const ITEM_TYPES = {

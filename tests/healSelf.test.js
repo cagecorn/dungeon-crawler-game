@@ -1,3 +1,4 @@
+const { rollDice } = require('../dice');
 const { JSDOM } = require('jsdom');
 const path = require('path');
 
@@ -5,7 +6,8 @@ async function run() {
   const dom = await JSDOM.fromFile(path.join(__dirname, '..', 'index.html'), {
     runScripts: 'dangerously',
     resources: 'usable',
-    url: 'http://localhost'
+    url: 'http://localhost',
+    beforeParse(window) { window.rollDice = rollDice; }
   });
 
   await new Promise(resolve => {

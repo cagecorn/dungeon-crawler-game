@@ -15,6 +15,7 @@
 
   if (typeof module !== 'undefined' && module.exports) {
     module.exports = { rollDice };
+    global.rollDice = rollDice;
   } else {
     global.rollDice = rollDice;
   }
