@@ -523,6 +523,23 @@
             font-size: 10px;
             cursor: pointer;
         }
+        .job-select-panel {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: linear-gradient(135deg, #2a2a2a, #333);
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 0 15px rgba(0,0,0,0.7);
+            border: 1px solid #555;
+            z-index: 200;
+            min-width: 200px;
+            text-align: center;
+        }
+        .job-option {
+            margin-bottom: 8px;
+        }
     </style>
 </head>
 <body>
@@ -642,6 +659,10 @@
     <div id="monster-detail-panel" class="details-panel" style="display:none;">
         <div id="monster-detail-content"></div>
         <button id="close-monster-detail">닫기</button>
+    </div>
+    <div id="job-select-panel" class="job-select-panel" style="display:none;">
+        <h2>직업 선택</h2>
+        <div id="job-options"></div>
     </div>
     <script>
 (function(global){
@@ -2087,16 +2108,37 @@ function killMonster(monster) {
             }
         }
 
-        function selectJob() {
-            let choice = null;
-            if (typeof window.prompt === 'function') {
-                try {
-                    choice = window.prompt('Choose your class: Warrior, Archer, Healer, FireMage, IceMage');
-                } catch(e) { choice = null; }
+        function selectJob(callback) {
+            const options = [
+                { id: 'Warrior', emoji: '⚔️', label: '전사' },
+                { id: 'Archer', emoji: '🏹', label: '궁수' },
+                { id: 'Healer', emoji: '✚', label: '힐러' },
+                { id: 'FireMage', emoji: '🔥', label: '화염술사' },
+                { id: 'IceMage', emoji: '❄️', label: '냉기술사' }
+            ];
+
+            if (typeof process !== 'undefined' && process.versions && process.versions.node) {
+                callback('Warrior');
+                return;
             }
-            const options = ['Warrior','Archer','Healer','FireMage','IceMage'];
-            if (!options.includes(choice)) choice = 'Warrior';
-            return choice;
+
+            const panel = document.getElementById('job-select-panel');
+            const container = document.getElementById('job-options');
+            container.innerHTML = '';
+            panel.style.display = 'block';
+            options.forEach(opt => {
+                const div = document.createElement('div');
+                div.className = 'job-option';
+                const btn = document.createElement('button');
+                btn.textContent = '[선택]';
+                btn.onclick = () => {
+                    panel.style.display = 'none';
+                    callback(opt.id);
+                };
+                div.textContent = `${opt.emoji} ${opt.label} `;
+                div.appendChild(btn);
+                container.appendChild(div);
+            });
         }
 
         function updateActionButtons() {
@@ -4126,39 +4168,42 @@ function killMonster(monster) {
         }
 
         // 초기화 및 입력 처리
-        gameState.player.job = selectJob();
-        const jobSkills = PLAYER_JOB_SKILLS[gameState.player.job] || [];
-        jobSkills.forEach(s => {
-            if (!gameState.player.skills.includes(s)) gameState.player.skills.push(s);
-        });
-        if (jobSkills[0]) gameState.player.assignedSkills[1] = jobSkills[0];
-        if (jobSkills[1]) gameState.player.assignedSkills[2] = jobSkills[1];
-        generateDungeon();
-        for (let i = 0; i < 5; i++) {
-            gameState.player.inventory.push(createItem('smallExpScroll', 0, 0));
+        function startGame(job) {
+            gameState.player.job = job;
+            const jobSkills = PLAYER_JOB_SKILLS[job] || [];
+            jobSkills.forEach(s => {
+                if (!gameState.player.skills.includes(s)) gameState.player.skills.push(s);
+            });
+            if (jobSkills[0]) gameState.player.assignedSkills[1] = jobSkills[0];
+            if (jobSkills[1]) gameState.player.assignedSkills[2] = jobSkills[1];
+            generateDungeon();
+            for (let i = 0; i < 5; i++) {
+                gameState.player.inventory.push(createItem('smallExpScroll', 0, 0));
+            }
+            updateInventoryDisplay();
+            updateSkillDisplay();
+            updateActionButtons();
+            document.getElementById('up').onclick = () => movePlayer(0, -1);
+            document.getElementById('down').onclick = () => movePlayer(0, 1);
+            document.getElementById('left').onclick = () => movePlayer(-1, 0);
+            document.getElementById('right').onclick = () => movePlayer(1, 0);
+            document.getElementById('save-game').onclick = saveGame;
+            document.getElementById('load-game').onclick = loadGame;
+            document.getElementById('attack').onclick = meleeAttackAction;
+            document.getElementById('ranged').onclick = rangedAction;
+            document.getElementById('skill1').onclick = skill1Action;
+            document.getElementById('skill2').onclick = skill2Action;
+            document.getElementById('heal').onclick = healAction;
+            document.getElementById('recall').onclick = recallMercenaries;
+            document.getElementById('close-shop').onclick = hideShop;
+            document.getElementById('close-mercenary-detail').onclick = hideMercenaryDetails;
+            document.getElementById('close-monster-detail').onclick = hideMonsterDetails;
+            document.getElementById('dungeon').addEventListener('click', handleDungeonClick);
+            document.getElementById('other').onclick = otherAction;
+            document.addEventListener('keydown', onGameKeyDown);
         }
-        updateInventoryDisplay();
-        updateSkillDisplay();
-        updateActionButtons();
-        document.getElementById('up').onclick = () => movePlayer(0, -1);
-        document.getElementById('down').onclick = () => movePlayer(0, 1);
-        document.getElementById('left').onclick = () => movePlayer(-1, 0);
-        document.getElementById('right').onclick = () => movePlayer(1, 0);
-        document.getElementById('save-game').onclick = saveGame;
-        document.getElementById('load-game').onclick = loadGame;
-        document.getElementById('attack').onclick = meleeAttackAction;
-        document.getElementById('ranged').onclick = rangedAction;
-        document.getElementById('skill1').onclick = skill1Action;
-        document.getElementById('skill2').onclick = skill2Action;
-        document.getElementById('heal').onclick = healAction;
-        document.getElementById('recall').onclick = recallMercenaries;
-        document.getElementById('close-shop').onclick = hideShop;
-        document.getElementById('close-mercenary-detail').onclick = hideMercenaryDetails;
-        document.getElementById('close-monster-detail').onclick = hideMonsterDetails;
-        document.getElementById('dungeon').addEventListener('click', handleDungeonClick);
-        document.getElementById('other').onclick = otherAction;
 
-        document.addEventListener('keydown', (e) => {
+        function onGameKeyDown(e) {
             if (e.key === 'ArrowUp') {
                 e.preventDefault();
                 movePlayer(0, -1);
@@ -4200,7 +4245,9 @@ function killMonster(monster) {
                     showMercenaryDetails(gameState.activeMercenaries[idx]);
                 }
             }
-        });
+        }
+
+        selectJob(startGame);
     </script>
 </body>
 </html>
