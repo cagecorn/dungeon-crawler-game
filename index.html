@@ -669,7 +669,7 @@
             REVIVE: 'revive',
             EXP_SCROLL: 'expScroll',
             SPELL: 'spell',
-            SKILLBOOK: 'skillbook'
+            
         };
 
         const SHOP_PRICE_MULTIPLIER = 3;
@@ -1020,46 +1020,7 @@
                 level: 1,
                 icon: '📜'
             },
-            fireballBook: {
-                name: '📘 파이어볼 서적',
-                type: ITEM_TYPES.SKILLBOOK,
-                skill: 'Fireball',
-                price: 0,
-                level: 1,
-                icon: '📘'
-            },
-            iceballBook: {
-                name: '📘 아이스볼 서적',
-                type: ITEM_TYPES.SKILLBOOK,
-                skill: 'Iceball',
-                price: 0,
-                level: 1,
-                icon: '📘'
-            },
-            fireNovaBook: {
-                name: '📘 파이어 노바 서적',
-                type: ITEM_TYPES.SKILLBOOK,
-                skill: 'FireNova',
-                price: 0,
-                level: 2,
-                icon: '📘'
-            },
-            iceNovaBook: {
-                name: '📘 아이스 노바 서적',
-                type: ITEM_TYPES.SKILLBOOK,
-                skill: 'IceNova',
-                price: 0,
-                level: 2,
-                icon: '📘'
-            },
-            healingBook: {
-                name: '📘 힐링 서적',
-                type: ITEM_TYPES.SKILLBOOK,
-                skill: 'Healing',
-                price: 0,
-                level: 1,
-                icon: '📘'
-            }
+            
         };
 
         const SKILL_DEFS = {
@@ -1067,7 +1028,11 @@
             Iceball: { name: 'Iceball', icon: '❄️', damageDice: '1d8', range: 5, magic: true, element: 'ice', manaCost: 2 },
             FireNova: { name: 'Fire Nova', icon: '🔥', damageDice: '1d6', radius: 3, magic: true, element: 'fire', manaCost: 5 },
             IceNova: { name: 'Ice Nova', icon: '❄️', damageDice: '1d6', radius: 3, magic: true, element: 'ice', manaCost: 4 },
-            Healing: { name: 'Healing', icon: '💖', heal: 10, manaCost: 3 }
+            Heal: { name: 'Heal', icon: '💖', heal: 10, range: 2, manaCost: 3 },
+            Purify: { name: 'Purify', icon: '🌀', purify: true, range: 2, manaCost: 2 },
+            DoubleStrike: { name: 'Double Strike', icon: '🔪', range: 1, manaCost: 3, melee: true, hits: 2 },
+            ChargeAttack: { name: 'Charge Attack', icon: '⚡', range: 2, manaCost: 2, melee: true, multiplier: 1.5 },
+            HawkEye: { name: 'Hawk Eye', icon: '🦅', range: 5, manaCost: 2, damageDice: '1d6' }
         };
 
         // 용병 전용 스킬 정의
@@ -1086,6 +1051,14 @@
             ARCHER: ['DoubleStrike', 'HawkEye'],
             HEALER: ['Heal'],
             WIZARD: ['Fireball', 'Iceball']
+        };
+
+        const PLAYER_JOB_SKILLS = {
+            Warrior: ['DoubleStrike', 'ChargeAttack'],
+            Archer: ['DoubleStrike', 'HawkEye'],
+            Healer: ['Heal', 'Purify'],
+            FireMage: ['Fireball', 'FireNova'],
+            IceMage: ['Iceball', 'IceNova']
         };
 
         const HEAL_MANA_COST = 2;
@@ -2118,10 +2091,10 @@ function killMonster(monster) {
             let choice = null;
             if (typeof window.prompt === 'function') {
                 try {
-                    choice = window.prompt('Choose your class: Warrior, Archer, Mage, Healer');
+                    choice = window.prompt('Choose your class: Warrior, Archer, Healer, FireMage, IceMage');
                 } catch(e) { choice = null; }
             }
-            const options = ['Warrior','Archer','Mage','Healer'];
+            const options = ['Warrior','Archer','Healer','FireMage','IceMage'];
             if (!options.includes(choice)) choice = 'Warrior';
             return choice;
         }
@@ -2131,7 +2104,7 @@ function killMonster(monster) {
             const rng = document.getElementById('ranged');
             const heal = document.getElementById('heal');
             const job = gameState.player.job;
-            atk.style.display = (!job || job === 'Warrior' || job === 'Mage') ? 'inline-block' : 'none';
+            atk.style.display = (!job || job === 'Warrior' || job === 'Mage' || job === 'FireMage' || job === 'IceMage') ? 'inline-block' : 'none';
             rng.style.display = job === 'Archer' ? 'inline-block' : 'none';
             heal.style.display = job === 'Healer' ? 'inline-block' : 'none';
         }
@@ -2152,7 +2125,8 @@ function killMonster(monster) {
                         gameState.player.strength += 2;
                         gameState.player.agility += 1;
                         break;
-                    case 'Mage':
+                    case 'FireMage':
+                    case 'IceMage':
                         gameState.player.endurance += 1;
                         gameState.player.intelligence += 2;
                         gameState.player.focus += 2;
@@ -2172,11 +2146,7 @@ function killMonster(monster) {
                 gameState.player.mana = getStat(gameState.player, 'maxMana');
                 gameState.player.expNeeded = Math.floor(gameState.player.expNeeded * 1.5);
                 addMessage(`🎉 플레이어 레벨이 ${gameState.player.level}이(가) 되었습니다!`, 'level');
-                if (!gameState.player.job && gameState.player.level >= 5) {
-                    gameState.player.job = selectJob();
-                    addMessage(`🆕 직업 ${gameState.player.job} 선택!`, 'level');
-                    updateActionButtons();
-                }
+                
                 updateStats();
             }
         }
@@ -2241,13 +2211,6 @@ function killMonster(monster) {
 
                 const fireSword = createItem('shortSword', 0, 0, 'Flaming');
                 gameState.player.equipped.weapon = fireSword;
-
-                if (!gameState.player.skills.includes('Fireball')) {
-                    gameState.player.skills.push('Fireball');
-                }
-                if (!gameState.player.assignedSkills[1]) {
-                    gameState.player.assignedSkills[1] = 'Fireball';
-                }
             }
 
             let exitX, exitY;
@@ -2320,18 +2283,6 @@ function killMonster(monster) {
                 gameState.dungeon[y][x] = 'item';
             }
 
-            const skillbookKeys = itemKeys.filter(k => ITEMS[k].type === ITEM_TYPES.SKILLBOOK);
-            if (skillbookKeys.length && Math.random() < 0.5) {
-                let sx, sy;
-                do {
-                    sx = Math.floor(Math.random() * size);
-                    sy = Math.floor(Math.random() * size);
-                } while (gameState.dungeon[sy][sx] !== 'empty');
-                const sk = skillbookKeys[Math.floor(Math.random() * skillbookKeys.length)];
-                const sb = createItem(sk, sx, sy);
-                gameState.items.push(sb);
-                gameState.dungeon[sy][sx] = 'item';
-            }
 
             // 상점 위치 및 아이템 설정
             let sx, sy;
@@ -3106,12 +3057,8 @@ function killMonster(monster) {
             if (cellType === 'item') {
                 const item = gameState.items.find(i => i.x === newX && i.y === newY);
                 if (item) {
-                    if (item.type === ITEM_TYPES.SKILLBOOK) {
-                        learnSkill(item.skill);
-                    } else {
-                        addToInventory(item);
-                        addMessage(`📦 ${item.name}을(를) 획득했습니다!`, 'item');
-                    }
+                    addToInventory(item);
+                    addMessage(`📦 ${item.name}을(를) 획득했습니다!`, 'item');
 
                     const itemIndex = gameState.items.findIndex(i => i === item);
                     if (itemIndex !== -1) {
@@ -3994,6 +3941,27 @@ function killMonster(monster) {
                 processTurn();
                 return;
             }
+            if (skill.purify) {
+                const statuses = ['poison','burn','freeze','bleed'];
+                let removed = false;
+                statuses.forEach(s => {
+                    if (gameState.player[s]) {
+                        gameState.player[s] = false;
+                        const key = s + 'Turns';
+                        if (gameState.player[key] !== undefined) gameState.player[key] = 0;
+                        removed = true;
+                    }
+                });
+                if (removed) {
+                    gameState.player.mana -= skill.manaCost;
+                    addMessage(`${skill.icon} 상태이상이 해제되었습니다.`, 'info');
+                    processTurn();
+                } else {
+                    addMessage('해제할 상태이상이 없습니다.', 'info');
+                    processTurn();
+                }
+                return;
+            }
             if (skill.radius !== undefined) {
                 const targets = gameState.monsters.filter(m => getDistance(gameState.player.x, gameState.player.y, m.x, m.y) <= skill.radius);
                 if (targets.length === 0) {
@@ -4035,6 +4003,33 @@ function killMonster(monster) {
             }
             if (!target) {
                 addMessage('🎯 사거리 내에 몬스터가 없습니다.', 'info');
+                processTurn();
+                return;
+            }
+            if (skill.melee) {
+                const attackMult = skill.multiplier || 1;
+                const hits = skill.hits || 1;
+                gameState.player.mana -= skill.manaCost;
+                for (let i = 0; i < hits; i++) {
+                    const attackValue = Math.floor(getStat(gameState.player, 'attack') * attackMult);
+                    const result = performAttack(gameState.player, target, { attackValue, status: gameState.player.equipped.weapon && gameState.player.equipped.weapon.status });
+                    const detail = `hit roll ${result.hitRoll} vs ${result.defenseTarget} → ${result.hit ? 'hit' : 'miss'}${result.hit ? '; damage roll ' + result.damageRoll : ''}`;
+                    if (!result.hit) {
+                        addMessage(`❌ ${target.name}에게 ${skill.name}이 빗나갔습니다!`, 'combat', detail);
+                    } else {
+                        const critMsg = result.crit ? ' (치명타!)' : '';
+                        let dmgStr = formatNumber(result.baseDamage);
+                        if (result.elementDamage) {
+                            const emoji = ELEMENT_EMOJI[result.element] || '';
+                            dmgStr = `${formatNumber(result.baseDamage)}+${emoji}${formatNumber(result.elementDamage)}`;
+                        }
+                        addMessage(`${skill.icon} ${target.name}에게 ${dmgStr}의 피해를 입혔습니다${critMsg}!`, 'combat', detail);
+                    }
+                    if (target.health <= 0) {
+                        killMonster(target);
+                        break;
+                    }
+                }
                 processTurn();
                 return;
             }
@@ -4131,6 +4126,13 @@ function killMonster(monster) {
         }
 
         // 초기화 및 입력 처리
+        gameState.player.job = selectJob();
+        const jobSkills = PLAYER_JOB_SKILLS[gameState.player.job] || [];
+        jobSkills.forEach(s => {
+            if (!gameState.player.skills.includes(s)) gameState.player.skills.push(s);
+        });
+        if (jobSkills[0]) gameState.player.assignedSkills[1] = jobSkills[0];
+        if (jobSkills[1]) gameState.player.assignedSkills[2] = jobSkills[1];
         generateDungeon();
         for (let i = 0; i < 5; i++) {
             gameState.player.inventory.push(createItem('smallExpScroll', 0, 0));
