@@ -2095,7 +2095,8 @@ function killMonster(monster) {
             const rng = document.getElementById('ranged');
             const heal = document.getElementById('heal');
             const job = gameState.player.job;
-            atk.style.display = (!job || job === 'Warrior' || job === 'Mage' || job === 'FireMage' || job === 'IceMage') ? 'inline-block' : 'none';
+            atk.style.display = (!job || job === 'Warrior' ||
+                    job === 'FireMage' || job === 'IceMage') ? 'inline-block' : 'none';
             rng.style.display = job === 'Archer' ? 'inline-block' : 'none';
             heal.style.display = job === 'Healer' ? 'inline-block' : 'none';
         }
