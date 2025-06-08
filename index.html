@@ -1778,6 +1778,7 @@
             document.getElementById('monster-detail-content').innerHTML = html;
             document.getElementById('monster-detail-panel').style.display = 'block';
             gameState.gameRunning = false;
+            window.currentDetailMonster = monster;
         }
 
         function showChampionDetails(champion) {
@@ -1810,6 +1811,7 @@
         function hideMonsterDetails() {
             document.getElementById('monster-detail-panel').style.display = 'none';
             gameState.gameRunning = true;
+            window.currentDetailMonster = null;
         }
 
         function spawnMercenaryNearPlayer(mercenary) {
@@ -1939,6 +1941,7 @@
                 freezeTurns: 0,
                 bleedTurns: 0,
                 exp: data.baseExp,
+                expNeeded: 15,
                 gold: data.baseGold,
                 range: data.range,
                 special: data.special,
@@ -1973,6 +1976,7 @@
                 monster.health = monster.maxHealth;
                 monster.maxMana = getStat(monster, 'maxMana');
                 monster.mana = monster.maxMana;
+                monster.expNeeded = Math.floor((monster.expNeeded || 15) * 1.5);
             }
         }
 
@@ -2266,6 +2270,25 @@ function killMonster(monster) {
                 updateMercenaryDisplay();
                 if (window.currentDetailMercenary && window.currentDetailMercenary.id === mercenary.id) {
                     showMercenaryDetails(mercenary);
+                }
+            }
+        }
+
+        function checkMonsterLevelUp(monster) {
+            while (monster.exp >= monster.expNeeded) {
+                monster.exp -= monster.expNeeded;
+                monster.level += 1;
+                monster.endurance += 2;
+                monster.strength += 1;
+                monster.agility += 1;
+                monster.focus += 1;
+                monster.intelligence += 1;
+                monster.health = getStat(monster, 'maxHealth');
+                monster.mana = getStat(monster, 'maxMana');
+                monster.expNeeded = Math.floor(monster.expNeeded * 1.5);
+                addMessage(`📈 ${monster.name}의 레벨이 ${monster.level}이(가) 되었습니다!`, 'combat');
+                if (window.currentDetailMonster && window.currentDetailMonster.id === monster.id) {
+                    showMonsterDetails(monster);
                 }
             }
         }
@@ -3013,12 +3036,22 @@ function killMonster(monster) {
                 
                 if (nearestTarget.health <= 0) {
                     if (nearestTarget === gameState.player) {
+                        monster.exp += gameState.player.level * 10;
+                        checkMonsterLevelUp(monster);
+                        if (window.currentDetailMonster && window.currentDetailMonster.id === monster.id) {
+                            showMonsterDetails(monster);
+                        }
                         handlePlayerDeath();
                         return true;
                     } else {
                         nearestTarget.alive = false;
                         nearestTarget.health = 0;
                         addMessage(`💀 ${nearestTarget.name}이(가) 전사했습니다...`, "mercenary");
+                        monster.exp += nearestTarget.level * 10;
+                        checkMonsterLevelUp(monster);
+                        if (window.currentDetailMonster && window.currentDetailMonster.id === monster.id) {
+                            showMonsterDetails(monster);
+                        }
                         updateMercenaryDisplay();
                     }
                 }
