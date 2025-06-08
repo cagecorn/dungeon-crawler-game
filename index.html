@@ -393,6 +393,7 @@
             background-color: #1a3347;
             border-left-color: #2196F3;
         }
+        .message.clickable { cursor: pointer; text-decoration: underline; }
         .controls {
             display: flex;
             flex-direction: column;
@@ -1063,6 +1064,8 @@
 
         const ELEMENT_EMOJI = { fire: '🔥', ice: '❄️', lightning: '⚡' };
 
+        const STATUS_NAMES = { poison: "독", burn: "화상", freeze: "빙결", bleed: "출혈" };
+
         // 접두사/접미사 풀
         const PREFIXES = [
             { name: 'Flaming', modifiers: { fireDamage: 2 } },
@@ -1237,17 +1240,19 @@
             return false;
         }
         function tryApplyStatus(target, status, turns) {
-            if (!target.statusResistances || target.statusResistances[status] === undefined) return false;
+            if (!target.statusResistances || target.statusResistances[status] === undefined)
+                return { applied: false, roll: null, dc: null };
             let resist = getStatusResist(target, status);
             const dc = Math.floor(resist * 20);
-            if (rollDice("1d20") > dc) {
+            const roll = rollDice("1d20");
+            if (roll > dc) {
                 target[status] = true;
                 const key = status + "Turns";
                 if (target[key] === undefined) target[key] = 0;
                 target[key] = Math.max(target[key], turns);
-                return true;
+                return { applied: true, roll, dc };
             }
-            return false;
+            return { applied: false, roll, dc };
         }
         function getStatusResist(character, status) {
             let value = character.statusResistances && character.statusResistances[status] ? character.statusResistances[status] : 0;
@@ -1275,8 +1280,9 @@
             const defenderEva = getStat(defender, 'evasion');
             const attackBonus = Math.floor(attackerAcc * 5);
             const defenseTarget = 10 + Math.floor(defenderEva * 5);
-            if (rollDice('1d20') + attackBonus < defenseTarget) {
-                return { hit: false };
+            const hitRoll = rollDice('1d20') + attackBonus;
+            if (hitRoll < defenseTarget) {
+                return { hit: false, hitRoll, defenseTarget, attackBonus };
             }
 
             const damageRoll = rollDice(options.damageDice || attacker.damageDice || '1d4');
@@ -1304,16 +1310,31 @@
 
             let statusApplied = false;
             if (status) {
-                if (tryApplyStatus(defender, status, 3)) statusApplied = true;
+                const res = tryApplyStatus(defender, status, 3);
+                if (res.applied) {
+                    statusApplied = true;
+                    const defName = defender === gameState.player ? '플레이어' : defender.name;
+                    addMessage(`⚠️ ${defName}이(가) ${STATUS_NAMES[status] || status} 상태가 되었습니다!`, 'combat', `resistance roll ${res.roll} vs DC ${res.dc} → failed`);
+                }
             }
             if (crit && element === 'fire') {
-                if (tryApplyStatus(defender, 'burn', 2)) statusApplied = true;
+                const res = tryApplyStatus(defender, 'burn', 2);
+                if (res.applied) {
+                    statusApplied = true;
+                    const defName = defender === gameState.player ? '플레이어' : defender.name;
+                    addMessage(`🔥 ${defName}이(가) 화상 상태가 되었습니다!`, 'combat', `resistance roll ${res.roll} vs DC ${res.dc} → failed`);
+                }
             }
             if (crit && element === 'ice') {
-                if (tryApplyStatus(defender, 'freeze', 2)) statusApplied = true;
+                const res = tryApplyStatus(defender, 'freeze', 2);
+                if (res.applied) {
+                    statusApplied = true;
+                    const defName = defender === gameState.player ? '플레이어' : defender.name;
+                    addMessage(`❄️ ${defName}이(가) 빙결 상태가 되었습니다!`, 'combat', `resistance roll ${res.roll} vs DC ${res.dc} → failed`);
+                }
             }
 
-            return { hit: true, crit, damage, baseDamage, elementDamage, element, statusApplied };
+            return { hit: true, crit, damage, baseDamage, elementDamage, element, statusApplied, hitRoll, damageRoll, defenseTarget, attackBonus };
         }
 
         function formatNumber(value) {
@@ -1437,8 +1458,9 @@
                     const result = performAttack(gameState.player, monster, { attackValue, magic, element: proj.element, status: gameState.player.equipped.weapon && gameState.player.equipped.weapon.status, damageDice: proj.damageDice });
                     const icon = proj.icon || '➡️';
                     const name = proj.skill ? SKILL_DEFS[proj.skill].name : '원거리 공격';
+                    const detail = `hit roll ${result.hitRoll} vs ${result.defenseTarget} → ${result.hit ? 'hit' : 'miss'}${result.hit ? '; damage roll ' + result.damageRoll : ''}`;
                     if (!result.hit) {
-                        addMessage(`❌ ${monster.name}에게 ${name}이 빗나갔습니다!`, 'combat');
+                        addMessage(`❌ ${monster.name}에게 ${name}이 빗나갔습니다!`, 'combat', detail);
                     } else {
                         const critMsg = result.crit ? ' (치명타!)' : '';
                         let dmgStr = formatNumber(result.baseDamage);
@@ -1446,7 +1468,7 @@
                             const emoji = ELEMENT_EMOJI[result.element] || '';
                             dmgStr = `${formatNumber(result.baseDamage)}+${emoji}${formatNumber(result.elementDamage)}`;
                         }
-                        addMessage(`${icon} ${monster.name}에게 ${dmgStr}의 피해를 입혔습니다${critMsg}!`, 'combat');
+                        addMessage(`${icon} ${monster.name}에게 ${dmgStr}의 피해를 입혔습니다${critMsg}!`, 'combat', detail);
                     }
                     if (monster.health <= 0) {
                         addMessage(`💀 ${monster.name}을(를) 처치했습니다!`, 'combat');
@@ -2455,11 +2477,16 @@ function killMonster(monster) {
         }
 
         // 메시지 로그 추가
-        function addMessage(text, type = 'info') {
+        function addMessage(text, type = 'info', detail = null) {
             const messageLog = document.getElementById('message-log');
             const message = document.createElement('div');
             message.className = `message ${type}`;
             message.textContent = text;
+            if (detail) {
+                message.dataset.detail = detail;
+                message.classList.add('clickable');
+                message.addEventListener('click', () => alert(detail));
+            }
             messageLog.appendChild(message);
             messageLog.scrollTop = messageLog.scrollHeight;
         }
@@ -2749,8 +2776,9 @@ function killMonster(monster) {
                                '⚔️ 공격';
 
                 const targetName = nearestTarget === gameState.player ? "플레이어" : nearestTarget.name;
+                const detail = `hit roll ${result.hitRoll} vs ${result.defenseTarget} → ${result.hit ? 'hit' : 'miss'}${result.hit ? '; damage roll ' + result.damageRoll : ''}`;
                 if (!result.hit) {
-                    addMessage(`${monster.name}의 공격이 빗나갔습니다!`, "combat");
+                    addMessage(`${monster.name}의 공격이 빗나갔습니다!`, "combat", detail);
                 } else {
                     const critMsg = result.crit ? ' (치명타!)' : '';
                     let dmgStr = result.baseDamage;
@@ -2758,7 +2786,7 @@ function killMonster(monster) {
                         const emoji = ELEMENT_EMOJI[result.element] || '';
                         dmgStr = `${result.baseDamage}+${emoji}${result.elementDamage}`;
                     }
-                    addMessage(`${monster.name}이(가) ${targetName}에게 ${attackType}으로 ${dmgStr}의 피해를 입혔습니다${critMsg}!`, "combat");
+                    addMessage(`${monster.name}이(가) ${targetName}에게 ${attackType}으로 ${dmgStr}의 피해를 입혔습니다${critMsg}!`, "combat", detail);
                 }
                 
                 if (nearestTarget.health <= 0) {
@@ -2832,8 +2860,9 @@ function killMonster(monster) {
                     const totalAttack = getStat(gameState.player, 'attack');
 
                     const result = performAttack(gameState.player, monster, { attackValue: totalAttack, status: gameState.player.equipped.weapon && gameState.player.equipped.weapon.status });
+                    const detail = `hit roll ${result.hitRoll} vs ${result.defenseTarget} → ${result.hit ? 'hit' : 'miss'}${result.hit ? '; damage roll ' + result.damageRoll : ''}`;
                     if (!result.hit) {
-                        addMessage(`❌ ${monster.name}에게 공격이 빗나갔습니다!`, "combat");
+                        addMessage(`❌ ${monster.name}에게 공격이 빗나갔습니다!`, "combat", detail);
                     } else {
                         const critMsg = result.crit ? ' (치명타!)' : '';
                         let dmgStr = formatNumber(result.baseDamage);
@@ -2841,7 +2870,7 @@ function killMonster(monster) {
                             const emoji = ELEMENT_EMOJI[result.element] || '';
                             dmgStr = `${formatNumber(result.baseDamage)}+${emoji}${formatNumber(result.elementDamage)}`;
                         }
-                        addMessage(`⚔️ ${monster.name}에게 ${dmgStr}의 피해를 입혔습니다${critMsg}!`, "combat");
+                        addMessage(`⚔️ ${monster.name}에게 ${dmgStr}의 피해를 입혔습니다${critMsg}!`, "combat", detail);
                     }
                     
                     if (monster.health <= 0) {
@@ -3321,8 +3350,9 @@ function killMonster(monster) {
                     const hits = 1;
                     const icon = skillInfo.icon;
                     const result = performAttack(mercenary, nearestMonster, { attackValue, status: mercenary.equipped.weapon && mercenary.equipped.weapon.status });
+                    const detail = `hit roll ${result.hitRoll} vs ${result.defenseTarget} → ${result.hit ? 'hit' : 'miss'}${result.hit ? '; damage roll ' + result.damageRoll : ''}`;
                     if (!result.hit) {
-                        addMessage(`❌ ${mercenary.name}의 ${skillInfo.name}이 빗나갔습니다!`, "mercenary");
+                        addMessage(`❌ ${mercenary.name}의 ${skillInfo.name}이 빗나갔습니다!`, "mercenary", detail);
                     } else {
                         const critMsg = result.crit ? ' (치명타!)' : '';
                         let dmgStr = result.baseDamage;
@@ -3330,7 +3360,7 @@ function killMonster(monster) {
                             const emoji = ELEMENT_EMOJI[result.element] || '';
                             dmgStr = `${result.baseDamage}+${emoji}${result.elementDamage}`;
                         }
-                        addMessage(`${icon} ${mercenary.name}이(가) ${nearestMonster.name}에게 ${dmgStr}의 피해를 입혔습니다${critMsg}!`, "mercenary");
+                        addMessage(`${icon} ${mercenary.name}이(가) ${nearestMonster.name}에게 ${dmgStr}의 피해를 입혔습니다${critMsg}!`, "mercenary", detail);
                     }
 
                     if (nearestMonster.health <= 0) {
@@ -3394,8 +3424,9 @@ function killMonster(monster) {
                     const icon = skillInfo.icon;
                     for (let i = 0; i < hits; i++) {
                         const result = performAttack(mercenary, nearestMonster, { attackValue, magic: skillInfo.magic, element: skillInfo.element, status: mercenary.equipped.weapon && mercenary.equipped.weapon.status, damageDice: skillInfo.damageDice });
+                        const detail = `hit roll ${result.hitRoll} vs ${result.defenseTarget} → ${result.hit ? 'hit' : 'miss'}${result.hit ? '; damage roll ' + result.damageRoll : ''}`;
                         if (!result.hit) {
-                            addMessage(`❌ ${mercenary.name}의 ${skillInfo.name}이 빗나갔습니다!`, "mercenary");
+                            addMessage(`❌ ${mercenary.name}의 ${skillInfo.name}이 빗나갔습니다!`, "mercenary", detail);
                         } else {
                             const critMsg = result.crit ? ' (치명타!)' : '';
                             let dmgStr = result.baseDamage;
@@ -3403,7 +3434,7 @@ function killMonster(monster) {
                                 const emoji = ELEMENT_EMOJI[result.element] || '';
                                 dmgStr = `${result.baseDamage}+${emoji}${result.elementDamage}`;
                             }
-                            addMessage(`${icon} ${mercenary.name}이(가) ${nearestMonster.name}에게 ${dmgStr}의 피해를 입혔습니다${critMsg}!`, "mercenary");
+                            addMessage(`${icon} ${mercenary.name}이(가) ${nearestMonster.name}에게 ${dmgStr}의 피해를 입혔습니다${critMsg}!`, "mercenary", detail);
                         }
 
                         if (nearestMonster.health <= 0) break;
@@ -3467,8 +3498,9 @@ function killMonster(monster) {
                     const totalAttack = getStat(mercenary, 'attack');
 
                     const result = performAttack(mercenary, nearestMonster, { attackValue: totalAttack, status: mercenary.equipped.weapon && mercenary.equipped.weapon.status });
+                    const detail = `hit roll ${result.hitRoll} vs ${result.defenseTarget} → ${result.hit ? 'hit' : 'miss'}${result.hit ? '; damage roll ' + result.damageRoll : ''}`;
                     if (!result.hit) {
-                        addMessage(`❌ ${mercenary.name}의 공격이 빗나갔습니다!`, "mercenary");
+                        addMessage(`❌ ${mercenary.name}의 공격이 빗나갔습니다!`, "mercenary", detail);
                     } else {
                         const critMsg = result.crit ? ' (치명타!)' : '';
                         let dmgStr = result.baseDamage;
@@ -3476,7 +3508,7 @@ function killMonster(monster) {
                             const emoji = ELEMENT_EMOJI[result.element] || '';
                             dmgStr = `${result.baseDamage}+${emoji}${result.elementDamage}`;
                         }
-                        addMessage(`⚔️ ${mercenary.name}이(가) ${nearestMonster.name}에게 ${dmgStr}의 피해를 입혔습니다${critMsg}!`, "mercenary");
+                        addMessage(`⚔️ ${mercenary.name}이(가) ${nearestMonster.name}에게 ${dmgStr}의 피해를 입혔습니다${critMsg}!`, "mercenary", detail);
                     }
                     
                     if (nearestMonster.health <= 0) {
