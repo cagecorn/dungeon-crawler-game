@@ -4592,6 +4592,12 @@ function killMonster(monster) {
                     addBtn(m.name, () => equipItemToMercenary(item, m));
                 });
             }
+            const buttons = content.querySelectorAll('.target-button');
+            if (buttons.length === 1) {
+                buttons[0].click();
+                return;
+            }
+
             if (typeof prompt === 'function') {
                 const msg = choices.map((c, i) => `${i}: ${c.label}`).join('\n');
                 const res = prompt(msg);
