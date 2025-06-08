@@ -1057,6 +1057,7 @@
             ChargeAttack: { name: 'Charge Attack', icon: '⚡', range: 2, manaCost: 2, multiplier: 1.5, dashRange: 4 },
             DoubleStrike: { name: 'Double Strike', icon: '🔪', range: 1, manaCost: 3 },
             Heal: { name: 'Heal', icon: '✨', range: 2, manaCost: 2 },
+            Purify: { name: 'Purify', icon: '🌀', range: 2, manaCost: 2 },
             Fireball: { name: 'Fireball', icon: '🔥', range: 4, manaCost: 3, damageDice: '1d8', magic: true, element: 'fire' },
             Iceball: { name: 'Iceball', icon: '❄️', range: 5, manaCost: 2, damageDice: '1d8', magic: true, element: 'ice' },
             HawkEye: { name: 'Hawk Eye', icon: '🦅', range: 5, manaCost: 2 }
@@ -1244,6 +1245,25 @@
                 } else {
                     addMessage(`💚 ${healer.name}이(가) ${name}을(를) ${amountStr} 회복했습니다.`, 'mercenary');
                 }
+                return true;
+            }
+            return false;
+        }
+
+        function purifyTarget(healer, target, skillInfo) {
+            const statuses = ['poison','burn','freeze','bleed'];
+            let removed = false;
+            statuses.forEach(s => {
+                if (target[s]) {
+                    target[s] = false;
+                    const key = s + 'Turns';
+                    if (target[key] !== undefined) target[key] = 0;
+                    removed = true;
+                }
+            });
+            if (removed) {
+                const name = target === gameState.player ? '플레이어' : target.name;
+                addMessage(`${skillInfo.icon} ${healer.name}의 ${skillInfo.name}이(가) ${name}의 상태이상을 해제했습니다.`, 'mercenary');
                 return true;
             }
             return false;
@@ -1612,7 +1632,9 @@
                 const totalAttack = getStat(merc, 'attack');
                 const totalDefense = getStat(merc, 'defense');
                 const skillInfo = MERCENARY_SKILLS[merc.skill];
-                const skillText = skillInfo ? `스킬:${skillInfo.name}(MP ${skillInfo.manaCost})` : '스킬: 없음';
+                const skillInfo2 = MERCENARY_SKILLS[merc.skill2];
+                let skillText = skillInfo ? `스킬:${skillInfo.name}(MP ${skillInfo.manaCost})` : '스킬: 없음';
+                if (skillInfo2) skillText += ` / ${skillInfo2.name}(MP ${skillInfo2.manaCost})`;
 
                 div.textContent = `${i + 1}. ${merc.icon} ${merc.name} Lv.${merc.level} (HP:${hp}, MP:${mp}) ` +
                     `[공격:${totalAttack}, 방어:${totalDefense}] ` +
@@ -1641,7 +1663,9 @@
                 const div = document.createElement('div');
                 div.className = 'mercenary-info alive';
                 const skillInfo = MERCENARY_SKILLS[merc.skill];
-                const skillText = skillInfo ? `스킬:${skillInfo.name}(MP ${skillInfo.manaCost})` : '스킬: 없음';
+                const skillInfo2 = MERCENARY_SKILLS[merc.skill2];
+                let skillText = skillInfo ? `스킬:${skillInfo.name}(MP ${skillInfo.manaCost})` : '스킬: 없음';
+                if (skillInfo2) skillText += ` / ${skillInfo2.name}(MP ${skillInfo2.manaCost})`;
                 div.textContent = `${merc.icon} ${merc.name} (대기) [${skillText}]`;
 
                 const swapBtn = document.createElement('button');
@@ -1681,7 +1705,9 @@
                 ? `<button class="sell-button" onclick="unequipItemFromMercenary('${merc.id}','accessory2')">해제</button>`
                 : '';
             const skillInfo = MERCENARY_SKILLS[merc.skill];
-            const skillText = skillInfo ? `${skillInfo.name} (MP ${skillInfo.manaCost})` : '없음';
+            const skillInfo2 = MERCENARY_SKILLS[merc.skill2];
+            let skillText = skillInfo ? `${skillInfo.name} (MP ${skillInfo.manaCost})` : '없음';
+            if (skillInfo2) skillText += ` / ${skillInfo2.name} (MP ${skillInfo2.manaCost})`;
 
             const html = `
                 <h3>${merc.icon} ${merc.name} Lv.${merc.level}</h3>
@@ -2418,6 +2444,7 @@ function killMonster(monster) {
             const mercType = MERCENARY_TYPES[type];
             const skillPool = MERCENARY_SKILL_SETS[type] || [];
             const assignedSkill = skillPool[Math.floor(Math.random() * skillPool.length)] || null;
+            const assignedSkill2 = type === 'HEALER' ? 'Purify' : null;
             const randomBaseName = MERCENARY_NAMES[Math.floor(Math.random() * MERCENARY_NAMES.length)];
             const jobLabel = mercType.name.split(' ')[1] || mercType.name;
             const name = `${randomBaseName} (${jobLabel})`;
@@ -2447,6 +2474,7 @@ function killMonster(monster) {
                 healthRegen: mercType.baseHealthRegen || 0,
                 manaRegen: mercType.baseManaRegen || 1,
                 skill: assignedSkill,
+                skill2: assignedSkill2,
                 attack: mercType.baseAttack,
                 defense: mercType.baseDefense,
                 accuracy: mercType.baseAccuracy,
@@ -3404,6 +3432,41 @@ function killMonster(monster) {
                         updateMercenaryDisplay();
                         mercenary.hasActed = true;
                         return;
+                    }
+                }
+
+                const purifyInfo = MERCENARY_SKILLS[mercenary.skill2];
+                if (purifyInfo && mercenary.skill2 === 'Purify' && mercenary.mana >= purifyInfo.manaCost) {
+                    const inRange = target => getDistance(mercenary.x, mercenary.y, target.x, target.y) <= purifyInfo.range;
+                    const hasStatus = t => t.poison || t.burn || t.freeze || t.bleed;
+
+                    if (hasStatus(gameState.player) && inRange(gameState.player)) {
+                        if (purifyTarget(mercenary, gameState.player, purifyInfo)) {
+                            mercenary.mana -= purifyInfo.manaCost;
+                            updateMercenaryDisplay();
+                            mercenary.hasActed = true;
+                            return;
+                        }
+                    }
+
+                    for (const m of gameState.activeMercenaries) {
+                        if (m !== mercenary && m.alive && hasStatus(m) && inRange(m)) {
+                            if (purifyTarget(mercenary, m, purifyInfo)) {
+                                mercenary.mana -= purifyInfo.manaCost;
+                                updateMercenaryDisplay();
+                                mercenary.hasActed = true;
+                                return;
+                            }
+                        }
+                    }
+
+                    if (hasStatus(mercenary)) {
+                        if (purifyTarget(mercenary, mercenary, purifyInfo)) {
+                            mercenary.mana -= purifyInfo.manaCost;
+                            updateMercenaryDisplay();
+                            mercenary.hasActed = true;
+                            return;
+                        }
                     }
                 }
             }
