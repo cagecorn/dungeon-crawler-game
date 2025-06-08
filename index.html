@@ -3274,6 +3274,18 @@ function killMonster(monster) {
                         }
                     }
                 }
+
+                if (mercenary.health < getStat(mercenary, 'maxHealth') * 0.5 && mercenary.mana >= manaCost) {
+                    const healed = knowsHeal
+                        ? healTarget(mercenary, mercenary, skillInfo)
+                        : healTarget(mercenary, mercenary);
+                    if (healed) {
+                        mercenary.mana -= manaCost;
+                        updateMercenaryDisplay();
+                        mercenary.hasActed = true;
+                        return;
+                    }
+                }
             }
             
             // 가장 가까운 시야 내 몬스터 찾기 (fog of war 고려)
@@ -3311,6 +3323,9 @@ function killMonster(monster) {
                                 break;
                             }
                         }
+                    }
+                    if (!target && mercenary.health < getStat(mercenary, 'maxHealth')) {
+                        target = mercenary;
                     }
                     if (target && healTarget(mercenary, target, skillInfo)) {
                         mercenary.mana -= skillInfo.manaCost;
