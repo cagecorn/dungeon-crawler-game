@@ -40,6 +40,10 @@ in the UI.
 
 Each dungeon floor now contains at least one **elite** monster. Elites boast higher stats and randomly receive an aura skill that benefits nearby allies. When an elite is revived as a mercenary, it keeps this aura skill. Elites appear with a purple glow and the "엘리트" prefix.
 
+### Loot
+
+Recipe scrolls may drop from monsters or appear in dungeons. Picking one up automatically adds the recipe to your known list. Duplicate scrolls are ignored once learned.
+
 ## Development
 
 Install dependencies with:
