@@ -1036,6 +1036,22 @@
                 level: 1,
                 icon: '📘'
             },
+            fireNovaBook: {
+                name: '📘 파이어 노바 서적',
+                type: ITEM_TYPES.SKILLBOOK,
+                skill: 'FireNova',
+                price: 0,
+                level: 2,
+                icon: '📘'
+            },
+            iceNovaBook: {
+                name: '📘 아이스 노바 서적',
+                type: ITEM_TYPES.SKILLBOOK,
+                skill: 'IceNova',
+                price: 0,
+                level: 2,
+                icon: '📘'
+            },
             healingBook: {
                 name: '📘 힐링 서적',
                 type: ITEM_TYPES.SKILLBOOK,
@@ -1049,6 +1065,8 @@
         const SKILL_DEFS = {
             Fireball: { name: 'Fireball', icon: '🔥', damageDice: '1d10', range: 5, magic: true, element: 'fire', manaCost: 3 },
             Iceball: { name: 'Iceball', icon: '❄️', damageDice: '1d8', range: 5, magic: true, element: 'ice', manaCost: 2 },
+            FireNova: { name: 'Fire Nova', icon: '🔥', damageDice: '1d6', radius: 3, magic: true, element: 'fire', manaCost: 5 },
+            IceNova: { name: 'Ice Nova', icon: '❄️', damageDice: '1d6', radius: 3, magic: true, element: 'ice', manaCost: 4 },
             Healing: { name: 'Healing', icon: '💖', heal: 10, manaCost: 3 }
         };
 
@@ -3973,6 +3991,36 @@ function killMonster(monster) {
                 gameState.player.health += healAmount;
                 addMessage(`💚 ${skill.name}으로 ${formatNumber(healAmount)} 체력을 회복했습니다.`, 'info');
                 updateStats();
+                processTurn();
+                return;
+            }
+            if (skill.radius !== undefined) {
+                const targets = gameState.monsters.filter(m => getDistance(gameState.player.x, gameState.player.y, m.x, m.y) <= skill.radius);
+                if (targets.length === 0) {
+                    addMessage('🎯 사거리 내에 몬스터가 없습니다.', 'info');
+                    processTurn();
+                    return;
+                }
+                gameState.player.mana -= skill.manaCost;
+                targets.slice().forEach(monster => {
+                    const attackValue = rollDice(skill.damageDice) + getStat(gameState.player, 'magicPower');
+                    const result = performAttack(gameState.player, monster, { attackValue, magic: skill.magic, element: skill.element, damageDice: skill.damageDice, status: gameState.player.equipped.weapon && gameState.player.equipped.weapon.status });
+                    const detail = `hit roll ${result.hitRoll} vs ${result.defenseTarget} → ${result.hit ? 'hit' : 'miss'}${result.hit ? '; damage roll ' + result.damageRoll : ''}`;
+                    if (!result.hit) {
+                        addMessage(`❌ ${monster.name}에게 ${skill.name}이 빗나갔습니다!`, 'combat', detail);
+                    } else {
+                        const critMsg = result.crit ? ' (치명타!)' : '';
+                        let dmgStr = formatNumber(result.baseDamage);
+                        if (result.elementDamage) {
+                            const emoji = ELEMENT_EMOJI[result.element] || '';
+                            dmgStr = `${formatNumber(result.baseDamage)}+${emoji}${formatNumber(result.elementDamage)}`;
+                        }
+                        addMessage(`${skill.icon} ${monster.name}에게 ${dmgStr}의 피해를 입혔습니다${critMsg}!`, 'combat', detail);
+                    }
+                    if (monster.health <= 0) {
+                        killMonster(monster);
+                    }
+                });
                 processTurn();
                 return;
             }
