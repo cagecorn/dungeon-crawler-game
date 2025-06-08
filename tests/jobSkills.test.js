@@ -1,30 +1,17 @@
-const { rollDice } = require('../dice');
-const { JSDOM } = require('jsdom');
-const path = require('path');
+const { loadGame } = require('./helpers');
 
 async function run() {
-  const dom = await JSDOM.fromFile(path.join(__dirname, '..', 'index.html'), {
-    runScripts: 'dangerously',
-    resources: 'usable',
-    url: 'http://localhost',
-    beforeParse(window) { window.rollDice = rollDice; }
-  });
+  const win = await loadGame();
+  win.updateStats = () => {};
+  win.updateMercenaryDisplay = () => {};
+  win.updateInventoryDisplay = () => {};
+  win.renderDungeon = () => {};
+  win.updateCamera = () => {};
+  win.updateSkillDisplay = () => {};
+  win.requestAnimationFrame = fn => fn();
 
-  await new Promise(resolve => {
-    if (dom.window.document.readyState === 'complete') resolve();
-    else dom.window.addEventListener('load', resolve);
-  });
-
-  dom.window.updateStats = () => {};
-  dom.window.updateMercenaryDisplay = () => {};
-  dom.window.updateInventoryDisplay = () => {};
-  dom.window.renderDungeon = () => {};
-  dom.window.updateCamera = () => {};
-  dom.window.updateSkillDisplay = () => {};
-  dom.window.requestAnimationFrame = fn => fn();
-
-  const { gameState } = dom.window;
-  const SKILL_DEFS = dom.window.eval('SKILL_DEFS');
+  const { gameState } = win;
+  const SKILL_DEFS = win.eval('SKILL_DEFS');
 
   const keys = Object.keys(SKILL_DEFS);
   if (gameState.player.skills.length !== keys.length || !keys.every(k => gameState.player.skills.includes(k))) {

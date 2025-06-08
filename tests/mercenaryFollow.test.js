@@ -1,29 +1,17 @@
-const { rollDice } = require('../dice');
-const { JSDOM } = require('jsdom');
-const path = require('path');
+const { loadGame } = require('./helpers');
 
 async function run() {
-  const dom = await JSDOM.fromFile(path.join(__dirname, '..', 'index.html'), {
-    runScripts: 'dangerously',
-    resources: 'usable',
-    url: 'http://localhost',
-    beforeParse(window) { window.rollDice = rollDice; }
-  });
-
-  await new Promise(resolve => {
-    if (dom.window.document.readyState === 'complete') resolve();
-    else dom.window.addEventListener('load', resolve);
-  });
+  const win = await loadGame();
 
   // override visual methods
-  dom.window.updateStats = () => {};
-  dom.window.updateMercenaryDisplay = () => {};
-  dom.window.updateInventoryDisplay = () => {};
-  dom.window.renderDungeon = () => {};
-  dom.window.updateCamera = () => {};
-  dom.window.requestAnimationFrame = fn => fn();
+  win.updateStats = () => {};
+  win.updateMercenaryDisplay = () => {};
+  win.updateInventoryDisplay = () => {};
+  win.renderDungeon = () => {};
+  win.updateCamera = () => {};
+  win.requestAnimationFrame = fn => fn();
 
-  const { hireMercenary, movePlayer, saveGame, localStorage, gameState } = dom.window;
+  const { hireMercenary, movePlayer, saveGame, localStorage, gameState } = win;
 
   // ensure enough gold for hiring
   gameState.player.gold = 200;
