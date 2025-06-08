@@ -6,6 +6,14 @@ This project is a lightweight browser-based dungeon crawler. It lets players exp
 
 Open `index.html` in a modern web browser to start the game.
 
+### Job Selection
+
+When the page loads you'll be prompted to choose a job. Click the emoji of the
+class you want and press the `[선택]` button. Available jobs are **Warrior**
+(⚔️), **Archer** (🏹), **Healer** (✚), **FireMage** (🔥) and **IceMage** (❄️).
+Your selection assigns two starting skills to the **Skill1** and **Skill2**
+buttons.
+
 ### Controls
 
 - Use the arrow keys or on-screen arrows to move your character.
