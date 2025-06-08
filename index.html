@@ -1953,11 +1953,11 @@
                 <div>💥 치명타: ${monster.critChance}</div>
                 <div>🔮 마법공격: ${monster.magicPower}</div>
                 <div>✨ 마법방어: ${monster.magicResist}</div>
-                <div>💪 힘: ${monster.strength}</div>
-                <div>🏃 민첩: ${monster.agility}</div>
-                <div>🛡 체력: ${monster.endurance}</div>
-                <div>🔮 집중: ${monster.focus}</div>
-                <div>📖 지능: ${monster.intelligence}</div>
+                <div>💪 힘: ${monster.strength}${monster.isSuperior ? ' ' + '★'.repeat(monster.stars.strength) : ''}</div>
+                <div>🏃 민첩: ${monster.agility}${monster.isSuperior ? ' ' + '★'.repeat(monster.stars.agility) : ''}</div>
+                <div>🛡 체력: ${monster.endurance}${monster.isSuperior ? ' ' + '★'.repeat(monster.stars.endurance) : ''}</div>
+                <div>🔮 집중: ${monster.focus}${monster.isSuperior ? ' ' + '★'.repeat(monster.stars.focus) : ''}</div>
+                <div>📖 지능: ${monster.intelligence}${monster.isSuperior ? ' ' + '★'.repeat(monster.stars.intelligence) : ''}</div>
                 <div>📏 사거리: ${monster.range}</div>
                 <div>특수: ${monster.special || '없음'}</div>
             `;
@@ -2154,6 +2154,27 @@
             return monster;
         }
 
+        function createSuperiorMonster(type, x, y, level = 1) {
+            const monster = createMonster(type, x, y, level + 1);
+            const auraKeys = ['MightAura','ProtectAura','RegenerationAura','MeditationAura','HasteAura','ConcentrationAura','CondemnAura','NaturalAura'];
+            const skillKeys = Object.keys(MERCENARY_SKILLS).filter(k => !k.endsWith('Aura'));
+            const skill = skillKeys[Math.floor(Math.random() * skillKeys.length)];
+            const auraSkill = auraKeys[Math.floor(Math.random() * auraKeys.length)];
+            monster.isElite = true;
+            monster.isSuperior = true;
+            monster.stars = generateStars();
+            monster.skill = skill;
+            monster.auraSkill = auraSkill;
+            monster.skillLevels = { [skill]: 1, [auraSkill]: 1 };
+            monster.name = `상급 ${monster.name}`;
+            monster.attack = Math.floor(monster.attack * 1.5);
+            monster.defense = Math.floor(monster.defense * 1.5);
+            monster.health = Math.floor(monster.health * 1.5);
+            monster.maxHealth = monster.health;
+            monster.lootChance = 0.8;
+            return monster;
+        }
+
         function setMercenaryLevel(mercenary, level) {
             for (let i = 1; i < level; i++) {
                 mercenary.level += 1;
@@ -2168,11 +2189,19 @@
         function setMonsterLevel(monster, level) {
             for (let i = 1; i < level; i++) {
                 monster.level += 1;
-                monster.endurance += 2;
-                monster.strength += 1;
-                monster.agility += 1;
-                monster.focus += 1;
-                monster.intelligence += 1;
+                if (monster.isSuperior && monster.stars) {
+                    monster.endurance += 2 + monster.stars.endurance * 0.5;
+                    monster.strength += 1 + monster.stars.strength * 0.5;
+                    monster.agility += 1 + monster.stars.agility * 0.5;
+                    monster.focus += 1 + monster.stars.focus * 0.5;
+                    monster.intelligence += 1 + monster.stars.intelligence * 0.5;
+                } else {
+                    monster.endurance += 2;
+                    monster.strength += 1;
+                    monster.agility += 1;
+                    monster.focus += 1;
+                    monster.intelligence += 1;
+                }
                 monster.maxHealth = getStat(monster, 'maxHealth');
                 monster.health = monster.maxHealth;
                 monster.maxMana = getStat(monster, 'maxMana');
@@ -2262,7 +2291,7 @@ function killMonster(monster) {
                 x: -1,
                 y: -1,
                 level: monster.level,
-                stars: {strength:0, agility:0, endurance:0, focus:0, intelligence:0},
+                stars: monster.isSuperior ? Object.assign({}, monster.stars) : {strength:0, agility:0, endurance:0, focus:0, intelligence:0},
                 endurance: monster.endurance,
                 focus: monster.focus,
                 strength: monster.strength,
@@ -2275,8 +2304,8 @@ function killMonster(monster) {
                 mana: monster.maxMana,
                 healthRegen: monster.healthRegen || 0,
                 manaRegen: monster.manaRegen || 1,
-                skill: monster.isElite ? monster.auraSkill : null,
-                skill2: null,
+                skill: monster.isSuperior ? monster.skill : (monster.isElite ? monster.auraSkill : null),
+                skill2: monster.isSuperior ? monster.auraSkill : null,
                 attack: monster.attack,
                 defense: monster.defense,
                 accuracy: monster.accuracy,
@@ -2291,7 +2320,15 @@ function killMonster(monster) {
                 exp: 0,
                 expNeeded: 15,
                 skillPoints: 0,
-                skillLevels: monster.isElite && monster.auraSkill ? { [monster.auraSkill]: 1 } : {},
+                skillLevels: (() => {
+                    if (monster.isSuperior) {
+                        const obj = {};
+                        obj[monster.skill] = 1;
+                        obj[monster.auraSkill] = 1;
+                        return obj;
+                    }
+                    return monster.isElite && monster.auraSkill ? { [monster.auraSkill]: 1 } : {};
+                })(),
                 alive: true,
                 hasActed: false,
                 equipped: { weapon: null, armor: null, accessory1: null, accessory2: null },
@@ -2520,11 +2557,19 @@ function killMonster(monster) {
             while (monster.exp >= monster.expNeeded) {
                 monster.exp -= monster.expNeeded;
                 monster.level += 1;
-                monster.endurance += 2;
-                monster.strength += 1;
-                monster.agility += 1;
-                monster.focus += 1;
-                monster.intelligence += 1;
+                if (monster.isSuperior && monster.stars) {
+                    monster.endurance += 2 + monster.stars.endurance * 0.5;
+                    monster.strength += 1 + monster.stars.strength * 0.5;
+                    monster.agility += 1 + monster.stars.agility * 0.5;
+                    monster.focus += 1 + monster.stars.focus * 0.5;
+                    monster.intelligence += 1 + monster.stars.intelligence * 0.5;
+                } else {
+                    monster.endurance += 2;
+                    monster.strength += 1;
+                    monster.agility += 1;
+                    monster.focus += 1;
+                    monster.intelligence += 1;
+                }
                 monster.health = getStat(monster, 'maxHealth');
                 monster.mana = getStat(monster, 'maxMana');
                 monster.expNeeded = Math.floor(monster.expNeeded * 1.5);
