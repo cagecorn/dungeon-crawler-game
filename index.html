@@ -95,6 +95,12 @@
             box-shadow: 0 0 6px rgba(244, 67, 54, 0.5);
             animation: monsterPulse 1.5s ease-in-out infinite alternate;
         }
+        .champion {
+            background: radial-gradient(circle, #ff9800, #f57c00);
+            color: white;
+            box-shadow: 0 0 8px rgba(255, 152, 0, 0.7);
+            animation: monsterPulse 1.5s ease-in-out infinite alternate;
+        }
         @keyframes monsterPulse {
             from { transform: scale(1); }
             to { transform: scale(1.1); }
@@ -745,6 +751,9 @@
                 cost: 80
             }
         };
+
+        // 챔피언 타입 (용병 타입과 동일)
+        const CHAMPION_TYPES = JSON.parse(JSON.stringify(MERCENARY_TYPES));
 
 
         // 몬스터 타입 정의
@@ -1733,6 +1742,34 @@
             gameState.gameRunning = false;
         }
 
+        function showChampionDetails(champion) {
+            const eq = champion.equipped || {};
+            const weapon = eq.weapon ? eq.weapon.name : '없음';
+            const armor = eq.armor ? eq.armor.name : '없음';
+            const acc1 = eq.accessory1 ? eq.accessory1.name : '없음';
+            const acc2 = eq.accessory2 ? eq.accessory2.name : '없음';
+            const html = `
+                <h3>${champion.icon} ${champion.name} (Lv.${champion.level})</h3>
+                <div>❤️ HP: ${champion.health}/${champion.maxHealth}</div>
+                <div>⚔️ 공격력: ${champion.attack}</div>
+                <div>🛡️ 방어력: ${champion.defense}</div>
+                <div>🎯 명중률: ${champion.accuracy}</div>
+                <div>💨 회피율: ${champion.evasion}</div>
+                <div>💥 치명타: ${champion.critChance}</div>
+                <div>🔮 마법공격: ${champion.magicPower}</div>
+                <div>✨ 마법방어: ${champion.magicResist}</div>
+                <div>🏃 속도: ${champion.speed}</div>
+                <div>📏 사거리: ${champion.range}</div>
+                <div>무기: ${weapon}</div>
+                <div>방어구: ${armor}</div>
+                <div>악세1: ${acc1}</div>
+                <div>악세2: ${acc2}</div>
+            `;
+            document.getElementById('monster-detail-content').innerHTML = html;
+            document.getElementById('monster-detail-panel').style.display = 'block';
+            gameState.gameRunning = false;
+        }
+
         function hideMonsterDetails() {
             document.getElementById('monster-detail-panel').style.display = 'none';
             gameState.gameRunning = true;
@@ -1885,7 +1922,19 @@ function killMonster(monster) {
             gameState.player.gold += goldGain;
             checkLevelUp();
             updateStats();
-            if (monster.special === 'boss') {
+            if (monster.isChampion) {
+                const eq = Object.values(monster.equipped || {}).filter(i => i);
+                if (eq.length) {
+                    const drop = eq[Math.floor(Math.random() * eq.length)];
+                    drop.x = monster.x;
+                    drop.y = monster.y;
+                    gameState.items.push(drop);
+                    gameState.dungeon[monster.y][monster.x] = 'item';
+                    addMessage(`🏆 ${monster.name}이(가) ${drop.name}을(를) 떨어뜨렸습니다!`, 'item');
+                } else {
+                    gameState.dungeon[monster.y][monster.x] = 'empty';
+                }
+            } else if (monster.special === 'boss') {
                 const bossItems = ['magicSword', 'magicStaff', 'plateArmor', 'greaterHealthPotion'];
                 if (Math.random() < 0.2) bossItems.push('reviveScroll');
                 const bossItemKey = bossItems[Math.floor(Math.random() * bossItems.length)];
@@ -1971,7 +2020,10 @@ function killMonster(monster) {
                                 div.textContent = merc.icon;
                             } else if (cellType === 'monster') {
                                 const m = gameState.monsters.find(mon => mon.x === x && mon.y === y);
-                                if (m) div.textContent = m.icon;
+                                if (m) {
+                                    div.textContent = m.icon;
+                                    if (m.isChampion) cellType = 'champion';
+                                }
                             } else if (cellType === 'item') {
                                 const it = gameState.items.find(it => it.x === x && it.y === y);
                                 if (it) div.textContent = it.icon;
@@ -2001,7 +2053,8 @@ function killMonster(monster) {
             const y = parseInt(cell.dataset.y, 10);
             const monster = gameState.monsters.find(m => m.x === x && m.y === y);
             if (monster) {
-                showMonsterDetails(monster);
+                if (monster.isChampion) showChampionDetails(monster);
+                else showMonsterDetails(monster);
                 return;
             }
             const merc = gameState.activeMercenaries.find(m => m.x === x && m.y === y && m.alive);
@@ -2175,6 +2228,23 @@ function killMonster(monster) {
                 const monster = createMonster(type, x, y);
                 gameState.monsters.push(monster);
                 gameState.dungeon[y][x] = 'monster';
+            }
+
+            // 층마다 챔피언 한 명 배치
+            const champTypes = Object.keys(CHAMPION_TYPES);
+            let cx = Math.floor(size / 2);
+            let cy = Math.floor(size / 2);
+            let attempts = 0;
+            while ((cx < 0 || cy < 0 || cx >= size || cy >= size || gameState.dungeon[cy][cx] !== 'empty') && attempts < 50) {
+                cx = Math.floor(size / 2) + Math.floor(Math.random()*3) - 1;
+                cy = Math.floor(size / 2) + Math.floor(Math.random()*3) - 1;
+                attempts++;
+            }
+            if (gameState.dungeon[cy][cx] === 'empty') {
+                const ct = champTypes[Math.floor(Math.random() * champTypes.length)];
+                const champ = createChampion(ct, cx, cy, gameState.floor);
+                gameState.monsters.push(champ);
+                gameState.dungeon[cy][cx] = 'monster';
             }
 
             // 보물은 던전 크기와 층수에 따라 적당히 배치
@@ -2465,6 +2535,56 @@ function killMonster(monster) {
             }
 
             return item;
+        }
+
+        // 챔피언 생성 함수
+        function createChampion(type, x, y, level) {
+            const base = CHAMPION_TYPES[type];
+            const randomBaseName = MERCENARY_NAMES[Math.floor(Math.random() * MERCENARY_NAMES.length)];
+            const jobLabel = base.name.split(' ')[1] || base.name;
+            const name = `${randomBaseName} (${jobLabel})`;
+            const champion = {
+                id: Math.random().toString(36).substr(2, 9),
+                type,
+                name,
+                icon: base.icon,
+                x,
+                y,
+                level: 1,
+                attack: base.baseAttack,
+                defense: base.baseDefense,
+                accuracy: base.baseAccuracy,
+                evasion: base.baseEvasion,
+                critChance: base.baseCritChance,
+                magicPower: base.baseMagicPower,
+                magicResist: base.baseMagicResist,
+                maxHealth: base.baseHealth,
+                health: base.baseHealth,
+                range: base.range || 1,
+                speed: base.speed || 1,
+                exp: level * 10,
+                gold: level * 10,
+                lootChance: 1,
+                hasActed: false,
+                isChampion: true,
+                equipped: { weapon: null, armor: null, accessory1: null, accessory2: null },
+                elementResistances: {fire:0, ice:0, lightning:0, earth:0, light:0, dark:0},
+                statusResistances: {poison:0, bleed:0, burn:0, freeze:0},
+                poison:false,burn:false,freeze:false,bleed:false,
+                poisonTurns:0,burnTurns:0,freezeTurns:0,bleedTurns:0
+            };
+            const keys = Object.keys(ITEMS).filter(k =>
+                [ITEM_TYPES.WEAPON, ITEM_TYPES.ARMOR, ITEM_TYPES.ACCESSORY].includes(ITEMS[k].type) &&
+                ITEMS[k].level <= Math.ceil(level / 2 + 1)
+            );
+            const weaponChoices = keys.filter(k => ITEMS[k].type === ITEM_TYPES.WEAPON);
+            const armorChoices = keys.filter(k => ITEMS[k].type === ITEM_TYPES.ARMOR);
+            const accChoices = keys.filter(k => ITEMS[k].type === ITEM_TYPES.ACCESSORY);
+            if (weaponChoices.length) champion.equipped.weapon = createItem(weaponChoices[Math.floor(Math.random()*weaponChoices.length)], 0, 0);
+            if (armorChoices.length) champion.equipped.armor = createItem(armorChoices[Math.floor(Math.random()*armorChoices.length)], 0, 0);
+            if (accChoices.length) champion.equipped.accessory1 = createItem(accChoices[Math.floor(Math.random()*accChoices.length)], 0, 0);
+            setMercenaryLevel(champion, level);
+            return champion;
         }
 
         function createHomingProjectile(x, y, target) {
