@@ -1340,9 +1340,14 @@
                 const monster = gameState.monsters.find(m => m.x === nx && m.y === ny);
                 if (monster) {
                     let attackValue;
-                    let magic = false;
+                    let magic = !!proj.magic;
                     if (proj.damage !== undefined) {
                         attackValue = proj.damage;
+                        if (magic) {
+                            attackValue += getStat(gameState.player, 'magicPower');
+                        }
+                    } else if (magic) {
+                        attackValue = getStat(gameState.player, 'magicPower');
                     } else {
                         attackValue = getStat(gameState.player, 'attack');
                     }
