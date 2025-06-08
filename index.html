@@ -1128,6 +1128,8 @@
             dungeonSize: 80,
             viewportSize: 25,
             camera: { x: 0, y: 0 },
+            autoMovePath: null,
+            autoMoveActive: false,
             gameRunning: true
         };
         window.gameState = gameState;
@@ -1958,6 +1960,13 @@ function killMonster(monster) {
             const merc = gameState.activeMercenaries.find(m => m.x === x && m.y === y && m.alive);
             if (merc) {
                 showMercenaryDetails(merc);
+                return;
+            }
+
+            const path = findPath(gameState.player.x, gameState.player.y, x, y);
+            if (path && path.length > 1) {
+                gameState.autoMovePath = path.slice(1);
+                autoMoveStep();
             }
         }
 
@@ -2762,6 +2771,9 @@ function killMonster(monster) {
         // 플레이어 이동
         function movePlayer(dx, dy) {
             if (!gameState.gameRunning) return;
+            if (!gameState.autoMoveActive) {
+                gameState.autoMovePath = null;
+            }
             
             const newX = gameState.player.x + dx;
             const newY = gameState.player.y + dy;
@@ -2900,6 +2912,24 @@ function killMonster(monster) {
             }
 
             processTurn();
+        }
+
+        function autoMoveStep() {
+            if (!gameState.autoMovePath || !gameState.autoMovePath.length) {
+                gameState.autoMovePath = null;
+                return;
+            }
+            const step = gameState.autoMovePath.shift();
+            const dx = step.x - gameState.player.x;
+            const dy = step.y - gameState.player.y;
+            gameState.autoMoveActive = true;
+            movePlayer(dx, dy);
+            gameState.autoMoveActive = false;
+            if (gameState.autoMovePath && gameState.autoMovePath.length && gameState.gameRunning) {
+                setTimeout(autoMoveStep, 100);
+            } else {
+                gameState.autoMovePath = null;
+            }
         }
 
         // 다음 층으로
