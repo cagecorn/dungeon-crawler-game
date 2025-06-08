@@ -1696,20 +1696,20 @@
                 const statusClass = merc.alive ? 'alive' : 'dead';
                 div.className = `mercenary-info ${statusClass}`;
 
-                const hp = `${merc.health}/${getStat(merc, 'maxHealth')}`;
-                const mp = `${merc.mana}/${getStat(merc, 'maxMana')}`;
+            const hp = `${formatNumber(merc.health)}/${formatNumber(getStat(merc, 'maxHealth'))}`;
+            const mp = `${formatNumber(merc.mana)}/${formatNumber(getStat(merc, 'maxMana'))}`;
                 const weapon = merc.equipped && merc.equipped.weapon ? merc.equipped.weapon.name : '없음';
                 const armor = merc.equipped && merc.equipped.armor ? merc.equipped.armor.name : '없음';
                 const accessory1 = merc.equipped && merc.equipped.accessory1 ? merc.equipped.accessory1.name : '없음';
                 const accessory2 = merc.equipped && merc.equipped.accessory2 ? merc.equipped.accessory2.name : '없음';
-                const totalAttack = getStat(merc, 'attack');
-                const totalDefense = getStat(merc, 'defense');
+            const totalAttack = formatNumber(getStat(merc, 'attack'));
+            const totalDefense = formatNumber(getStat(merc, 'defense'));
                 const skillInfo = MERCENARY_SKILLS[merc.skill];
                 const skillInfo2 = MERCENARY_SKILLS[merc.skill2];
                 let skillText = skillInfo ? `스킬:${skillInfo.name}(MP ${skillInfo.manaCost})` : '스킬: 없음';
                 if (skillInfo2) skillText += ` / ${skillInfo2.name}(MP ${skillInfo2.manaCost})`;
 
-                div.textContent = `${i + 1}. ${merc.icon} ${merc.name} Lv.${merc.level} (HP:${hp}, MP:${mp}) ` +
+                div.textContent = `${formatNumber(i + 1)}. ${merc.icon} ${merc.name} Lv.${formatNumber(merc.level)} (HP:${hp}, MP:${mp}) ` +
                     `[공격:${totalAttack}, 방어:${totalDefense}] ` +
                     `[무기:${weapon}, 방어구:${armor}, 악세1:${accessory1}, 악세2:${accessory2}] ` +
                     `[${skillText}]`;
@@ -1786,25 +1786,25 @@
             }).join('');
 
             const html = `
-                <h3>${merc.icon} ${merc.name} Lv.${merc.level}</h3>
-                <div>💪 힘: ${merc.strength} ${'★'.repeat(merc.stars.strength)}</div>
-                <div>🏃 민첩: ${merc.agility} ${'★'.repeat(merc.stars.agility)}</div>
-                <div>🛡 체력: ${merc.endurance} ${'★'.repeat(merc.stars.endurance)}</div>
-                <div>🔮 집중: ${merc.focus} ${'★'.repeat(merc.stars.focus)}</div>
-                <div>📖 지능: ${merc.intelligence} ${'★'.repeat(merc.stars.intelligence)}</div>
+                <h3>${merc.icon} ${merc.name} Lv.${formatNumber(merc.level)}</h3>
+                <div>💪 힘: ${formatNumber(merc.strength)} ${'★'.repeat(merc.stars.strength)}</div>
+                <div>🏃 민첩: ${formatNumber(merc.agility)} ${'★'.repeat(merc.stars.agility)}</div>
+                <div>🛡 체력: ${formatNumber(merc.endurance)} ${'★'.repeat(merc.stars.endurance)}</div>
+                <div>🔮 집중: ${formatNumber(merc.focus)} ${'★'.repeat(merc.stars.focus)}</div>
+                <div>📖 지능: ${formatNumber(merc.intelligence)} ${'★'.repeat(merc.stars.intelligence)}</div>
                 <hr>
-                <div>❤️ HP: ${merc.health}/${getStat(merc, 'maxHealth')}</div>
-                <div>🔋 MP: ${merc.mana}/${getStat(merc, 'maxMana')}</div>
-                <div>⚔️ 공격력: ${getStat(merc, 'attack')}</div>
-                <div>🛡️ 방어력: ${getStat(merc, 'defense')}</div>
-                <div>🎯 명중률: ${getStat(merc, 'accuracy')}</div>
-                <div>💨 회피율: ${getStat(merc, 'evasion')}</div>
-                <div>💥 치명타: ${getStat(merc, 'critChance')}</div>
-                <div>🔮 마법공격: ${getStat(merc, 'magicPower')}</div>
-                <div>✨ 마법방어: ${getStat(merc, 'magicResist')}</div>
-                <div>❤️‍🩹 회복력: ${getStat(merc, 'healthRegen')}</div>
-                <div>🔁 마나회복: ${getStat(merc, 'manaRegen')}</div>
-                <div>📚 스킬포인트: ${merc.skillPoints}</div>
+                <div>❤️ HP: ${formatNumber(merc.health)}/${formatNumber(getStat(merc, 'maxHealth'))}</div>
+                <div>🔋 MP: ${formatNumber(merc.mana)}/${formatNumber(getStat(merc, 'maxMana'))}</div>
+                <div>⚔️ 공격력: ${formatNumber(getStat(merc, 'attack'))}</div>
+                <div>🛡️ 방어력: ${formatNumber(getStat(merc, 'defense'))}</div>
+                <div>🎯 명중률: ${formatNumber(getStat(merc, 'accuracy'))}</div>
+                <div>💨 회피율: ${formatNumber(getStat(merc, 'evasion'))}</div>
+                <div>💥 치명타: ${formatNumber(getStat(merc, 'critChance'))}</div>
+                <div>🔮 마법공격: ${formatNumber(getStat(merc, 'magicPower'))}</div>
+                <div>✨ 마법방어: ${formatNumber(getStat(merc, 'magicResist'))}</div>
+                <div>❤️‍🩹 회복력: ${formatNumber(getStat(merc, 'healthRegen'))}</div>
+                <div>🔁 마나회복: ${formatNumber(getStat(merc, 'manaRegen'))}</div>
+                <div>📚 스킬포인트: ${formatNumber(merc.skillPoints)}</div>
                 <hr>
                 <div>무기: ${weapon} ${weaponBtn}</div>
                 <div>방어구: ${armor} ${armorBtn}</div>
