@@ -1540,6 +1540,19 @@
             const armor = merc.equipped && merc.equipped.armor ? merc.equipped.armor.name : '없음';
             const accessory1 = merc.equipped && merc.equipped.accessory1 ? merc.equipped.accessory1.name : '없음';
             const accessory2 = merc.equipped && merc.equipped.accessory2 ? merc.equipped.accessory2.name : '없음';
+
+            const weaponBtn = merc.equipped && merc.equipped.weapon
+                ? `<button class="sell-button" onclick="unequipItemFromMercenary('${merc.id}','weapon')">해제</button>`
+                : '';
+            const armorBtn = merc.equipped && merc.equipped.armor
+                ? `<button class="sell-button" onclick="unequipItemFromMercenary('${merc.id}','armor')">해제</button>`
+                : '';
+            const acc1Btn = merc.equipped && merc.equipped.accessory1
+                ? `<button class="sell-button" onclick="unequipItemFromMercenary('${merc.id}','accessory1')">해제</button>`
+                : '';
+            const acc2Btn = merc.equipped && merc.equipped.accessory2
+                ? `<button class="sell-button" onclick="unequipItemFromMercenary('${merc.id}','accessory2')">해제</button>`
+                : '';
             const skillInfo = MERCENARY_SKILLS[merc.skill];
             const skillText = skillInfo ? `${skillInfo.name} (MP ${skillInfo.manaCost})` : '없음';
 
@@ -1563,10 +1576,10 @@
                 <div>❤️‍🩹 회복력: ${getStat(merc, 'healthRegen')}</div>
                 <div>🔁 마나회복: ${getStat(merc, 'manaRegen')}</div>
                 <hr>
-                <div>무기: ${weapon}</div>
-                <div>방어구: ${armor}</div>
-                <div>악세1: ${accessory1}</div>
-                <div>악세2: ${accessory2}</div>
+                <div>무기: ${weapon} ${weaponBtn}</div>
+                <div>방어구: ${armor} ${armorBtn}</div>
+                <div>악세1: ${accessory1} ${acc1Btn}</div>
+                <div>악세2: ${accessory2} ${acc2Btn}</div>
                 <div>스킬: ${skillText}</div>
             `;
 
@@ -2414,7 +2427,7 @@ function killMonster(monster) {
         function unequipItemFromMercenary(mercenaryId, slotType) {
             const mercenary = gameState.activeMercenaries.find(m => m.id === mercenaryId);
             if (!mercenary || !mercenary.equipped) return;
-            
+
             const item = mercenary.equipped[slotType];
             if (item) {
                 addToInventory(item);
@@ -2422,6 +2435,7 @@ function killMonster(monster) {
                 addMessage(`📦 ${mercenary.name}의 ${item.name}을(를) 해제했습니다.`, 'mercenary');
                 updateInventoryDisplay();
                 updateMercenaryDisplay();
+                showMercenaryDetails(mercenary);
             }
         }
 
