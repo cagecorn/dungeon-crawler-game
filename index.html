@@ -2614,7 +2614,7 @@ function killMonster(monster) {
                 options.push(`${i + 1}: ${m.name}`);
             });
 
-            if (item.type === ITEM_TYPES.POTION) {
+            if (item.type === ITEM_TYPES.POTION || item.type === ITEM_TYPES.EXP_SCROLL) {
                 const choice = prompt(`${item.name}을(를) 사용할 대상을 선택하세요:\n${options.join('\n')}`);
                 if (choice === null) return;
                 const index = parseInt(choice, 10);
