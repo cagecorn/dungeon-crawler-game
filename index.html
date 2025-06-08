@@ -465,40 +465,6 @@
             background: #777;
         }
 
-        /* Trait info panel */
-        .trait-info {
-            background: linear-gradient(135deg, #2a2a2a, #333);
-            padding: 15px;
-            border-radius: 8px;
-            box-shadow: 0 0 15px rgba(0, 0, 0, 0.7);
-            border: 1px solid #555;
-            max-width: 1400px;
-            width: 100%;
-            margin-top: 15px;
-            font-size: 13px;
-        }
-        .trait-info h2 {
-            color: #ff6600;
-            margin: 0 0 12px 0;
-            border-bottom: 2px solid #ff6600;
-            padding-bottom: 8px;
-            text-align: center;
-            font-size: 16px;
-        }
-        .trait-info h3 {
-            margin: 8px 0 4px 0;
-            color: #ffcc00;
-            font-size: 14px;
-        }
-        .trait-info ul {
-            list-style: none;
-            padding: 0;
-            margin: 0;
-        }
-        .trait-info li {
-            margin-bottom: 4px;
-            font-size: 12px;
-        }
         .shop-panel {
             position: absolute;
             top: 50%;
@@ -635,7 +601,6 @@
         </div>
     </div>
 
-    <div id="trait-info" class="trait-info"></div>
 
     <div id="shop-panel" class="shop-panel" style="display:none;">
         <h2>상점</h2>
@@ -736,92 +701,6 @@
             }
         };
 
-        // 용병 특성 - 카테고리별 배열
-        const ABILITY_TRAITS = [ // 능력 강화형
-            '철벽',
-            '돌주먹',
-            '거산',
-            '마력 조율자',
-            '장신',
-            '재빠름',
-            '오크의 피',
-            '빙결의 혼'
-        ];
-
-        const REACTIVE_TRAITS = [ // 상태 반응형
-        ];
-
-        const STATUS_TRAITS = [ // 상태 부여형
-        ];
-
-        const FIELD_TRAITS = [ // 필드 기반형
-            '재산 관리인',
-            '책벌레',
-            '공허 지식자',
-            '도발의 혼'
-        ];
-
-        const SPECIAL_ACTION_TRAITS = [ // 특수 행동형
-            '구호의 손길',
-            '보물 감별사'
-        ];
-
-        const POSITIVE_TRAITS = [
-            ...ABILITY_TRAITS,
-            ...REACTIVE_TRAITS,
-            ...STATUS_TRAITS,
-            ...FIELD_TRAITS,
-            ...SPECIAL_ACTION_TRAITS
-        ];
-        const NEGATIVE_TRAITS = [];
-        const TRADEOFF_TRAITS = [];
-
-        // 특성 상세 설명
-        const TRAIT_DETAILS = {
-            '철벽': '받는 피해 10% 감소',
-            '돌주먹': '공격력 10% 증가',
-            '거산': '최대 체력 15% 증가',
-            '마력 조율자': '마나 능력치 10% 증가',
-            '장신': '근접 사거리 +1',
-            '재빠름': '한 번에 두 칸 이동',
-            '오크의 피': '체력 재생 10% 증가',
-            '빙결의 혼': '빙결 피해 15% 증가',
-            '은밀한 칼날': '공격 시 30% 확률로 3턴 출혈',
-            '재산 관리인': '몬스터 골드 20% 증가',
-            '책벌레': '마법 공격력 10% 증가',
-            '공허 지식자': '마법 공격력 +1',
-            '도발의 혼': '적이 우선적으로 자신을 노림',
-            '구호의 손길': '치유 효과 20% 증가',
-            '보물 감별사': '보물 골드 50% 증가'
-        };
-
-        // 특성 정보 영역 렌더링
-        function renderTraitInfo() {
-            const container = document.getElementById('trait-info');
-            if (!container) return;
-            container.innerHTML = '<h2>📜 특성 정보</h2>';
-
-            const categories = {
-                '능력 강화형': ABILITY_TRAITS,
-                '상태 반응형': REACTIVE_TRAITS,
-                '상태 부여형': STATUS_TRAITS,
-                '필드 기반형': FIELD_TRAITS,
-                '특수 행동형': SPECIAL_ACTION_TRAITS
-            };
-
-            for (const [cat, traits] of Object.entries(categories)) {
-                const h3 = document.createElement('h3');
-                h3.textContent = cat;
-                container.appendChild(h3);
-                const ul = document.createElement('ul');
-                for (const t of traits) {
-                    const li = document.createElement('li');
-                    li.innerHTML = `<strong>${t}</strong>: ${TRAIT_DETAILS[t] || ''}`;
-                    ul.appendChild(li);
-                }
-                container.appendChild(ul);
-            }
-        }
 
         // 몬스터 타입 정의
         const MONSTER_TYPES = {
@@ -1242,9 +1121,6 @@
         // 간단한 치유 로직
         function healTarget(healer, target, skillInfo) {
             let healAmount = Math.min(3 + healer.level, target.maxHealth - target.health);
-            if (hasTrait(healer, '구호의 손길')) {
-                healAmount = Math.floor(healAmount * 1.2);
-            }
             if (healAmount > 0) {
                 target.health += healAmount;
                 const name = target === gameState.player ? '플레이어' : target.name;
@@ -1309,16 +1185,9 @@
 
 
             let damage = baseDamage + elementDamage;
-            if (hasTrait(defender, '철벽')) {
-                damage = Math.floor(damage * 0.9);
-            }
             defender.health -= damage;
 
             let statusApplied = false;
-            if (hasTrait(attacker, '은밀한 칼날') && Math.random() < 0.3) {
-                defender.bleedTurns = Math.max(defender.bleedTurns || 0, 3);
-                statusApplied = true;
-            }
             if (status) {
                 if (tryApplyStatus(defender, status, 3)) statusApplied = true;
             }
@@ -1368,30 +1237,10 @@
                     }
                 });
             }
-            if (stat === 'attack' && hasTrait(character, '돌주먹')) {
-                value *= 1.1;
-            }
-            if (stat === 'magicPower' && hasTrait(character, '책벌레')) {
-                value *= 1.1;
-            }
-            if (stat === 'maxHealth' && hasTrait(character, '거산')) {
-                value *= 1.15;
-            }
-            if (stat === 'healthRegen' && hasTrait(character, '오크의 피')) {
-                value *= 1.1;
-            }
-            if ((stat === 'manaRegen' || stat === 'maxMana') && hasTrait(character, '마력 조율자')) {
-                value *= 1.1;
-            }
-            if (stat === 'iceDamage' && hasTrait(character, '빙결의 혼')) {
-                value *= 1.15;
-            }
+            // trait bonuses removed
             return value;
         }
 
-        function hasTrait(entity, name) {
-            return entity && Array.isArray(entity.traits) && entity.traits.includes(name);
-        }
 
         // 플레이어 체력 비율에 따른 표정 반환
         function getPlayerEmoji() {
@@ -1582,8 +1431,7 @@
                 div.textContent = `${i + 1}. ${merc.icon} ${merc.name} Lv.${merc.level} (HP:${hp}, MP:${mp}) ` +
                     `[공격:${totalAttack}, 방어:${totalDefense}] ` +
                     `[무기:${weapon}, 방어구:${armor}, 악세1:${accessory1}, 악세2:${accessory2}] ` +
-                    `[${skillText}] ` +
-                    `[특성:${merc.traits.join(', ')}]`;
+                    `[${skillText}]`;
 
                 if (merc.alive) {
                     div.onclick = () => {
@@ -1657,8 +1505,6 @@
             const skillInfo = MERCENARY_SKILLS[merc.skill];
             const skillText = skillInfo ? `${skillInfo.name} (MP ${skillInfo.manaCost})` : '없음';
 
-            const traitInfo = merc.traits.map(t => `- ${t}: ${TRAIT_DETAILS[t] || ''}`).join('\n');
-
             const info = `${merc.icon} ${merc.name} Lv.${merc.level}\n` +
                 `HP: ${merc.health}/${merc.maxHealth}\n` +
                 `MP: ${merc.mana}/${merc.maxMana}\n` +
@@ -1673,8 +1519,7 @@
                 `방어구: ${armor}\n` +
                 `악세서리1: ${accessory1}\n` +
                 `악세서리2: ${accessory2}\n` +
-                `스킬: ${skillText}\n` +
-                `특성:\n${traitInfo}`;
+                `스킬: ${skillText}`;
 
             alert(info);
         }
@@ -1816,12 +1661,6 @@ function killMonster(monster) {
             addMessage(`💀 ${monster.name}을(를) 처치했습니다!`, 'combat');
             gameState.player.exp += monster.exp;
             let goldGain = monster.gold;
-            if (gameState.activeMercenaries.some(m => m.alive && hasTrait(m, '재산 관리인'))) {
-                goldGain = Math.floor(goldGain * 1.2);
-            }
-            if (gameState.activeMercenaries.some(m => m.alive && hasTrait(m, '보물 감별사'))) {
-                goldGain = Math.floor(goldGain * 1.5);
-            }
             gameState.player.gold += goldGain;
             checkLevelUp();
             updateStats();
@@ -1835,9 +1674,6 @@ function killMonster(monster) {
                 addMessage(`🎁 ${monster.name}이(가) ${bossItem.name}을(를) 떨어뜨렸습니다!`, 'treasure');
             } else {
                 let lootChance = monster.lootChance;
-                if (gameState.activeMercenaries.some(m => m.alive && hasTrait(m, '보물 감별사'))) {
-                    lootChance *= 1.5;
-                }
                 if (Math.random() < lootChance) {
                     const itemKeys = Object.keys(ITEMS).filter(k => k !== 'reviveScroll');
                     const availableItems = itemKeys.filter(key => ITEMS[key].level <= Math.ceil(gameState.floor / 2 + 1));
@@ -2241,18 +2077,6 @@ function killMonster(monster) {
             const mercType = MERCENARY_TYPES[type];
             const skillPool = MERCENARY_SKILL_SETS[type] || [];
             const assignedSkill = skillPool[Math.floor(Math.random() * skillPool.length)] || null;
-            const allTraits = [
-                ...ABILITY_TRAITS,
-                ...REACTIVE_TRAITS,
-                ...STATUS_TRAITS,
-                ...FIELD_TRAITS,
-                ...SPECIAL_ACTION_TRAITS
-            ];
-            const traits = [];
-            while (traits.length < 2) {
-                const t = allTraits[Math.floor(Math.random() * allTraits.length)];
-                if (!traits.includes(t)) traits.push(t);
-            }
             const randomBaseName = MERCENARY_NAMES[Math.floor(Math.random() * MERCENARY_NAMES.length)];
             const jobLabel = mercType.name.split(' ')[1] || mercType.name;
             const name = `${randomBaseName} (${jobLabel})`;
@@ -2291,7 +2115,6 @@ function killMonster(monster) {
                 expNeeded: 15,
                 alive: true,
                 hasActed: false,
-                traits: traits,
                 bleedTurns: 0,
                 equipped: {
                     weapon: null,
@@ -2809,9 +2632,6 @@ function killMonster(monster) {
                 const treasure = gameState.treasures.find(t => t.x === newX && t.y === newY);
                 if (treasure) {
                     let gold = treasure.gold;
-                    if (gameState.activeMercenaries.some(m => m.alive && hasTrait(m, '보물 감별사'))) {
-                        gold = Math.floor(gold * 1.5);
-                    }
                     gameState.player.gold += gold;
                     addMessage(`💎 보물을 발견했습니다! ${formatNumber(gold)} 골드를 획득했습니다!`, "treasure");
                     
@@ -3081,7 +2901,7 @@ function killMonster(monster) {
             if (!mercenary.alive || mercenary.hasActed) return;
             mercenary.nextX = mercenary.x;
             mercenary.nextY = mercenary.y;
-            const moveTiles = hasTrait(mercenary, '재빠름') ? 2 : 1;
+            const moveTiles = 1;
 
             if (mercenary.bleedTurns && mercenary.bleedTurns > 0) {
                 mercenary.bleedTurns--;
@@ -3105,7 +2925,6 @@ function killMonster(monster) {
             const baseAttackRange = mercenary.role === 'ranged' ? 3 :
                                    mercenary.role === 'caster' ? 2 : 1;
             let attackRange = baseAttackRange;
-            if (hasTrait(mercenary, '장신')) attackRange += 1;
             
             // 힐러는 치료 우선
             if (mercenary.role === 'support') {
@@ -3736,7 +3555,6 @@ function killMonster(monster) {
         }
         updateInventoryDisplay();
         updateSkillDisplay();
-        renderTraitInfo();
         updateActionButtons();
         document.getElementById('up').onclick = () => movePlayer(0, -1);
         document.getElementById('down').onclick = () => movePlayer(0, 1);
