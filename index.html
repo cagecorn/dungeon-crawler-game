@@ -1019,7 +1019,9 @@
             Purify: { name: 'Purify', icon: '🌀', purify: true, range: 2, manaCost: 2 },
             DoubleStrike: { name: 'Double Strike', icon: '🔪', range: 1, manaCost: 3, melee: true, hits: 2 },
             ChargeAttack: { name: 'Charge Attack', icon: '⚡', range: 2, manaCost: 2, melee: true, multiplier: 1.5 },
-            HawkEye: { name: 'Hawk Eye', icon: '🦅', range: 5, manaCost: 2, damageDice: '1d6' }
+            HawkEye: { name: 'Hawk Eye', icon: '🦅', range: 5, manaCost: 2, damageDice: '1d6' },
+            MightAura: { name: 'Might Aura', icon: '💪', passive: true, radius: 6, aura: { attack: 1, magicPower: 1 } },
+            ProtectAura: { name: 'Protect Aura', icon: '🛡️', passive: true, radius: 6, aura: { defense: 1, magicResist: 1 } }
         };
 
         // 용병 전용 스킬 정의
@@ -1268,6 +1270,21 @@
             return value;
         }
 
+        function getAuraBonus(character, stat) {
+            let bonus = 0;
+            ['1', '2'].forEach(slot => {
+                const key = gameState.player.assignedSkills[slot];
+                const skill = SKILL_DEFS[key];
+                if (skill && skill.passive && skill.aura && skill.aura[stat] !== undefined) {
+                    const dist = getDistance(gameState.player.x, gameState.player.y, character.x, character.y);
+                    if (dist <= (skill.radius || 0)) {
+                        bonus += skill.aura[stat];
+                    }
+                }
+            });
+            return bonus;
+        }
+
         // 통합 공격 처리
         function performAttack(attacker, defender, options = {}) {
             const magic = options.magic || false;
@@ -1415,6 +1432,7 @@
                     }
                 });
             }
+            value += getAuraBonus(character, stat);
             return value;
         }
 
@@ -3862,6 +3880,11 @@ function killMonster(monster) {
                 return;
             }
             const skill = SKILL_DEFS[skillKey];
+            if (skill.passive) {
+                addMessage('이 스킬은 항상 효과가 발동중입니다.', 'info');
+                processTurn();
+                return;
+            }
             if (gameState.player.mana < skill.manaCost) {
                 addMessage('마나가 부족합니다.', 'info');
                 processTurn();
