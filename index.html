@@ -2233,7 +2233,7 @@
         }
 
         function createSuperiorMonster(type, x, y, level = 1) {
-            const monster = createMonster(type, x, y, level + 1);
+            const monster = createMonster(type, x, y, 1);
             const auraKeys = ['MightAura','ProtectAura','RegenerationAura','MeditationAura','HasteAura','ConcentrationAura','CondemnAura','NaturalAura'];
             const skillKeys = Object.keys(MERCENARY_SKILLS).filter(k => !k.endsWith('Aura'));
             const skill = skillKeys[Math.floor(Math.random() * skillKeys.length)];
@@ -2245,6 +2245,7 @@
             monster.auraSkill = auraSkill;
             monster.skillLevels = { [skill]: 1, [auraSkill]: 1 };
             monster.name = `상급 ${monster.name}`;
+            setMonsterLevel(monster, level + 1);
             monster.attack = Math.floor(monster.attack * 1.5);
             monster.defense = Math.floor(monster.defense * 1.5);
             monster.health = Math.floor(monster.health * 1.5);
