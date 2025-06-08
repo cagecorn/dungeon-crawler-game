@@ -124,6 +124,10 @@
             background: radial-gradient(circle, #ff9800, #e65100);
             color: white;
         }
+        .corpse {
+            background: radial-gradient(circle, #555, #333);
+            color: #ccc;
+        }
         .exit {
             background: linear-gradient(45deg, #00BCD4, #00ACC1, #0097A7);
             color: white;
@@ -1127,6 +1131,7 @@
             standbyMercenaries: [],
             get mercenaries() { return this.activeMercenaries; },
             monsters: [],
+            corpses: [],
             treasures: [],
             items: [],
             projectiles: [],
@@ -1487,14 +1492,7 @@
                         addMessage(`${icon} ${monster.name}에게 ${dmgStr}의 피해를 입혔습니다${critMsg}!`, 'combat', detail);
                     }
                     if (monster.health <= 0) {
-                        addMessage(`💀 ${monster.name}을(를) 처치했습니다!`, 'combat');
-                        gameState.player.exp += monster.exp;
-                        gameState.player.gold += monster.gold;
-                        checkLevelUp();
-                        updateStats();
-                        gameState.dungeon[monster.y][monster.x] = 'empty';
-                        const idx = gameState.monsters.findIndex(m => m === monster);
-                        if (idx !== -1) gameState.monsters.splice(idx, 1);
+                        killMonster(monster);
                     }
                     continue;
                 }
@@ -1769,11 +1767,11 @@
                 <div>💥 치명타: ${monster.critChance}</div>
                 <div>🔮 마법공격: ${monster.magicPower}</div>
                 <div>✨ 마법방어: ${monster.magicResist}</div>
-                <div>💪 힘: ${monster.strength}</div>
-                <div>🏃 민첩: ${monster.agility}</div>
-                <div>🛡 체력: ${monster.endurance}</div>
-                <div>🔮 집중: ${monster.focus}</div>
-                <div>📖 지능: ${monster.intelligence}</div>
+                <div>💪 힘: ${monster.strength} ${'★'.repeat(monster.stars?.strength || 0)}</div>
+                <div>🏃 민첩: ${monster.agility} ${'★'.repeat(monster.stars?.agility || 0)}</div>
+                <div>🛡 체력: ${monster.endurance} ${'★'.repeat(monster.stars?.endurance || 0)}</div>
+                <div>🔮 집중: ${monster.focus} ${'★'.repeat(monster.stars?.focus || 0)}</div>
+                <div>📖 지능: ${monster.intelligence} ${'★'.repeat(monster.stars?.intelligence || 0)}</div>
                 <div>📏 사거리: ${monster.range}</div>
                 <div>특수: ${monster.special || '없음'}</div>
             `;
@@ -1913,6 +1911,7 @@
                 x,
                 y,
                 level: 1,
+                stars: generateStars(),
                 endurance: endurance,
                 focus: 0,
                 strength: data.baseAttack,
@@ -1966,15 +1965,32 @@
         function setMonsterLevel(monster, level) {
             for (let i = 1; i < level; i++) {
                 monster.level += 1;
-                monster.endurance += 2;
-                monster.strength += 1;
-                monster.agility += 1;
-                monster.focus += 1;
-                monster.intelligence += 1;
+                const stars = monster.stars || {strength:0, agility:0, endurance:0, focus:0, intelligence:0};
+                monster.endurance += 2 + stars.endurance * 0.5;
+                monster.strength += 1 + stars.strength * 0.5;
+                monster.agility += 1 + stars.agility * 0.5;
+                monster.focus += 1 + stars.focus * 0.5;
+                monster.intelligence += 1 + stars.intelligence * 0.5;
                 monster.maxHealth = getStat(monster, 'maxHealth');
                 monster.health = monster.maxHealth;
                 monster.maxMana = getStat(monster, 'maxMana');
                 monster.mana = monster.maxMana;
+            }
+        }
+
+        function checkMonsterLevelUp(monster) {
+            while (monster.exp >= monster.expNeeded) {
+                monster.exp -= monster.expNeeded;
+                monster.level += 1;
+                const stars = monster.stars || {strength:0, agility:0, endurance:0, focus:0, intelligence:0};
+                monster.endurance += 2 + stars.endurance * 0.5;
+                monster.strength += 1 + stars.strength * 0.5;
+                monster.agility += 1 + stars.agility * 0.5;
+                monster.focus += 1 + stars.focus * 0.5;
+                monster.intelligence += 1 + stars.intelligence * 0.5;
+                monster.health = getStat(monster, 'maxHealth');
+                monster.mana = getStat(monster, 'maxMana');
+                monster.expNeeded = Math.floor((monster.expNeeded || 10) * 1.5);
             }
         }
 
@@ -1997,10 +2013,6 @@ function killMonster(monster) {
                     drop.x = monster.x;
                     drop.y = monster.y;
                     gameState.items.push(drop);
-                    gameState.dungeon[monster.y][monster.x] = 'item';
-                    addMessage(`🏆 ${monster.name}이(가) ${drop.name}을(를) 떨어뜨렸습니다!`, 'item');
-                } else {
-                    gameState.dungeon[monster.y][monster.x] = 'empty';
                 }
             } else if (monster.special === 'boss') {
                 const bossItems = ['magicSword', 'magicStaff', 'plateArmor', 'greaterHealthPotion'];
@@ -2008,7 +2020,6 @@ function killMonster(monster) {
                 const bossItemKey = bossItems[Math.floor(Math.random() * bossItems.length)];
                 const bossItem = createItem(bossItemKey, monster.x, monster.y);
                 gameState.items.push(bossItem);
-                gameState.dungeon[monster.y][monster.x] = 'item';
                 addMessage(`🎁 ${monster.name}이(가) ${bossItem.name}을(를) 떨어뜨렸습니다!`, 'treasure');
             } else {
                 let lootChance = monster.lootChance;
@@ -2021,14 +2032,97 @@ function killMonster(monster) {
                     }
                     const droppedItem = createItem(randomItemKey, monster.x, monster.y);
                     gameState.items.push(droppedItem);
-                    gameState.dungeon[monster.y][monster.x] = 'item';
                     addMessage(`📦 ${monster.name}이(가) ${droppedItem.name}을(를) 떨어뜨렸습니다!`, 'item');
-                } else {
-                    gameState.dungeon[monster.y][monster.x] = 'empty';
                 }
             }
             const idx = gameState.monsters.findIndex(m => m === monster);
             if (idx !== -1) gameState.monsters.splice(idx, 1);
+            monster.health = 0;
+            gameState.corpses.push(monster);
+            gameState.dungeon[monster.y][monster.x] = 'corpse';
+        }
+
+        function convertMonsterToMercenary(monster) {
+            return {
+                id: monster.id,
+                type: 'MONSTER',
+                name: monster.name,
+                icon: monster.icon,
+                role: monster.special === 'ranged' ? 'ranged' : monster.special === 'magic' ? 'caster' : 'tank',
+                x: -1,
+                y: -1,
+                level: monster.level,
+                stars: Object.assign({strength:0, agility:0, endurance:0, focus:0, intelligence:0}, monster.stars || {}),
+                endurance: monster.endurance,
+                focus: monster.focus,
+                strength: monster.strength,
+                agility: monster.agility,
+                intelligence: monster.intelligence,
+                baseDefense: monster.baseDefense,
+                maxHealth: monster.maxHealth,
+                health: monster.maxHealth,
+                maxMana: monster.maxMana,
+                mana: monster.maxMana,
+                healthRegen: monster.healthRegen || 0,
+                manaRegen: monster.manaRegen || 1,
+                skill: null,
+                skill2: null,
+                attack: monster.attack,
+                defense: monster.defense,
+                accuracy: monster.accuracy,
+                evasion: monster.evasion,
+                critChance: monster.critChance,
+                magicPower: monster.magicPower,
+                magicResist: monster.magicResist,
+                elementResistances: Object.assign({}, monster.elementResistances),
+                statusResistances: Object.assign({}, monster.statusResistances),
+                poison:false,burn:false,freeze:false,bleed:false,
+                poisonTurns:0,burnTurns:0,freezeTurns:0,bleedTurns:0,
+                exp: 0,
+                expNeeded: 15,
+                skillPoints: 0,
+                skillLevels: {},
+                alive: true,
+                hasActed: false,
+                equipped: { weapon: null, armor: null, accessory1: null, accessory2: null },
+                range: monster.range,
+                special: monster.special,
+                statusEffect: monster.statusEffect
+            };
+        }
+
+        function reviveMonsterCorpse(corpse) {
+            const cost = 200;
+            if (gameState.player.gold < cost) {
+                addMessage(`💸 골드가 부족합니다. 부활에는 ${formatNumber(cost)} 골드가 필요합니다.`, 'info');
+                return;
+            }
+            const mercenary = convertMonsterToMercenary(corpse);
+            const activeCount = gameState.activeMercenaries.filter(m => m.alive).length;
+            if (activeCount < 3) {
+                if (!spawnMercenaryNearPlayer(mercenary)) {
+                    addMessage('❌ 용병을 배치할 공간이 없습니다.', 'info');
+                    return;
+                }
+                gameState.player.gold -= cost;
+                gameState.activeMercenaries.push(mercenary);
+                addMessage(`🎉 ${corpse.name}을(를) 부활시켜 동료로 만들었습니다!`, 'mercenary');
+            } else if (gameState.standbyMercenaries.length < 2) {
+                gameState.player.gold -= cost;
+                gameState.standbyMercenaries.push(mercenary);
+                addMessage(`📋 부활한 ${corpse.name}을(를) 대기열에 추가했습니다.`, 'mercenary');
+            } else {
+                addMessage('❌ 용병이 가득 찼습니다.', 'info');
+                return;
+            }
+
+            const idx = gameState.corpses.findIndex(c => c === corpse);
+            if (idx !== -1) gameState.corpses.splice(idx, 1);
+            const hasItem = gameState.items.some(i => i.x === corpse.x && i.y === corpse.y);
+            gameState.dungeon[corpse.y][corpse.x] = hasItem ? 'item' : 'empty';
+            updateStats();
+            updateMercenaryDisplay();
+            renderDungeon();
         }
 
         function applyStatusEffects(entity) {
@@ -2095,6 +2189,8 @@ function killMonster(monster) {
                             } else if (cellType === 'item') {
                                 const it = gameState.items.find(it => it.x === x && it.y === y);
                                 if (it) div.textContent = it.icon;
+                            } else if (cellType === 'corpse') {
+                                div.textContent = '☠️';
                             } else if (cellType === 'treasure') {
                                 div.textContent = '💰';
                             } else if (cellType === 'exit') {
@@ -3018,44 +3114,7 @@ function killMonster(monster) {
                     }
                     
                     if (monster.health <= 0) {
-                        addMessage(`💀 ${monster.name}을(를) 처치했습니다!`, "combat");
-                        
-                        gameState.player.exp += monster.exp;
-                        gameState.player.gold += monster.gold;
-                        
-                        checkLevelUp();
-                        updateStats();
-                        
-                        if (monster.special === 'boss') {
-                            const bossItems = ['magicSword', 'magicStaff', 'plateArmor', 'greaterHealthPotion'];
-                            if (Math.random() < 0.2) bossItems.push('reviveScroll');
-                            const bossItemKey = bossItems[Math.floor(Math.random() * bossItems.length)];
-                            const bossItem = createItem(bossItemKey, newX, newY);
-                            gameState.items.push(bossItem);
-                            gameState.dungeon[newY][newX] = 'item';
-                            addMessage(`🎁 ${monster.name}이(가) ${bossItem.name}을(를) 떨어뜨렸습니다!`, "treasure");
-                        } else if (Math.random() < monster.lootChance) {
-                            const itemKeys = Object.keys(ITEMS).filter(k => k !== 'reviveScroll');
-                            const availableItems = itemKeys.filter(key =>
-                                ITEMS[key].level <= Math.ceil(gameState.floor / 2 + 1)
-                            );
-                            let randomItemKey = availableItems[Math.floor(Math.random() * availableItems.length)];
-                            if (Math.random() < 0.1 && ITEMS.reviveScroll.level <= Math.ceil(gameState.floor / 2 + 1)) {
-                                randomItemKey = 'reviveScroll';
-                            }
-                            
-                            const droppedItem = createItem(randomItemKey, newX, newY);
-                            gameState.items.push(droppedItem);
-                            gameState.dungeon[newY][newX] = 'item';
-                            addMessage(`📦 ${monster.name}이(가) ${droppedItem.name}을(를) 떨어뜨렸습니다!`, "item");
-                        } else {
-                            gameState.dungeon[newY][newX] = 'empty';
-                        }
-                        
-                        const monsterIndex = gameState.monsters.findIndex(m => m === monster);
-                        if (monsterIndex !== -1) {
-                            gameState.monsters.splice(monsterIndex, 1);
-                        }
+                        killMonster(monster);
                     }
                     
                     processTurn();
@@ -3092,6 +3151,16 @@ function killMonster(monster) {
                         gameState.items.splice(itemIndex, 1);
                     }
                     gameState.dungeon[newY][newX] = 'empty';
+                }
+            }
+
+            if (cellType === 'corpse') {
+                const corpse = gameState.corpses.find(c => c.x === newX && c.y === newY);
+                if (corpse) {
+                    const confirmRevive = confirm('200골드를 사용해 이 몬스터를 부활시키겠습니까?');
+                    if (confirmRevive) {
+                        reviveMonsterCorpse(corpse);
+                    }
                 }
             }
             
