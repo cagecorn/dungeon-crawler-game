@@ -544,14 +544,6 @@
             </div>
             <div class="message-log" id="message-log"></div>
             <div class="controls">
-                <div class="controls-row">
-                    <button id="up">⬆️</button>
-                </div>
-                <div class="controls-row">
-                    <button id="left">⬅️</button>
-                    <button id="down">⬇️</button>
-                    <button id="right">➡️</button>
-                </div>
                 <div class="controls-row" style="margin-top: 10px;">
                     <button id="save-game" style="background: linear-gradient(45deg, #2196F3, #1976D2);">💾 게임 저장</button>
                     <button id="load-game" style="background: linear-gradient(45deg, #FF9800, #F57C00);">📁 게임 불러오기</button>
@@ -570,7 +562,7 @@
                     <button id="skill1">Skill1</button>
                     <button id="skill2">Skill2</button>
                     <button id="recall">Recall</button>
-                    <button id="other">Other</button>
+                    <button id="pickup">Pick Up</button>
                 </div>
             </div>
             <div class="inventory">
@@ -1116,7 +1108,7 @@
             player: {
                 x: 0,
                 y: 0,
-                level: 4,
+                level: 1,
                 endurance: 10,
                 focus: 5,
                 strength: 5,
@@ -1493,6 +1485,39 @@
             return value;
         }
 
+        function averageDice(notation) {
+            const m = notation.match(/(\d*)d(\d+)/);
+            if (!m) return 0;
+            const count = parseInt(m[1] || '1', 10);
+            const sides = parseInt(m[2], 10);
+            return count * (sides + 1) / 2;
+        }
+
+        function estimateSkillDamage(owner, key, defs) {
+            const info = defs[key];
+            if (!info) return 0;
+            const lvl = owner.skillLevels && owner.skillLevels[key] || 1;
+            if (info.heal) {
+                return (info.heal * lvl) + getStat(owner, 'magicPower');
+            }
+            if (info.damageDice) {
+                const base = averageDice(info.damageDice) * lvl;
+                return base + (info.magic ? getStat(owner, 'magicPower') : getStat(owner, 'attack'));
+            }
+            if (info.melee) {
+                const mult = info.multiplier || 1;
+                return getStat(owner, 'attack') * mult * lvl;
+            }
+            return 0;
+        }
+
+        function showSkillDamage(owner, key, defs) {
+            if (!key) return;
+            const dmg = estimateSkillDamage(owner, key, defs);
+            const name = defs[key].name;
+            alert(`${name} 예상 피해: ${formatNumber(dmg)}`);
+        }
+
 
         // 플레이어 체력 비율에 따른 표정 반환
         function getPlayerEmoji() {
@@ -1643,11 +1668,19 @@
                 };
                 list.appendChild(div);
             });
-            document.getElementById('skill1-name').textContent = gameState.player.assignedSkills[1] ? SKILL_DEFS[gameState.player.assignedSkills[1]].name : '없음';
-            document.getElementById('skill2-name').textContent = gameState.player.assignedSkills[2] ? SKILL_DEFS[gameState.player.assignedSkills[2]].name : '없음';
+            const s1 = document.getElementById('skill1-name');
+            const s2 = document.getElementById('skill2-name');
+            s1.textContent = gameState.player.assignedSkills[1] ? SKILL_DEFS[gameState.player.assignedSkills[1]].name : '없음';
+            s2.textContent = gameState.player.assignedSkills[2] ? SKILL_DEFS[gameState.player.assignedSkills[2]].name : '없음';
+            s1.onclick = () => showSkillDamage(gameState.player, gameState.player.assignedSkills[1], SKILL_DEFS);
+            s2.onclick = () => showSkillDamage(gameState.player, gameState.player.assignedSkills[2], SKILL_DEFS);
         }
 
         function assignSkill(slot, skill) {
+            const other = slot === 1 ? 2 : 1;
+            if (gameState.player.assignedSkills[other] === skill) {
+                gameState.player.assignedSkills[other] = null;
+            }
             gameState.player.assignedSkills[slot] = skill;
             updateSkillDisplay();
         }
@@ -1749,7 +1782,7 @@
                 const info = MERCENARY_SKILLS[key];
                 const lvl = merc.skillLevels && merc.skillLevels[key] || 1;
                 const cost = info.manaCost + lvl - 1;
-                return `<div>${info.icon} ${info.name} Lv.${lvl} (MP ${cost}) <button onclick="upgradeMercenarySkill(window.currentDetailMercenary,'${key}')">레벨업</button></div>`;
+                return `<div><span class="merc-skill" onclick="showSkillDamage(window.currentDetailMercenary,'${key}',MERCENARY_SKILLS)">${info.icon} ${info.name} Lv.${lvl} (MP ${cost})</span> <button onclick="upgradeMercenarySkill(window.currentDetailMercenary,'${key}')">레벨업</button></div>`;
             }).join('');
 
             const html = `
@@ -2178,7 +2211,7 @@ function killMonster(monster) {
             }
             const mercenary = convertMonsterToMercenary(corpse);
             const activeCount = gameState.activeMercenaries.filter(m => m.alive).length;
-            if (activeCount < 3) {
+            if (activeCount < 5) {
                 if (!spawnMercenaryNearPlayer(mercenary)) {
                     addMessage('❌ 용병을 배치할 공간이 없습니다.', 'info');
                     return;
@@ -2186,7 +2219,7 @@ function killMonster(monster) {
                 gameState.player.gold -= cost;
                 gameState.activeMercenaries.push(mercenary);
                 addMessage(`🎉 ${corpse.name}을(를) 부활시켜 동료로 만들었습니다!`, 'mercenary');
-            } else if (gameState.standbyMercenaries.length < 2) {
+            } else if (gameState.standbyMercenaries.length < 5) {
                 gameState.player.gold -= cost;
                 gameState.standbyMercenaries.push(mercenary);
                 addMessage(`📋 부활한 ${corpse.name}을(를) 대기열에 추가했습니다.`, 'mercenary');
@@ -2427,6 +2460,8 @@ function killMonster(monster) {
 
                 const fireSword = createItem('shortSword', 0, 0, 'Flaming');
                 gameState.player.equipped.weapon = fireSword;
+                const leatherArmor = createItem('leatherArmor', 0, 0);
+                gameState.player.equipped.armor = leatherArmor;
             }
 
             let exitX, exitY;
@@ -2588,7 +2623,7 @@ function killMonster(monster) {
             const mercenary = createMercenary(type, -1, -1);
 
             const activeCount = gameState.activeMercenaries.filter(m => m.alive).length;
-            if (activeCount < 3) {
+            if (activeCount < 5) {
                 if (!spawnMercenaryNearPlayer(mercenary)) {
                     addMessage('❌ 용병을 배치할 공간이 없습니다.', 'info');
                     return;
@@ -2596,7 +2631,7 @@ function killMonster(monster) {
                 gameState.player.gold -= mercType.cost;
                 gameState.activeMercenaries.push(mercenary);
                 addMessage(`🎉 ${mercType.name}을(를) 고용했습니다!`, 'mercenary');
-            } else if (gameState.standbyMercenaries.length < 2) {
+            } else if (gameState.standbyMercenaries.length < 5) {
                 gameState.player.gold -= mercType.cost;
                 gameState.standbyMercenaries.push(mercenary);
                 addMessage(`📋 ${mercType.name}을(를) 대기열에 추가했습니다.`, 'mercenary');
@@ -4206,38 +4241,36 @@ function killMonster(monster) {
                 return;
             }
             if (skill.heal !== undefined) {
-                const healAmount = Math.min(skill.heal * level, getStat(gameState.player, 'maxHealth') - gameState.player.health);
-                if (healAmount <= 0) {
-                    addMessage('❤️ 체력이 이미 가득 찼습니다.', 'info');
+                const targets = [gameState.player, ...gameState.activeMercenaries.filter(m => m.alive)]
+                    .filter(t => getDistance(gameState.player.x, gameState.player.y, t.x, t.y) <= skill.range && t.health < getStat(t, 'maxHealth'));
+                if (targets.length === 0) {
+                    addMessage('❤️ 회복할 대상이 없습니다.', 'info');
                     processTurn();
                     return;
                 }
+                const target = targets.sort((a,b) => (getStat(b,'maxHealth')-b.health)-(getStat(a,'maxHealth')-a.health))[0];
                 gameState.player.mana -= manaCost;
-                gameState.player.health += healAmount;
-                addMessage(`💚 ${skill.name}으로 ${formatNumber(healAmount)} 체력을 회복했습니다.`, 'info');
+                healTarget(gameState.player, target, skill, level);
                 updateStats();
+                updateMercenaryDisplay();
                 processTurn();
                 return;
             }
             if (skill.purify) {
-                const statuses = ['poison','burn','freeze','bleed'];
-                let removed = false;
-                statuses.forEach(s => {
-                    if (gameState.player[s]) {
-                        gameState.player[s] = false;
-                        const key = s + 'Turns';
-                        if (gameState.player[key] !== undefined) gameState.player[key] = 0;
-                        removed = true;
-                    }
-                });
-                if (removed) {
-                    gameState.player.mana -= manaCost;
-                    addMessage(`${skill.icon} 상태이상이 해제되었습니다.`, 'info');
-                    processTurn();
-                } else {
+                const hasStatus = t => t.poison || t.burn || t.freeze || t.bleed;
+                const targets = [gameState.player, ...gameState.activeMercenaries.filter(m => m.alive)]
+                    .filter(t => getDistance(gameState.player.x, gameState.player.y, t.x, t.y) <= skill.range && hasStatus(t));
+                if (targets.length === 0) {
                     addMessage('해제할 상태이상이 없습니다.', 'info');
                     processTurn();
+                    return;
                 }
+                const target = targets[0];
+                gameState.player.mana -= manaCost;
+                purifyTarget(gameState.player, target, skill);
+                updateStats();
+                updateMercenaryDisplay();
+                processTurn();
                 return;
             }
             if (skill.radius !== undefined) {
@@ -4360,7 +4393,25 @@ function killMonster(monster) {
             processTurn();
         }
 
-        function otherAction() {
+        function pickUpAction() {
+            const items = gameState.items.filter(i =>
+                getDistance(gameState.player.x, gameState.player.y, i.x, i.y) <= 2);
+            if (items.length === 0) {
+                addMessage('📦 주변에 아이템이 없습니다.', 'info');
+                processTurn();
+                return;
+            }
+            items.forEach(item => {
+                addToInventory(item);
+                addMessage(`📦 ${item.name}을(를) 획득했습니다!`, 'item');
+                const idx = gameState.items.indexOf(item);
+                if (idx !== -1) gameState.items.splice(idx, 1);
+                if (gameState.dungeon[item.y] && gameState.dungeon[item.y][item.x] === 'item') {
+                    gameState.dungeon[item.y][item.x] = 'empty';
+                }
+            });
+            renderDungeon();
+            processTurn();
         }
 
         function updateShopDisplay() {
@@ -4427,10 +4478,6 @@ function killMonster(monster) {
 
         // 초기화 및 입력 처리
         startGame();
-        document.getElementById('up').onclick = () => movePlayer(0, -1);
-        document.getElementById('down').onclick = () => movePlayer(0, 1);
-        document.getElementById('left').onclick = () => movePlayer(-1, 0);
-        document.getElementById('right').onclick = () => movePlayer(1, 0);
         document.getElementById('save-game').onclick = saveGame;
         document.getElementById('load-game').onclick = loadGame;
         document.getElementById('attack').onclick = meleeAttackAction;
@@ -4443,7 +4490,7 @@ function killMonster(monster) {
         document.getElementById('close-mercenary-detail').onclick = hideMercenaryDetails;
         document.getElementById('close-monster-detail').onclick = hideMonsterDetails;
         document.getElementById('dungeon').addEventListener('click', handleDungeonClick);
-        document.getElementById('other').onclick = otherAction;
+        document.getElementById('pickup').onclick = pickUpAction;
 
         document.addEventListener('keydown', (e) => {
             if (e.key === 'ArrowUp') {
@@ -4476,7 +4523,15 @@ function killMonster(monster) {
             }
             else if (e.key.toLowerCase() === 'v') {
                 e.preventDefault();
+                rangedAction();
+            }
+            else if (e.key.toLowerCase() === 'a') {
+                e.preventDefault();
                 recallMercenaries();
+            }
+            else if (e.key.toLowerCase() === 'b') {
+                e.preventDefault();
+                pickUpAction();
             }
             else if (/^[1-9]$/.test(e.key)) {
                 const idx = parseInt(e.key) - 1;

@@ -12,11 +12,11 @@ Open `index.html` in a modern web browser to start the game. The player now begi
 - Use the arrow keys or on-screen arrows to move your character.
 - Press `Z` (or `F`) or click **Attack** to strike the nearest monster.
 - Number keys `1`-`9` open the details of each hired mercenary.
-- Additional actions such as **Heal**, **Recall**, **Skill1** and **Skill2** are available via the action buttons. You can also use `X` for **Skill1**, `C` for **Skill2** and `V` to recall your mercenaries.
+- Additional actions such as **Heal**, **Recall**, **Skill1** and **Skill2** are available via the action buttons. You can also use `X` for **Skill1**, `C` for **Skill2**, `V` for **Ranged** attack and `A` to recall your mercenaries.
 
 ### Hiring Mercenaries
 
-Click the buttons in the *Hire Mercenary* panel to recruit warriors, archers, healers or wizards. Each mercenary costs gold and appears near the player. You may have up to three mercenaries at a time; when full you will be prompted to replace an existing ally.
+Click the buttons in the *Hire Mercenary* panel to recruit warriors, archers, healers or wizards. Each mercenary costs gold and appears near the player. You may have up to five mercenaries at a time; when full you will be prompted to replace an existing ally.
 
 ### Shop and Skill System
 
