@@ -338,6 +338,30 @@
             border-radius: 4px;
             font-size: 11px;
         }
+        .materials-panel {
+            background: linear-gradient(135deg, #2a2a2a, #333);
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 0 15px rgba(0, 0, 0, 0.7);
+            border: 1px solid #555;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        .materials-panel h2 {
+            color: #00BCD4;
+            margin: 0 0 12px 0;
+            border-bottom: 2px solid #00BCD4;
+            padding-bottom: 8px;
+            text-align: center;
+            font-size: 16px;
+        }
+        .recipe-item {
+            background-color: #444;
+            padding: 6px;
+            margin-bottom: 4px;
+            border-radius: 4px;
+            font-size: 11px;
+        }
         .inventory-slot {
             background-color: #444;
             padding: 6px;
@@ -596,6 +620,14 @@
                 <div id="skill-list"></div>
                 <div>1번 슬롯: <span id="skill1-name">없음</span></div>
                 <div>2번 슬롯: <span id="skill2-name">없음</span></div>
+            </div>
+            <div class="materials-panel" id="materials-panel">
+                <h2>🛠️ 제작</h2>
+                <div id="materials-list"></div>
+                <h3>레시피</h3>
+                <div id="recipe-list"></div>
+                <h3>제작 중</h3>
+                <div id="crafting-queue"></div>
             </div>
         </div>
 
@@ -1062,6 +1094,11 @@
             WIZARD: ['Fireball', 'Iceball']
         };
 
+        const RECIPES = {
+            healthPotion: { name: 'Health Potion', output: 'healthPotion', materials: { herb: 2 }, turns: 3 },
+            shortSword: { name: 'Short Sword', output: 'shortSword', materials: { wood: 1, iron: 2 }, turns: 5 }
+        };
+
 
 
         const HEAL_MANA_COST = 2;
@@ -1168,6 +1205,9 @@
             exitLocation: { x: 0, y: 0 },
             shopLocation: { x: 0, y: 0 },
             shopItems: [],
+            materials: { herb: 5, wood: 3, iron: 0 },
+            knownRecipes: ['healthPotion'],
+            craftingQueue: [],
             floor: 1,
             dungeonSize: 80,
             viewportSize: 25,
@@ -1677,6 +1717,61 @@
             s2.textContent = gameState.player.assignedSkills[2] ? SKILL_DEFS[gameState.player.assignedSkills[2]].name : '없음';
             s1.onclick = () => showSkillDamage(gameState.player, gameState.player.assignedSkills[1], SKILL_DEFS);
             s2.onclick = () => showSkillDamage(gameState.player, gameState.player.assignedSkills[2], SKILL_DEFS);
+        }
+
+        function updateMaterialsDisplay() {
+            const matList = document.getElementById('materials-list');
+            if (!matList) return;
+            matList.innerHTML = '';
+            Object.entries(gameState.materials).forEach(([m, q]) => {
+                const div = document.createElement('div');
+                div.textContent = `${m}: ${formatNumber(q)}`;
+                matList.appendChild(div);
+            });
+
+            const recipes = document.getElementById('recipe-list');
+            recipes.innerHTML = '';
+            gameState.knownRecipes.forEach(key => {
+                const r = RECIPES[key];
+                if (!r) return;
+                const div = document.createElement('div');
+                div.className = 'recipe-item';
+                const req = Object.entries(r.materials).map(([m,q]) => `${m}:${q}`).join(', ');
+                const span = document.createElement('span');
+                span.textContent = `${r.name} (${req})`;
+                div.appendChild(span);
+                const btn = document.createElement('button');
+                btn.textContent = 'Craft';
+                btn.onclick = () => craftItem(key);
+                div.appendChild(btn);
+                recipes.appendChild(div);
+            });
+
+            const queueDiv = document.getElementById('crafting-queue');
+            queueDiv.innerHTML = '';
+            gameState.craftingQueue.forEach(entry => {
+                const div = document.createElement('div');
+                const r = RECIPES[entry.recipe];
+                div.textContent = `${r.name} (${entry.turnsLeft}T)`;
+                queueDiv.appendChild(div);
+            });
+        }
+
+        function craftItem(key) {
+            const recipe = RECIPES[key];
+            if (!recipe) return;
+            for (const [mat, qty] of Object.entries(recipe.materials)) {
+                if ((gameState.materials[mat] || 0) < qty) {
+                    addMessage('재료가 부족합니다.', 'info');
+                    return;
+                }
+            }
+            for (const [mat, qty] of Object.entries(recipe.materials)) {
+                gameState.materials[mat] -= qty;
+            }
+            gameState.craftingQueue.push({ recipe: key, turnsLeft: recipe.turns });
+            addMessage(`🛠️ ${recipe.name} 제작 시작`, 'info');
+            updateMaterialsDisplay();
         }
 
         function assignSkill(slot, skill) {
@@ -3584,6 +3679,18 @@ function killMonster(monster) {
             gameState.player.mana = Math.min(getStat(gameState.player, 'maxMana'), gameState.player.mana + mpRegen);
             updateStats();
             updateMercenaryDisplay();
+            gameState.craftingQueue.forEach(entry => entry.turnsLeft--);
+            for (let i = 0; i < gameState.craftingQueue.length; i++) {
+                const c = gameState.craftingQueue[i];
+                if (c.turnsLeft <= 0) {
+                    const item = createItem(RECIPES[c.recipe].output, 0, 0);
+                    addToInventory(item);
+                    addMessage(`🛠️ ${RECIPES[c.recipe].name} 제작 완료`, 'item');
+                    gameState.craftingQueue.splice(i, 1);
+                    i--;
+                }
+            }
+            updateMaterialsDisplay();
         }
 
         // 용병 AI (개선됨 - 장비 보너스 적용, 안전성 체크 추가)
@@ -4455,8 +4562,9 @@ function killMonster(monster) {
             const panel = document.getElementById('item-target-panel');
             const content = document.getElementById('item-target-content');
             content.innerHTML = `<h3>${item.name} 대상 선택</h3>`;
-
+            const choices = [];
             const addBtn = (label, action) => {
+                choices.push({ label, action });
                 const btn = document.createElement('button');
                 btn.textContent = label;
                 btn.className = 'target-button';
@@ -4484,9 +4592,15 @@ function killMonster(monster) {
                     addBtn(m.name, () => equipItemToMercenary(item, m));
                 });
             }
-
-            panel.style.display = 'block';
-            gameState.gameRunning = false;
+            if (typeof prompt === 'function') {
+                const msg = choices.map((c, i) => `${i}: ${c.label}`).join('\n');
+                const res = prompt(msg);
+                const idx = parseInt(res, 10);
+                if (!isNaN(idx) && choices[idx]) choices[idx].action();
+            } else {
+                panel.style.display = 'block';
+                gameState.gameRunning = false;
+            }
         }
 
         function hideItemTargetPanel() {
@@ -4529,6 +4643,7 @@ function killMonster(monster) {
             }
             updateInventoryDisplay();
             updateSkillDisplay();
+            updateMaterialsDisplay();
             updateActionButtons();
         }
 
