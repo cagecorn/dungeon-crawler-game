@@ -1134,7 +1134,7 @@
                 expNeeded: 20,
                 gold: 1000,
                 inventory: [],
-                skills: ['Fireball'],
+            skills: [],
                 assignedSkills: {1: null, 2: null},
                 equipped: {
                     weapon: null,
@@ -4126,21 +4126,28 @@ function killMonster(monster) {
             updateShopDisplay();
         }
 
-        // 초기화 및 입력 처리
-        gameState.player.job = selectJob();
-        const jobSkills = PLAYER_JOB_SKILLS[gameState.player.job] || [];
-        jobSkills.forEach(s => {
-            if (!gameState.player.skills.includes(s)) gameState.player.skills.push(s);
-        });
-        if (jobSkills[0]) gameState.player.assignedSkills[1] = jobSkills[0];
-        if (jobSkills[1]) gameState.player.assignedSkills[2] = jobSkills[1];
-        generateDungeon();
-        for (let i = 0; i < 5; i++) {
-            gameState.player.inventory.push(createItem('smallExpScroll', 0, 0));
+        function startGame() {
+            gameState.player.job = selectJob();
+            const jobSkills = PLAYER_JOB_SKILLS[gameState.player.job] || [];
+            jobSkills.forEach(s => {
+                if (!gameState.player.skills.includes(s)) {
+                    gameState.player.skills.push(s);
+                }
+            });
+            if (jobSkills[0]) gameState.player.assignedSkills[1] = jobSkills[0];
+            if (jobSkills[1]) gameState.player.assignedSkills[2] = jobSkills[1];
+
+            generateDungeon();
+            for (let i = 0; i < 5; i++) {
+                gameState.player.inventory.push(createItem('smallExpScroll', 0, 0));
+            }
+            updateInventoryDisplay();
+            updateSkillDisplay();
+            updateActionButtons();
         }
-        updateInventoryDisplay();
-        updateSkillDisplay();
-        updateActionButtons();
+
+        // 초기화 및 입력 처리
+        startGame();
         document.getElementById('up').onclick = () => movePlayer(0, -1);
         document.getElementById('down').onclick = () => movePlayer(0, 1);
         document.getElementById('left').onclick = () => movePlayer(-1, 0);
