@@ -3398,23 +3398,31 @@ function killMonster(monster) {
             if (saved.activeMercenaries) gameState.activeMercenaries = saved.activeMercenaries;
             else if (saved.mercenaries) gameState.activeMercenaries = saved.mercenaries;
             if (saved.standbyMercenaries) gameState.standbyMercenaries = saved.standbyMercenaries;
-            if (!gameState.player.endurance) {
-                gameState.player.endurance = getStat(gameState.player, 'maxHealth') / 2;
-                gameState.player.focus = getStat(gameState.player, 'maxMana') / 2;
-                gameState.player.strength = getStat(gameState.player, 'attack');
-                gameState.player.agility = Math.max(0, Math.round((gameState.player.accuracy - 0.7) / 0.02));
-                gameState.player.intelligence = getStat(gameState.player, 'magicPower');
+            if (!saved.player.endurance) {
+                const sp = saved.player;
+                const endurance = sp.maxHealth / 2;
+                gameState.player.endurance = endurance;
+                gameState.player.focus = sp.maxMana / 2;
+                gameState.player.strength = sp.attack;
+                gameState.player.agility = Math.max(0, Math.round((sp.accuracy - 0.7) / 0.02));
+                gameState.player.intelligence = sp.magicPower;
+                gameState.player.baseDefense = sp.defense - Math.floor(endurance * 0.1);
             }
-            gameState.activeMercenaries.forEach(m => {
+
+            const convertMercenary = m => {
                 if (!m.endurance) {
-                    m.endurance = getStat(m, 'maxHealth') / 2;
-                    m.focus = getStat(m, 'maxMana') / 2;
-                    m.strength = getStat(m, 'attack');
+                    const endurance = m.maxHealth / 2;
+                    m.endurance = endurance;
+                    m.focus = (m.maxMana || 0) / 2;
+                    m.strength = m.attack;
                     m.agility = Math.max(0, Math.round((m.accuracy - 0.7) / 0.02));
-                    m.intelligence = getStat(m, 'magicPower');
-                    m.baseDefense = m.baseDefense || m.defense - Math.floor(m.endurance * 0.1);
+                    m.intelligence = m.magicPower;
+                    m.baseDefense = m.defense - Math.floor(endurance * 0.1);
                 }
-            });
+            };
+
+            gameState.activeMercenaries.forEach(convertMercenary);
+            gameState.standbyMercenaries.forEach(convertMercenary);
             updateFogOfWar();
             updateStats();
             updateInventoryDisplay();
