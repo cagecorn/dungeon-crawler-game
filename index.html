@@ -3816,6 +3816,9 @@ function killMonster(monster) {
                         if (monsterIndex !== -1) {
                             gameState.monsters.splice(monsterIndex, 1);
                         }
+                        nearestMonster.health = 0;
+                        gameState.corpses.push(nearestMonster);
+                        gameState.dungeon[nearestMonster.y][nearestMonster.x] = 'corpse';
                     }
                     mercenary.mana -= skillManaCost;
                     updateMercenaryDisplay();
@@ -3899,6 +3902,9 @@ function killMonster(monster) {
                         if (monsterIndex !== -1) {
                             gameState.monsters.splice(monsterIndex, 1);
                         }
+                        nearestMonster.health = 0;
+                        gameState.corpses.push(nearestMonster);
+                        gameState.dungeon[nearestMonster.y][nearestMonster.x] = 'corpse';
                     }
                     mercenary.mana -= skillManaCost;
                     updateMercenaryDisplay();
@@ -3972,6 +3978,9 @@ function killMonster(monster) {
                         if (monsterIndex !== -1) {
                             gameState.monsters.splice(monsterIndex, 1);
                         }
+                        nearestMonster.health = 0;
+                        gameState.corpses.push(nearestMonster);
+                        gameState.dungeon[nearestMonster.y][nearestMonster.x] = 'corpse';
                     }
                     mercenary.hasActed = true;
                     return;
