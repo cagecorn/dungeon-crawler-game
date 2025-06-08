@@ -1032,7 +1032,7 @@
             Heal: { name: 'Heal', icon: '💖', heal: 10, range: 2, manaCost: 3 },
             Purify: { name: 'Purify', icon: '🌀', purify: true, range: 2, manaCost: 2 },
             DoubleStrike: { name: 'Double Strike', icon: '🔪', range: 1, manaCost: 3, melee: true, hits: 2 },
-            ChargeAttack: { name: 'Charge Attack', icon: '⚡', range: 2, manaCost: 2, melee: true, multiplier: 1.5 },
+            ChargeAttack: { name: 'Charge Attack', icon: '⚡', range: 2, manaCost: 2, melee: true, multiplier: 1.5, dashRange: 4 },
             HawkEye: { name: 'Hawk Eye', icon: '🦅', range: 5, manaCost: 2, damageDice: '1d6' },
             MightAura: { name: 'Might Aura', icon: '💪', passive: true, radius: 6, aura: { attack: 1, magicPower: 1 } },
             ProtectAura: { name: 'Protect Aura', icon: '🛡️', passive: true, radius: 6, aura: { defense: 1, magicResist: 1 } },
@@ -4305,9 +4305,10 @@ function killMonster(monster) {
             }
             let target = null;
             let dist = Infinity;
+            const searchRange = (skill.melee && skill.dashRange) ? skill.dashRange : skill.range;
             for (const monster of gameState.monsters) {
                 const d = getDistance(gameState.player.x, gameState.player.y, monster.x, monster.y);
-                if (d <= skill.range && d < dist && hasLineOfSight(gameState.player.x, gameState.player.y, monster.x, monster.y)) {
+                if (d <= searchRange && d < dist && hasLineOfSight(gameState.player.x, gameState.player.y, monster.x, monster.y)) {
                     target = monster;
                     dist = d;
                 }
@@ -4318,6 +4319,28 @@ function killMonster(monster) {
                 return;
             }
             if (skill.melee) {
+                if (skill.dashRange && dist <= skill.dashRange && hasLineOfSight(gameState.player.x, gameState.player.y, target.x, target.y)) {
+                    const path = findPath(gameState.player.x, gameState.player.y, target.x, target.y);
+                    let destX = gameState.player.x;
+                    let destY = gameState.player.y;
+                    if (path && path.length > 1) {
+                        const maxSteps = Math.min(skill.dashRange, path.length - 2);
+                        for (let i = 1; i <= maxSteps; i++) {
+                            const step = path[i];
+                            const blocked =
+                                gameState.dungeon[step.y][step.x] === 'wall' ||
+                                gameState.dungeon[step.y][step.x] === 'monster' ||
+                                gameState.activeMercenaries.some(m => m.alive && m.x === step.x && m.y === step.y);
+                            if (blocked) {
+                                break;
+                            }
+                            destX = step.x;
+                            destY = step.y;
+                        }
+                    }
+                    gameState.player.x = destX;
+                    gameState.player.y = destY;
+                }
                 const attackMult = skill.multiplier || 1;
                 const hits = skill.hits || 1;
                 gameState.player.mana -= manaCost;
