@@ -1155,7 +1155,9 @@
 
         // 간단한 치유 로직
         function healTarget(healer, target, skillInfo) {
-            let healAmount = Math.min(3 + healer.level, getStat(target, 'maxHealth') - target.health);
+            const base = skillInfo?.heal ?? 3 + healer.level;
+            const power = getStat(healer, 'magicPower');
+            let healAmount = Math.min(base + power, getStat(target, 'maxHealth') - target.health);
             if (healAmount > 0) {
                 target.health += healAmount;
                 const name = target === gameState.player ? '플레이어' : target.name;
