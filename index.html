@@ -588,6 +588,7 @@
             <div class="stats">
                 <h2>🛡️ 플레이어 정보</h2>
                 <div>📊 레벨: <span id="level">1</span></div>
+                <div>📚 스킬포인트: <span id="skillPoints">0</span></div>
                 <div>💪 힘: <span id="strengthStat">5</span></div>
                 <div>🏃 민첩: <span id="agilityStat">5</span></div>
                 <div>🛡 체력: <span id="enduranceStat">10</span></div>
@@ -1117,6 +1118,8 @@
                 expNeeded: 20,
                 gold: 1000,
                 inventory: [],
+                skillPoints: 0,
+                skillLevels: {},
             skills: [],
                 assignedSkills: {1: null, 2: null},
                 equipped: {
@@ -1465,7 +1468,7 @@
                     let attackValue;
                     let magic = !!proj.magic;
                     if (proj.damageDice !== undefined) {
-                        attackValue = rollDice(proj.damageDice);
+                        attackValue = rollDice(proj.damageDice) * (proj.level || 1);
                         if (magic) {
                             attackValue += getStat(gameState.player, 'magicPower');
                         }
@@ -1578,8 +1581,16 @@
                 const div = document.createElement('div');
                 div.className = 'skill-item';
                 const info = SKILL_DEFS[skill];
-                div.textContent = `${info.icon} ${info.name}`;
+                const level = gameState.player.skillLevels[skill] || 1;
+                div.textContent = `${info.icon} ${info.name} (Lv ${level})`;
                 div.onclick = () => {
+                    if (gameState.player.skillPoints > 0 && skill !== 'Purify' && confirm(`${info.name} 레벨업?`)) {
+                        gameState.player.skillPoints -= 1;
+                        gameState.player.skillLevels[skill] = level + 1;
+                        updateStats();
+                        updateSkillDisplay();
+                        return;
+                    }
                     const slot = prompt('Assign to slot (1 or 2)?');
                     if (slot === '1' || slot === '2') assignSkill(parseInt(slot,10), skill);
                 };
@@ -1828,6 +1839,7 @@
         // 플레이어 능력치 표시 업데이트
         function updateStats() {
             document.getElementById('level').textContent = formatNumber(gameState.player.level);
+            document.getElementById('skillPoints').textContent = formatNumber(gameState.player.skillPoints);
             document.getElementById('strengthStat').textContent = formatNumber(gameState.player.strength);
             document.getElementById('agilityStat').textContent = formatNumber(gameState.player.agility);
             document.getElementById('enduranceStat').textContent = formatNumber(gameState.player.endurance);
@@ -2096,6 +2108,8 @@ function killMonster(monster) {
                 gameState.player.exp -= gameState.player.expNeeded;
                 gameState.player.level += 1;
 
+                gameState.player.skillPoints += 1;
+
                 gameState.player.endurance += 2;
                 gameState.player.strength += 1;
                 gameState.player.agility += 1;
@@ -2104,8 +2118,9 @@ function killMonster(monster) {
                 gameState.player.mana = getStat(gameState.player, 'maxMana');
                 gameState.player.expNeeded = Math.floor(gameState.player.expNeeded * 1.5);
                 addMessage(`🎉 플레이어 레벨이 ${gameState.player.level}이(가) 되었습니다!`, 'level');
-                
+
                 updateStats();
+                updateSkillDisplay();
             }
         }
 
@@ -3873,31 +3888,33 @@ function killMonster(monster) {
             useSkill(skill);
         }
 
-       function useSkill(skillKey) {
+        function useSkill(skillKey) {
             if (!skillKey) {
                 addMessage('스킬이 설정되어 있지 않습니다.', 'info');
                 processTurn();
                 return;
             }
             const skill = SKILL_DEFS[skillKey];
+            const level = gameState.player.skillLevels[skillKey] || 1;
+            const manaCost = skill.manaCost + level - 1;
             if (skill.passive) {
                 addMessage('이 스킬은 항상 효과가 발동중입니다.', 'info');
                 processTurn();
                 return;
             }
-            if (gameState.player.mana < skill.manaCost) {
+            if (gameState.player.mana < manaCost) {
                 addMessage('마나가 부족합니다.', 'info');
                 processTurn();
                 return;
             }
             if (skill.heal !== undefined) {
-                const healAmount = Math.min(skill.heal, getStat(gameState.player, 'maxHealth') - gameState.player.health);
+                const healAmount = Math.min(skill.heal * level, getStat(gameState.player, 'maxHealth') - gameState.player.health);
                 if (healAmount <= 0) {
                     addMessage('❤️ 체력이 이미 가득 찼습니다.', 'info');
                     processTurn();
                     return;
                 }
-                gameState.player.mana -= skill.manaCost;
+                gameState.player.mana -= manaCost;
                 gameState.player.health += healAmount;
                 addMessage(`💚 ${skill.name}으로 ${formatNumber(healAmount)} 체력을 회복했습니다.`, 'info');
                 updateStats();
@@ -3916,7 +3933,7 @@ function killMonster(monster) {
                     }
                 });
                 if (removed) {
-                    gameState.player.mana -= skill.manaCost;
+                    gameState.player.mana -= manaCost;
                     addMessage(`${skill.icon} 상태이상이 해제되었습니다.`, 'info');
                     processTurn();
                 } else {
@@ -3932,9 +3949,9 @@ function killMonster(monster) {
                     processTurn();
                     return;
                 }
-                gameState.player.mana -= skill.manaCost;
+                gameState.player.mana -= manaCost;
                 targets.slice().forEach(monster => {
-                    const attackValue = rollDice(skill.damageDice) + getStat(gameState.player, 'magicPower');
+                    const attackValue = rollDice(skill.damageDice) * level + getStat(gameState.player, 'magicPower');
                     const result = performAttack(gameState.player, monster, { attackValue, magic: skill.magic, element: skill.element, damageDice: skill.damageDice, status: gameState.player.equipped.weapon && gameState.player.equipped.weapon.status });
                     const detail = `hit roll ${result.hitRoll} vs ${result.defenseTarget} → ${result.hit ? 'hit' : 'miss'}${result.hit ? '; damage roll ' + result.damageRoll : ''}`;
                     if (!result.hit) {
@@ -3972,9 +3989,9 @@ function killMonster(monster) {
             if (skill.melee) {
                 const attackMult = skill.multiplier || 1;
                 const hits = skill.hits || 1;
-                gameState.player.mana -= skill.manaCost;
+                gameState.player.mana -= manaCost;
                 for (let i = 0; i < hits; i++) {
-                    const attackValue = Math.floor(getStat(gameState.player, 'attack') * attackMult);
+                    const attackValue = Math.floor(getStat(gameState.player, 'attack') * attackMult * level);
                     const result = performAttack(gameState.player, target, { attackValue, status: gameState.player.equipped.weapon && gameState.player.equipped.weapon.status });
                     const detail = `hit roll ${result.hitRoll} vs ${result.defenseTarget} → ${result.hit ? 'hit' : 'miss'}${result.hit ? '; damage roll ' + result.damageRoll : ''}`;
                     if (!result.hit) {
@@ -3998,8 +4015,8 @@ function killMonster(monster) {
             }
             const dx = Math.sign(target.x - gameState.player.x);
             const dy = Math.sign(target.y - gameState.player.y);
-            gameState.player.mana -= skill.manaCost;
-            gameState.projectiles.push({ x: gameState.player.x, y: gameState.player.y, dx, dy, rangeLeft: dist, icon: skill.icon, damageDice: skill.damageDice, magic: skill.magic, skill: skillKey, element: skill.element });
+            gameState.player.mana -= manaCost;
+            gameState.projectiles.push({ x: gameState.player.x, y: gameState.player.y, dx, dy, rangeLeft: dist, icon: skill.icon, damageDice: skill.damageDice, magic: skill.magic, skill: skillKey, element: skill.element, level });
             processTurn();
         }
 
@@ -4091,10 +4108,12 @@ function killMonster(monster) {
         function startGame() {
             gameState.player.job = null;
             const allSkills = Object.keys(SKILL_DEFS);
+            gameState.player.skillPoints = 0;
             allSkills.forEach(s => {
                 if (!gameState.player.skills.includes(s)) {
                     gameState.player.skills.push(s);
                 }
+                gameState.player.skillLevels[s] = 1;
             });
             if (allSkills[0]) gameState.player.assignedSkills[1] = allSkills[0];
             if (allSkills[1]) gameState.player.assignedSkills[2] = allSkills[1];
