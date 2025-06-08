@@ -10,12 +10,12 @@ async function run() {
   win.updateSkillDisplay = () => {};
   win.requestAnimationFrame = fn => fn();
 
-  const { createSuperiorMonster, convertMonsterToMercenary } = win;
+  const { createSuperiorMonster, createEliteMonster, createMonster, convertMonsterToMercenary } = win;
 
-  const seq = [0];
   const origRandom = win.Math.random;
-  win.Math.random = () => seq.shift() ?? origRandom();
-
+  win.Math.random = () => 0;
+  const base = createMonster('GOBLIN', 1, 1, 2);
+  const elite = createEliteMonster('GOBLIN', 1, 1, 1);
   const monster = createSuperiorMonster('GOBLIN', 1, 1, 1);
   win.Math.random = origRandom;
 
@@ -29,6 +29,19 @@ async function run() {
   }
   if (!monster.stars || Object.values(monster.stars).reduce((a,b)=>a+b,0) > 9) {
     console.error('invalid star values');
+    process.exit(1);
+  }
+
+  const expectedAtk = Math.floor(base.attack * 2);
+  const expectedDef = Math.floor(base.defense * 2);
+  const expectedHp = Math.floor(base.health * 2);
+  if (monster.attack !== expectedAtk || monster.defense !== expectedDef || monster.health !== expectedHp) {
+    console.error('superior stats not stronger');
+    process.exit(1);
+  }
+
+  if (monster.maxMana <= elite.maxMana || monster.mana !== monster.maxMana || monster.maxMana === 0) {
+    console.error('superior mana not assigned');
     process.exit(1);
   }
 

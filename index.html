@@ -2245,10 +2245,13 @@
             monster.auraSkill = auraSkill;
             monster.skillLevels = { [skill]: 1, [auraSkill]: 1 };
             monster.name = `상급 ${monster.name}`;
-            monster.attack = Math.floor(monster.attack * 1.5);
-            monster.defense = Math.floor(monster.defense * 1.5);
-            monster.health = Math.floor(monster.health * 1.5);
+            monster.attack = Math.floor(monster.attack * 2);
+            monster.defense = Math.floor(monster.defense * 2);
+            monster.health = Math.floor(monster.health * 2);
             monster.maxHealth = monster.health;
+            monster.focus = 5;
+            monster.maxMana = getStat(monster, 'maxMana');
+            monster.mana = monster.maxMana;
             monster.lootChance = 0.8;
             return monster;
         }
