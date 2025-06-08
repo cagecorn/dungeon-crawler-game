@@ -3246,7 +3246,7 @@ function killMonster(monster) {
                     if (skillKey === 'ChargeAttack') {
                         attackValue = Math.floor(attackValue * skillInfo.multiplier);
                     } else if (skillKey === 'Fireball' || skillKey === 'Iceball') {
-                        attackValue = skillInfo.damage;
+                        attackValue = skillInfo.damage + getStat(mercenary, 'magicPower');
                     }
 
                     const hits = skillKey === 'DoubleStrike' ? 2 : 1;
