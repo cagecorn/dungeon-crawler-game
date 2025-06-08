@@ -1,38 +1,26 @@
-const { rollDice } = require('../dice');
+const { loadGame } = require('./helpers');
 const assert = require('assert');
-const { JSDOM } = require('jsdom');
-const path = require('path');
 
 async function run() {
-  const dom = await JSDOM.fromFile(path.join(__dirname, '..', 'index.html'), {
-    runScripts: 'dangerously',
-    resources: 'usable',
-    url: 'http://localhost',
-    beforeParse(window) { window.rollDice = rollDice; }
-  });
-
-  await new Promise(resolve => {
-    if (dom.window.document.readyState === 'complete') resolve();
-    else dom.window.addEventListener('load', resolve);
-  });
+  const win = await loadGame();
 
   // stub out visual functions
-  dom.window.updateStats = () => {};
-  dom.window.updateMercenaryDisplay = () => {};
-  dom.window.updateInventoryDisplay = () => {};
-  dom.window.renderDungeon = () => {};
-  dom.window.updateCamera = () => {};
-  dom.window.updateSkillDisplay = () => {};
-  dom.window.requestAnimationFrame = fn => fn();
+  win.updateStats = () => {};
+  win.updateMercenaryDisplay = () => {};
+  win.updateInventoryDisplay = () => {};
+  win.renderDungeon = () => {};
+  win.updateCamera = () => {};
+  win.updateSkillDisplay = () => {};
+  win.requestAnimationFrame = fn => fn();
 
   const {
     hireMercenary,
     createMonster,
     processMercenaryTurn,
     gameState
-  } = dom.window;
+  } = win;
 
-  const MERCENARY_SKILLS = dom.window.eval('MERCENARY_SKILLS');
+  const MERCENARY_SKILLS = win.eval('MERCENARY_SKILLS');
 
   // create a simple empty dungeon
   const size = 5;

@@ -1,19 +1,7 @@
-const { JSDOM } = require('jsdom');
-const path = require('path');
+const { loadGame } = require('./helpers');
 
 async function run() {
-  const dom = await JSDOM.fromFile(path.join(__dirname, '..', 'index.html'), {
-    runScripts: 'dangerously',
-    resources: 'usable',
-    url: 'http://localhost'
-  });
-
-  await new Promise(resolve => {
-    if (dom.window.document.readyState === 'complete') resolve();
-    else dom.window.addEventListener('load', resolve);
-  });
-
-  const win = dom.window;
+  const win = await loadGame();
   win.updateStats = () => {};
   win.updateMercenaryDisplay = () => {};
   win.updateInventoryDisplay = () => {};
