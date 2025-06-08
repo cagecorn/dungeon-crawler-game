@@ -21,7 +21,7 @@ Click the buttons in the *Hire Mercenary* panel to recruit warriors, archers, he
 
 ### Shop and Skill System
 
-Spend collected gold in the shop to purchase items. Bought gear is placed in your inventory and can boost your stats when equipped. As you gain experience you can unlock new skills and activate them with the **Skill1** and **Skill2** buttons.
+Spend collected gold in the shop to purchase items. Bought gear is placed in your inventory and can boost your stats when equipped. Each chosen job automatically grants two starting skills that you can assign to the **Skill1** and **Skill2** slots.
 
 ### Mercenary Skills
 
