@@ -1163,6 +1163,7 @@
             corpses: [],
             treasures: [],
             items: [],
+            materials: [],
             projectiles: [],
             exitLocation: { x: 0, y: 0 },
             shopLocation: { x: 0, y: 0 },
@@ -2239,6 +2240,23 @@ function killMonster(monster) {
             renderDungeon();
         }
 
+        function dissectCorpse(corpse) {
+            const materialsPool = ['뼈', '가죽', '정수'];
+            const gained = [];
+            const count = Math.floor(Math.random() * 3) + 1;
+            for (let i = 0; i < count; i++) {
+                const mat = materialsPool[Math.floor(Math.random() * materialsPool.length)];
+                gameState.materials.push(mat);
+                gained.push(mat);
+            }
+            const idx = gameState.corpses.findIndex(c => c === corpse);
+            if (idx !== -1) gameState.corpses.splice(idx, 1);
+            const hasItem = gameState.items.some(i => i.x === corpse.x && i.y === corpse.y);
+            gameState.dungeon[corpse.y][corpse.x] = hasItem ? 'item' : 'empty';
+            addMessage(`🔪 ${corpse.name}의 시체를 해체하여 ${gained.join(', ')}을(를) 얻었습니다.`, 'item');
+            renderDungeon();
+        }
+
         function applyStatusEffects(entity) {
             const name = entity === gameState.player ? '플레이어' : entity.name;
             let died = false;
@@ -3284,9 +3302,20 @@ function killMonster(monster) {
             if (cellType === 'corpse') {
                 const corpse = gameState.corpses.find(c => c.x === newX && c.y === newY);
                 if (corpse) {
-                    const confirmRevive = (typeof confirm === 'function' ? confirm('200골드를 사용해 이 몬스터를 부활시키겠습니까?\n취소를 누르면 아이템을 획득합니다.') : false);
-                    if (confirmRevive) {
+                    let choice = 'revive';
+                    if (typeof prompt === 'function' && !String(prompt).includes('notImplemented')) {
+                        const input = prompt('시체를 어떻게 처리하시겠습니까?\n1: 부활 (200골드)\n2: 해체\n기타: 아이템만 획득');
+                        if (input === '2') choice = 'dissect';
+                        else if (input === '1') choice = 'revive';
+                        else choice = 'loot';
+                    } else {
+                        const confirmRevive = (typeof confirm === 'function' ? confirm('200골드를 사용해 이 몬스터를 부활시키겠습니까?\n취소를 누르면 아이템을 획득합니다.') : false);
+                        choice = confirmRevive ? 'revive' : 'loot';
+                    }
+                    if (choice === 'revive') {
                         reviveMonsterCorpse(corpse);
+                    } else if (choice === 'dissect') {
+                        dissectCorpse(corpse);
                     } else {
                         const item = gameState.items.find(i => i.x === newX && i.y === newY);
                         if (item) {
@@ -3298,8 +3327,6 @@ function killMonster(monster) {
                                 gameState.items.splice(itemIndex, 1);
                             }
                         }
-                        // keep the corpse so the player may revive later
-                        // remove item indicator from the dungeon
                         gameState.dungeon[newY][newX] = 'corpse';
                     }
                 }
