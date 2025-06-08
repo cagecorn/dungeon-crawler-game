@@ -636,9 +636,24 @@
         <div id="monster-detail-content"></div>
         <button id="close-monster-detail">닫기</button>
     </div>
-
     <script>
-        // 아이템 타입 정의
+(function(global){
+  function rollDice(notation){
+    if(typeof notation!=="string") throw new Error("notation must be a string");
+    const m=notation.trim().match(/^(\d*)d(\d+)([+-]\d+)?$/i);
+    if(!m) throw new Error("invalid dice notation");
+    const c=parseInt(m[1]||"1",10);
+    const s=parseInt(m[2],10);
+    const mod=m[3]?parseInt(m[3],10):0;
+    let t=0;
+    for(let i=0;i<c;i++){t+=Math.floor(Math.random()*s)+1;}
+    t+=mod;
+    return t;
+  }
+  global.rollDice=rollDice;
+})(this);
+    </script>
+    <script>
         const ITEM_TYPES = {
             WEAPON: 'weapon',
             ARMOR: 'armor',
@@ -746,6 +761,7 @@
                 baseMagicPower: 0,
                 baseMagicResist: 0,
                 baseExp: 6,
+                damageDice: "1d4",
                 baseGold: 3,
                 speed: 0.5,
                 range: 1,
@@ -765,6 +781,7 @@
                 baseMagicResist: 0,
                 baseExp: 4,
                 baseGold: 5,
+                damageDice: "1d4",
                 speed: 1.5,
                 range: 1,
                 special: 'fast'
@@ -782,6 +799,7 @@
                 baseMagicPower: 0,
                 baseMagicResist: 0,
                 baseExp: 8,
+                damageDice: "1d6",
                 baseGold: 7,
                 speed: 1,
                 range: 3,
@@ -801,6 +819,7 @@
                 baseMagicPower: 5,
                 baseMagicResist: 1,
                 baseExp: 10,
+                damageDice: "1d6",
                 baseGold: 10,
                 speed: 1,
                 range: 4,
@@ -821,6 +840,7 @@
                 baseMagicResist: 0.5,
                 baseExp: 15,
                 baseGold: 12,
+                damageDice: "1d8",
                 speed: 0.8,
                 range: 1,
                 special: 'strong',
@@ -839,6 +859,7 @@
                 baseMagicPower: 3,
                 baseMagicResist: 2,
                 baseExp: 50,
+                damageDice: "1d10",
                 baseGold: 50,
                 speed: 1,
                 range: 2,
@@ -853,6 +874,7 @@
                 name: '🗡️ 단검',
                 type: ITEM_TYPES.WEAPON,
                 attack: 2,
+                damageDice: "1d6",
                 price: 10,
                 level: 1,
                 icon: '🗡️'
@@ -862,6 +884,7 @@
                 type: ITEM_TYPES.WEAPON,
                 attack: 4,
                 price: 25,
+                damageDice: "1d8",
                 level: 2,
                 icon: '⚔️'
             },
@@ -871,6 +894,7 @@
                 attack: 6,
                 price: 50,
                 level: 3,
+                damageDice: "1d10",
                 icon: '✨'
             },
             magicStaff: {
@@ -880,6 +904,7 @@
                 manaRegen: 1,
                 price: 30,
                 level: 2,
+                damageDice: "1d4",
                 icon: '🔮'
             },
             leatherArmor: {
@@ -1012,8 +1037,8 @@
         };
 
         const SKILL_DEFS = {
-            Fireball: { name: 'Fireball', icon: '🔥', damage: 10, range: 5, magic: true, element: 'fire', manaCost: 3 },
-            Iceball: { name: 'Iceball', icon: '❄️', damage: 8, range: 5, magic: true, element: 'ice', manaCost: 2 },
+            Fireball: { name: 'Fireball', icon: '🔥', damageDice: '1d10', range: 5, magic: true, element: 'fire', manaCost: 3 },
+            Iceball: { name: 'Iceball', icon: '❄️', damageDice: '1d8', range: 5, magic: true, element: 'ice', manaCost: 2 },
             Healing: { name: 'Healing', icon: '💖', heal: 10, manaCost: 3 }
         };
 
@@ -1022,8 +1047,8 @@
             ChargeAttack: { name: 'Charge Attack', icon: '⚡', range: 2, manaCost: 2, multiplier: 1.5, dashRange: 4 },
             DoubleStrike: { name: 'Double Strike', icon: '🔪', range: 1, manaCost: 3 },
             Heal: { name: 'Heal', icon: '✨', range: 2, manaCost: 2 },
-            Fireball: { name: 'Fireball', icon: '🔥', range: 4, manaCost: 3, damage: 8, magic: true, element: 'fire' },
-            Iceball: { name: 'Iceball', icon: '❄️', range: 5, manaCost: 2, damage: 8, magic: true, element: 'ice' },
+            Fireball: { name: 'Fireball', icon: '🔥', range: 4, manaCost: 3, damageDice: '1d8', magic: true, element: 'fire' },
+            Iceball: { name: 'Iceball', icon: '❄️', range: 5, manaCost: 2, damageDice: '1d8', magic: true, element: 'ice' },
             HawkEye: { name: 'Hawk Eye', icon: '🦅', range: 5, manaCost: 2 }
         };
 
@@ -1211,21 +1236,19 @@
             }
             return false;
         }
-
         function tryApplyStatus(target, status, turns) {
             if (!target.statusResistances || target.statusResistances[status] === undefined) return false;
             let resist = getStatusResist(target, status);
-            // removed obsolete trait check
-            if (Math.random() > resist) {
+            const dc = Math.floor(resist * 20);
+            if (rollDice("1d20") > dc) {
                 target[status] = true;
-                const key = status + 'Turns';
+                const key = status + "Turns";
                 if (target[key] === undefined) target[key] = 0;
                 target[key] = Math.max(target[key], turns);
                 return true;
             }
             return false;
         }
-
         function getStatusResist(character, status) {
             let value = character.statusResistances && character.statusResistances[status] ? character.statusResistances[status] : 0;
             if (character.equipped) {
@@ -1250,12 +1273,14 @@
 
             const attackerAcc = getStat(attacker, 'accuracy');
             const defenderEva = getStat(defender, 'evasion');
-            const hitChance = attackerAcc / (attackerAcc + defenderEva);
-            if (Math.random() > hitChance) {
+            const attackBonus = Math.floor(attackerAcc * 5);
+            const defenseTarget = 10 + Math.floor(defenderEva * 5);
+            if (rollDice('1d20') + attackBonus < defenseTarget) {
                 return { hit: false };
             }
 
-            let baseDamage = Math.max(1, attackStat - defenseStat);
+            const damageRoll = rollDice(options.damageDice || attacker.damageDice || '1d4');
+            let baseDamage = Math.max(1, damageRoll + attackStat - defenseStat);
 
             let crit = false;
             const critChance = getStat(attacker, 'critChance');
@@ -1399,8 +1424,8 @@
                 if (monster) {
                     let attackValue;
                     let magic = !!proj.magic;
-                    if (proj.damage !== undefined) {
-                        attackValue = proj.damage;
+                    if (proj.damageDice !== undefined) {
+                        attackValue = rollDice(proj.damageDice);
                         if (magic) {
                             attackValue += getStat(gameState.player, 'magicPower');
                         }
@@ -1409,7 +1434,7 @@
                     } else {
                         attackValue = getStat(gameState.player, 'attack');
                     }
-                    const result = performAttack(gameState.player, monster, { attackValue, magic, element: proj.element, status: gameState.player.equipped.weapon && gameState.player.equipped.weapon.status });
+                    const result = performAttack(gameState.player, monster, { attackValue, magic, element: proj.element, status: gameState.player.equipped.weapon && gameState.player.equipped.weapon.status, damageDice: proj.damageDice });
                     const icon = proj.icon || '➡️';
                     const name = proj.skill ? SKILL_DEFS[proj.skill].name : '원거리 공격';
                     if (!result.hit) {
@@ -3362,13 +3387,13 @@ function killMonster(monster) {
                     if (skillKey === 'ChargeAttack') {
                         attackValue = Math.floor(attackValue * skillInfo.multiplier);
                     } else if (skillKey === 'Fireball' || skillKey === 'Iceball') {
-                        attackValue = skillInfo.damage + getStat(mercenary, 'magicPower');
+                        attackValue = rollDice(skillInfo.damageDice) + getStat(mercenary, 'magicPower');
                     }
 
                     const hits = skillKey === 'DoubleStrike' ? 2 : 1;
                     const icon = skillInfo.icon;
                     for (let i = 0; i < hits; i++) {
-                        const result = performAttack(mercenary, nearestMonster, { attackValue, magic: skillInfo.magic, element: skillInfo.element, status: mercenary.equipped.weapon && mercenary.equipped.weapon.status });
+                        const result = performAttack(mercenary, nearestMonster, { attackValue, magic: skillInfo.magic, element: skillInfo.element, status: mercenary.equipped.weapon && mercenary.equipped.weapon.status, damageDice: skillInfo.damageDice });
                         if (!result.hit) {
                             addMessage(`❌ ${mercenary.name}의 ${skillInfo.name}이 빗나갔습니다!`, "mercenary");
                         } else {
@@ -3738,7 +3763,7 @@ function killMonster(monster) {
             const dx = Math.sign(target.x - gameState.player.x);
             const dy = Math.sign(target.y - gameState.player.y);
             gameState.player.mana -= skill.manaCost;
-            gameState.projectiles.push({ x: gameState.player.x, y: gameState.player.y, dx, dy, rangeLeft: dist, icon: skill.icon, damage: skill.damage, magic: skill.magic, skill: skillKey, element: skill.element });
+            gameState.projectiles.push({ x: gameState.player.x, y: gameState.player.y, dx, dy, rangeLeft: dist, icon: skill.icon, damageDice: skill.damageDice, magic: skill.magic, skill: skillKey, element: skill.element });
             processTurn();
         }
 
