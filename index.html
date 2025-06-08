@@ -261,6 +261,30 @@
             border: 1px solid #555;
             box-shadow: 0 0 15px rgba(0, 0, 0, 0.7);
         }
+        .incubator-panel {
+            background: linear-gradient(135deg, #2a2a2a, #333);
+            padding: 15px;
+            border-radius: 8px;
+            border: 1px solid #555;
+            box-shadow: 0 0 15px rgba(0, 0, 0, 0.7);
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        .incubator-panel h2 {
+            color: #FFEB3B;
+            margin: 0 0 12px 0;
+            border-bottom: 2px solid #FFEB3B;
+            padding-bottom: 8px;
+            text-align: center;
+            font-size: 16px;
+        }
+        .incubator-slot {
+            background-color: #444;
+            padding: 6px;
+            margin-bottom: 4px;
+            border-radius: 4px;
+            font-size: 11px;
+        }
         .hire-panel h2 {
             color: #FFD700;
             margin: 0 0 12px 0;
@@ -664,7 +688,14 @@
                 <h3>대기 중</h3>
                 <div id="standby-mercenary-list"></div>
             </div>
-            
+
+            <div class="incubator-panel">
+                <h2>🥚 인큐베이터</h2>
+                <div id="incubator-slots"></div>
+                <h3>대기실</h3>
+                <div id="hatched-list"></div>
+            </div>
+
             <div class="hire-panel">
                 <h2>💼 용병 고용</h2>
                 <button class="hire-button" onclick="hireMercenary('WARRIOR')">⚔️ 전사 고용 (50💰)</button>
@@ -726,7 +757,8 @@
             ACCESSORY: 'accessory',
             POTION: 'potion',
             REVIVE: 'revive',
-            EXP_SCROLL: 'expScroll'
+            EXP_SCROLL: 'expScroll',
+            EGG: 'egg'
         };
 
         const SHOP_PRICE_MULTIPLIER = 3;
@@ -1047,7 +1079,15 @@
                 level: 1,
                 icon: '📜'
             },
-            
+            superiorEgg: {
+                name: '🥚 슈페리어 알',
+                type: ITEM_TYPES.EGG,
+                price: 50,
+                level: 1,
+                icon: '🥚',
+                incubation: 3
+            },
+
         };
 
         const SKILL_DEFS = {
@@ -1214,6 +1254,9 @@
             camera: { x: 0, y: 0 },
             autoMovePath: null,
             autoMoveActive: false,
+            turn: 0,
+            incubators: [null, null],
+            hatchedSuperiors: [],
             gameRunning: true
         };
         window.gameState = gameState;
@@ -1852,7 +1895,41 @@
                     }
                 };
                 div.appendChild(swapBtn);
-                standbyList.appendChild(div);
+            standbyList.appendChild(div);
+        });
+        }
+
+        function updateIncubatorDisplay() {
+            const list = document.getElementById('incubator-slots');
+            const waiting = document.getElementById('hatched-list');
+            if (!list || !waiting) return;
+            list.innerHTML = '';
+            gameState.incubators.forEach((slot, i) => {
+                const div = document.createElement('div');
+                div.className = 'incubator-slot';
+                if (slot) {
+                    div.textContent = `${slot.egg.name} (${slot.remainingTurns}T)`;
+                    const btn = document.createElement('button');
+                    btn.textContent = '회수';
+                    btn.className = 'sell-button';
+                    btn.onclick = () => removeEggFromIncubator(i);
+                    div.appendChild(btn);
+                } else {
+                    div.textContent = '비어 있음';
+                }
+                list.appendChild(div);
+            });
+            waiting.innerHTML = '';
+            gameState.hatchedSuperiors.forEach(mon => {
+                const div = document.createElement('div');
+                div.className = 'incubator-slot';
+                div.textContent = mon.name;
+                const btn = document.createElement('button');
+                btn.textContent = '영입';
+                btn.className = 'sell-button';
+                btn.onclick = () => recruitHatchedSuperior(mon);
+                div.appendChild(btn);
+                waiting.appendChild(div);
             });
         }
 
@@ -2039,6 +2116,7 @@
             active.y = -1;
             addMessage(`🔄 ${standby.name}과 ${active.name}을 교체했습니다.`, 'mercenary');
             updateMercenaryDisplay();
+            updateIncubatorDisplay();
             renderDungeon();
         }
 
@@ -2264,7 +2342,9 @@ function killMonster(monster) {
                     const itemKeys = Object.keys(ITEMS).filter(k => k !== 'reviveScroll');
                     const availableItems = itemKeys.filter(key => ITEMS[key].level <= Math.ceil(gameState.floor / 2 + 1));
                     let randomItemKey = availableItems[Math.floor(Math.random() * availableItems.length)];
-                    if (Math.random() < 0.1 && ITEMS.reviveScroll.level <= Math.ceil(gameState.floor / 2 + 1)) {
+                    if (Math.random() < 0.05) {
+                        randomItemKey = 'superiorEgg';
+                    } else if (Math.random() < 0.1 && ITEMS.reviveScroll.level <= Math.ceil(gameState.floor / 2 + 1)) {
                         randomItemKey = 'reviveScroll';
                     }
                     const pos = findAdjacentEmpty(monster.x, monster.y);
@@ -2386,6 +2466,67 @@ function killMonster(monster) {
             const hasItem = gameState.items.some(i => i.x === corpse.x && i.y === corpse.y);
             gameState.dungeon[corpse.y][corpse.x] = hasItem ? 'item' : 'empty';
             addMessage(`🔪 ${corpse.name}의 시체를 해체하여 ${gained.join(', ')}을(를) 얻었습니다.`, 'item');
+            renderDungeon();
+        }
+
+        function placeEggInIncubator(eggItem, turns) {
+            const idx = gameState.incubators.findIndex(s => s === null);
+            if (idx === -1) {
+                addMessage('❌ 인큐베이터가 가득 찼습니다.', 'info');
+                return false;
+            }
+            gameState.incubators[idx] = { egg: eggItem, remainingTurns: turns };
+            const invIdx = gameState.player.inventory.findIndex(i => i.id === eggItem.id);
+            if (invIdx !== -1) gameState.player.inventory.splice(invIdx, 1);
+            updateInventoryDisplay();
+            updateIncubatorDisplay();
+            return true;
+        }
+
+        function removeEggFromIncubator(index) {
+            const slot = gameState.incubators[index];
+            if (!slot) return;
+            addToInventory(slot.egg);
+            gameState.incubators[index] = null;
+            updateIncubatorDisplay();
+        }
+
+        function advanceIncubators() {
+            const monsterTypes = Object.keys(MONSTER_TYPES);
+            gameState.incubators.forEach((slot, i) => {
+                if (!slot) return;
+                slot.remainingTurns--;
+                if (slot.remainingTurns <= 0) {
+                    const t = monsterTypes[Math.floor(Math.random() * monsterTypes.length)];
+                    const monster = createSuperiorMonster(t, 0, 0, gameState.floor);
+                    gameState.hatchedSuperiors.push(monster);
+                    addMessage(`🥚 ${monster.name}이(가) 부화했습니다!`, 'info');
+                    gameState.incubators[i] = null;
+                }
+            });
+        }
+
+        function recruitHatchedSuperior(monster) {
+            const mercenary = convertMonsterToMercenary(monster);
+            const activeCount = gameState.activeMercenaries.filter(m => m.alive).length;
+            if (activeCount < 5) {
+                if (!spawnMercenaryNearPlayer(mercenary)) {
+                    addMessage('❌ 용병을 배치할 공간이 없습니다.', 'info');
+                    return;
+                }
+                gameState.activeMercenaries.push(mercenary);
+                addMessage(`🎉 ${mercenary.name}이(가) 합류했습니다!`, 'mercenary');
+            } else if (gameState.standbyMercenaries.length < 5) {
+                gameState.standbyMercenaries.push(mercenary);
+                addMessage(`📋 ${mercenary.name}을(를) 대기열에 추가했습니다.`, 'mercenary');
+            } else {
+                addMessage('❌ 용병이 가득 찼습니다.', 'info');
+                return;
+            }
+            const idx = gameState.hatchedSuperiors.findIndex(m => m === monster);
+            if (idx !== -1) gameState.hatchedSuperiors.splice(idx, 1);
+            updateMercenaryDisplay();
+            updateIncubatorDisplay();
             renderDungeon();
         }
 
@@ -2622,6 +2763,8 @@ function killMonster(monster) {
                 gameState.player.equipped.weapon = fireSword;
                 const leatherArmor = createItem('leatherArmor', 0, 0);
                 gameState.player.equipped.armor = leatherArmor;
+                const egg = createItem('superiorEgg', 0, 0);
+                placeEggInIncubator(egg, 1);
             }
 
             let exitX, exitY;
@@ -3553,6 +3696,7 @@ function killMonster(monster) {
         // 턴 처리 (최적화됨)
         function processTurn() {
             if (!gameState.gameRunning) return;
+            gameState.turn++;
             processProjectiles();
 
             if (applyStatusEffects(gameState.player)) {
@@ -3736,6 +3880,8 @@ function killMonster(monster) {
                 }
             }
             updateMaterialsDisplay();
+            advanceIncubators();
+            updateIncubatorDisplay();
         }
 
         // 용병 AI (개선됨 - 장비 보너스 적용, 안전성 체크 추가)
@@ -4631,6 +4777,8 @@ function killMonster(monster) {
                 gameState.activeMercenaries.forEach(m => {
                     addBtn(m.name, () => useItemOnTarget(item, m));
                 });
+            } else if (item.type === ITEM_TYPES.EGG) {
+                addBtn('인큐베이터', () => placeEggInIncubator(item, item.incubation || 3));
             } else {
                 addBtn('플레이어', () => equipItem(item));
                 gameState.activeMercenaries.forEach(m => {
@@ -4694,6 +4842,7 @@ function killMonster(monster) {
             }
             updateInventoryDisplay();
             updateSkillDisplay();
+            updateIncubatorDisplay();
             updateMaterialsDisplay();
             updateActionButtons();
         }
