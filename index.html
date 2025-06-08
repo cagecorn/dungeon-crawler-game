@@ -66,6 +66,7 @@
             border-radius: 2px;
             transition: all 0.3s;
             position: relative;
+            cursor: pointer;
         }
         .wall {
             background: linear-gradient(45deg, #1a1a1a, #2a2a2a);
@@ -629,6 +630,11 @@
     <div id="mercenary-detail-panel" class="details-panel" style="display:none;">
         <div id="mercenary-detail-content"></div>
         <button id="close-mercenary-detail">닫기</button>
+    </div>
+
+    <div id="monster-detail-panel" class="details-panel" style="display:none;">
+        <div id="monster-detail-content"></div>
+        <button id="close-monster-detail">닫기</button>
     </div>
 
     <script>
@@ -1595,6 +1601,31 @@
             window.currentDetailMercenary = null;
         }
 
+        function showMonsterDetails(monster) {
+            const html = `
+                <h3>${monster.icon} ${monster.name}</h3>
+                <div>❤️ HP: ${monster.health}/${monster.maxHealth}</div>
+                <div>⚔️ 공격력: ${monster.attack}</div>
+                <div>🛡️ 방어력: ${monster.defense}</div>
+                <div>🎯 명중률: ${monster.accuracy}</div>
+                <div>💨 회피율: ${monster.evasion}</div>
+                <div>💥 치명타: ${monster.critChance}</div>
+                <div>🔮 마법공격: ${monster.magicPower}</div>
+                <div>✨ 마법방어: ${monster.magicResist}</div>
+                <div>🏃 속도: ${monster.speed}</div>
+                <div>📏 사거리: ${monster.range}</div>
+                <div>특수: ${monster.special || '없음'}</div>
+            `;
+            document.getElementById('monster-detail-content').innerHTML = html;
+            document.getElementById('monster-detail-panel').style.display = 'block';
+            gameState.gameRunning = false;
+        }
+
+        function hideMonsterDetails() {
+            document.getElementById('monster-detail-panel').style.display = 'none';
+            gameState.gameRunning = true;
+        }
+
         function spawnMercenaryNearPlayer(mercenary) {
             const positions = [
                 {x: gameState.player.x + 1, y: gameState.player.y},
@@ -1801,6 +1832,8 @@ function killMonster(monster) {
             for (let y = 0; y < gameState.dungeonSize; y++) {
                 for (let x = 0; x < gameState.dungeonSize; x++) {
                     const div = document.createElement('div');
+                    div.dataset.x = x;
+                    div.dataset.y = y;
                     let cellType = gameState.dungeon[y][x];
 
                     if (x === gameState.player.x && y === gameState.player.y) {
@@ -1838,6 +1871,22 @@ function killMonster(monster) {
                     }
                     dungeonEl.appendChild(div);
                 }
+            }
+        }
+
+        function handleDungeonClick(e) {
+            const cell = e.target.closest('.cell');
+            if (!cell) return;
+            const x = parseInt(cell.dataset.x, 10);
+            const y = parseInt(cell.dataset.y, 10);
+            const monster = gameState.monsters.find(m => m.x === x && m.y === y);
+            if (monster) {
+                showMonsterDetails(monster);
+                return;
+            }
+            const merc = gameState.activeMercenaries.find(m => m.x === x && m.y === y && m.alive);
+            if (merc) {
+                showMercenaryDetails(merc);
             }
         }
 
@@ -3682,6 +3731,8 @@ function killMonster(monster) {
         document.getElementById('recall').onclick = recallMercenaries;
         document.getElementById('close-shop').onclick = hideShop;
         document.getElementById('close-mercenary-detail').onclick = hideMercenaryDetails;
+        document.getElementById('close-monster-detail').onclick = hideMonsterDetails;
+        document.getElementById('dungeon').addEventListener('click', handleDungeonClick);
         document.getElementById('other').onclick = otherAction;
 
         document.addEventListener('keydown', (e) => {
