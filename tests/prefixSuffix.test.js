@@ -17,7 +17,7 @@ async function run() {
 
   const item = createItem('shortSword', 0, 0);
 
-  dom.window.Math.random = origRandom;
+  win.Math.random = origRandom;
 
   if (item.prefix !== 'Refreshing' || item.suffix !== 'of Wisdom') {
     console.error('prefix or suffix not applied');

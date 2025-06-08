@@ -2002,6 +2002,23 @@ function createTreasure(x, y, gold) {
             return { x, y, gold: gold + floorBonus };
         }
 
+function findAdjacentEmpty(x, y) {
+            const dirs = [
+                {dx:1, dy:0}, {dx:-1, dy:0}, {dx:0, dy:1}, {dx:0, dy:-1},
+                {dx:1, dy:1}, {dx:-1, dy:-1}, {dx:1, dy:-1}, {dx:-1, dy:1}
+            ];
+            for (const d of dirs) {
+                const nx = x + d.dx;
+                const ny = y + d.dy;
+                if (nx >= 0 && nx < gameState.dungeonSize &&
+                    ny >= 0 && ny < gameState.dungeonSize &&
+                    gameState.dungeon[ny][nx] === 'empty') {
+                    return {x:nx, y:ny};
+                }
+            }
+            return {x, y};
+        }
+
 function killMonster(monster) {
             addMessage(`💀 ${monster.name}을(를) 처치했습니다!`, 'combat');
             gameState.player.exp += monster.exp;
@@ -2013,16 +2030,20 @@ function killMonster(monster) {
                 const eq = Object.values(monster.equipped || {}).filter(i => i);
                 if (eq.length) {
                     const drop = eq[Math.floor(Math.random() * eq.length)];
-                    drop.x = monster.x;
-                    drop.y = monster.y;
+                    const pos = findAdjacentEmpty(monster.x, monster.y);
+                    drop.x = pos.x;
+                    drop.y = pos.y;
                     gameState.items.push(drop);
+                    gameState.dungeon[pos.y][pos.x] = 'item';
                 }
             } else if (monster.special === 'boss') {
                 const bossItems = ['magicSword', 'magicStaff', 'plateArmor', 'greaterHealthPotion'];
                 if (Math.random() < 0.2) bossItems.push('reviveScroll');
                 const bossItemKey = bossItems[Math.floor(Math.random() * bossItems.length)];
-                const bossItem = createItem(bossItemKey, monster.x, monster.y);
+                const pos = findAdjacentEmpty(monster.x, monster.y);
+                const bossItem = createItem(bossItemKey, pos.x, pos.y);
                 gameState.items.push(bossItem);
+                gameState.dungeon[pos.y][pos.x] = 'item';
                 addMessage(`🎁 ${monster.name}이(가) ${bossItem.name}을(를) 떨어뜨렸습니다!`, 'treasure');
             } else {
                 let lootChance = monster.lootChance;
@@ -2033,8 +2054,10 @@ function killMonster(monster) {
                     if (Math.random() < 0.1 && ITEMS.reviveScroll.level <= Math.ceil(gameState.floor / 2 + 1)) {
                         randomItemKey = 'reviveScroll';
                     }
-                    const droppedItem = createItem(randomItemKey, monster.x, monster.y);
+                    const pos = findAdjacentEmpty(monster.x, monster.y);
+                    const droppedItem = createItem(randomItemKey, pos.x, pos.y);
                     gameState.items.push(droppedItem);
+                    gameState.dungeon[pos.y][pos.x] = 'item';
                     addMessage(`📦 ${monster.name}이(가) ${droppedItem.name}을(를) 떨어뜨렸습니다!`, 'item');
                 }
             }
@@ -3691,9 +3714,10 @@ function killMonster(monster) {
                             const bossItems = ['magicSword', 'plateArmor', 'greaterHealthPotion'];
                             if (Math.random() < 0.2) bossItems.push('reviveScroll');
                             const bossItemKey = bossItems[Math.floor(Math.random() * bossItems.length)];
-                            const bossItem = createItem(bossItemKey, nearestMonster.x, nearestMonster.y);
+                            const pos = findAdjacentEmpty(nearestMonster.x, nearestMonster.y);
+                            const bossItem = createItem(bossItemKey, pos.x, pos.y);
                             gameState.items.push(bossItem);
-                            gameState.dungeon[nearestMonster.y][nearestMonster.x] = 'item';
+                            gameState.dungeon[pos.y][pos.x] = 'item';
                             addMessage(`🎁 ${nearestMonster.name}이(가) ${bossItem.name}을(를) 떨어뜨렸습니다!`, "treasure");
                         } else if (Math.random() < nearestMonster.lootChance) {
                             const itemKeys = Object.keys(ITEMS).filter(k => k !== 'reviveScroll');
@@ -3705,9 +3729,10 @@ function killMonster(monster) {
                                 randomItemKey = 'reviveScroll';
                             }
 
-                            const droppedItem = createItem(randomItemKey, nearestMonster.x, nearestMonster.y);
+                            const pos = findAdjacentEmpty(nearestMonster.x, nearestMonster.y);
+                            const droppedItem = createItem(randomItemKey, pos.x, pos.y);
                             gameState.items.push(droppedItem);
-                            gameState.dungeon[nearestMonster.y][nearestMonster.x] = 'item';
+                            gameState.dungeon[pos.y][pos.x] = 'item';
                             addMessage(`📦 ${nearestMonster.name}이(가) ${droppedItem.name}을(를) 떨어뜨렸습니다!`, "item");
                         } else {
                             gameState.dungeon[nearestMonster.y][nearestMonster.x] = 'empty';
@@ -3772,9 +3797,10 @@ function killMonster(monster) {
                             const bossItems = ['magicSword', 'plateArmor', 'greaterHealthPotion'];
                             if (Math.random() < 0.2) bossItems.push('reviveScroll');
                             const bossItemKey = bossItems[Math.floor(Math.random() * bossItems.length)];
-                            const bossItem = createItem(bossItemKey, nearestMonster.x, nearestMonster.y);
+                            const pos = findAdjacentEmpty(nearestMonster.x, nearestMonster.y);
+                            const bossItem = createItem(bossItemKey, pos.x, pos.y);
                             gameState.items.push(bossItem);
-                            gameState.dungeon[nearestMonster.y][nearestMonster.x] = 'item';
+                            gameState.dungeon[pos.y][pos.x] = 'item';
                             addMessage(`🎁 ${nearestMonster.name}이(가) ${bossItem.name}을(를) 떨어뜨렸습니다!`, "treasure");
                         } else if (Math.random() < nearestMonster.lootChance) {
                             const itemKeys = Object.keys(ITEMS).filter(k => k !== 'reviveScroll');
@@ -3786,9 +3812,10 @@ function killMonster(monster) {
                                 randomItemKey = 'reviveScroll';
                             }
 
-                            const droppedItem = createItem(randomItemKey, nearestMonster.x, nearestMonster.y);
+                            const pos = findAdjacentEmpty(nearestMonster.x, nearestMonster.y);
+                            const droppedItem = createItem(randomItemKey, pos.x, pos.y);
                             gameState.items.push(droppedItem);
-                            gameState.dungeon[nearestMonster.y][nearestMonster.x] = 'item';
+                            gameState.dungeon[pos.y][pos.x] = 'item';
                             addMessage(`📦 ${nearestMonster.name}이(가) ${droppedItem.name}을(를) 떨어뜨렸습니다!`, "item");
                         } else {
                             gameState.dungeon[nearestMonster.y][nearestMonster.x] = 'empty';
@@ -3843,9 +3870,10 @@ function killMonster(monster) {
                             const bossItems = ['magicSword', 'magicStaff', 'plateArmor', 'greaterHealthPotion'];
                             if (Math.random() < 0.2) bossItems.push('reviveScroll');
                             const bossItemKey = bossItems[Math.floor(Math.random() * bossItems.length)];
-                            const bossItem = createItem(bossItemKey, nearestMonster.x, nearestMonster.y);
+                            const pos = findAdjacentEmpty(nearestMonster.x, nearestMonster.y);
+                            const bossItem = createItem(bossItemKey, pos.x, pos.y);
                             gameState.items.push(bossItem);
-                            gameState.dungeon[nearestMonster.y][nearestMonster.x] = 'item';
+                            gameState.dungeon[pos.y][pos.x] = 'item';
                             addMessage(`🎁 ${nearestMonster.name}이(가) ${bossItem.name}을(를) 떨어뜨렸습니다!`, "treasure");
                         } else if (Math.random() < nearestMonster.lootChance) {
                             const itemKeys = Object.keys(ITEMS).filter(k => k !== 'reviveScroll');
@@ -3857,9 +3885,10 @@ function killMonster(monster) {
                                 randomItemKey = 'reviveScroll';
                             }
 
-                            const droppedItem = createItem(randomItemKey, nearestMonster.x, nearestMonster.y);
+                            const pos = findAdjacentEmpty(nearestMonster.x, nearestMonster.y);
+                            const droppedItem = createItem(randomItemKey, pos.x, pos.y);
                             gameState.items.push(droppedItem);
-                            gameState.dungeon[nearestMonster.y][nearestMonster.x] = 'item';
+                            gameState.dungeon[pos.y][pos.x] = 'item';
                             addMessage(`📦 ${nearestMonster.name}이(가) ${droppedItem.name}을(를) 떨어뜨렸습니다!`, "item");
                         } else {
                             gameState.dungeon[nearestMonster.y][nearestMonster.x] = 'empty';

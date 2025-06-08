@@ -47,12 +47,12 @@ async function run() {
   const skillCost = MERCENARY_SKILLS[merc.skill].manaCost;
   merc.mana = merc.maxMana;
   const initialMana = merc.mana;
-  const origRandom = dom.window.Math.random;
-  dom.window.Math.random = () => 0;
+  const origRandom = win.Math.random;
+  win.Math.random = () => 0;
 
   processMercenaryTurn(merc);
 
-  dom.window.Math.random = origRandom;
+  win.Math.random = origRandom;
 
   const expected = initialMana - skillCost;
   assert.strictEqual(merc.mana, expected, 'mana should decrease by skill cost');
