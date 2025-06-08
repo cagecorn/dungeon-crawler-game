@@ -478,6 +478,19 @@
             z-index: 100;
             min-width: 200px;
         }
+        .details-panel {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: linear-gradient(135deg, #2a2a2a, #333);
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 0 15px rgba(0, 0, 0, 0.7);
+            border: 1px solid #555;
+            z-index: 100;
+            min-width: 220px;
+        }
         .shop-panel h2 {
             color: #ffc107;
             margin-top: 0;
@@ -611,6 +624,11 @@
         <h2>상점</h2>
         <div id="shop-items"></div>
         <button id="close-shop">닫기</button>
+    </div>
+
+    <div id="mercenary-detail-panel" class="details-panel" style="display:none;">
+        <div id="mercenary-detail-content"></div>
+        <button id="close-mercenary-detail">닫기</button>
     </div>
 
     <script>
@@ -1477,23 +1495,6 @@
                 if (merc.alive) {
                     div.onclick = () => {
                         showMercenaryDetails(merc);
-                        const slots = [];
-                        if (merc.equipped && merc.equipped.weapon) slots.push('0: 무기');
-                        if (merc.equipped && merc.equipped.armor) slots.push('1: 방어구');
-                        if (merc.equipped && merc.equipped.accessory1) slots.push('2: 악세서리1');
-                        if (merc.equipped && merc.equipped.accessory2) slots.push('3: 악세서리2');
-                        if (slots.length === 0) return;
-                        const choice = prompt(`${merc.name}의 장비를 해제하려면 번호를 입력하세요:\n${slots.join('\n')}`);
-                        if (choice === null) return;
-                        if (choice === '0' && merc.equipped.weapon) {
-                            unequipItemFromMercenary(merc.id, 'weapon');
-                        } else if (choice === '1' && merc.equipped.armor) {
-                            unequipItemFromMercenary(merc.id, 'armor');
-                        } else if (choice === '2' && merc.equipped.accessory1) {
-                            unequipItemFromMercenary(merc.id, 'accessory1');
-                        } else if (choice === '3' && merc.equipped.accessory2) {
-                            unequipItemFromMercenary(merc.id, 'accessory2');
-                        }
                     };
                 } else {
                     const reviveBtn = document.createElement('button');
@@ -1539,28 +1540,44 @@
             const armor = merc.equipped && merc.equipped.armor ? merc.equipped.armor.name : '없음';
             const accessory1 = merc.equipped && merc.equipped.accessory1 ? merc.equipped.accessory1.name : '없음';
             const accessory2 = merc.equipped && merc.equipped.accessory2 ? merc.equipped.accessory2.name : '없음';
-            const totalAttack = getStat(merc, 'attack');
-            const totalDefense = getStat(merc, 'defense');
             const skillInfo = MERCENARY_SKILLS[merc.skill];
             const skillText = skillInfo ? `${skillInfo.name} (MP ${skillInfo.manaCost})` : '없음';
 
-            const info = `${merc.icon} ${merc.name} Lv.${merc.level}\n` +
-                `HP: ${merc.health}/${getStat(merc, 'maxHealth')}\n` +
-                `MP: ${merc.mana}/${getStat(merc, 'maxMana')}\n` +
-                `공격력: ${totalAttack}\n` +
-                `방어력: ${totalDefense}\n` +
-                `명중률: ${getStat(merc, 'accuracy')}\n` +
-                `회피율: ${getStat(merc, 'evasion')}\n` +
-                `치명타: ${getStat(merc, 'critChance')}\n` +
-                `마법공격: ${getStat(merc, 'magicPower')}\n` +
-                `마법방어: ${getStat(merc, 'magicResist')}\n` +
-                `무기: ${weapon}\n` +
-                `방어구: ${armor}\n` +
-                `악세서리1: ${accessory1}\n` +
-                `악세서리2: ${accessory2}\n` +
-                `스킬: ${skillText}`;
+            const html = `
+                <h3>${merc.icon} ${merc.name} Lv.${merc.level}</h3>
+                <div>💪 힘: ${merc.strength}</div>
+                <div>🏃 민첩: ${merc.agility}</div>
+                <div>🛡 체력: ${merc.endurance}</div>
+                <div>🔮 집중: ${merc.focus}</div>
+                <div>📖 지능: ${merc.intelligence}</div>
+                <hr>
+                <div>❤️ HP: ${merc.health}/${getStat(merc, 'maxHealth')}</div>
+                <div>🔋 MP: ${merc.mana}/${getStat(merc, 'maxMana')}</div>
+                <div>⚔️ 공격력: ${getStat(merc, 'attack')}</div>
+                <div>🛡️ 방어력: ${getStat(merc, 'defense')}</div>
+                <div>🎯 명중률: ${getStat(merc, 'accuracy')}</div>
+                <div>💨 회피율: ${getStat(merc, 'evasion')}</div>
+                <div>💥 치명타: ${getStat(merc, 'critChance')}</div>
+                <div>🔮 마법공격: ${getStat(merc, 'magicPower')}</div>
+                <div>✨ 마법방어: ${getStat(merc, 'magicResist')}</div>
+                <div>❤️‍🩹 회복력: ${getStat(merc, 'healthRegen')}</div>
+                <div>🔁 마나회복: ${getStat(merc, 'manaRegen')}</div>
+                <hr>
+                <div>무기: ${weapon}</div>
+                <div>방어구: ${armor}</div>
+                <div>악세1: ${accessory1}</div>
+                <div>악세2: ${accessory2}</div>
+                <div>스킬: ${skillText}</div>
+            `;
 
-            alert(info);
+            document.getElementById('mercenary-detail-content').innerHTML = html;
+            document.getElementById('mercenary-detail-panel').style.display = 'block';
+            gameState.gameRunning = false;
+        }
+
+        function hideMercenaryDetails() {
+            document.getElementById('mercenary-detail-panel').style.display = 'none';
+            gameState.gameRunning = true;
         }
 
         function spawnMercenaryNearPlayer(mercenary) {
@@ -3615,6 +3632,7 @@ function killMonster(monster) {
         document.getElementById('heal').onclick = healAction;
         document.getElementById('recall').onclick = recallMercenaries;
         document.getElementById('close-shop').onclick = hideShop;
+        document.getElementById('close-mercenary-detail').onclick = hideMercenaryDetails;
         document.getElementById('other').onclick = otherAction;
 
         document.addEventListener('keydown', (e) => {
