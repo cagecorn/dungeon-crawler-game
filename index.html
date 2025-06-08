@@ -101,6 +101,12 @@
             box-shadow: 0 0 8px rgba(255, 152, 0, 0.7);
             animation: monsterPulse 1.5s ease-in-out infinite alternate;
         }
+        .elite {
+            background: radial-gradient(circle, #9C27B0, #7B1FA2);
+            color: white;
+            box-shadow: 0 0 8px rgba(156, 39, 176, 0.7);
+            animation: monsterPulse 1.5s ease-in-out infinite alternate;
+        }
         @keyframes monsterPulse {
             from { transform: scale(1); }
             to { transform: scale(1.1); }
@@ -1037,7 +1043,13 @@
             ChargeAttack: { name: 'Charge Attack', icon: '⚡', range: 2, manaCost: 2, melee: true, multiplier: 1.5 },
             HawkEye: { name: 'Hawk Eye', icon: '🦅', range: 5, manaCost: 2, damageDice: '1d6' },
             MightAura: { name: 'Might Aura', icon: '💪', passive: true, radius: 6, aura: { attack: 1, magicPower: 1 } },
-            ProtectAura: { name: 'Protect Aura', icon: '🛡️', passive: true, radius: 6, aura: { defense: 1, magicResist: 1 } }
+            ProtectAura: { name: 'Protect Aura', icon: '🛡️', passive: true, radius: 6, aura: { defense: 1, magicResist: 1 } },
+            RegenerationAura: { name: 'Regeneration Aura', icon: '💚', passive: true, radius: 6, aura: { healthRegen: 1 } },
+            MeditationAura: { name: 'Meditation Aura', icon: '🌀', passive: true, radius: 6, aura: { manaRegen: 1 } },
+            HasteAura: { name: 'Haste Aura', icon: '💨', passive: true, radius: 6, aura: { evasion: 0.05 } },
+            ConcentrationAura: { name: 'Concentration Aura', icon: '🎯', passive: true, radius: 6, aura: { accuracy: 0.05 } },
+            CondemnAura: { name: 'Condemn Aura', icon: '⚔️', passive: true, radius: 6, aura: { critChance: 0.05 } },
+            NaturalAura: { name: 'Natural Aura', icon: '🌿', passive: true, radius: 6, aura: { defense: 1, magicResist: 1 } }
         };
 
         // 용병 전용 스킬 정의
@@ -1048,7 +1060,13 @@
             Purify: { name: 'Purify', icon: '🌀', range: 2, manaCost: 2 },
             Fireball: { name: 'Fireball', icon: '🔥', range: 4, manaCost: 3, damageDice: '1d8', magic: true, element: 'fire' },
             Iceball: { name: 'Iceball', icon: '❄️', range: 5, manaCost: 2, damageDice: '1d8', magic: true, element: 'ice' },
-            HawkEye: { name: 'Hawk Eye', icon: '🦅', range: 5, manaCost: 2 }
+            HawkEye: { name: 'Hawk Eye', icon: '🦅', range: 5, manaCost: 2 },
+            RegenerationAura: { name: 'Regeneration Aura', icon: '💚', passive: true, radius: 6, aura: { healthRegen: 1 } },
+            MeditationAura: { name: 'Meditation Aura', icon: '🌀', passive: true, radius: 6, aura: { manaRegen: 1 } },
+            HasteAura: { name: 'Haste Aura', icon: '💨', passive: true, radius: 6, aura: { evasion: 0.05 } },
+            ConcentrationAura: { name: 'Concentration Aura', icon: '🎯', passive: true, radius: 6, aura: { accuracy: 0.05 } },
+            CondemnAura: { name: 'Condemn Aura', icon: '⚔️', passive: true, radius: 6, aura: { critChance: 0.05 } },
+            NaturalAura: { name: 'Natural Aura', icon: '🌿', passive: true, radius: 6, aura: { defense: 1, magicResist: 1 } }
         };
 
         const MERCENARY_SKILL_SETS = {
@@ -1300,6 +1318,26 @@
                         bonus += skill.aura[stat];
                     }
                 }
+            });
+
+            gameState.monsters.filter(m => m.isElite).forEach(elite => {
+                const key = elite.auraSkill;
+                const skill = SKILL_DEFS[key];
+                if (skill && skill.passive && skill.aura && skill.aura[stat] !== undefined) {
+                    const dist = getDistance(elite.x, elite.y, character.x, character.y);
+                    if (dist <= (skill.radius || 0)) bonus += skill.aura[stat];
+                }
+            });
+
+            gameState.activeMercenaries.filter(m => m.alive).forEach(merc => {
+                const skills = [merc.skill, merc.skill2, merc.auraSkill];
+                skills.filter(Boolean).forEach(key => {
+                    const skill = SKILL_DEFS[key];
+                    if (skill && skill.passive && skill.aura && skill.aura[stat] !== undefined) {
+                        const dist = getDistance(merc.x, merc.y, character.x, character.y);
+                        if (dist <= (skill.radius || 0)) bonus += skill.aura[stat];
+                    }
+                });
             });
             return bonus;
         }
@@ -1970,6 +2008,21 @@
             return monster;
         }
 
+        function createEliteMonster(type, x, y, level = 1) {
+            const monster = createMonster(type, x, y, level + 1);
+            const auraKeys = ['RegenerationAura', 'MeditationAura', 'HasteAura', 'ConcentrationAura', 'CondemnAura', 'NaturalAura'];
+            const auraSkill = auraKeys[Math.floor(Math.random() * auraKeys.length)];
+            monster.isElite = true;
+            monster.auraSkill = auraSkill;
+            monster.name = `엘리트 ${monster.name}`;
+            monster.attack = Math.floor(monster.attack * 1.5);
+            monster.defense = Math.floor(monster.defense * 1.5);
+            monster.health = Math.floor(monster.health * 1.5);
+            monster.maxHealth = monster.health;
+            monster.lootChance = 0.6;
+            return monster;
+        }
+
         function setMercenaryLevel(mercenary, level) {
             for (let i = 1; i < level; i++) {
                 mercenary.level += 1;
@@ -2091,7 +2144,7 @@ function killMonster(monster) {
                 mana: monster.maxMana,
                 healthRegen: monster.healthRegen || 0,
                 manaRegen: monster.manaRegen || 1,
-                skill: null,
+                skill: monster.isElite ? monster.auraSkill : null,
                 skill2: null,
                 attack: monster.attack,
                 defense: monster.defense,
@@ -2107,7 +2160,7 @@ function killMonster(monster) {
                 exp: 0,
                 expNeeded: 15,
                 skillPoints: 0,
-                skillLevels: {},
+                skillLevels: monster.isElite && monster.auraSkill ? { [monster.auraSkill]: 1 } : {},
                 alive: true,
                 hasActed: false,
                 equipped: { weapon: null, armor: null, accessory1: null, accessory2: null },
@@ -2211,6 +2264,7 @@ function killMonster(monster) {
                                 if (m) {
                                     div.textContent = m.icon;
                                     if (m.isChampion) cellType = 'champion';
+                                    else if (m.isElite) cellType = 'elite';
                                 }
                             } else if (cellType === 'item') {
                                 const it = gameState.items.find(it => it.x === x && it.y === y);
@@ -2414,6 +2468,26 @@ function killMonster(monster) {
                 const champ = createChampion(ct, cx, cy, gameState.floor);
                 gameState.monsters.push(champ);
                 gameState.dungeon[cy][cx] = 'monster';
+            }
+
+            // 층마다 엘리트 몬스터 배치
+            let ex, ey;
+            do {
+                ex = Math.floor(Math.random() * size);
+                ey = Math.floor(Math.random() * size);
+            } while (gameState.dungeon[ey][ex] !== 'empty');
+            const eType = monsterTypes[Math.floor(Math.random() * (monsterTypes.length - 1))];
+            const elite = createEliteMonster(eType, ex, ey, gameState.floor);
+            gameState.monsters.push(elite);
+            gameState.dungeon[ey][ex] = 'monster';
+            const around = 2 + Math.floor(Math.random() * 4);
+            for (let i = 0; i < around; i++) {
+                const pos = findAdjacentEmpty(ex, ey);
+                if (gameState.dungeon[pos.y][pos.x] !== 'empty') continue;
+                const t = monsterTypes[Math.floor(Math.random() * (monsterTypes.length - 1))];
+                const m = createMonster(t, pos.x, pos.y, gameState.floor);
+                gameState.monsters.push(m);
+                gameState.dungeon[pos.y][pos.x] = 'monster';
             }
 
             // 보물은 던전 크기와 층수에 따라 적당히 배치
