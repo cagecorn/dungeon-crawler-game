@@ -74,13 +74,14 @@ async function run() {
     captured = opts;
     return { hit: true, crit: false, baseDamage: 0, elementDamage: 0 };
   };
+  win.rollDice = () => 8;
   const origRandom = win.Math.random;
   win.Math.random = () => 0;
   processMercenaryTurn(fireCaster);
   win.Math.random = origRandom;
   win.performAttack = origPerform;
 
-  const fireExpected = MERCENARY_SKILLS['Fireball'].damage + getStat(fireCaster, 'magicPower');
+  const fireExpected = 8 + getStat(fireCaster, 'magicPower');
   if (!captured || captured.attackValue !== fireExpected || captured.magic !== true || captured.element !== 'fire') {
     console.error('fireball not scaled with magicPower');
     process.exit(1);
@@ -103,12 +104,13 @@ async function run() {
     captured = opts;
     return { hit: true, crit: false, baseDamage: 0, elementDamage: 0 };
   };
+  win.rollDice = () => 6;
   win.Math.random = () => 0;
   processMercenaryTurn(iceCaster);
   win.Math.random = origRandom;
   win.performAttack = origPerform;
 
-  const iceExpected = MERCENARY_SKILLS['Iceball'].damage + getStat(iceCaster, 'magicPower');
+  const iceExpected = 6 + getStat(iceCaster, 'magicPower');
   if (!captured || captured.attackValue !== iceExpected || captured.magic !== true || captured.element !== 'ice') {
     console.error('iceball not scaled with magicPower');
     process.exit(1);
