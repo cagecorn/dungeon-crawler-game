@@ -1,7 +1,7 @@
-const { loadGame } = require('./helpers');
+const { loadGame: loadGameHelper } = require('./helpers');
 
 async function run() {
-  const win = await loadGame();
+  const win = await loadGameHelper();
   win.updateStats = () => {};
   win.updateMercenaryDisplay = () => {};
   win.updateInventoryDisplay = () => {};
@@ -9,7 +9,7 @@ async function run() {
   win.updateCamera = () => {};
   win.requestAnimationFrame = fn => fn();
 
-  const { hireMercenary, gameState, checkMercenaryLevelUp, showMercenaryDetails, saveGame, loadGame, localStorage } = win;
+  const { hireMercenary, gameState, checkMercenaryLevelUp, showMercenaryDetails, saveGame, loadGame: loadGameGame, localStorage } = win;
 
   gameState.player.gold = 500;
   hireMercenary('WARRIOR');
@@ -40,7 +40,7 @@ async function run() {
 
   delete merc.stars;
   saveGame();
-  loadGame();
+  loadGameGame();
   const loaded = gameState.activeMercenaries[0];
   const loadSum = Object.values(loaded.stars).reduce((a,b)=>a+b,0);
   if (loadSum > 9) {
