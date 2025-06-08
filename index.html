@@ -567,6 +567,11 @@
             <div class="stats">
                 <h2>🛡️ 플레이어 정보</h2>
                 <div>📊 레벨: <span id="level">1</span></div>
+                <div>💪 힘: <span id="strengthStat">5</span></div>
+                <div>🏃 민첩: <span id="agilityStat">5</span></div>
+                <div>🛡 체력: <span id="enduranceStat">10</span></div>
+                <div>🔮 집중: <span id="focusStat">5</span></div>
+                <div>📖 지능: <span id="intelligenceStat">0</span></div>
                 <div>❤️ 체력: <span id="health">20</span>/<span id="maxHealth">20</span></div>
                 <div>🔋 마나: <span id="mana">10</span>/<span id="maxMana">10</span></div>
                 <div>❤️‍🩹 회복력: <span id="healthRegen">0</span></div>
@@ -1006,6 +1011,12 @@
                 x: 0,
                 y: 0,
                 level: 4,
+                endurance: 10,
+                focus: 5,
+                strength: 5,
+                agility: 5,
+                intelligence: 0,
+                baseDefense: 0,
                 maxHealth: 20,
                 health: 20,
                 maxMana: 10,
@@ -1120,7 +1131,7 @@
 
         // 간단한 치유 로직
         function healTarget(healer, target, skillInfo) {
-            let healAmount = Math.min(3 + healer.level, target.maxHealth - target.health);
+            let healAmount = Math.min(3 + healer.level, getStat(target, 'maxHealth') - target.health);
             if (healAmount > 0) {
                 target.health += healAmount;
                 const name = target === gameState.player ? '플레이어' : target.name;
@@ -1154,8 +1165,8 @@
             const magic = options.magic || false;
             const element = options.element;
             const status = options.status;
-            let attackStat = options.attackValue !== undefined ? options.attackValue : (magic ? attacker.magicPower : attacker.attack);
-            let defenseStat = options.defenseValue !== undefined ? options.defenseValue : (magic ? defender.magicResist : defender.defense);
+            let attackStat = options.attackValue !== undefined ? options.attackValue : (magic ? getStat(attacker, 'magicPower') : getStat(attacker, 'attack'));
+            let defenseStat = options.defenseValue !== undefined ? options.defenseValue : (magic ? getStat(defender, 'magicResist') : getStat(defender, 'defense'));
 
 
             const attackerAcc = getStat(attacker, 'accuracy');
@@ -1228,7 +1239,43 @@
         }
 
         function getStat(character, stat) {
-            let value = character[stat] || 0;
+            const e = character.endurance || 0;
+            const f = character.focus || 0;
+            const s = character.strength || 0;
+            const a = character.agility || 0;
+            const i = character.intelligence || 0;
+            let value = 0;
+            switch (stat) {
+                case 'maxHealth':
+                    value = e * 2;
+                    break;
+                case 'maxMana':
+                    value = f * 2;
+                    break;
+                case 'attack':
+                    value = s;
+                    break;
+                case 'defense':
+                    value = Math.floor(e * 0.1) + (character.baseDefense || 0);
+                    break;
+                case 'accuracy':
+                    value = 0.7 + a * 0.02;
+                    break;
+                case 'evasion':
+                    value = a * 0.02;
+                    break;
+                case 'critChance':
+                    value = 0.03 + a * 0.005;
+                    break;
+                case 'magicPower':
+                    value = i;
+                    break;
+                case 'magicResist':
+                    value = i * 0.2;
+                    break;
+                default:
+                    value = character[stat] || 0;
+            }
             if (character.equipped) {
                 ['weapon', 'armor', 'accessory1', 'accessory2'].forEach(slot => {
                     const it = character.equipped[slot];
@@ -1237,14 +1284,13 @@
                     }
                 });
             }
-            // trait bonuses removed
             return value;
         }
 
 
         // 플레이어 체력 비율에 따른 표정 반환
         function getPlayerEmoji() {
-            const ratio = gameState.player.health / gameState.player.maxHealth;
+            const ratio = gameState.player.health / getStat(gameState.player, 'maxHealth');
             if (ratio >= 0.7) return '😀';
             if (ratio >= 0.4) return '😐';
             if (ratio >= 0.1) return '😟';
@@ -1272,10 +1318,7 @@
                     if (proj.damage !== undefined) {
                         attackValue = proj.damage;
                     } else {
-                        attackValue = gameState.player.attack;
-                        if (gameState.player.equipped.weapon) {
-                            attackValue += gameState.player.equipped.weapon.attack;
-                        }
+                        attackValue = getStat(gameState.player, 'attack');
                     }
                     const result = performAttack(gameState.player, monster, { attackValue, magic, element: proj.element });
                     const icon = proj.icon || '➡️';
@@ -1415,16 +1458,14 @@
                 const statusClass = merc.alive ? 'alive' : 'dead';
                 div.className = `mercenary-info ${statusClass}`;
 
-                const hp = `${merc.health}/${merc.maxHealth}`;
-                const mp = `${merc.mana}/${merc.maxMana}`;
+                const hp = `${merc.health}/${getStat(merc, 'maxHealth')}`;
+                const mp = `${merc.mana}/${getStat(merc, 'maxMana')}`;
                 const weapon = merc.equipped && merc.equipped.weapon ? merc.equipped.weapon.name : '없음';
                 const armor = merc.equipped && merc.equipped.armor ? merc.equipped.armor.name : '없음';
                 const accessory1 = merc.equipped && merc.equipped.accessory1 ? merc.equipped.accessory1.name : '없음';
                 const accessory2 = merc.equipped && merc.equipped.accessory2 ? merc.equipped.accessory2.name : '없음';
-                const attackBonus = merc.equipped && merc.equipped.weapon ? merc.equipped.weapon.attack : 0;
-                const defenseBonus = merc.equipped && merc.equipped.armor ? merc.equipped.armor.defense : 0;
-                const totalAttack = merc.attack + attackBonus;
-                const totalDefense = merc.defense + defenseBonus;
+                const totalAttack = getStat(merc, 'attack');
+                const totalDefense = getStat(merc, 'defense');
                 const skillInfo = MERCENARY_SKILLS[merc.skill];
                 const skillText = skillInfo ? `스킬:${skillInfo.name}(MP ${skillInfo.manaCost})` : '스킬: 없음';
 
@@ -1498,16 +1539,14 @@
             const armor = merc.equipped && merc.equipped.armor ? merc.equipped.armor.name : '없음';
             const accessory1 = merc.equipped && merc.equipped.accessory1 ? merc.equipped.accessory1.name : '없음';
             const accessory2 = merc.equipped && merc.equipped.accessory2 ? merc.equipped.accessory2.name : '없음';
-            const attackBonus = merc.equipped && merc.equipped.weapon ? merc.equipped.weapon.attack : 0;
-            const defenseBonus = merc.equipped && merc.equipped.armor ? merc.equipped.armor.defense : 0;
-            const totalAttack = merc.attack + attackBonus;
-            const totalDefense = merc.defense + defenseBonus;
+            const totalAttack = getStat(merc, 'attack');
+            const totalDefense = getStat(merc, 'defense');
             const skillInfo = MERCENARY_SKILLS[merc.skill];
             const skillText = skillInfo ? `${skillInfo.name} (MP ${skillInfo.manaCost})` : '없음';
 
             const info = `${merc.icon} ${merc.name} Lv.${merc.level}\n` +
-                `HP: ${merc.health}/${merc.maxHealth}\n` +
-                `MP: ${merc.mana}/${merc.maxMana}\n` +
+                `HP: ${merc.health}/${getStat(merc, 'maxHealth')}\n` +
+                `MP: ${merc.mana}/${getStat(merc, 'maxMana')}\n` +
                 `공격력: ${totalAttack}\n` +
                 `방어력: ${totalDefense}\n` +
                 `명중률: ${getStat(merc, 'accuracy')}\n` +
@@ -1568,14 +1607,19 @@
         // 플레이어 능력치 표시 업데이트
         function updateStats() {
             document.getElementById('level').textContent = formatNumber(gameState.player.level);
+            document.getElementById('strengthStat').textContent = formatNumber(gameState.player.strength);
+            document.getElementById('agilityStat').textContent = formatNumber(gameState.player.agility);
+            document.getElementById('enduranceStat').textContent = formatNumber(gameState.player.endurance);
+            document.getElementById('focusStat').textContent = formatNumber(gameState.player.focus);
+            document.getElementById('intelligenceStat').textContent = formatNumber(gameState.player.intelligence);
             document.getElementById('health').textContent = formatNumber(gameState.player.health);
-            document.getElementById('maxHealth').textContent = formatNumber(gameState.player.maxHealth);
+            document.getElementById('maxHealth').textContent = formatNumber(getStat(gameState.player, 'maxHealth'));
             document.getElementById('mana').textContent = formatNumber(gameState.player.mana);
-            document.getElementById('maxMana').textContent = formatNumber(gameState.player.maxMana);
+            document.getElementById('maxMana').textContent = formatNumber(getStat(gameState.player, 'maxMana'));
             document.getElementById('healthRegen').textContent = formatNumber(getStat(gameState.player, 'healthRegen'));
             document.getElementById('manaRegen').textContent = formatNumber(getStat(gameState.player, 'manaRegen'));
-            document.getElementById('attackStat').textContent = formatNumber(gameState.player.attack);
-            document.getElementById('defense').textContent = formatNumber(gameState.player.defense);
+            document.getElementById('attackStat').textContent = formatNumber(getStat(gameState.player, 'attack'));
+            document.getElementById('defense').textContent = formatNumber(getStat(gameState.player, 'defense'));
             document.getElementById('accuracy').textContent = formatNumber(getStat(gameState.player, 'accuracy'));
             document.getElementById('evasion').textContent = formatNumber(getStat(gameState.player, 'evasion'));
             document.getElementById('critChance').textContent = formatNumber(getStat(gameState.player, 'critChance'));
@@ -1644,10 +1688,10 @@
         function setMercenaryLevel(mercenary, level) {
             for (let i = 1; i < level; i++) {
                 mercenary.level += 1;
-                mercenary.maxHealth += 3;
-                mercenary.health = mercenary.maxHealth;
-                mercenary.attack += 1;
-                mercenary.defense += 1;
+                mercenary.endurance += 2;
+                mercenary.strength += 1;
+                mercenary.health = getStat(mercenary, 'maxHealth');
+                mercenary.mana = getStat(mercenary, 'maxMana');
                 mercenary.expNeeded = Math.floor(mercenary.expNeeded * 1.5);
             }
         }
@@ -1795,33 +1839,32 @@ function killMonster(monster) {
 
                 switch (gameState.player.job) {
                     case 'Warrior':
-                        gameState.player.maxHealth += 5;
-                        gameState.player.attack += 2;
-                        gameState.player.defense += 2;
+                        gameState.player.endurance += 3;
+                        gameState.player.strength += 2;
                         break;
                     case 'Archer':
-                        gameState.player.maxHealth += 4;
-                        gameState.player.attack += 2;
-                        gameState.player.accuracy += 0.05;
+                        gameState.player.endurance += 2;
+                        gameState.player.strength += 2;
+                        gameState.player.agility += 1;
                         break;
                     case 'Mage':
-                        gameState.player.maxHealth += 3;
-                        gameState.player.magicPower += 2;
-                        gameState.player.maxMana += 2;
+                        gameState.player.endurance += 1;
+                        gameState.player.intelligence += 2;
+                        gameState.player.focus += 2;
                         break;
                     case 'Healer':
-                        gameState.player.maxHealth += 3;
-                        gameState.player.magicPower += 1;
-                        gameState.player.maxMana += 3;
-                        gameState.player.defense += 1;
+                        gameState.player.endurance += 1;
+                        gameState.player.intelligence += 1;
+                        gameState.player.focus += 3;
                         break;
                     default:
-                        gameState.player.maxHealth += 5;
-                        gameState.player.attack += 1;
-                        gameState.player.defense += 1;
+                        gameState.player.endurance += 2;
+                        gameState.player.strength += 1;
+                        gameState.player.agility += 1;
                 }
 
-                gameState.player.health = gameState.player.maxHealth;
+                gameState.player.health = getStat(gameState.player, 'maxHealth');
+                gameState.player.mana = getStat(gameState.player, 'maxMana');
                 gameState.player.expNeeded = Math.floor(gameState.player.expNeeded * 1.5);
                 addMessage(`🎉 플레이어 레벨이 ${gameState.player.level}이(가) 되었습니다!`, 'level');
                 if (!gameState.player.job && gameState.player.level >= 5) {
@@ -1837,10 +1880,10 @@ function killMonster(monster) {
             while (mercenary.exp >= mercenary.expNeeded) {
                 mercenary.exp -= mercenary.expNeeded;
                 mercenary.level += 1;
-                mercenary.maxHealth += 3;
-                mercenary.health = mercenary.maxHealth;
-                mercenary.attack += 1;
-                mercenary.defense += 1;
+                mercenary.endurance += 2;
+                mercenary.strength += 1;
+                mercenary.health = getStat(mercenary, 'maxHealth');
+                mercenary.mana = getStat(mercenary, 'maxMana');
                 mercenary.expNeeded = Math.floor(mercenary.expNeeded * 1.5);
                 addMessage(`🎉 ${mercenary.name}의 레벨이 ${mercenary.level}이(가) 되었습니다!`, 'mercenary');
                 updateMercenaryDisplay();
@@ -2080,6 +2123,9 @@ function killMonster(monster) {
             const randomBaseName = MERCENARY_NAMES[Math.floor(Math.random() * MERCENARY_NAMES.length)];
             const jobLabel = mercType.name.split(' ')[1] || mercType.name;
             const name = `${randomBaseName} (${jobLabel})`;
+            const endurance = mercType.baseHealth / 2;
+            const focus = (mercType.baseMaxMana || 0) / 2;
+            const agility = Math.max(0, Math.round((mercType.baseAccuracy - 0.7) / 0.02));
             return {
                 id: Math.random().toString(36).substr(2, 9),
                 type: type,
@@ -2089,6 +2135,12 @@ function killMonster(monster) {
                 x: x,
                 y: y,
                 level: 1,
+                endurance: endurance,
+                focus: focus,
+                strength: mercType.baseAttack,
+                agility: agility,
+                intelligence: mercType.baseMagicPower,
+                baseDefense: mercType.baseDefense - Math.floor(endurance * 0.1),
                 maxHealth: mercType.baseHealth,
                 health: mercType.baseHealth,
                 maxMana: mercType.baseMaxMana || 0,
@@ -2359,8 +2411,8 @@ function killMonster(monster) {
         // 아이템 사용 (대상 지정)
         function useItemOnTarget(item, target) {
             if (item.type === ITEM_TYPES.POTION) {
-                if (target.health < target.maxHealth) {
-                    const healAmount = Math.min(item.healing, target.maxHealth - target.health);
+                if (target.health < getStat(target, 'maxHealth')) {
+                    const healAmount = Math.min(item.healing, getStat(target, 'maxHealth') - target.health);
                     target.health += healAmount;
                     const name = target === gameState.player ? '플레이어' : target.name;
                     addMessage(`🩹 ${item.name}을(를) 사용하여 ${name}의 체력을 ${formatNumber(healAmount)} 회복했습니다.`, 'item');
@@ -2410,7 +2462,7 @@ function killMonster(monster) {
             if (scrollIndex !== -1) {
                 gameState.player.inventory.splice(scrollIndex, 1);
                 mercenary.alive = true;
-                mercenary.health = mercenary.maxHealth;
+                mercenary.health = getStat(mercenary, 'maxHealth');
                 addMessage(`✨ 부활 스크롤로 ${mercenary.name}을(를) 부활시켰습니다!`, 'mercenary');
                 updateInventoryDisplay();
             } else {
@@ -2421,7 +2473,7 @@ function killMonster(monster) {
                 }
                 gameState.player.gold -= cost;
                 mercenary.alive = true;
-                mercenary.health = mercenary.maxHealth;
+                mercenary.health = getStat(mercenary, 'maxHealth');
                 addMessage(`💰 ${formatNumber(cost)}골드를 사용해 ${mercenary.name}을(를) 부활시켰습니다.`, 'mercenary');
             }
 
@@ -2458,19 +2510,7 @@ function killMonster(monster) {
             });
             
             if (nearestTarget) {
-                let totalDefense = nearestTarget.defense;
-
-                if (nearestTarget === gameState.player && gameState.player.equipped.armor) {
-                    totalDefense += gameState.player.equipped.armor.defense;
-                } else if (nearestTarget !== gameState.player) {
-                    // 용병 장비 초기화 확인
-                    if (!nearestTarget.equipped) {
-                        nearestTarget.equipped = { weapon: null, armor: null };
-                    }
-                    if (nearestTarget.equipped.armor) {
-                        totalDefense += nearestTarget.equipped.armor.defense;
-                    }
-                }
+                let totalDefense = getStat(nearestTarget, 'defense');
 
                 const attackValue = monster.special === 'magic' ? monster.magicPower : monster.attack;
                 const result = performAttack(monster, nearestTarget, {
@@ -2561,10 +2601,7 @@ function killMonster(monster) {
             if (cellType === 'monster') {
                 const monster = gameState.monsters.find(m => m.x === newX && m.y === newY);
                 if (monster) {
-                    let totalAttack = gameState.player.attack;
-                    if (gameState.player.equipped.weapon) {
-                        totalAttack += gameState.player.equipped.weapon.attack;
-                    }
+                    const totalAttack = getStat(gameState.player, 'attack');
 
                     const result = performAttack(gameState.player, monster, { attackValue: totalAttack });
                     if (!result.hit) {
@@ -2682,7 +2719,8 @@ function killMonster(monster) {
             // 용병들 체력 약간 회복
             gameState.activeMercenaries.forEach(mercenary => {
                 if (mercenary.alive) {
-                    mercenary.health = Math.min(mercenary.maxHealth, mercenary.health + Math.floor(mercenary.maxHealth * 0.2));
+                    const maxHp = getStat(mercenary, 'maxHealth');
+                    mercenary.health = Math.min(maxHp, mercenary.health + Math.floor(maxHp * 0.2));
                 }
             });
             
@@ -2890,8 +2928,8 @@ function killMonster(monster) {
             });
             const hpRegen = getStat(gameState.player, 'healthRegen');
             const mpRegen = getStat(gameState.player, 'manaRegen');
-            gameState.player.health = Math.min(gameState.player.maxHealth, gameState.player.health + hpRegen);
-            gameState.player.mana = Math.min(gameState.player.maxMana, gameState.player.mana + mpRegen);
+            gameState.player.health = Math.min(getStat(gameState.player, 'maxHealth'), gameState.player.health + hpRegen);
+            gameState.player.mana = Math.min(getStat(gameState.player, 'maxMana'), gameState.player.mana + mpRegen);
             updateStats();
             updateMercenaryDisplay();
         }
@@ -2909,8 +2947,8 @@ function killMonster(monster) {
 
             const hpRegen = getStat(mercenary, 'healthRegen');
             const mpRegen = getStat(mercenary, 'manaRegen');
-            mercenary.health = Math.min(mercenary.maxHealth, mercenary.health + hpRegen);
-            mercenary.mana = Math.min(mercenary.maxMana, mercenary.mana + mpRegen);
+            mercenary.health = Math.min(getStat(mercenary, 'maxHealth'), mercenary.health + hpRegen);
+            mercenary.mana = Math.min(getStat(mercenary, 'maxMana'), mercenary.mana + mpRegen);
             
             // 장비 초기화 확인
             if (!mercenary.equipped) {
@@ -2932,7 +2970,7 @@ function killMonster(monster) {
                 const manaCost = knowsHeal ? skillInfo.manaCost : HEAL_MANA_COST;
                 const healRange = knowsHeal ? skillInfo.range : 2;
 
-                if (mercenary.mana >= manaCost && gameState.player.health < gameState.player.maxHealth * 0.7) {
+                if (mercenary.mana >= manaCost && gameState.player.health < getStat(gameState.player, 'maxHealth') * 0.7) {
                     if (getDistance(mercenary.x, mercenary.y, gameState.player.x, gameState.player.y) <= healRange) {
                         const healed = knowsHeal
                             ? healTarget(mercenary, gameState.player, skillInfo)
@@ -2947,7 +2985,7 @@ function killMonster(monster) {
                 }
 
                 for (const otherMerc of gameState.activeMercenaries) {
-                    if (otherMerc !== mercenary && otherMerc.alive && otherMerc.health < otherMerc.maxHealth * 0.5) {
+                    if (otherMerc !== mercenary && otherMerc.alive && otherMerc.health < getStat(otherMerc, 'maxHealth') * 0.5) {
                         if (mercenary.mana >= manaCost && getDistance(mercenary.x, mercenary.y, otherMerc.x, otherMerc.y) <= healRange) {
                             const healed = knowsHeal
                                 ? healTarget(mercenary, otherMerc, skillInfo)
@@ -2988,12 +3026,12 @@ function killMonster(monster) {
             if (skillInfo && mercenary.mana >= skillInfo.manaCost && (forceSkill || Math.random() < 0.5)) {
                 if (skillKey === 'Heal') {
                     let target = null;
-                    if (gameState.player.health < gameState.player.maxHealth && getDistance(mercenary.x, mercenary.y, gameState.player.x, gameState.player.y) <= skillInfo.range) {
+                    if (gameState.player.health < getStat(gameState.player, 'maxHealth') && getDistance(mercenary.x, mercenary.y, gameState.player.x, gameState.player.y) <= skillInfo.range) {
                         target = gameState.player;
                     }
                     if (!target) {
                         for (const m of gameState.activeMercenaries) {
-                            if (m !== mercenary && m.alive && m.health < m.maxHealth && getDistance(mercenary.x, mercenary.y, m.x, m.y) <= skillInfo.range) {
+                            if (m !== mercenary && m.alive && m.health < getStat(m, 'maxHealth') && getDistance(mercenary.x, mercenary.y, m.x, m.y) <= skillInfo.range) {
                                 target = m;
                                 break;
                             }
@@ -3006,10 +3044,7 @@ function killMonster(monster) {
                         return;
                     }
                 } else if (skillKey === 'ChargeAttack' && nearestMonster && nearestDistance <= skillInfo.dashRange && hasLineOfSight(mercenary.x, mercenary.y, nearestMonster.x, nearestMonster.y)) {
-                    let attackValue = mercenary.attack;
-                    if (mercenary.equipped && mercenary.equipped.weapon) {
-                        attackValue += mercenary.equipped.weapon.attack;
-                    }
+                    let attackValue = getStat(mercenary, 'attack');
                     attackValue = Math.floor(attackValue * skillInfo.multiplier);
 
                     const path = findPath(mercenary.x, mercenary.y, nearestMonster.x, nearestMonster.y);
@@ -3102,10 +3137,7 @@ function killMonster(monster) {
                     mercenary.hasActed = true;
                     return;
                 } else if (nearestMonster && nearestDistance <= skillInfo.range && hasLineOfSight(mercenary.x, mercenary.y, nearestMonster.x, nearestMonster.y)) {
-                    let attackValue = mercenary.attack;
-                    if (mercenary.equipped && mercenary.equipped.weapon) {
-                        attackValue += mercenary.equipped.weapon.attack;
-                    }
+                    let attackValue = getStat(mercenary, 'attack');
                     if (skillKey === 'ChargeAttack') {
                         attackValue = Math.floor(attackValue * skillInfo.multiplier);
                     } else if (skillKey === 'Fireball' || skillKey === 'Iceball') {
@@ -3186,11 +3218,8 @@ function killMonster(monster) {
             if (nearestMonster) {
                 if (nearestDistance <= attackRange) {
                     // 공격 (장비 보너스 적용)
-                    let totalAttack = mercenary.attack;
-                    if (mercenary.equipped && mercenary.equipped.weapon) {
-                        totalAttack += mercenary.equipped.weapon.attack;
-                    }
-                    
+                    const totalAttack = getStat(mercenary, 'attack');
+
                     const result = performAttack(mercenary, nearestMonster, { attackValue: totalAttack });
                     if (!result.hit) {
                         addMessage(`❌ ${mercenary.name}의 공격이 빗나갔습니다!`, "mercenary");
@@ -3352,6 +3381,23 @@ function killMonster(monster) {
             if (saved.activeMercenaries) gameState.activeMercenaries = saved.activeMercenaries;
             else if (saved.mercenaries) gameState.activeMercenaries = saved.mercenaries;
             if (saved.standbyMercenaries) gameState.standbyMercenaries = saved.standbyMercenaries;
+            if (!gameState.player.endurance) {
+                gameState.player.endurance = getStat(gameState.player, 'maxHealth') / 2;
+                gameState.player.focus = getStat(gameState.player, 'maxMana') / 2;
+                gameState.player.strength = getStat(gameState.player, 'attack');
+                gameState.player.agility = Math.max(0, Math.round((gameState.player.accuracy - 0.7) / 0.02));
+                gameState.player.intelligence = getStat(gameState.player, 'magicPower');
+            }
+            gameState.activeMercenaries.forEach(m => {
+                if (!m.endurance) {
+                    m.endurance = getStat(m, 'maxHealth') / 2;
+                    m.focus = getStat(m, 'maxMana') / 2;
+                    m.strength = getStat(m, 'attack');
+                    m.agility = Math.max(0, Math.round((m.accuracy - 0.7) / 0.02));
+                    m.intelligence = getStat(m, 'magicPower');
+                    m.baseDefense = m.baseDefense || m.defense - Math.floor(m.endurance * 0.1);
+                }
+            });
             updateFogOfWar();
             updateStats();
             updateInventoryDisplay();
@@ -3429,7 +3475,7 @@ function killMonster(monster) {
                 return;
             }
             if (skill.heal !== undefined) {
-                const healAmount = Math.min(skill.heal, gameState.player.maxHealth - gameState.player.health);
+                const healAmount = Math.min(skill.heal, getStat(gameState.player, 'maxHealth') - gameState.player.health);
                 if (healAmount <= 0) {
                     addMessage('❤️ 체력이 이미 가득 찼습니다.', 'info');
                     processTurn();
@@ -3464,7 +3510,7 @@ function killMonster(monster) {
         }
 
         function healAction() {
-            const healAmount = Math.min(Math.floor(gameState.player.maxHealth * 0.3), gameState.player.maxHealth - gameState.player.health);
+            const healAmount = Math.min(Math.floor(getStat(gameState.player, 'maxHealth') * 0.3), getStat(gameState.player, 'maxHealth') - gameState.player.health);
             if (healAmount > 0) {
                 gameState.player.health += healAmount;
                 addMessage(`💚 플레이어가 휴식을 취해 ${formatNumber(healAmount)} 체력을 회복했습니다.`, 'info');
