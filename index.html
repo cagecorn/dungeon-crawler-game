@@ -648,11 +648,28 @@
         <div id="monster-detail-content"></div>
         <button id="close-monster-detail">닫기</button>
     </div>
-    <script src="dice.js"></script>
     <script>
-        if (typeof window.rollDice === "undefined" && typeof require === "function") {
-            window.rollDice = require("./dice.js").rollDice;
-        }
+        (function(global){
+            function rollDice(notation) {
+                if (typeof notation !== 'string') throw new Error('notation must be a string');
+                const match = notation.trim().match(/^(\d*)d(\d+)([+-]\d+)?$/i);
+                if (!match) throw new Error('invalid dice notation');
+                const count = parseInt(match[1] || '1', 10);
+                const sides = parseInt(match[2], 10);
+                const mod = match[3] ? parseInt(match[3], 10) : 0;
+                let total = 0;
+                for (let i = 0; i < count; i++) {
+                    total += Math.floor(Math.random() * sides) + 1;
+                }
+                return total + mod;
+            }
+            if (typeof module !== 'undefined' && module.exports) {
+                module.exports = { rollDice };
+                global.rollDice = rollDice;
+            } else {
+                global.rollDice = rollDice;
+            }
+        })(this);
     </script>
     <script>
         const ITEM_TYPES = {
@@ -1576,7 +1593,7 @@
                 const level = gameState.player.skillLevels[skill] || 1;
                 div.textContent = `${info.icon} ${info.name} (Lv ${level})`;
                 div.onclick = () => {
-                    if (gameState.player.skillPoints > 0 && skill !== 'Purify' && confirm(`${info.name} 레벨업?`)) {
+                    if (gameState.player.skillPoints > 0 && skill !== 'Purify' && (typeof confirm === 'function' ? confirm(`${info.name} 레벨업?`) : false)) {
                         gameState.player.skillPoints -= 1;
                         gameState.player.skillLevels[skill] = level + 1;
                         updateStats();
@@ -3139,9 +3156,23 @@ function killMonster(monster) {
             if (cellType === 'corpse') {
                 const corpse = gameState.corpses.find(c => c.x === newX && c.y === newY);
                 if (corpse) {
-                    const confirmRevive = confirm('200골드를 사용해 이 몬스터를 부활시키겠습니까?');
+                    const confirmRevive = (typeof confirm === 'function' ? confirm('200골드를 사용해 이 몬스터를 부활시키겠습니까?\n취소를 누르면 아이템을 획득합니다.') : false);
                     if (confirmRevive) {
                         reviveMonsterCorpse(corpse);
+                    } else {
+                        const item = gameState.items.find(i => i.x === newX && i.y === newY);
+                        if (item) {
+                            addToInventory(item);
+                            addMessage(`📦 ${item.name}을(를) 획득했습니다!`, 'item');
+
+                            const itemIndex = gameState.items.findIndex(i => i === item);
+                            if (itemIndex !== -1) {
+                                gameState.items.splice(itemIndex, 1);
+                            }
+                        }
+                        // keep the corpse so the player may revive later
+                        // remove item indicator from the dungeon
+                        gameState.dungeon[newY][newX] = 'corpse';
                     }
                 }
             }
