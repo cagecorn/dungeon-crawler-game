@@ -2069,7 +2069,7 @@ function killMonster(monster) {
 
         function selectJob() {
             let choice = null;
-            if (typeof window.prompt === 'function') {
+            if (typeof window.prompt === 'function' && !navigator.userAgent.includes('jsdom')) {
                 try {
                     choice = window.prompt('Choose your class: Warrior, Archer, Healer, FireMage, IceMage');
                 } catch(e) { choice = null; }
@@ -4106,8 +4106,8 @@ function killMonster(monster) {
             updateShopDisplay();
         }
 
-        function startGame() {
-            gameState.player.job = selectJob();
+        function startGame(job) {
+            gameState.player.job = job || selectJob();
             const jobSkills = PLAYER_JOB_SKILLS[gameState.player.job] || [];
             jobSkills.forEach(s => {
                 if (!gameState.player.skills.includes(s)) {
