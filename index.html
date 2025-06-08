@@ -667,9 +667,7 @@
             ACCESSORY: 'accessory',
             POTION: 'potion',
             REVIVE: 'revive',
-            EXP_SCROLL: 'expScroll',
-            SPELL: 'spell',
-            
+            EXP_SCROLL: 'expScroll'
         };
 
         const SHOP_PRICE_MULTIPLIER = 3;
@@ -1593,14 +1591,6 @@
         function assignSkill(slot, skill) {
             gameState.player.assignedSkills[slot] = skill;
             updateSkillDisplay();
-        }
-
-        function learnSkill(skill) {
-            if (!gameState.player.skills.includes(skill)) {
-                gameState.player.skills.push(skill);
-                addMessage(`📚 ${skill} 스킬을 배웠습니다!`, 'info');
-                updateSkillDisplay();
-            }
         }
 
         // 용병 목록 갱신
