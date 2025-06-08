@@ -1558,11 +1558,11 @@
 
             const html = `
                 <h3>${merc.icon} ${merc.name} Lv.${merc.level}</h3>
-                <div>💪 힘: ${merc.strength}</div>
-                <div>🏃 민첩: ${merc.agility}</div>
-                <div>🛡 체력: ${merc.endurance}</div>
-                <div>🔮 집중: ${merc.focus}</div>
-                <div>📖 지능: ${merc.intelligence}</div>
+                <div>💪 힘: ${merc.strength} ${'★'.repeat(merc.stars.strength)}</div>
+                <div>🏃 민첩: ${merc.agility} ${'★'.repeat(merc.stars.agility)}</div>
+                <div>🛡 체력: ${merc.endurance} ${'★'.repeat(merc.stars.endurance)}</div>
+                <div>🔮 집중: ${merc.focus} ${'★'.repeat(merc.stars.focus)}</div>
+                <div>📖 지능: ${merc.intelligence} ${'★'.repeat(merc.stars.intelligence)}</div>
                 <hr>
                 <div>❤️ HP: ${merc.health}/${getStat(merc, 'maxHealth')}</div>
                 <div>🔋 MP: ${merc.mana}/${getStat(merc, 'maxMana')}</div>
@@ -1586,11 +1586,13 @@
             document.getElementById('mercenary-detail-content').innerHTML = html;
             document.getElementById('mercenary-detail-panel').style.display = 'block';
             gameState.gameRunning = false;
+            window.currentDetailMercenary = merc;
         }
 
         function hideMercenaryDetails() {
             document.getElementById('mercenary-detail-panel').style.display = 'none';
             gameState.gameRunning = true;
+            window.currentDetailMercenary = null;
         }
 
         function spawnMercenaryNearPlayer(mercenary) {
@@ -1910,13 +1912,19 @@ function killMonster(monster) {
             while (mercenary.exp >= mercenary.expNeeded) {
                 mercenary.exp -= mercenary.expNeeded;
                 mercenary.level += 1;
-                mercenary.endurance += 2;
-                mercenary.strength += 1;
+                mercenary.endurance += 2 + mercenary.stars.endurance * 0.5;
+                mercenary.strength += 1 + mercenary.stars.strength * 0.5;
+                mercenary.agility += 1 + mercenary.stars.agility * 0.5;
+                mercenary.focus += 1 + mercenary.stars.focus * 0.5;
+                mercenary.intelligence += 1 + mercenary.stars.intelligence * 0.5;
                 mercenary.health = getStat(mercenary, 'maxHealth');
                 mercenary.mana = getStat(mercenary, 'maxMana');
                 mercenary.expNeeded = Math.floor(mercenary.expNeeded * 1.5);
                 addMessage(`🎉 ${mercenary.name}의 레벨이 ${mercenary.level}이(가) 되었습니다!`, 'mercenary');
                 updateMercenaryDisplay();
+                if (window.currentDetailMercenary && window.currentDetailMercenary.id === mercenary.id) {
+                    showMercenaryDetails(mercenary);
+                }
             }
         }
 
@@ -2145,6 +2153,20 @@ function killMonster(monster) {
             renderDungeon();
         }
 
+        function generateStars() {
+            let stars;
+            do {
+                stars = {
+                    strength: Math.floor(Math.random() * 4),
+                    agility: Math.floor(Math.random() * 4),
+                    endurance: Math.floor(Math.random() * 4),
+                    focus: Math.floor(Math.random() * 4),
+                    intelligence: Math.floor(Math.random() * 4)
+                };
+            } while (Object.values(stars).reduce((a,b)=>a+b,0) > 9);
+            return stars;
+        }
+
         // 용병 생성 함수
         function createMercenary(type, x, y) {
             const mercType = MERCENARY_TYPES[type];
@@ -2165,6 +2187,7 @@ function killMonster(monster) {
                 x: x,
                 y: y,
                 level: 1,
+                stars: generateStars(),
                 endurance: endurance,
                 focus: focus,
                 strength: mercType.baseAttack,
@@ -3408,6 +3431,7 @@ function killMonster(monster) {
                 return;
             }
             const saved = JSON.parse(data);
+            delete saved.mercenaries;
             Object.assign(gameState, saved);
             if (saved.activeMercenaries) gameState.activeMercenaries = saved.activeMercenaries;
             else if (saved.mercenaries) gameState.activeMercenaries = saved.mercenaries;
@@ -3432,6 +3456,9 @@ function killMonster(monster) {
                     m.agility = Math.max(0, Math.round((m.accuracy - 0.7) / 0.02));
                     m.intelligence = m.magicPower;
                     m.baseDefense = m.defense - Math.floor(endurance * 0.1);
+                }
+                if (!m.stars) {
+                    m.stars = generateStars();
                 }
             };
 
