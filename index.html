@@ -3895,11 +3895,23 @@ function killMonster(monster) {
                 e.preventDefault();
                 movePlayer(1, 0);
             }
-            else if (e.key.toLowerCase() === 'f') {
+            else if (e.key.toLowerCase() === 'f' || e.key.toLowerCase() === 'z') {
                 e.preventDefault();
                 if (gameState.player.job === 'Archer') rangedAction();
                 else if (gameState.player.job === 'Healer') healAction();
                 else meleeAttackAction();
+            }
+            else if (e.key.toLowerCase() === 'x') {
+                e.preventDefault();
+                skill1Action();
+            }
+            else if (e.key.toLowerCase() === 'c') {
+                e.preventDefault();
+                skill2Action();
+            }
+            else if (e.key.toLowerCase() === 'v') {
+                e.preventDefault();
+                recallMercenaries();
             }
             else if (/^[1-9]$/.test(e.key)) {
                 const idx = parseInt(e.key) - 1;

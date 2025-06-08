@@ -9,9 +9,9 @@ Open `index.html` in a modern web browser to start the game.
 ### Controls
 
 - Use the arrow keys or on-screen arrows to move your character.
-- Press `F` or click **Attack** to strike the nearest monster.
+- Press `Z` (or `F`) or click **Attack** to strike the nearest monster.
 - Number keys `1`-`9` open the details of each hired mercenary.
-- Additional actions such as **Heal**, **Recall**, **Skill1** and **Skill2** are available via the action buttons.
+- Additional actions such as **Heal**, **Recall**, **Skill1** and **Skill2** are available via the action buttons. You can also use `X` for **Skill1**, `C` for **Skill2** and `V` to recall your mercenaries.
 
 ### Hiring Mercenaries
 
