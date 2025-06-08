@@ -22,7 +22,7 @@ async function run() {
 
   const { createItem, formatItem, PREFIXES, SUFFIXES } = dom.window;
 
-  const seq = [0, 0, 0.79, 0, 0.79];
+  const seq = [0, 0, 0.35, 0, 0.35];
   const origRandom = dom.window.Math.random;
   dom.window.Math.random = () => seq.shift() ?? origRandom();
 

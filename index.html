@@ -785,7 +785,8 @@
                 baseGold: 7,
                 speed: 1,
                 range: 3,
-                special: 'ranged'
+                special: 'ranged',
+                statusEffect: 'poison'
             },
             WIZARD: {
                 name: '🧙‍♂️ 마법사',
@@ -803,7 +804,8 @@
                 baseGold: 10,
                 speed: 1,
                 range: 4,
-                special: 'magic'
+                special: 'magic',
+                statusEffect: 'freeze'
             },
             ORC: {
                 name: '💪 오크 전사',
@@ -821,7 +823,8 @@
                 baseGold: 12,
                 speed: 0.8,
                 range: 1,
-                special: 'strong'
+                special: 'strong',
+                statusEffect: 'bleed'
             },
             BOSS: {
                 name: '👑 던전 보스',
@@ -839,7 +842,8 @@
                 baseGold: 50,
                 speed: 1,
                 range: 2,
-                special: 'boss'
+                special: 'boss',
+                statusEffect: 'burn'
             }
         };
 
@@ -882,6 +886,10 @@
                 name: '🛡️ 가죽 갑옷',
                 type: ITEM_TYPES.ARMOR,
                 defense: 2,
+                poisonResist: 0.1,
+                bleedResist: 0.1,
+                burnResist: 0.1,
+                freezeResist: 0.1,
                 price: 15,
                 level: 1,
                 icon: '🛡️'
@@ -890,6 +898,10 @@
                 name: '🔗 사슬 갑옷',
                 type: ITEM_TYPES.ARMOR,
                 defense: 4,
+                poisonResist: 0.1,
+                bleedResist: 0.1,
+                burnResist: 0.1,
+                freezeResist: 0.1,
                 price: 35,
                 level: 2,
                 icon: '🔗'
@@ -898,6 +910,10 @@
                 name: '🛡️ 판금 갑옷',
                 type: ITEM_TYPES.ARMOR,
                 defense: 6,
+                poisonResist: 0.1,
+                bleedResist: 0.1,
+                burnResist: 0.1,
+                freezeResist: 0.1,
                 price: 60,
                 level: 3,
                 icon: '🛡️'
@@ -906,6 +922,10 @@
                 name: '💎 치명 부적',
                 type: ITEM_TYPES.ACCESSORY,
                 critChance: 0.05,
+                poisonResist: 0.1,
+                bleedResist: 0.1,
+                burnResist: 0.1,
+                freezeResist: 0.1,
                 price: 20,
                 level: 1,
                 icon: '💎'
@@ -914,6 +934,10 @@
                 name: '🍀 회피 부적',
                 type: ITEM_TYPES.ACCESSORY,
                 evasion: 0.05,
+                poisonResist: 0.1,
+                bleedResist: 0.1,
+                burnResist: 0.1,
+                freezeResist: 0.1,
                 price: 20,
                 level: 1,
                 icon: '🍀'
@@ -922,6 +946,10 @@
                 name: '🎯 명중 반지',
                 type: ITEM_TYPES.ACCESSORY,
                 accuracy: 0.05,
+                poisonResist: 0.1,
+                bleedResist: 0.1,
+                burnResist: 0.1,
+                freezeResist: 0.1,
                 price: 25,
                 level: 2,
                 icon: '🎯'
@@ -1016,14 +1044,22 @@
             { name: 'Sharp', modifiers: { attack: 1 } },
             { name: 'Sturdy', modifiers: { defense: 1 } },
             { name: 'Refreshing', modifiers: { healthRegen: 1 } },
-            { name: 'Mystic', modifiers: { manaRegen: 1 } }
+            { name: 'Mystic', modifiers: { manaRegen: 1 } },
+            { name: 'Venomous', modifiers: { status: 'poison' } },
+            { name: 'Serrated', modifiers: { status: 'bleed' } },
+            { name: 'Smoldering', modifiers: { status: 'burn' } },
+            { name: 'Frosted', modifiers: { status: 'freeze' } }
         ];
         const SUFFIXES = [
             { name: 'of Protection', modifiers: { defense: 2 } },
             { name: 'of Fury', modifiers: { attack: 2 } },
             { name: 'of Vitality', modifiers: { maxHealth: 5 } },
             { name: 'of Wisdom', modifiers: { manaRegen: 1 } },
-            { name: 'of Mending', modifiers: { healthRegen: 1 } }
+            { name: 'of Mending', modifiers: { healthRegen: 1 } },
+            { name: 'of Venom', modifiers: { status: 'poison' } },
+            { name: 'of Bleeding', modifiers: { status: 'bleed' } },
+            { name: 'of Burning', modifiers: { status: 'burn' } },
+            { name: 'of Frost', modifiers: { status: 'freeze' } }
         ];
 
         // 게임 상태
@@ -1060,9 +1096,11 @@
                 poison: false,
                 burn: false,
                 freeze: false,
+                bleed: false,
                 poisonTurns: 0,
                 burnTurns: 0,
                 freezeTurns: 0,
+                bleedTurns: 0,
                 exp: 0,
                 expNeeded: 20,
                 gold: 1000,
@@ -1174,7 +1212,7 @@
 
         function tryApplyStatus(target, status, turns) {
             if (!target.statusResistances || target.statusResistances[status] === undefined) return false;
-            let resist = target.statusResistances[status];
+            let resist = getStatusResist(target, status);
             // removed obsolete trait check
             if (Math.random() > resist) {
                 target[status] = true;
@@ -1184,6 +1222,19 @@
                 return true;
             }
             return false;
+        }
+
+        function getStatusResist(character, status) {
+            let value = character.statusResistances && character.statusResistances[status] ? character.statusResistances[status] : 0;
+            if (character.equipped) {
+                ['weapon', 'armor', 'accessory1', 'accessory2'].forEach(slot => {
+                    const it = character.equipped[slot];
+                    if (it && it[status + 'Resist'] !== undefined) {
+                        value += it[status + 'Resist'];
+                    }
+                });
+            }
+            return value;
         }
 
         // 통합 공격 처리
@@ -1261,6 +1312,11 @@
             if (item.magicPower !== undefined) stats.push(`마공+${formatNumber(item.magicPower)}`);
             if (item.magicResist !== undefined) stats.push(`마방+${formatNumber(item.magicResist)}`);
             if (item.manaRegen !== undefined) stats.push(`MP회복+${formatNumber(item.manaRegen)}`);
+            if (item.poisonResist !== undefined) stats.push(`독저항+${formatNumber(item.poisonResist)}`);
+            if (item.bleedResist !== undefined) stats.push(`출혈저항+${formatNumber(item.bleedResist)}`);
+            if (item.burnResist !== undefined) stats.push(`화상저항+${formatNumber(item.burnResist)}`);
+            if (item.freezeResist !== undefined) stats.push(`동결저항+${formatNumber(item.freezeResist)}`);
+            if (item.status) stats.push(`${item.status} 부여`);
             return `${item.name}${stats.length ? ' (' + stats.join(', ') + ')' : ''}`;
         }
 
@@ -1351,7 +1407,7 @@
                     } else {
                         attackValue = getStat(gameState.player, 'attack');
                     }
-                    const result = performAttack(gameState.player, monster, { attackValue, magic, element: proj.element });
+                    const result = performAttack(gameState.player, monster, { attackValue, magic, element: proj.element, status: gameState.player.equipped.weapon && gameState.player.equipped.weapon.status });
                     const icon = proj.icon || '➡️';
                     const name = proj.skill ? SKILL_DEFS[proj.skill].name : '원거리 공격';
                     if (!result.hit) {
@@ -1741,6 +1797,7 @@
                 poison: false,
                 burn: false,
                 freeze: false,
+                bleed: false,
                 poisonTurns: 0,
                 burnTurns: 0,
                 freezeTurns: 0,
@@ -1750,6 +1807,7 @@
                 range: data.range,
                 speed: data.speed,
                 special: data.special,
+                statusEffect: data.statusEffect,
                 lootChance: 0.3,
                 hasActed: false
             };
@@ -1827,6 +1885,12 @@ function killMonster(monster) {
                 entity.freezeTurns--;
                 addMessage(`❄️ ${name}이(가) 빙결로 1의 피해를 입었습니다.`, 'combat');
                 if (entity.freezeTurns <= 0) entity.freeze = false;
+            }
+            if (entity.bleed && entity.bleedTurns > 0) {
+                entity.health -= 2;
+                entity.bleedTurns--;
+                addMessage(`🩸 ${name}이(가) 출혈로 2의 피해를 입었습니다.`, 'combat');
+                if (entity.bleedTurns <= 0) entity.bleed = false;
             }
             if (entity.health <= 0) died = true;
             return died;
@@ -2269,14 +2333,15 @@ function killMonster(monster) {
                 poison: false,
                 burn: false,
                 freeze: false,
+                bleed: false,
                 poisonTurns: 0,
                 burnTurns: 0,
                 freezeTurns: 0,
+                bleedTurns: 0,
                 exp: 0,
                 expNeeded: 15,
                 alive: true,
                 hasActed: false,
-                bleedTurns: 0,
                 equipped: {
                     weapon: null,
                     armor: null,
@@ -2307,7 +2372,12 @@ function killMonster(monster) {
                         item.prefix = prefix.name;
                         item.name = `${prefix.name} ${item.name}`;
                         for (const stat in prefix.modifiers) {
-                            item[stat] = (item[stat] || 0) + prefix.modifiers[stat];
+                            const val = prefix.modifiers[stat];
+                            if (typeof val === 'number') {
+                                item[stat] = (item[stat] || 0) + val;
+                            } else {
+                                item[stat] = val;
+                            }
                         }
                     }
                 } else if (Math.random() < 0.5) {
@@ -2315,7 +2385,12 @@ function killMonster(monster) {
                     item.prefix = prefix.name;
                     item.name = `${prefix.name} ${item.name}`;
                     for (const stat in prefix.modifiers) {
-                        item[stat] = (item[stat] || 0) + prefix.modifiers[stat];
+                        const val = prefix.modifiers[stat];
+                        if (typeof val === 'number') {
+                            item[stat] = (item[stat] || 0) + val;
+                        } else {
+                            item[stat] = val;
+                        }
                     }
                 }
                 if (Math.random() < 0.5) {
@@ -2323,7 +2398,12 @@ function killMonster(monster) {
                     item.suffix = suffix.name;
                     item.name = `${item.name} ${suffix.name}`;
                     for (const stat in suffix.modifiers) {
-                        item[stat] = (item[stat] || 0) + suffix.modifiers[stat];
+                        const val = suffix.modifiers[stat];
+                        if (typeof val === 'number') {
+                            item[stat] = (item[stat] || 0) + val;
+                        } else {
+                            item[stat] = val;
+                        }
                     }
                 }
             }
@@ -2626,7 +2706,8 @@ function killMonster(monster) {
                 const result = performAttack(monster, nearestTarget, {
                     attackValue: attackValue,
                     magic: monster.special === 'magic',
-                    defenseValue: totalDefense
+                    defenseValue: totalDefense,
+                    status: monster.statusEffect
                 });
 
                 let attackType = monster.special === 'magic' ? '🔮 마법 공격' :
@@ -2713,7 +2794,7 @@ function killMonster(monster) {
                 if (monster) {
                     const totalAttack = getStat(gameState.player, 'attack');
 
-                    const result = performAttack(gameState.player, monster, { attackValue: totalAttack });
+                    const result = performAttack(gameState.player, monster, { attackValue: totalAttack, status: gameState.player.equipped.weapon && gameState.player.equipped.weapon.status });
                     if (!result.hit) {
                         addMessage(`❌ ${monster.name}에게 공격이 빗나갔습니다!`, "combat");
                     } else {
@@ -3184,7 +3265,7 @@ function killMonster(monster) {
 
                     const hits = 1;
                     const icon = skillInfo.icon;
-                    const result = performAttack(mercenary, nearestMonster, { attackValue });
+                    const result = performAttack(mercenary, nearestMonster, { attackValue, status: mercenary.equipped.weapon && mercenary.equipped.weapon.status });
                     if (!result.hit) {
                         addMessage(`❌ ${mercenary.name}의 ${skillInfo.name}이 빗나갔습니다!`, "mercenary");
                     } else {
@@ -3257,7 +3338,7 @@ function killMonster(monster) {
                     const hits = skillKey === 'DoubleStrike' ? 2 : 1;
                     const icon = skillInfo.icon;
                     for (let i = 0; i < hits; i++) {
-                        const result = performAttack(mercenary, nearestMonster, { attackValue, magic: skillInfo.magic, element: skillInfo.element });
+                        const result = performAttack(mercenary, nearestMonster, { attackValue, magic: skillInfo.magic, element: skillInfo.element, status: mercenary.equipped.weapon && mercenary.equipped.weapon.status });
                         if (!result.hit) {
                             addMessage(`❌ ${mercenary.name}의 ${skillInfo.name}이 빗나갔습니다!`, "mercenary");
                         } else {
@@ -3330,7 +3411,7 @@ function killMonster(monster) {
                     // 공격 (장비 보너스 적용)
                     const totalAttack = getStat(mercenary, 'attack');
 
-                    const result = performAttack(mercenary, nearestMonster, { attackValue: totalAttack });
+                    const result = performAttack(mercenary, nearestMonster, { attackValue: totalAttack, status: mercenary.equipped.weapon && mercenary.equipped.weapon.status });
                     if (!result.hit) {
                         addMessage(`❌ ${mercenary.name}의 공격이 빗나갔습니다!`, "mercenary");
                     } else {
