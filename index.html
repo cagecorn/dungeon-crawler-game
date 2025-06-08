@@ -533,6 +533,20 @@
             font-size: 10px;
             cursor: pointer;
         }
+        .target-button {
+            background: linear-gradient(45deg, #4CAF50, #45a049);
+            color: white;
+            border: none;
+            padding: 6px 10px;
+            margin: 4px 0;
+            border-radius: 4px;
+            cursor: pointer;
+            width: 100%;
+            font-size: 12px;
+        }
+        .target-button:hover {
+            background: linear-gradient(45deg, #45a049, #4CAF50);
+        }
     </style>
 </head>
 <body>
@@ -645,6 +659,10 @@
     <div id="monster-detail-panel" class="details-panel" style="display:none;">
         <div id="monster-detail-content"></div>
         <button id="close-monster-detail">닫기</button>
+    </div>
+    <div id="item-target-panel" class="details-panel" style="display:none;">
+        <div id="item-target-content"></div>
+        <button id="close-item-target">취소</button>
     </div>
     <script>
         (function(global){
@@ -2887,48 +2905,9 @@ function killMonster(monster) {
             }
         }
 
-        // 아이템 클릭 시 대상 선택
+        // 아이템 클릭 시 대상 패널 표시
         function handleItemClick(item) {
-            const options = ['0: 플레이어'];
-            gameState.activeMercenaries.forEach((m, i) => {
-                options.push(`${i + 1}: ${m.name}`);
-            });
-
-            if (item.type === ITEM_TYPES.POTION || item.type === ITEM_TYPES.EXP_SCROLL) {
-                const choice = prompt(`${item.name}을(를) 사용할 대상을 선택하세요:\n${options.join('\n')}`);
-                if (choice === null) return;
-                const index = parseInt(choice, 10);
-                let target = gameState.player;
-                if (!isNaN(index) && index > 0 && gameState.activeMercenaries[index - 1]) {
-                    target = gameState.activeMercenaries[index - 1];
-                }
-                useItemOnTarget(item, target);
-                return;
-            } else if (item.type === ITEM_TYPES.REVIVE) {
-                const dead = gameState.activeMercenaries.filter(m => !m.alive);
-                if (dead.length === 0) {
-                    addMessage('부활할 용병이 없습니다.', 'info');
-                    return;
-                }
-                const reviveOptions = dead.map((m, i) => `${i}: ${m.name}`);
-                const choice = prompt(`${item.name}을(를) 사용할 대상을 선택하세요:\n${reviveOptions.join('\n')}`);
-                if (choice === null) return;
-                const idx = parseInt(choice, 10);
-                if (!isNaN(idx) && dead[idx]) {
-                    const merc = dead[idx];
-                    reviveMercenary(merc);
-                }
-                return;
-            }
-
-            const choice = prompt(`${item.name}을(를) 장착할 대상을 선택하세요:\n${options.join('\n')}`);
-            if (choice === null) return;
-            const index = parseInt(choice, 10);
-            if (index === 0 || isNaN(index)) {
-                equipItem(item);
-            } else if (gameState.activeMercenaries[index - 1]) {
-                equipItemToMercenary(item, gameState.activeMercenaries[index - 1]);
-            }
+            showItemTargetPanel(item);
         }
 
         // 아이템 장착 (플레이어)
@@ -4422,6 +4401,49 @@ function killMonster(monster) {
             gameState.gameRunning = true;
         }
 
+        function showItemTargetPanel(item) {
+            const panel = document.getElementById('item-target-panel');
+            const content = document.getElementById('item-target-content');
+            content.innerHTML = `<h3>${item.name} 대상 선택</h3>`;
+
+            const addBtn = (label, action) => {
+                const btn = document.createElement('button');
+                btn.textContent = label;
+                btn.className = 'target-button';
+                btn.onclick = () => { action(); hideItemTargetPanel(); };
+                content.appendChild(btn);
+            };
+
+            if (item.type === ITEM_TYPES.REVIVE) {
+                const dead = gameState.activeMercenaries.filter(m => !m.alive);
+                if (dead.length === 0) {
+                    addMessage('부활할 용병이 없습니다.', 'info');
+                    return;
+                }
+                dead.forEach(m => {
+                    addBtn(m.name, () => reviveMercenary(m));
+                });
+            } else if (item.type === ITEM_TYPES.POTION || item.type === ITEM_TYPES.EXP_SCROLL) {
+                addBtn('플레이어', () => useItemOnTarget(item, gameState.player));
+                gameState.activeMercenaries.forEach(m => {
+                    addBtn(m.name, () => useItemOnTarget(item, m));
+                });
+            } else {
+                addBtn('플레이어', () => equipItem(item));
+                gameState.activeMercenaries.forEach(m => {
+                    addBtn(m.name, () => equipItemToMercenary(item, m));
+                });
+            }
+
+            panel.style.display = 'block';
+            gameState.gameRunning = false;
+        }
+
+        function hideItemTargetPanel() {
+            document.getElementById('item-target-panel').style.display = 'none';
+            gameState.gameRunning = true;
+        }
+
         function buyShopItem(index) {
             const item = gameState.shopItems[index];
             if (!item) return;
@@ -4473,6 +4495,7 @@ function killMonster(monster) {
         document.getElementById('close-shop').onclick = hideShop;
         document.getElementById('close-mercenary-detail').onclick = hideMercenaryDetails;
         document.getElementById('close-monster-detail').onclick = hideMonsterDetails;
+        document.getElementById('close-item-target').onclick = hideItemTargetPanel;
         document.getElementById('dungeon').addEventListener('click', handleDungeonClick);
         document.getElementById('pickup').onclick = pickUpAction;
 
