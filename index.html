@@ -3456,18 +3456,18 @@ function killMonster(monster) {
                 mercenary.nextY = mercenary.y;
             });
 
-            gameState.activeMercenaries.sort((a, b) => {
+            const sortedMercenaries = [...gameState.activeMercenaries].sort((a, b) => {
                 const da = getDistance(a.x, a.y, gameState.player.x, gameState.player.y);
                 const db = getDistance(b.x, b.y, gameState.player.x, gameState.player.y);
                 return db - da; // farthest first
             });
 
-            gameState.activeMercenaries.forEach(mercenary => {
+            sortedMercenaries.forEach(mercenary => {
                 processMercenaryTurn(mercenary);
             });
 
             const occupied = new Set();
-            gameState.activeMercenaries.forEach(mercenary => {
+            sortedMercenaries.forEach(mercenary => {
                 const key = `${mercenary.nextX},${mercenary.nextY}`;
                 if (!occupied.has(key)) {
                     mercenary.x = mercenary.nextX;
