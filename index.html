@@ -1793,6 +1793,7 @@
         }
 
         function spawnMercenaryNearPlayer(mercenary) {
+            if (!gameState.dungeon.length) generateDungeon();
             const positions = [
                 {x: gameState.player.x + 1, y: gameState.player.y},
                 {x: gameState.player.x - 1, y: gameState.player.y},
@@ -1806,7 +1807,7 @@
             for (const pos of positions) {
                 if (pos.x >= 0 && pos.x < gameState.dungeonSize &&
                     pos.y >= 0 && pos.y < gameState.dungeonSize &&
-                    gameState.dungeon[pos.y][pos.x] === 'empty' &&
+                    gameState.dungeon[pos.y] && gameState.dungeon[pos.y][pos.x] === 'empty' &&
                     !gameState.activeMercenaries.some(m => m.x === pos.x && m.y === pos.y && m.alive) &&
                     !gameState.monsters.some(m => m.x === pos.x && m.y === pos.y)) {
                     mercenary.x = pos.x;
