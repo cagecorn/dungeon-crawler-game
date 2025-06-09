@@ -13,15 +13,16 @@ async function run() {
   let alerted = null;
   win.alert = msg => { alerted = msg; };
 
-  win.addMessage('test', 'info', 'some detail');
+  const detail = 'damage roll 1 + attack 2 - defense 1 = 2';
+  win.addMessage('test', 'info', detail);
   const log = win.document.getElementById('message-log');
   const msg = log.lastElementChild;
-  if (!msg.dataset.detail || msg.dataset.detail !== 'some detail') {
+  if (!msg.dataset.detail || msg.dataset.detail !== detail) {
     console.error('detail attribute missing');
     process.exit(1);
   }
   msg.click();
-  if (alerted !== 'some detail') {
+  if (alerted !== detail) {
     console.error('detail click did not trigger alert');
     process.exit(1);
   }

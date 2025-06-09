@@ -1714,10 +1714,14 @@
             }
 
             let elementDamage = 0;
+            let elementBaseDamage = 0;
+            let elementResist = 0;
             if (element) {
                 elementDamage = getStat(attacker, `${element}Damage`);
+                elementBaseDamage = elementDamage;
                 if (defender.elementResistances && defender.elementResistances[element] !== undefined) {
                     const resist = defender.elementResistances[element];
+                    elementResist = resist;
                     elementDamage = Math.floor(elementDamage * (1 - resist));
                 }
             }
@@ -1727,10 +1731,12 @@
             defender.health -= damage;
 
             let statusApplied = false;
+            const statusEffects = [];
             if (status) {
                 const res = tryApplyStatus(defender, status, 3);
                 if (res.applied) {
                     statusApplied = true;
+                    statusEffects.push(status);
                     const defName = defender === gameState.player ? '플레이어' : defender.name;
                     addMessage(`⚠️ ${defName}이(가) ${STATUS_NAMES[status] || status} 상태가 되었습니다!`, 'combat', `resistance roll ${res.roll} vs DC ${res.dc} → failed`);
                 }
@@ -1739,6 +1745,7 @@
                 const res = tryApplyStatus(defender, 'burn', 2);
                 if (res.applied) {
                     statusApplied = true;
+                    statusEffects.push('burn');
                     const defName = defender === gameState.player ? '플레이어' : defender.name;
                     addMessage(`🔥 ${defName}이(가) 화상 상태가 되었습니다!`, 'combat', `resistance roll ${res.roll} vs DC ${res.dc} → failed`);
                 }
@@ -1747,12 +1754,36 @@
                 const res = tryApplyStatus(defender, 'freeze', 2);
                 if (res.applied) {
                     statusApplied = true;
+                    statusEffects.push('freeze');
                     const defName = defender === gameState.player ? '플레이어' : defender.name;
                     addMessage(`❄️ ${defName}이(가) 빙결 상태가 되었습니다!`, 'combat', `resistance roll ${res.roll} vs DC ${res.dc} → failed`);
                 }
             }
 
-            return { hit: true, crit, damage, baseDamage, elementDamage, element, statusApplied, hitRoll, damageRoll, defenseTarget, attackBonus };
+            return { hit: true, crit, damage, baseDamage, elementDamage, element, elementBaseDamage, elementResist, statusApplied, statusEffects, hitRoll, damageRoll, defenseTarget, attackBonus, attackValue: attackStat, defenseStat };
+        }
+
+        function buildAttackDetail(type, skill, result) {
+            let detail = `${type}${skill ? ' ' + skill : ''}: `;
+            if (!result.hit) {
+                return detail + `miss (hit roll ${result.hitRoll} vs ${result.defenseTarget})`;
+            }
+            detail += `damage roll ${result.damageRoll} + attack ${result.attackValue} - defense ${result.defenseStat} = ${result.baseDamage}`;
+            if (result.element) {
+                const emoji = ELEMENT_EMOJI[result.element] || result.element;
+                if (result.elementBaseDamage) {
+                    if (result.elementResist) {
+                        detail += `; ${emoji} ${result.elementBaseDamage} x (1 - resist ${result.elementResist}) = ${result.elementDamage}`;
+                    } else {
+                        detail += `; ${emoji} ${result.elementBaseDamage}`;
+                    }
+                }
+            }
+            if (result.statusEffects && result.statusEffects.length) {
+                const names = result.statusEffects.map(s => STATUS_NAMES[s] || s).join(', ');
+                detail += `; status ${names}`;
+            }
+            return detail;
         }
 
         function formatNumber(value) {
@@ -1910,7 +1941,7 @@
                     const result = performAttack(gameState.player, monster, { attackValue, magic, element: proj.element, status: gameState.player.equipped.weapon && gameState.player.equipped.weapon.status, damageDice: proj.damageDice });
                     const icon = proj.icon || '➡️';
                     const name = proj.skill ? SKILL_DEFS[proj.skill].name : '원거리 공격';
-                    const detail = `hit roll ${result.hitRoll} vs ${result.defenseTarget} → ${result.hit ? 'hit' : 'miss'}${result.hit ? '; damage roll ' + result.damageRoll : ''}`;
+                    const detail = buildAttackDetail('원거리 공격', name, result);
                     if (!result.hit) {
                         addMessage(`❌ ${monster.name}에게 ${name}이 빗나갔습니다!`, 'combat', detail);
                     } else {
@@ -3827,7 +3858,7 @@ function killMonster(monster) {
                                '⚔️ 공격';
 
                 const targetName = nearestTarget === gameState.player ? "플레이어" : nearestTarget.name;
-                const detail = `hit roll ${result.hitRoll} vs ${result.defenseTarget} → ${result.hit ? 'hit' : 'miss'}${result.hit ? '; damage roll ' + result.damageRoll : ''}`;
+                const detail = buildAttackDetail(attackType, traitInfo && traitInfo.name ? traitInfo.name : '', result);
                 if (!result.hit) {
                     addMessage(`${monster.name}의 공격이 빗나갔습니다!`, "combat", detail);
                 } else {
@@ -3927,7 +3958,7 @@ function killMonster(monster) {
                     const totalAttack = getStat(gameState.player, 'attack');
 
                     const result = performAttack(gameState.player, monster, { attackValue: totalAttack, status: gameState.player.equipped.weapon && gameState.player.equipped.weapon.status });
-                    const detail = `hit roll ${result.hitRoll} vs ${result.defenseTarget} → ${result.hit ? 'hit' : 'miss'}${result.hit ? '; damage roll ' + result.damageRoll : ''}`;
+                    const detail = buildAttackDetail('근접 공격', '', result);
                     if (!result.hit) {
                         addMessage(`❌ ${monster.name}에게 공격이 빗나갔습니다!`, "combat", detail);
                     } else {
@@ -4502,7 +4533,7 @@ function killMonster(monster) {
                     const hits = 1;
                     const icon = skillInfo.icon;
                     const result = performAttack(mercenary, nearestMonster, { attackValue, status: mercenary.equipped.weapon && mercenary.equipped.weapon.status });
-                    const detail = `hit roll ${result.hitRoll} vs ${result.defenseTarget} → ${result.hit ? 'hit' : 'miss'}${result.hit ? '; damage roll ' + result.damageRoll : ''}`;
+                    const detail = buildAttackDetail(skillInfo.icon, skillInfo.name, result);
                     if (!result.hit) {
                         addMessage(`❌ ${mercenary.name}의 ${skillInfo.name}이 빗나갔습니다!`, "mercenary", detail);
                     } else {
@@ -4576,7 +4607,7 @@ function killMonster(monster) {
                     const icon = skillInfo.icon;
                     for (let i = 0; i < hits; i++) {
                         const result = performAttack(mercenary, nearestMonster, { attackValue, magic: skillInfo.magic, element: skillInfo.element, status: skillInfo.status || (mercenary.equipped.weapon && mercenary.equipped.weapon.status), damageDice: skillInfo.damageDice });
-                        const detail = `hit roll ${result.hitRoll} vs ${result.defenseTarget} → ${result.hit ? 'hit' : 'miss'}${result.hit ? '; damage roll ' + result.damageRoll : ''}`;
+                        const detail = buildAttackDetail(icon, skillInfo.name, result);
                         if (!result.hit) {
                             addMessage(`❌ ${mercenary.name}의 ${skillInfo.name}이 빗나갔습니다!`, "mercenary", detail);
                         } else {
@@ -4662,7 +4693,7 @@ function killMonster(monster) {
                     const icon = skillInfo.icon;
                     for (let i = 0; i < hits; i++) {
                         const result = performAttack(mercenary, nearestMonster, { attackValue, magic: skillInfo.magic, element: skillInfo.element, status: mercenary.equipped.weapon && mercenary.equipped.weapon.status, damageDice: skillInfo.damageDice });
-                        const detail = `hit roll ${result.hitRoll} vs ${result.defenseTarget} → ${result.hit ? 'hit' : 'miss'}${result.hit ? '; damage roll ' + result.damageRoll : ''}`;
+                        const detail = buildAttackDetail(icon, skillInfo.name, result);
                         if (!result.hit) {
                             addMessage(`❌ ${mercenary.name}의 ${skillInfo.name}이 빗나갔습니다!`, "mercenary", detail);
                         } else {
@@ -4741,7 +4772,7 @@ function killMonster(monster) {
                     const totalAttack = getStat(mercenary, 'attack');
 
                     const result = performAttack(mercenary, nearestMonster, { attackValue: totalAttack, status: mercenary.equipped.weapon && mercenary.equipped.weapon.status });
-                    const detail = `hit roll ${result.hitRoll} vs ${result.defenseTarget} → ${result.hit ? 'hit' : 'miss'}${result.hit ? '; damage roll ' + result.damageRoll : ''}`;
+                    const detail = buildAttackDetail('근접 공격', '', result);
                     if (!result.hit) {
                         addMessage(`❌ ${mercenary.name}의 공격이 빗나갔습니다!`, "mercenary", detail);
                     } else {
@@ -5094,7 +5125,7 @@ function killMonster(monster) {
                 targets.slice().forEach(monster => {
                     const attackValue = rollDice(skill.damageDice) * level + getStat(gameState.player, 'magicPower');
                     const result = performAttack(gameState.player, monster, { attackValue, magic: skill.magic, element: skill.element, damageDice: skill.damageDice, status: gameState.player.equipped.weapon && gameState.player.equipped.weapon.status });
-                    const detail = `hit roll ${result.hitRoll} vs ${result.defenseTarget} → ${result.hit ? 'hit' : 'miss'}${result.hit ? '; damage roll ' + result.damageRoll : ''}`;
+                    const detail = buildAttackDetail(skill.icon, skill.name, result);
                     if (!result.hit) {
                         addMessage(`❌ ${monster.name}에게 ${skill.name}이 빗나갔습니다!`, 'combat', detail);
                     } else {
@@ -5157,7 +5188,7 @@ function killMonster(monster) {
                 for (let i = 0; i < hits; i++) {
                     const attackValue = Math.floor(getStat(gameState.player, 'attack') * attackMult * level);
                     const result = performAttack(gameState.player, target, { attackValue, status: gameState.player.equipped.weapon && gameState.player.equipped.weapon.status });
-                    const detail = `hit roll ${result.hitRoll} vs ${result.defenseTarget} → ${result.hit ? 'hit' : 'miss'}${result.hit ? '; damage roll ' + result.damageRoll : ''}`;
+                    const detail = buildAttackDetail(skill.icon, skill.name, result);
                     if (!result.hit) {
                         addMessage(`❌ ${target.name}에게 ${skill.name}이 빗나갔습니다!`, 'combat', detail);
                     } else {
