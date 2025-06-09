@@ -3447,9 +3447,10 @@ function killMonster(monster) {
         function processTurn() {
             if (!gameState.gameRunning) return;
             gameState.turn++;
+            const AFFINITY_PER_TURN = 0.01;
             gameState.activeMercenaries.forEach(m => {
                 if (m.alive) {
-                    m.affinity = Math.min(200, (m.affinity || 0) + 1);
+                    m.affinity = Math.min(200, (m.affinity || 0) + AFFINITY_PER_TURN);
                 }
             });
             processProjectiles();
