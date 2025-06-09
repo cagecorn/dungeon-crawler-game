@@ -1,0 +1,101 @@
+(function(global){
+  const MONSTER_VISION = 6;
+  const FOG_RADIUS = 6; // increased player vision range
+  const MERCENARY_TRIGGER_DISTANCE = 5; // player distance to trigger ally attacks
+  const gameState = {
+    dungeon: [],
+    fogOfWar: [],
+    cellElements: [],
+    player: {
+      x: 0,
+      y: 0,
+      level: 1,
+      endurance: 10,
+      focus: 5,
+      strength: 5,
+      agility: 5,
+      intelligence: 0,
+      baseDefense: 0,
+      maxHealth: 20,
+      health: 20,
+      maxMana: 10,
+      mana: 10,
+      healthRegen: 0.3,
+      manaRegen: 0.5,
+      attack: 5,
+      defense: 1,
+      accuracy: 0.8,
+      evasion: 0.1,
+      critChance: 0.05,
+      magicPower: 0,
+      magicResist: 0,
+      job: null,
+      elementResistances: {fire:0, ice:0, lightning:0, earth:0, light:0, dark:0},
+      statusResistances: {poison:0, bleed:0, burn:0, freeze:0, paralysis:0, nightmare:0, silence:0, petrify:0, debuff:0},
+      poison: false,
+      burn: false,
+      freeze: false,
+      bleed: false,
+      paralysis: false,
+      nightmare: false,
+      silence: false,
+      petrify: false,
+      debuff: false,
+      poisonTurns: 0,
+      burnTurns: 0,
+      freezeTurns: 0,
+      bleedTurns: 0,
+      paralysisTurns: 0,
+      nightmareTurns: 0,
+      silenceTurns: 0,
+      petrifyTurns: 0,
+      debuffTurns: 0,
+      exp: 0,
+      expNeeded: 20,
+      gold: 1000,
+      inventory: [],
+      skillPoints: 0,
+      skillLevels: {},
+      skills: [],
+      assignedSkills: {1: null, 2: null},
+      equipped: {
+        weapon: null,
+        armor: null,
+        accessory1: null,
+        accessory2: null
+      }
+    },
+    activeMercenaries: [],
+    standbyMercenaries: [],
+    get mercenaries(){ return this.activeMercenaries; },
+    monsters: [],
+    corpses: [],
+    treasures: [],
+    items: [],
+    projectiles: [],
+    exitLocation: { x: 0, y: 0 },
+    shopLocation: { x: 0, y: 0 },
+    shopItems: [],
+    materials: { herb: 5, wood: 3, iron: 0 },
+    knownRecipes: ['healthPotion'],
+    craftingQueue: [],
+    floor: 1,
+    dungeonSize: 80,
+    viewportSize: 25,
+    camera: { x: 0, y: 0 },
+    autoMovePath: null,
+    autoMoveActive: false,
+    turn: 0,
+    incubators: [null, null],
+    hatchedSuperiors: [],
+    farms: [null, null, null, null, null, null],
+    gameRunning: true
+  };
+  global.gameState = gameState;
+  global.MONSTER_VISION = MONSTER_VISION;
+  global.FOG_RADIUS = FOG_RADIUS;
+  global.MERCENARY_TRIGGER_DISTANCE = MERCENARY_TRIGGER_DISTANCE;
+  if (typeof module !== 'undefined' && module.exports) {
+    module.exports = { gameState, MONSTER_VISION, FOG_RADIUS, MERCENARY_TRIGGER_DISTANCE };
+  }
+})(this);
