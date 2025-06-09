@@ -595,10 +595,19 @@
         .target-button:hover {
             background: linear-gradient(45deg, #45a049, #4CAF50);
         }
+        .turn-effects {
+            background: #333;
+            padding: 6px;
+            margin-bottom: 10px;
+            border-radius: 4px;
+            text-align: center;
+            font-size: 14px;
+        }
     </style>
 </head>
 <body>
     <h1>🏰 던전 크롤러 🗡️</h1>
+    <div id="turn-effects" class="turn-effects"></div>
     <div class="main-container">
         <div class="game-area">
             <div class="dungeon-container">
@@ -2465,6 +2474,55 @@
             document.getElementById('floor').textContent = formatNumber(gameState.floor);
             document.getElementById('weaponBonus').textContent = gameState.player.equipped.weapon ? `(+${formatNumber(gameState.player.equipped.weapon.attack)})` : '';
             document.getElementById('armorBonus').textContent = gameState.player.equipped.armor ? `(+${formatNumber(gameState.player.equipped.armor.defense)})` : '';
+            updateTurnEffects();
+        }
+
+        function updateTurnEffects() {
+            const panel = document.getElementById('turn-effects');
+            if (!panel) return;
+            const auras = [];
+            const addAura = (key, lvl) => {
+                const info = SKILL_DEFS[key] || MERCENARY_SKILLS[key] || MONSTER_SKILLS[key];
+                if (info && info.passive && info.aura) {
+                    auras.push(`${info.icon} ${info.name} Lv.${lvl}`);
+                }
+            };
+            ['1','2'].forEach(slot => {
+                const k = gameState.player.assignedSkills[slot];
+                if (k) addAura(k, gameState.player.skillLevels[k] || 1);
+            });
+            gameState.activeMercenaries.filter(m=>m.alive).forEach(m=>{
+                [m.skill, m.skill2, m.auraSkill].filter(Boolean).forEach(k=>{
+                    const info = SKILL_DEFS[k];
+                    if (info && info.passive && info.aura) {
+                        const dist = getDistance(m.x, m.y, gameState.player.x, gameState.player.y);
+                        if (dist <= (info.radius || 0)) addAura(k, m.skillLevels[k] || 1);
+                    }
+                });
+            });
+            gameState.monsters.filter(m=>m.isElite).forEach(el=>{
+                const k = el.auraSkill;
+                const info = SKILL_DEFS[k];
+                if (info && info.passive && info.aura) {
+                    const dist = getDistance(el.x, el.y, gameState.player.x, gameState.player.y);
+                    if (dist <= (info.radius || 0)) addAura(k, el.skillLevels[k] || 1);
+                }
+            });
+
+            const statusParts = [];
+            const statusKeys = ['poison','burn','freeze','bleed','paralysis','nightmare','silence','petrify','debuff'];
+            statusKeys.forEach(s => {
+                if (gameState.player[s]) {
+                    const icon = STATUS_ICONS[s] || '';
+                    const turns = gameState.player[s + 'Turns'] || 0;
+                    const name = STATUS_NAMES[s] || s;
+                    statusParts.push(`${icon} ${name}(${turns})`);
+                }
+            });
+
+            const auraText = auras.length ? auras.join(', ') : '없음';
+            const statusText = statusParts.length ? statusParts.join(', ') : '없음';
+            panel.innerHTML = `<div>오라: ${auraText}</div><div>상태: ${statusText}</div>`;
         }
 
         // 안개 업데이트
