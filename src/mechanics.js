@@ -17,6 +17,7 @@ const MERCENARY_NAMES = ['Aldo', 'Borin', 'Cara', 'Dain', 'Elin', 'Faris'];
 
         const MAX_FULLNESS = 100;
         const FULLNESS_LOSS_PER_TURN = 0.01;
+        const CORRIDOR_WIDTH = 5; // width of dungeon corridors
 
         // 용병 타입 정의
         const MERCENARY_TYPES = {
@@ -2561,6 +2562,27 @@ function killMonster(monster) {
         // 던전 생성
         function generateDungeon() {
             const size = gameState.dungeonSize;
+            const corridorRadius = Math.floor(CORRIDOR_WIDTH / 2);
+
+            function widenCorridors() {
+                const newDungeon = gameState.dungeon.map(row => row.slice());
+                for (let y = 0; y < size; y++) {
+                    for (let x = 0; x < size; x++) {
+                        if (gameState.dungeon[y][x] === 'empty') {
+                            for (let dy = -corridorRadius; dy <= corridorRadius; dy++) {
+                                for (let dx = -corridorRadius; dx <= corridorRadius; dx++) {
+                                    const nx = x + dx;
+                                    const ny = y + dy;
+                                    if (nx >= 0 && nx < size && ny >= 0 && ny < size) {
+                                        newDungeon[ny][nx] = 'empty';
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                gameState.dungeon = newDungeon;
+            }
             const dungeonEl = document.getElementById('dungeon');
             if (dungeonEl) {
                 dungeonEl.style.setProperty('--dungeon-size', size);
@@ -2662,6 +2684,7 @@ function killMonster(monster) {
             gameState.player.x = 1;
             gameState.player.y = 1;
             gameState.dungeon[1][1] = 'empty';
+            widenCorridors();
 
             if (gameState.floor === 1 && gameState.player.inventory.length === 0) {
                 const starterPotion = createItem('healthPotion', 0, 0);
