@@ -47,7 +47,8 @@ loyalty to the party.
 - When a mercenary dies they lose **5** affinity. If their affinity drops to zero
   they permanently leave your party.
 
-You can view a unit's current affinity by opening their detail window.
+You can view a unit's current affinity by opening their detail window. The value
+appears near the top of the stats panel.
 
 #### Food and Cooking
 

@@ -1438,6 +1438,7 @@
                 <div>🛡 체력: ${formatNumber(merc.endurance)} ${'★'.repeat(merc.stars.endurance)}</div>
                 <div>🔮 집중: ${formatNumber(merc.focus)} ${'★'.repeat(merc.stars.focus)}</div>
                 <div>📖 지능: ${formatNumber(merc.intelligence)} ${'★'.repeat(merc.stars.intelligence)}</div>
+                <div>💕 호감도: ${formatNumber(merc.affinity)}</div>
                 <hr>
                 <div>❤️ HP: ${formatNumber(merc.health)}/${formatNumber(getStat(merc, 'maxHealth'))}</div>
                 <div>🔋 MP: ${formatNumber(merc.mana)}/${formatNumber(getStat(merc, 'maxMana'))}</div>
@@ -1514,6 +1515,7 @@
                 <div>💥 치명타: ${monster.critChance}</div>
                 <div>🔮 마법공격: ${monster.magicPower}</div>
                 <div>✨ 마법방어: ${monster.magicResist}</div>
+                ${monster.affinity !== undefined ? `<div>💕 호감도: ${formatNumber(monster.affinity)}</div>` : ''}
                 <div>💪 힘: ${monster.strength}${monster.isSuperior ? ' ' + '★'.repeat(monster.stars.strength) : ''}</div>
                 <div>🏃 민첩: ${monster.agility}${monster.isSuperior ? ' ' + '★'.repeat(monster.stars.agility) : ''}</div>
                 <div>🛡 체력: ${monster.endurance}${monster.isSuperior ? ' ' + '★'.repeat(monster.stars.endurance) : ''}</div>
@@ -1546,6 +1548,7 @@
                 <div>🛡 체력: ${formatNumber(champion.endurance)} ${'★'.repeat(champion.stars.endurance)}</div>
                 <div>🔮 집중: ${formatNumber(champion.focus)} ${'★'.repeat(champion.stars.focus)}</div>
                 <div>📖 지능: ${formatNumber(champion.intelligence)} ${'★'.repeat(champion.stars.intelligence)}</div>
+                ${champion.affinity !== undefined ? `<div>💕 호감도: ${formatNumber(champion.affinity)}</div>` : ''}
                 <hr>
                 <div>❤️ HP: ${formatNumber(champion.health)}/${formatNumber(champion.maxHealth)}</div>
                 <div>🔋 MP: ${formatNumber(champion.mana)}/${formatNumber(champion.maxMana)}</div>
@@ -2038,6 +2041,7 @@ function killMonster(monster) {
                     return obj;
                 })(),
                 alive: true,
+                affinity: 30,
                 hasActed: false,
                 equipped: { weapon: null, armor: null, accessory1: null, accessory2: null },
                 range: monster.range,
@@ -2743,6 +2747,7 @@ function killMonster(monster) {
                 })(),
                 alive: true,
                 hasActed: false,
+                affinity: 50,
                 equipped: {
                     weapon: null,
                     armor: null,
@@ -3112,6 +3117,17 @@ function killMonster(monster) {
             renderDungeon();
         }
 
+        function removeMercenary(mercenary) {
+            let idx = gameState.activeMercenaries.indexOf(mercenary);
+            if (idx !== -1) {
+                gameState.activeMercenaries.splice(idx, 1);
+            } else {
+                idx = gameState.standbyMercenaries.indexOf(mercenary);
+                if (idx !== -1) gameState.standbyMercenaries.splice(idx, 1);
+            }
+            updateMercenaryDisplay();
+        }
+
         // 기본 플레이어 대상 아이템 사용 (호환성)
         function useItem(item) {
             useItemOnTarget(item, gameState.player);
@@ -3182,7 +3198,11 @@ function killMonster(monster) {
                     } else {
                         nearestTarget.alive = false;
                         nearestTarget.health = 0;
+                        nearestTarget.affinity = Math.max(0, (nearestTarget.affinity || 0) - 5);
                         addMessage(`💀 ${nearestTarget.name}이(가) 전사했습니다...`, "mercenary");
+                        if (nearestTarget.affinity <= 0) {
+                            removeMercenary(nearestTarget);
+                        }
                         monster.exp += nearestTarget.level * 10;
                         checkMonsterLevelUp(monster);
                         if (window.currentDetailMonster && window.currentDetailMonster.id === monster.id) {
@@ -3426,6 +3446,11 @@ function killMonster(monster) {
         function processTurn() {
             if (!gameState.gameRunning) return;
             gameState.turn++;
+            gameState.activeMercenaries.forEach(m => {
+                if (m.alive) {
+                    m.affinity = Math.min(200, (m.affinity || 0) + 1);
+                }
+            });
             processProjectiles();
 
             if (applyStatusEffects(gameState.player)) {
@@ -3437,7 +3462,11 @@ function killMonster(monster) {
                 if (applyStatusEffects(mercenary)) {
                     mercenary.alive = false;
                     mercenary.health = 0;
+                    mercenary.affinity = Math.max(0, (mercenary.affinity || 0) - 5);
                     addMessage(`💀 ${mercenary.name}이(가) 전사했습니다...`, 'mercenary');
+                    if (mercenary.affinity <= 0) {
+                        removeMercenary(mercenary);
+                    }
                 }
             });
             gameState.monsters.slice().forEach(monster => {
@@ -4793,16 +4822,16 @@ hideMercenaryDetails, hideMonsterDetails, hideShop, hireMercenary, killMonster,
 loadGame, meleeAttackAction, monsterAttack, movePlayer, nextFloor, 
 processMercenaryTurn, processProjectiles, processTurn, purifyTarget, 
 rangedAction, recallMercenaries, recruitHatchedSuperior, 
-removeEggFromIncubator, renderDungeon, reviveMercenary, reviveMonsterCorpse, 
+removeEggFromIncubator, renderDungeon, reviveMercenary, reviveMonsterCorpse,
 rollDice, saveGame, sellItem, setMercenaryLevel, setMonsterLevel, setChampionLevel,
-showChampionDetails, showItemTargetPanel, showMercenaryDetails, 
+showChampionDetails, showItemTargetPanel, showMercenaryDetails,
 showMonsterDetails, showShop, showSkillDamage, showAuraDetails, skill1Action, skill2Action,
 spawnMercenaryNearPlayer, startGame, swapActiveAndStandby, tryApplyStatus,
 unequipAccessory, unequipItemFromMercenary, updateActionButtons, updateCamera,
 updateFogOfWar, updateIncubatorDisplay,
 updateInventoryDisplay, updateMaterialsDisplay, updateMercenaryDisplay,
 updateShopDisplay, updateSkillDisplay, updateStats, updateTurnEffects,
-upgradeMercenarySkill, useItem, useItemOnTarget, useSkill
+upgradeMercenarySkill, useItem, useItemOnTarget, useSkill, removeMercenary
 };
 Object.assign(window, exportsObj, {SKILL_DEFS, MERCENARY_SKILLS, MONSTER_SKILLS, MONSTER_SKILL_SETS, MONSTER_TRAITS, MONSTER_TRAIT_SETS, PREFIXES, SUFFIXES});
 
