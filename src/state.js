@@ -88,7 +88,6 @@
     turn: 0,
     incubators: [null, null],
     hatchedSuperiors: [],
-    farms: [null, null, null, null, null, null],
     gameRunning: true
   };
   global.gameState = gameState;

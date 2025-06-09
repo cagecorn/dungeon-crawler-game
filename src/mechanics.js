@@ -1449,7 +1449,6 @@
                 <div>악세1: ${accessory1} ${acc1Btn}</div>
                 <div>악세2: ${accessory2} ${acc2Btn}</div>
                 ${skillHtml || '<div>스킬: 없음</div>'}
-                ${(function(){ const idx=gameState.farms.findIndex(f=>!f); return idx!==-1?`<button onclick="plantMonster(window.currentDetailMercenary,${idx})">농장 보내기</button>`:''; })()}
             `;
 
             document.getElementById('mercenary-detail-content').innerHTML = html;
@@ -2080,87 +2079,6 @@ function killMonster(monster) {
             });
         }
 
-        function updateFarmDisplay() {
-            const list = document.getElementById('farm-slots');
-            if (!list) return;
-            list.innerHTML = '';
-            gameState.farms.forEach((slot, i) => {
-                const div = document.createElement('div');
-                div.className = 'farm-slot';
-                if (slot) {
-                    if (slot.remainingTurns > 0) {
-                        div.textContent = `${slot.monster.name} (${slot.remainingTurns}T)`;
-                    } else {
-                        div.textContent = `${slot.monster.name} 수확 가능`;
-                        const btn = document.createElement('button');
-                        btn.textContent = '수확';
-                        btn.className = 'sell-button';
-                        btn.onclick = () => harvestMonster(i);
-                        div.appendChild(btn);
-                    }
-                } else {
-                    div.textContent = '비어 있음';
-                }
-                list.appendChild(div);
-            });
-        }
-
-        function plantMonster(monster, index) {
-            if (gameState.farms[index]) return;
-            if (monster.equipped) {
-                Object.values(monster.equipped).forEach(it => { if (it) addToInventory(it); });
-                monster.equipped = { weapon: null, armor: null, accessory1: null, accessory2: null };
-            }
-            monster.alive = false;
-            const fIndex = gameState.activeMercenaries.indexOf(monster);
-            if (fIndex !== -1) gameState.activeMercenaries.splice(fIndex,1);
-            const sIndex = gameState.standbyMercenaries.indexOf(monster);
-            if (sIndex !== -1) gameState.standbyMercenaries.splice(sIndex,1);
-            const fertIndex = gameState.player.inventory.findIndex(i => i.key === 'fertilizer');
-            let fertilized = false;
-            if (fertIndex !== -1) {
-                gameState.player.inventory.splice(fertIndex,1);
-                fertilized = true;
-            }
-            const turns = monster.isSuperior ? 1 : 5;
-            gameState.farms[index] = { monster, remainingTurns: turns, fertilizer: fertilized };
-            addMessage(`🌱 ${monster.name}을(를) 농장에 심었습니다.`, 'info');
-            updateInventoryDisplay();
-            updateMercenaryDisplay();
-            updateFarmDisplay();
-        }
-
-        function advanceFarms() {
-            gameState.farms.forEach((slot, i) => {
-                if (!slot) return;
-                if (slot.remainingTurns > 0) {
-                    slot.remainingTurns--;
-                    if (slot.remainingTurns === 0) {
-                        addMessage(`🌾 ${slot.monster.name}이(가) 수확 준비되었습니다!`, 'info');
-                    }
-                }
-            });
-        }
-
-        function harvestMonster(index) {
-            const slot = gameState.farms[index];
-            if (!slot || slot.remainingTurns > 0) return;
-            const m = slot.monster;
-            const mult = (0.5 + Math.random() * 0.5) * (slot.fertilizer ? 1.2 : 1);
-            const item = {
-                id: Math.random().toString(36).substr(2,9),
-                name: `${m.name}의 정수`,
-                type: ITEM_TYPES.ACCESSORY,
-                attack: Math.floor(m.attack * mult),
-                defense: Math.floor(m.defense * mult),
-                magicPower: Math.floor(m.magicPower * mult)
-            };
-            addToInventory(item);
-            addMessage(`🌾 ${item.name}을(를) 수확했습니다!`, 'item');
-            gameState.farms[index] = null;
-            updateFarmDisplay();
-            updateInventoryDisplay();
-        }
 
         function recruitHatchedSuperior(monster) {
             const mercenary = convertMonsterToMercenary(monster);
@@ -3614,8 +3532,6 @@ function killMonster(monster) {
             updateMaterialsDisplay();
             advanceIncubators();
             updateIncubatorDisplay();
-            advanceFarms();
-            updateFarmDisplay();
         }
 
         // 용병 AI (개선됨 - 장비 보너스 적용, 안전성 체크 추가)
@@ -4280,7 +4196,6 @@ function killMonster(monster) {
             renderDungeon();
             updateCamera();
             updateIncubatorDisplay();
-            updateFarmDisplay();
             updateActionButtons();
             addMessage('📁 게임을 불러왔습니다.', 'info');
         }
@@ -4697,7 +4612,6 @@ function killMonster(monster) {
             updateInventoryDisplay();
             updateSkillDisplay();
             updateIncubatorDisplay();
-            updateFarmDisplay();
             updateMaterialsDisplay();
             updateActionButtons();
         }
@@ -4769,7 +4683,7 @@ function killMonster(monster) {
             }
         });
 const exportsObj = {
-gameState, addMessage, addToInventory, advanceFarms, advanceIncubators, 
+gameState, addMessage, addToInventory, advanceIncubators, 
 applyStatusEffects, assignSkill, autoMoveStep, averageDice, buildAttackDetail, 
 buyShopItem, checkLevelUp, checkMercenaryLevelUp, checkMonsterLevelUp, 
 convertMonsterToMercenary, craftItem, createChampion, createEliteMonster, 
@@ -4778,11 +4692,10 @@ createSuperiorMonster, createTreasure, dissectCorpse, equipItem,
 equipItemToMercenary, estimateSkillDamage, findAdjacentEmpty, findPath, 
 formatItem, formatNumber, generateDungeon, generateStars, getAuraBonus, 
 getDistance, getMonsterPoolForFloor, getPlayerEmoji, getStat, getStatusResist, 
-handleDungeonClick, handleItemClick, handlePlayerDeath, harvestMonster, 
+handleDungeonClick, handleItemClick, handlePlayerDeath, 
 hasLineOfSight, healAction, healTarget, hideItemTargetPanel, 
 hideMercenaryDetails, hideMonsterDetails, hideShop, hireMercenary, killMonster, 
 loadGame, meleeAttackAction, monsterAttack, movePlayer, nextFloor, 
-performAttack, pickUpAction, placeEggInIncubator, plantMonster, 
 processMercenaryTurn, processProjectiles, processTurn, purifyTarget, 
 rangedAction, recallMercenaries, recruitHatchedSuperior, 
 removeEggFromIncubator, renderDungeon, reviveMercenary, reviveMonsterCorpse, 
@@ -4791,7 +4704,7 @@ showChampionDetails, showItemTargetPanel, showMercenaryDetails,
 showMonsterDetails, showShop, showSkillDamage, skill1Action, skill2Action, 
 spawnMercenaryNearPlayer, startGame, swapActiveAndStandby, tryApplyStatus, 
 unequipAccessory, unequipItemFromMercenary, updateActionButtons, updateCamera, 
-updateFarmDisplay, updateFogOfWar, updateIncubatorDisplay, 
+updateFogOfWar, updateIncubatorDisplay, 
 updateInventoryDisplay, updateMaterialsDisplay, updateMercenaryDisplay, 
 updateShopDisplay, updateSkillDisplay, updateStats, updateTurnEffects, 
 upgradeMercenarySkill, useItem, useItemOnTarget, useSkill
