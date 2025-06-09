@@ -6,7 +6,8 @@
             REVIVE: 'revive',
             EXP_SCROLL: 'expScroll',
             EGG: 'egg',
-            FERTILIZER: 'fertilizer'
+            FERTILIZER: 'fertilizer',
+            ESSENCE: 'essence'
         };
 
         const SHOP_PRICE_MULTIPLIER = 3;
@@ -488,8 +489,59 @@
                 level: 1,
                 icon: '🌱'
             },
+            fireEssence: {
+                name: '🔥 Fire Essence',
+                type: ITEM_TYPES.ESSENCE,
+                price: 0,
+                level: 1,
+                icon: '🔥'
+            },
+            iceEssence: {
+                name: '❄️ Ice Essence',
+                type: ITEM_TYPES.ESSENCE,
+                price: 0,
+                level: 1,
+                icon: '❄️'
+            },
+            lightningEssence: {
+                name: '⚡ Lightning Essence',
+                type: ITEM_TYPES.ESSENCE,
+                price: 0,
+                level: 1,
+                icon: '⚡'
+            },
+            windEssence: {
+                name: '💨 Wind Essence',
+                type: ITEM_TYPES.ESSENCE,
+                price: 0,
+                level: 1,
+                icon: '💨'
+            },
+            earthEssence: {
+                name: '🌱 Earth Essence',
+                type: ITEM_TYPES.ESSENCE,
+                price: 0,
+                level: 1,
+                icon: '🌱'
+            },
+            lightEssence: {
+                name: '✨ Light Essence',
+                type: ITEM_TYPES.ESSENCE,
+                price: 0,
+                level: 1,
+                icon: '✨'
+            },
+            darkEssence: {
+                name: '🌑 Dark Essence',
+                type: ITEM_TYPES.ESSENCE,
+                price: 0,
+                level: 1,
+                icon: '🌑'
+            },
 
         };
+
+        const ESSENCE = ['fireEssence','iceEssence','lightningEssence','windEssence','earthEssence','lightEssence','darkEssence'];
 
         const SKILL_DEFS = {
             Fireball: { name: 'Fireball', icon: '🔥', damageDice: '1d10', range: 5, magic: true, element: 'fire', manaCost: 3 },
@@ -1929,7 +1981,7 @@ function findAdjacentEmpty(x, y) {
             return {x, y};
         }
 
-function killMonster(monster) {
+        function killMonster(monster) {
             addMessage(`💀 ${monster.name}을(를) 처치했습니다!`, 'combat');
             gameState.player.exp += monster.exp;
             let goldGain = monster.gold;
@@ -1978,6 +2030,28 @@ function killMonster(monster) {
             monster.health = 0;
             gameState.corpses.push(monster);
             gameState.dungeon[monster.y][monster.x] = 'corpse';
+        }
+
+        function dismissMonster(monster) {
+            if (typeof confirm !== 'function' || confirm(`${monster.name}을(를) 제거하시겠습니까?`)) {
+                const idx = gameState.monsters.findIndex(m => m === monster);
+                if (idx !== -1) gameState.monsters.splice(idx, 1);
+                gameState.dungeon[monster.y][monster.x] = 'empty';
+                renderDungeon();
+            }
+        }
+
+        function sacrificeMonster(monster) {
+            if (typeof confirm !== 'function' || confirm(`${monster.name}을(를) 희생하시겠습니까?`)) {
+                const idx = gameState.monsters.findIndex(m => m === monster);
+                if (idx !== -1) gameState.monsters.splice(idx, 1);
+                gameState.dungeon[monster.y][monster.x] = 'empty';
+                const key = ESSENCE[Math.floor(Math.random() * ESSENCE.length)];
+                const item = createItem(key, 0, 0);
+                addToInventory(item);
+                addMessage(`🩸 ${monster.name}의 희생으로 ${item.name}을(를) 얻었습니다.`, 'combat');
+                renderDungeon();
+            }
         }
 
         function convertMonsterToMercenary(monster) {
@@ -3127,6 +3201,24 @@ function killMonster(monster) {
                 if (idx !== -1) gameState.standbyMercenaries.splice(idx, 1);
             }
             updateMercenaryDisplay();
+        }
+
+        function dismissMercenary(mercenary) {
+            if (typeof confirm !== 'function' || confirm(`${mercenary.name}을(를) 내보내시겠습니까?`)) {
+                removeMercenary(mercenary);
+                renderDungeon();
+            }
+        }
+
+        function sacrificeMercenary(mercenary) {
+            if (typeof confirm !== 'function' || confirm(`${mercenary.name}을(를) 희생하시겠습니까?`)) {
+                removeMercenary(mercenary);
+                const key = ESSENCE[Math.floor(Math.random() * ESSENCE.length)];
+                const item = createItem(key, 0, 0);
+                addToInventory(item);
+                addMessage(`🩸 ${mercenary.name}의 희생으로 ${item.name}을(를) 얻었습니다.`, 'mercenary');
+                renderDungeon();
+            }
         }
 
         // 기본 플레이어 대상 아이템 사용 (호환성)
@@ -4834,6 +4926,6 @@ updateFogOfWar, updateIncubatorDisplay,
 updateInventoryDisplay, updateMaterialsDisplay, updateMercenaryDisplay,
 updateShopDisplay, updateSkillDisplay, updateStats, updateTurnEffects,
 upgradeMercenarySkill, useItem, useItemOnTarget, useSkill, removeMercenary
-};
+ , dismissMercenary, sacrificeMercenary, dismissMonster, sacrificeMonster, ESSENCE };
 Object.assign(window, exportsObj, {SKILL_DEFS, MERCENARY_SKILLS, MONSTER_SKILLS, MONSTER_SKILL_SETS, MONSTER_TRAITS, MONSTER_TRAIT_SETS, PREFIXES, SUFFIXES});
 
