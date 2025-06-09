@@ -27,6 +27,7 @@ async function run() {
   gameState.dungeon = Array.from({ length: size }, () => Array(size).fill('empty'));
   gameState.fogOfWar = Array.from({ length: size }, () => Array(size).fill(false));
   gameState.monsters = [];
+  gameState.activeMercenaries = [];
   gameState.player.x = 1;
   gameState.player.y = 1;
   gameState.dungeon[1][1] = 'empty';

@@ -6,7 +6,8 @@
             REVIVE: 'revive',
             EXP_SCROLL: 'expScroll',
             EGG: 'egg',
-            FERTILIZER: 'fertilizer'
+            FERTILIZER: 'fertilizer',
+            FOOD: 'food'
         };
 
         const SHOP_PRICE_MULTIPLIER = 3;
@@ -487,6 +488,13 @@
                 price: 5,
                 level: 1,
                 icon: '🌱'
+            },
+            food: {
+                name: '🍲 요리',
+                type: ITEM_TYPES.FOOD,
+                price: 1,
+                level: 1,
+                icon: '🍲'
             },
 
         };
@@ -4726,6 +4734,19 @@ function killMonster(monster) {
             generateDungeon();
             for (let i = 0; i < 5; i++) {
                 gameState.player.inventory.push(createItem('smallExpScroll', 0, 0));
+            }
+            const z = createMonster('ZOMBIE', 0, 0, 1);
+            const merc = convertMonsterToMercenary(z);
+            merc.affinity = 195;
+            gameState.activeMercenaries.push(merc);
+            spawnMercenaryNearPlayer(merc);
+            for (let i = 0; i < 5; i++) {
+                gameState.player.inventory.push({
+                    id: Math.random().toString(36).substr(2, 9),
+                    name: '요리',
+                    type: ITEM_TYPES.FOOD,
+                    icon: '🍲'
+                });
             }
             updateInventoryDisplay();
             updateSkillDisplay();

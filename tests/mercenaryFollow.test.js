@@ -15,6 +15,7 @@ async function run() {
 
   // ensure enough gold for hiring
   gameState.player.gold = 200;
+  gameState.activeMercenaries = [];
 
   hireMercenary('WARRIOR');
   hireMercenary('ARCHER');

@@ -15,6 +15,7 @@ async function run() {
   gameState.dungeonSize = size;
   gameState.dungeon = Array.from({ length: size }, () => Array(size).fill('empty'));
   gameState.fogOfWar = Array.from({ length: size }, () => Array(size).fill(false));
+  gameState.activeMercenaries = [];
   gameState.player.x = 2;
   gameState.player.y = 2;
 
