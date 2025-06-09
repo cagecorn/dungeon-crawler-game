@@ -1255,14 +1255,17 @@
 
 
 
-            const groups = {};
-            gameState.player.inventory.forEach(item => {
+            // group identical items together so they can be displayed as stacks
+            const groups = new Map();
+            for (const item of gameState.player.inventory) {
                 const key = `${item.key}-${item.prefix || ''}-${item.suffix || ''}`;
-                if (!groups[key]) groups[key] = { item, count: 0 };
-                groups[key].count += 1;
-            });
+                if (!groups.has(key)) {
+                    groups.set(key, { item, count: 0 });
+                }
+                groups.get(key).count += 1;
+            }
 
-            Object.values(groups).forEach(({ item, count }) => {
+            for (const { item, count } of groups.values()) {
                 const div = document.createElement('div');
                 div.className = 'inventory-item';
                 const span = document.createElement('span');
@@ -1279,7 +1282,7 @@
                 div.onclick = () => handleItemClick(item);
                 div.appendChild(sellBtn);
                 container.appendChild(div);
-            });
+            }
 
             const weaponSlot = document.getElementById('equipped-weapon');
             if (gameState.player.equipped.weapon) {
