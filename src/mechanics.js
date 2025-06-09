@@ -1627,6 +1627,12 @@
             document.getElementById('floor').textContent = formatNumber(gameState.floor);
             document.getElementById('weaponBonus').textContent = gameState.player.equipped.weapon ? `(+${formatNumber(gameState.player.equipped.weapon.attack)})` : '';
             document.getElementById('armorBonus').textContent = gameState.player.equipped.armor ? `(+${formatNumber(gameState.player.equipped.armor.defense)})` : '';
+            const hpRatio = gameState.player.health / getStat(gameState.player,'maxHealth');
+            const hpEl = document.getElementById('hp-bar');
+            if (hpEl) hpEl.style.width = (hpRatio*100) + '%';
+            const mpRatio = gameState.player.mana / getStat(gameState.player,'maxMana');
+            const mpEl = document.getElementById('mp-bar');
+            if (mpEl) mpEl.style.width = (mpRatio*100) + '%';
             updateTurnEffects();
         }
 
