@@ -43,7 +43,7 @@ loyalty to the party.
 
 - Newly hired mercenaries start with **50** affinity.
 - Revived monsters start with **30** affinity.
-- Affinity rises slowly each turn a unit stays in your party and caps at **200**.
+- Affinity rises by **0.01** each turn a unit stays in your party and caps at **200**.
 - When a mercenary dies they lose **5** affinity. If their affinity drops to zero
   they permanently leave your party.
 
