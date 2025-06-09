@@ -4322,7 +4322,7 @@ function killMonster(monster) {
             const playerDistance = getDistance(mercenary.x, mercenary.y, gameState.player.x, gameState.player.y);
             const minDistanceFromPlayer = 1;
             const maxDistanceFromPlayer = 3;
-            const skillInfo = MERCENARY_SKILLS[mercenary.skill];
+            const skillInfo = MERCENARY_SKILLS[mercenary.skill] || MONSTER_SKILLS[mercenary.skill];
             const skillLevel = mercenary.skillLevels && mercenary.skillLevels[mercenary.skill] || 1;
             const skillManaCost = skillInfo ? skillInfo.manaCost + skillLevel - 1 : 0;
             const baseAttackRange = mercenary.role === 'ranged' ? 3 :
@@ -4506,6 +4506,83 @@ function killMonster(monster) {
                             dmgStr = `${result.baseDamage}+${emoji}${result.elementDamage}`;
                         }
                         addMessage(`${icon} ${mercenary.name}이(가) ${nearestMonster.name}에게 ${dmgStr}의 피해를 입혔습니다${critMsg}!`, "mercenary", detail);
+                    }
+
+                    if (nearestMonster.health <= 0) {
+                        addMessage(`💀 ${mercenary.name}이(가) ${nearestMonster.name}을(를) 처치했습니다!`, "mercenary");
+
+                        const mercExp = Math.floor(nearestMonster.exp * 0.6);
+                        const playerExp = Math.floor(nearestMonster.exp * 0.4);
+
+                        mercenary.exp += mercExp;
+                        gameState.player.exp += playerExp;
+                        gameState.player.gold += nearestMonster.gold;
+
+                        checkMercenaryLevelUp(mercenary);
+                        checkLevelUp();
+                        updateStats();
+
+                        if (nearestMonster.special === 'boss') {
+                            const bossItems = ['magicSword', 'plateArmor', 'greaterHealthPotion'];
+                            if (Math.random() < 0.2) bossItems.push('reviveScroll');
+                            const bossItemKey = bossItems[Math.floor(Math.random() * bossItems.length)];
+                            const pos = findAdjacentEmpty(nearestMonster.x, nearestMonster.y);
+                            const bossItem = createItem(bossItemKey, pos.x, pos.y);
+                            gameState.items.push(bossItem);
+                            gameState.dungeon[pos.y][pos.x] = 'item';
+                            addMessage(`🎁 ${nearestMonster.name}이(가) ${bossItem.name}을(를) 떨어뜨렸습니다!`, "treasure");
+                        } else if (Math.random() < nearestMonster.lootChance) {
+                            const itemKeys = Object.keys(ITEMS).filter(k => k !== 'reviveScroll');
+                            const availableItems = itemKeys.filter(key =>
+                                ITEMS[key].level <= Math.ceil(gameState.floor / 2 + 1)
+                            );
+                            let randomItemKey = availableItems[Math.floor(Math.random() * availableItems.length)];
+                            if (Math.random() < 0.1 && ITEMS.reviveScroll.level <= Math.ceil(gameState.floor / 2 + 1)) {
+                                randomItemKey = 'reviveScroll';
+                            }
+
+                            const pos = findAdjacentEmpty(nearestMonster.x, nearestMonster.y);
+                            const droppedItem = createItem(randomItemKey, pos.x, pos.y);
+                            gameState.items.push(droppedItem);
+                            gameState.dungeon[pos.y][pos.x] = 'item';
+                            addMessage(`📦 ${nearestMonster.name}이(가) ${droppedItem.name}을(를) 떨어뜨렸습니다!`, "item");
+                        } else {
+                            gameState.dungeon[nearestMonster.y][nearestMonster.x] = 'empty';
+                        }
+
+                        const monsterIndex = gameState.monsters.findIndex(m => m === nearestMonster);
+                        if (monsterIndex !== -1) {
+                            gameState.monsters.splice(monsterIndex, 1);
+                        }
+                        nearestMonster.health = 0;
+                        gameState.corpses.push(nearestMonster);
+                        gameState.dungeon[nearestMonster.y][nearestMonster.x] = 'corpse';
+                    }
+                    mercenary.mana -= skillManaCost;
+                    updateMercenaryDisplay();
+                    mercenary.hasActed = true;
+                    return;
+                } else if (MONSTER_SKILLS[skillKey] && nearestMonster && nearestDistance <= skillInfo.range && hasLineOfSight(mercenary.x, mercenary.y, nearestMonster.x, nearestMonster.y)) {
+                    const base = skillInfo.magic ? getStat(mercenary, 'magicPower') : getStat(mercenary, 'attack');
+                    const attackValue = rollDice(skillInfo.damageDice) * skillLevel + base;
+                    const hits = skillInfo.hits || 1;
+                    const icon = skillInfo.icon;
+                    for (let i = 0; i < hits; i++) {
+                        const result = performAttack(mercenary, nearestMonster, { attackValue, magic: skillInfo.magic, element: skillInfo.element, status: skillInfo.status || (mercenary.equipped.weapon && mercenary.equipped.weapon.status), damageDice: skillInfo.damageDice });
+                        const detail = `hit roll ${result.hitRoll} vs ${result.defenseTarget} → ${result.hit ? 'hit' : 'miss'}${result.hit ? '; damage roll ' + result.damageRoll : ''}`;
+                        if (!result.hit) {
+                            addMessage(`❌ ${mercenary.name}의 ${skillInfo.name}이 빗나갔습니다!`, "mercenary", detail);
+                        } else {
+                            const critMsg = result.crit ? ' (치명타!)' : '';
+                            let dmgStr = result.baseDamage;
+                            if (result.elementDamage) {
+                                const emoji = ELEMENT_EMOJI[result.element] || '';
+                                dmgStr = `${result.baseDamage}+${emoji}${result.elementDamage}`;
+                            }
+                            addMessage(`${icon} ${mercenary.name}이(가) ${nearestMonster.name}에게 ${dmgStr}의 피해를 입혔습니다${critMsg}!`, "mercenary", detail);
+                        }
+
+                        if (nearestMonster.health <= 0) break;
                     }
 
                     if (nearestMonster.health <= 0) {
