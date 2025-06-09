@@ -6,7 +6,9 @@
             REVIVE: 'revive',
             EXP_SCROLL: 'expScroll',
             EGG: 'egg',
-            FERTILIZER: 'fertilizer'
+            FERTILIZER: 'fertilizer',
+            ESSENCE: 'essence',
+            FOOD: 'food'
         };
 
         const SHOP_PRICE_MULTIPLIER = 3;
@@ -488,6 +490,56 @@
                 level: 1,
                 icon: '🌱'
             },
+            strengthEssence: {
+                name: '💪 힘의 정수',
+                type: ITEM_TYPES.ESSENCE,
+                price: 20,
+                level: 1,
+                icon: '💪'
+            },
+            agilityEssence: {
+                name: '🤸 민첩의 정수',
+                type: ITEM_TYPES.ESSENCE,
+                price: 20,
+                level: 1,
+                icon: '🤸'
+            },
+            enduranceEssence: {
+                name: '🛡️ 인내의 정수',
+                type: ITEM_TYPES.ESSENCE,
+                price: 20,
+                level: 1,
+                icon: '🛡️'
+            },
+            focusEssence: {
+                name: '🎯 집중의 정수',
+                type: ITEM_TYPES.ESSENCE,
+                price: 25,
+                level: 1,
+                icon: '🎯'
+            },
+            intelligenceEssence: {
+                name: '🧠 지능의 정수',
+                type: ITEM_TYPES.ESSENCE,
+                price: 25,
+                level: 1,
+                icon: '🧠'
+            },
+            skillLevelEssence: {
+                name: '⭐ 스킬 레벨 정수',
+                type: ITEM_TYPES.ESSENCE,
+                price: 30,
+                level: 1,
+                icon: '⭐'
+            },
+            cookedMeal: {
+                name: '🍲 요리',
+                type: ITEM_TYPES.FOOD,
+                affinityGain: 5,
+                price: 15,
+                level: 1,
+                icon: '🍲'
+            }
 
         };
 
