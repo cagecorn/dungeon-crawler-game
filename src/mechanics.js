@@ -17,7 +17,7 @@ const MERCENARY_NAMES = ['Aldo', 'Borin', 'Cara', 'Dain', 'Elin', 'Faris'];
 
         const MAX_FULLNESS = 100;
         const FULLNESS_LOSS_PER_TURN = 0.01;
-        const CORRIDOR_WIDTH = 5; // width of dungeon corridors
+        const CORRIDOR_WIDTH = 7; // width of dungeon corridors
 
         // 용병 타입 정의
         const MERCENARY_TYPES = {
@@ -2687,7 +2687,6 @@ function killMonster(monster) {
             gameState.player.x = 1;
             gameState.player.y = 1;
             gameState.dungeon[1][1] = 'empty';
-            widenCorridors();
 
             if (gameState.floor === 1 && gameState.player.inventory.length === 0) {
                 const starterPotion = createItem('healthPotion', 0, 0);
@@ -2835,6 +2834,7 @@ function killMonster(monster) {
                 gameState.shopItems.push(shopItem);
             }
 
+            widenCorridors();
             updateFogOfWar();
             updateStats();
             updateInventoryDisplay();
