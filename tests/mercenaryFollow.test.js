@@ -35,7 +35,7 @@ async function run() {
   const distances = state.activeMercenaries.map(m =>
     Math.abs(m.x - state.player.x) + Math.abs(m.y - state.player.y)
   );
-  console.log('distances from player:', distances.join(','));
+  // console.log('distances from player:', distances.join(','));
   if (distances.some(d => d > 3)) {
     console.error('mercenary too far from player');
     process.exit(1);
