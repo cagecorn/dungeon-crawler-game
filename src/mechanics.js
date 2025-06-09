@@ -568,6 +568,15 @@ const MERCENARY_NAMES = ['Aldo', 'Borin', 'Cara', 'Dain', 'Elin', 'Faris'];
                 level: 1,
                 icon: '🍖'
             },
+            rawMeat: {
+                name: '🥩 생고기',
+                type: ITEM_TYPES.FOOD,
+                affinityGain: 0,
+                fullnessGain: 2,
+                price: 2,
+                level: 1,
+                icon: '🥩'
+            },
             lettuce: {
                 name: '🥬 양상추',
                 type: ITEM_TYPES.FOOD,
@@ -2226,7 +2235,7 @@ function killMonster(monster) {
         }
 
         function dissectCorpse(corpse) {
-            const materialsPool = ['뼈', '가죽', '정수', 'bread', 'meat', 'lettuce'];
+            const materialsPool = ['뼈', '가죽', '정수', 'bread', 'meat', 'rawMeat', 'lettuce'];
             const gained = [];
             const count = Math.floor(Math.random() * 3) + 1;
             for (let i = 0; i < count; i++) {
