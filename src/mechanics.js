@@ -2569,13 +2569,16 @@ function killMonster(monster) {
                 for (let y = 0; y < size; y++) {
                     for (let x = 0; x < size; x++) {
                         if (gameState.dungeon[y][x] === 'empty') {
+                            for (let dx = -corridorRadius; dx <= corridorRadius; dx++) {
+                                const nx = x + dx;
+                                if (nx >= 0 && nx < size) {
+                                    newDungeon[y][nx] = 'empty';
+                                }
+                            }
                             for (let dy = -corridorRadius; dy <= corridorRadius; dy++) {
-                                for (let dx = -corridorRadius; dx <= corridorRadius; dx++) {
-                                    const nx = x + dx;
-                                    const ny = y + dy;
-                                    if (nx >= 0 && nx < size && ny >= 0 && ny < size) {
-                                        newDungeon[ny][nx] = 'empty';
-                                    }
+                                const ny = y + dy;
+                                if (ny >= 0 && ny < size) {
+                                    newDungeon[ny][x] = 'empty';
                                 }
                             }
                         }
