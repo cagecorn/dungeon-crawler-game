@@ -2593,30 +2593,6 @@ function killMonster(monster) {
         // 던전 생성
         function generateDungeon() {
             const size = gameState.dungeonSize;
-            const corridorRadius = Math.floor(CORRIDOR_WIDTH / 2);
-
-            function widenCorridors() {
-                const newDungeon = gameState.dungeon.map(row => row.slice());
-                for (let y = 0; y < size; y++) {
-                    for (let x = 0; x < size; x++) {
-                        if (gameState.dungeon[y][x] === 'empty') {
-                            for (let dx = -corridorRadius; dx <= corridorRadius; dx++) {
-                                const nx = x + dx;
-                                if (nx >= 0 && nx < size) {
-                                    newDungeon[y][nx] = 'empty';
-                                }
-                            }
-                            for (let dy = -corridorRadius; dy <= corridorRadius; dy++) {
-                                const ny = y + dy;
-                                if (ny >= 0 && ny < size) {
-                                    newDungeon[ny][x] = 'empty';
-                                }
-                            }
-                        }
-                    }
-                }
-                gameState.dungeon = newDungeon;
-            }
             const dungeonEl = document.getElementById('dungeon');
             if (dungeonEl) {
                 dungeonEl.style.setProperty('--dungeon-size', size);
