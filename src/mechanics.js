@@ -13,7 +13,10 @@
 
         const SHOP_PRICE_MULTIPLIER = 3;
 
-        const MERCENARY_NAMES = ['Aldo', 'Borin', 'Cara', 'Dain', 'Elin', 'Faris'];
+const MERCENARY_NAMES = ['Aldo', 'Borin', 'Cara', 'Dain', 'Elin', 'Faris'];
+
+        const MAX_FULLNESS = 100;
+        const FULLNESS_LOSS_PER_TURN = 0.1;
 
         // 용병 타입 정의
         const MERCENARY_TYPES = {
@@ -1911,6 +1914,7 @@
                 special: data.special,
                 statusEffect: data.statusEffect,
                 lootChance: 0.3,
+                fullness: 75,
                 hasActed: false
             };
             setMonsterLevel(monster, level);
@@ -2885,7 +2889,7 @@ function killMonster(monster) {
                 alive: true,
                 hasActed: false,
                 affinity: 50,
-                fullness: 0,
+                fullness: 75,
                 equipped: {
                     weapon: null,
                     armor: null,
@@ -3651,9 +3655,51 @@ function killMonster(monster) {
         }
 
         // 턴 처리 (최적화됨)
-        function processTurn() {
-            if (!gameState.gameRunning) return;
-            gameState.turn++;
+function processTurn() {
+    if (!gameState.gameRunning) return;
+    gameState.turn++;
+
+            const starvedMercs = [];
+            const starvedMonsters = [];
+            [...gameState.activeMercenaries, ...gameState.standbyMercenaries].forEach(m => {
+                m.fullness = Math.max(0, (m.fullness || 0) - FULLNESS_LOSS_PER_TURN);
+                if (m.fullness <= 0) {
+                    starvedMercs.push(m);
+                } else if (m.fullness <= 50) {
+                    const food = gameState.player.inventory.find(i => i.type === ITEM_TYPES.FOOD);
+                    if (food) {
+                        useItemOnTarget(food, m);
+                        addMessage(`🍽️ ${m.name}이(가) ${food.name}을(를) 먹었습니다.`, 'info');
+                    }
+                }
+            });
+            starvedMercs.forEach(m => {
+                addMessage(`💀 ${m.name}이(가) 굶주림으로 사망했습니다.`, 'mercenary');
+                removeMercenary(m);
+            });
+
+            gameState.monsters.forEach(monster => {
+                monster.fullness = Math.max(0, (monster.fullness || 0) - FULLNESS_LOSS_PER_TURN);
+                if (monster.fullness <= 0) {
+                    starvedMonsters.push(monster);
+                } else if (monster.fullness <= 50) {
+                    const food = gameState.player.inventory.find(i => i.type === ITEM_TYPES.FOOD);
+                    if (food) {
+                        useItemOnTarget(food, monster);
+                        addMessage(`🍽️ ${monster.name}이(가) ${food.name}을(를) 먹었습니다.`, 'info');
+                    }
+                }
+            });
+            starvedMonsters.forEach(monster => {
+                addMessage(`💀 ${monster.name}이(가) 굶어 죽었습니다.`, 'info');
+                const idx = gameState.monsters.indexOf(monster);
+                if (idx !== -1) {
+                    gameState.monsters.splice(idx, 1);
+                    if (monster.y >= 0 && monster.x >= 0 && gameState.dungeon[monster.y]) {
+                        gameState.dungeon[monster.y][monster.x] = 'empty';
+                    }
+                }
+            });
             const AFFINITY_PER_TURN = 0.01;
             gameState.activeMercenaries.forEach(m => {
                 if (m.alive) {
@@ -4936,6 +4982,7 @@ function killMonster(monster) {
             generateDungeon();
             const zombieMerc = convertMonsterToMercenary(createMonster('ZOMBIE', 0, 0, 1));
             zombieMerc.affinity = 195;
+            zombieMerc.fullness = 50;
             gameState.standbyMercenaries.push(zombieMerc);
             for (let i = 0; i < 5; i++) {
                 gameState.player.inventory.push(createItem('cookedMeal', 0, 0));
