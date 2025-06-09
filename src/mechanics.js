@@ -1577,14 +1577,15 @@
                 : '';
             const html = `
                 <h3>${monster.icon} ${monster.name} (Lv.${monster.level})</h3>
-                <div>❤️ HP: ${monster.health}/${monster.maxHealth}</div>
-                <div>⚔️ 공격력: ${monster.attack}</div>
-                <div>🛡️ 방어력: ${monster.defense}</div>
-                <div>🎯 명중률: ${monster.accuracy}</div>
-                <div>💨 회피율: ${monster.evasion}</div>
-                <div>💥 치명타: ${monster.critChance}</div>
-                <div>🔮 마법공격: ${monster.magicPower}</div>
-                <div>✨ 마법방어: ${monster.magicResist}</div>
+                <div>❤️ HP: ${monster.health}/${formatNumber(getStat(monster,'maxHealth'))}</div>
+                <div>🔋 MP: ${formatNumber(monster.mana)}/${formatNumber(getStat(monster,'maxMana'))}</div>
+                <div>⚔️ 공격력: ${formatNumber(getStat(monster,'attack'))}</div>
+                <div>🛡️ 방어력: ${formatNumber(getStat(monster,'defense'))}</div>
+                <div>🎯 명중률: ${formatNumber(getStat(monster,'accuracy'))}</div>
+                <div>💨 회피율: ${formatNumber(getStat(monster,'evasion'))}</div>
+                <div>💥 치명타: ${formatNumber(getStat(monster,'critChance'))}</div>
+                <div>🔮 마법공격: ${formatNumber(getStat(monster,'magicPower'))}</div>
+                <div>✨ 마법방어: ${formatNumber(getStat(monster,'magicResist'))}</div>
                 ${monster.affinity !== undefined ? `<div>💕 호감도: ${formatNumber(monster.affinity)}</div>` : ''}
                 <div>💪 힘: ${monster.strength}${monster.isSuperior ? ' ' + '★'.repeat(monster.stars.strength) : ''}</div>
                 <div>🏃 민첩: ${monster.agility}${monster.isSuperior ? ' ' + '★'.repeat(monster.stars.agility) : ''}</div>
@@ -1621,15 +1622,15 @@
                 <div>📖 지능: ${formatNumber(champion.intelligence)} ${'★'.repeat(champion.stars.intelligence)}</div>
                 ${champion.affinity !== undefined ? `<div>💕 호감도: ${formatNumber(champion.affinity)}</div>` : ''}
                 <hr>
-                <div>❤️ HP: ${formatNumber(champion.health)}/${formatNumber(champion.maxHealth)}</div>
-                <div>🔋 MP: ${formatNumber(champion.mana)}/${formatNumber(champion.maxMana)}</div>
-                <div>⚔️ 공격력: ${formatNumber(champion.attack)}</div>
-                <div>🛡️ 방어력: ${formatNumber(champion.defense)}</div>
-                <div>🎯 명중률: ${formatNumber(champion.accuracy)}</div>
-                <div>💨 회피율: ${formatNumber(champion.evasion)}</div>
-                <div>💥 치명타: ${formatNumber(champion.critChance)}</div>
-                <div>🔮 마법공격: ${formatNumber(champion.magicPower)}</div>
-                <div>✨ 마법방어: ${formatNumber(champion.magicResist)}</div>
+                <div>❤️ HP: ${formatNumber(champion.health)}/${formatNumber(getStat(champion,'maxHealth'))}</div>
+                <div>🔋 MP: ${formatNumber(champion.mana)}/${formatNumber(getStat(champion,'maxMana'))}</div>
+                <div>⚔️ 공격력: ${formatNumber(getStat(champion,'attack'))}</div>
+                <div>🛡️ 방어력: ${formatNumber(getStat(champion,'defense'))}</div>
+                <div>🎯 명중률: ${formatNumber(getStat(champion,'accuracy'))}</div>
+                <div>💨 회피율: ${formatNumber(getStat(champion,'evasion'))}</div>
+                <div>💥 치명타: ${formatNumber(getStat(champion,'critChance'))}</div>
+                <div>🔮 마법공격: ${formatNumber(getStat(champion,'magicPower'))}</div>
+                <div>✨ 마법방어: ${formatNumber(getStat(champion,'magicResist'))}</div>
                 <div>📏 사거리: ${champion.range}</div>
                 <div>무기: ${weapon}</div>
                 <div>방어구: ${armor}</div>
@@ -2528,6 +2529,11 @@ function killMonster(monster) {
                 gameState.player.equipped.armor = leatherArmor;
                 const egg = createItem('superiorEgg', 0, 0);
                 placeEggInIncubator(egg, 1);
+
+                const essences = ['strengthEssence','agilityEssence','enduranceEssence','focusEssence','intelligenceEssence','skillLevelEssence'];
+                essences.forEach(k => {
+                    gameState.player.inventory.push(createItem(k, 0, 0));
+                });
             }
 
             let exitX, exitY;
@@ -4802,7 +4808,8 @@ function killMonster(monster) {
                 });
             } else if (item.type === ITEM_TYPES.POTION ||
                        item.type === ITEM_TYPES.EXP_SCROLL ||
-                       item.type === ITEM_TYPES.FOOD) {
+                       item.type === ITEM_TYPES.FOOD ||
+                       item.type === ITEM_TYPES.ESSENCE) {
                 addBtn('플레이어', () => useItemOnTarget(item, gameState.player));
                 gameState.activeMercenaries.forEach(m => {
                     addBtn(m.name, () => useItemOnTarget(item, m));
