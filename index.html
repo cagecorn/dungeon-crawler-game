@@ -2224,7 +2224,7 @@
                 const cost = (info.manaCost || 0) + lvl - 1;
                 const mpText = info.manaCost ? ` (MP ${cost})` : '';
                 const defs = MERCENARY_SKILLS[key] ? 'MERCENARY_SKILLS' : 'MONSTER_SKILLS';
-                const levelUp = MERCENARY_SKILLS[key]
+                const levelUp = (MERCENARY_SKILLS[key] || MONSTER_SKILLS[key])
                     ? ` <button onclick="upgradeMercenarySkill(window.currentDetailMercenary,'${key}')">레벨업</button>`
                     : '';
                 return `<div><span class="merc-skill" onclick="showSkillDamage(window.currentDetailMercenary,'${key}',${defs})">${info.icon} ${info.name} Lv.${lvl}${mpText}</span>${levelUp}</div>`;
