@@ -36,6 +36,29 @@ in the UI.
 
 *This system has been removed.* Mercenaries no longer receive random traits or related bonuses.
 
+### Mercenary Affinity (호감도 시스템)
+
+Mercenaries and revived monsters track an *affinity* value that measures their
+loyalty to the party.
+
+- Newly hired mercenaries start with **50** affinity.
+- Revived monsters start with **30** affinity.
+- Affinity rises slowly each turn a unit stays in your party and caps at **200**.
+- When a mercenary dies they lose **5** affinity. If their affinity drops to zero
+  they permanently leave your party.
+
+You can view a unit's current affinity by opening their detail window.
+
+#### Food and Cooking
+
+Food items increase affinity. Simple drops like **Bread** provide small bonuses
+(+3 affinity), while cooked dishes from the **Crafting** tab grant larger
+amounts. For example, combining Bread, Carrot and Milk into a **Sandwich** yields
+**+15** affinity.
+
+Ingredient items and cooking recipes drop randomly during exploration and are
+stored as crafting materials rather than in your main inventory.
+
 ### Elite Monsters and Auras
 
 Each dungeon floor now contains at least one **elite** monster. Elites boast higher stats and randomly receive an aura skill that benefits nearby allies. When an elite is revived as a mercenary, it keeps this aura skill. Elites appear with a purple glow and the "엘리트" prefix.
