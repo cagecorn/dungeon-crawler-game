@@ -2155,10 +2155,6 @@ function killMonster(monster) {
                 defense: Math.floor(m.defense * mult),
                 magicPower: Math.floor(m.magicPower * mult)
             };
-            const skills = [m.skill, m.skill2, m.auraSkill, m.monsterSkill].filter(Boolean);
-            if (skills.length) {
-                item.skill = skills[Math.floor(Math.random()*skills.length)];
-            }
             addToInventory(item);
             addMessage(`🌾 ${item.name}을(를) 수확했습니다!`, 'item');
             gameState.farms[index] = null;

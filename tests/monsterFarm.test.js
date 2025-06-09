@@ -57,6 +57,10 @@ async function run() {
     console.error('fertilizer effect on stats missing');
     process.exit(1);
   }
+  if ('skill' in essence) {
+    console.error('harvested essence should not have a skill property');
+    process.exit(1);
+  }
 }
 
 run().catch(e => { console.error(e); process.exit(1); });
