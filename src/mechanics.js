@@ -4795,7 +4795,9 @@ function killMonster(monster) {
                 dead.forEach(m => {
                     addBtn(m.name, () => reviveMercenary(m));
                 });
-            } else if (item.type === ITEM_TYPES.POTION || item.type === ITEM_TYPES.EXP_SCROLL) {
+            } else if (item.type === ITEM_TYPES.POTION ||
+                       item.type === ITEM_TYPES.EXP_SCROLL ||
+                       item.type === ITEM_TYPES.FOOD) {
                 addBtn('플레이어', () => useItemOnTarget(item, gameState.player));
                 gameState.activeMercenaries.forEach(m => {
                     addBtn(m.name, () => useItemOnTarget(item, m));
