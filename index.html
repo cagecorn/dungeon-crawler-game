@@ -1253,7 +1253,9 @@
             HasteAura: { name: 'Haste Aura', icon: '💨', passive: true, radius: 6, aura: { evasion: 0.05 } },
             ConcentrationAura: { name: 'Concentration Aura', icon: '🎯', passive: true, radius: 6, aura: { accuracy: 0.05 } },
             CondemnAura: { name: 'Condemn Aura', icon: '⚔️', passive: true, radius: 6, aura: { critChance: 0.05 } },
-            NaturalAura: { name: 'Natural Aura', icon: '🌿', passive: true, radius: 6, aura: { defense: 1, magicResist: 1 } }
+            NaturalAura: { name: 'Natural Aura', icon: '🌿', passive: true, radius: 6, aura: { defense: 1, magicResist: 1 } },
+            KnockbackStrike: { name: 'Knockback Strike', icon: '💥', range: 1, manaCost: 2, melee: true, damageDice: '1d6', forceDirection: 'away', forceDistance: 1 },
+            Telekinesis: { name: 'Telekinesis', icon: '🌀', range: 3, manaCost: 3, magic: true, damageDice: '1d4', forceDirection: 'toward', forceDistance: 1 }
         };
 
         // 용병 전용 스킬 정의
@@ -1379,7 +1381,7 @@
                 magicResist: 0,
                 job: null,
                 elementResistances: {fire:0, ice:0, lightning:0, earth:0, light:0, dark:0},
-                statusResistances: {poison:0, bleed:0, burn:0, freeze:0},
+                statusResistances: {poison:0, bleed:0, burn:0, freeze:0, force:0},
                 poison: false,
                 burn: false,
                 freeze: false,
@@ -1553,6 +1555,45 @@
                 });
             }
             return value;
+        }
+
+        function checkForceResist(target) {
+            if (!target.statusResistances || target.statusResistances.force === undefined)
+                return { resisted: false, roll: null, dc: null };
+            const resist = getStatusResist(target, 'force');
+            const dc = Math.floor(resist * 20);
+            const roll = rollDice('1d20');
+            return { resisted: roll <= dc, roll, dc };
+        }
+
+        function attemptForcedMove(source, target, direction, distance) {
+            const res = checkForceResist(target);
+            if (res.resisted) return res;
+
+            let dx = Math.sign(target.x - source.x);
+            let dy = Math.sign(target.y - source.y);
+            if (direction === 'toward') { dx = -dx; dy = -dy; }
+            for (let i = 0; i < distance; i++) {
+                const nx = target.x + dx;
+                const ny = target.y + dy;
+                if (nx < 0 || nx >= gameState.dungeonSize || ny < 0 || ny >= gameState.dungeonSize) break;
+                if (gameState.dungeon[ny][nx] !== 'empty') break;
+                if (gameState.player.x === nx && gameState.player.y === ny) break;
+                if (gameState.activeMercenaries.some(m => m.alive && m.x === nx && m.y === ny)) break;
+                if (gameState.monsters.some(m => m !== target && m.x === nx && m.y === ny)) break;
+
+                if (gameState.monsters.includes(target)) {
+                    gameState.dungeon[target.y][target.x] = 'empty';
+                    target.x = nx; target.y = ny;
+                    gameState.dungeon[ny][nx] = 'monster';
+                } else if (target === gameState.player) {
+                    target.x = nx; target.y = ny;
+                } else if (gameState.activeMercenaries.includes(target)) {
+                    target.x = nx; target.y = ny;
+                    target.nextX = nx; target.nextY = ny;
+                }
+            }
+            return res;
         }
 
         function getAuraBonus(character, stat) {
@@ -1826,6 +1867,12 @@
                             dmgStr = `${formatNumber(result.baseDamage)}+${emoji}${formatNumber(result.elementDamage)}`;
                         }
                         addMessage(`${icon} ${monster.name}에게 ${dmgStr}의 피해를 입혔습니다${critMsg}!`, 'combat', detail);
+                        if (proj.skill) {
+                            const info = SKILL_DEFS[proj.skill];
+                            if (info && info.forceDistance) {
+                                attemptForcedMove(gameState.player, monster, info.forceDirection, info.forceDistance);
+                            }
+                        }
                     }
                     if (monster.health <= 0) {
                         killMonster(monster);
@@ -2373,7 +2420,7 @@
                 magicPower: data.baseMagicPower,
                 magicResist: data.baseMagicResist,
                 elementResistances: {fire:0, ice:0, lightning:0, earth:0, light:0, dark:0},
-                statusResistances: {poison:0, bleed:0, burn:0, freeze:0},
+                statusResistances: {poison:0, bleed:0, burn:0, freeze:0, force:0},
                 poison: false,
                 burn: false,
                 freeze: false,
@@ -3250,7 +3297,7 @@ function killMonster(monster) {
                 magicPower: mercType.baseMagicPower,
                 magicResist: mercType.baseMagicResist,
                 elementResistances: {fire:0, ice:0, lightning:0, earth:0, light:0, dark:0},
-                statusResistances: {poison:0, bleed:0, burn:0, freeze:0},
+                statusResistances: {poison:0, bleed:0, burn:0, freeze:0, force:0},
                 poison: false,
                 burn: false,
                 freeze: false,
@@ -3370,7 +3417,7 @@ function killMonster(monster) {
                 isChampion: true,
                 equipped: { weapon: null, armor: null, accessory1: null, accessory2: null },
                 elementResistances: {fire:0, ice:0, lightning:0, earth:0, light:0, dark:0},
-                statusResistances: {poison:0, bleed:0, burn:0, freeze:0},
+                statusResistances: {poison:0, bleed:0, burn:0, freeze:0, force:0},
                 poison:false,burn:false,freeze:false,bleed:false,
                 poisonTurns:0,burnTurns:0,freezeTurns:0,bleedTurns:0
             };
@@ -4398,6 +4445,9 @@ function killMonster(monster) {
                                 dmgStr = `${result.baseDamage}+${emoji}${result.elementDamage}`;
                             }
                             addMessage(`${icon} ${mercenary.name}이(가) ${nearestMonster.name}에게 ${dmgStr}의 피해를 입혔습니다${critMsg}!`, "mercenary", detail);
+                            if (skillInfo.forceDistance) {
+                                attemptForcedMove(mercenary, nearestMonster, skillInfo.forceDirection, skillInfo.forceDistance);
+                            }
                         }
 
                         if (nearestMonster.health <= 0) break;
@@ -4870,6 +4920,9 @@ function killMonster(monster) {
                             dmgStr = `${formatNumber(result.baseDamage)}+${emoji}${formatNumber(result.elementDamage)}`;
                         }
                         addMessage(`${skill.icon} ${target.name}에게 ${dmgStr}의 피해를 입혔습니다${critMsg}!`, 'combat', detail);
+                        if (skill.forceDistance) {
+                            attemptForcedMove(gameState.player, target, skill.forceDirection, skill.forceDistance);
+                        }
                     }
                     if (target.health <= 0) {
                         killMonster(target);
