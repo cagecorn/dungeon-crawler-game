@@ -10,11 +10,28 @@ async function run() {
   win.updateSkillDisplay = () => {};
   win.requestAnimationFrame = fn => fn();
 
-  const { createChampion, gameState, killMonster, createItem } = win;
+  const { createChampion, killMonster, reviveMonsterCorpse, gameState, createItem } = win;
+  const MONSTER_SKILLS = win.eval('MONSTER_SKILLS');
 
   const champ = createChampion('WARRIOR', 0, 0, 3);
   if (!champ.isChampion || champ.level !== 3) {
     console.error('champion creation failed');
+    process.exit(1);
+  }
+  const total = Object.values(champ.stars).reduce((a,b)=>a+b,0);
+  if (total > 9) {
+    console.error('champion stars invalid');
+    process.exit(1);
+  }
+  if (!MONSTER_SKILLS[champ.monsterSkill]) {
+    console.error('champion skill invalid');
+    process.exit(1);
+  }
+
+  win.showChampionDetails(champ);
+  const html = win.document.getElementById('monster-detail-content').innerHTML;
+  if (!html.includes('★'.repeat(champ.stars.strength)) || !html.includes(MONSTER_SKILLS[champ.monsterSkill].name)) {
+    console.error('champion details missing info');
     process.exit(1);
   }
 
@@ -34,6 +51,14 @@ async function run() {
   killMonster(dropChamp);
   if (gameState.items.length !== 1) {
     console.error('champion drop not guaranteed');
+    process.exit(1);
+  }
+
+  gameState.player.gold = 1000;
+  reviveMonsterCorpse(dropChamp);
+  const merc = gameState.activeMercenaries.find(m => m.id === dropChamp.id);
+  if (!merc || merc.stars.strength !== dropChamp.stars.strength || merc.skill !== dropChamp.monsterSkill) {
+    console.error('champion stats not kept after revival');
     process.exit(1);
   }
 }

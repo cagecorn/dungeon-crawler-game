@@ -31,7 +31,7 @@ async function run() {
   gameState.dungeon[monster.y][monster.x] = 'monster';
 
   const origRandom = win.Math.random;
-  win.Math.random = () => 0; // ensure hit
+  win.Math.random = () => 0.99; // ensure hit
   monsterAttack(monster);
   win.Math.random = origRandom;
 

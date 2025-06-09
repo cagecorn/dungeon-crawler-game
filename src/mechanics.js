@@ -1537,21 +1537,31 @@
             const armor = eq.armor ? eq.armor.name : '없음';
             const acc1 = eq.accessory1 ? eq.accessory1.name : '없음';
             const acc2 = eq.accessory2 ? eq.accessory2.name : '없음';
+            const skillInfo = champion.monsterSkill ? MONSTER_SKILLS[champion.monsterSkill] : null;
+            const skillLine = skillInfo ? `<div>스킬: ${skillInfo.icon} ${skillInfo.name}</div>` : '<div>스킬: 없음</div>';
             const html = `
                 <h3>${champion.icon} ${champion.name} (Lv.${champion.level})</h3>
-                <div>❤️ HP: ${champion.health}/${champion.maxHealth}</div>
-                <div>⚔️ 공격력: ${champion.attack}</div>
-                <div>🛡️ 방어력: ${champion.defense}</div>
-                <div>🎯 명중률: ${champion.accuracy}</div>
-                <div>💨 회피율: ${champion.evasion}</div>
-                <div>💥 치명타: ${champion.critChance}</div>
-                <div>🔮 마법공격: ${champion.magicPower}</div>
-                <div>✨ 마법방어: ${champion.magicResist}</div>
+                <div>💪 힘: ${formatNumber(champion.strength)} ${'★'.repeat(champion.stars.strength)}</div>
+                <div>🏃 민첩: ${formatNumber(champion.agility)} ${'★'.repeat(champion.stars.agility)}</div>
+                <div>🛡 체력: ${formatNumber(champion.endurance)} ${'★'.repeat(champion.stars.endurance)}</div>
+                <div>🔮 집중: ${formatNumber(champion.focus)} ${'★'.repeat(champion.stars.focus)}</div>
+                <div>📖 지능: ${formatNumber(champion.intelligence)} ${'★'.repeat(champion.stars.intelligence)}</div>
+                <hr>
+                <div>❤️ HP: ${formatNumber(champion.health)}/${formatNumber(champion.maxHealth)}</div>
+                <div>🔋 MP: ${formatNumber(champion.mana)}/${formatNumber(champion.maxMana)}</div>
+                <div>⚔️ 공격력: ${formatNumber(champion.attack)}</div>
+                <div>🛡️ 방어력: ${formatNumber(champion.defense)}</div>
+                <div>🎯 명중률: ${formatNumber(champion.accuracy)}</div>
+                <div>💨 회피율: ${formatNumber(champion.evasion)}</div>
+                <div>💥 치명타: ${formatNumber(champion.critChance)}</div>
+                <div>🔮 마법공격: ${formatNumber(champion.magicPower)}</div>
+                <div>✨ 마법방어: ${formatNumber(champion.magicResist)}</div>
                 <div>📏 사거리: ${champion.range}</div>
                 <div>무기: ${weapon}</div>
                 <div>방어구: ${armor}</div>
                 <div>악세1: ${acc1}</div>
                 <div>악세2: ${acc2}</div>
+                ${skillLine}
             `;
             document.getElementById('monster-detail-content').innerHTML = html;
             document.getElementById('monster-detail-panel').style.display = 'block';
@@ -1842,7 +1852,7 @@
         function setMonsterLevel(monster, level) {
             for (let i = 1; i < level; i++) {
                 monster.level += 1;
-                if (monster.isSuperior && monster.stars) {
+                if ((monster.isSuperior || monster.isChampion) && monster.stars) {
                     monster.endurance += 2 + monster.stars.endurance * 0.5;
                     monster.strength += 1 + monster.stars.strength * 0.5;
                     monster.agility += 1 + monster.stars.agility * 0.5;
@@ -1859,7 +1869,37 @@
                 monster.health = monster.maxHealth;
                 monster.maxMana = getStat(monster, 'maxMana');
                 monster.mana = monster.maxMana;
+                monster.attack = getStat(monster, 'attack');
+                monster.defense = getStat(monster, 'defense');
+                monster.accuracy = getStat(monster, 'accuracy');
+                monster.evasion = getStat(monster, 'evasion');
+                monster.critChance = getStat(monster, 'critChance');
+                monster.magicPower = getStat(monster, 'magicPower');
+                monster.magicResist = getStat(monster, 'magicResist');
                 monster.expNeeded = Math.floor((monster.expNeeded || 15) * 1.5);
+            }
+        }
+
+        function setChampionLevel(champion, level) {
+            for (let i = 1; i < level; i++) {
+                champion.level += 1;
+                champion.endurance += 2 + champion.stars.endurance * 0.5;
+                champion.strength += 1 + champion.stars.strength * 0.5;
+                champion.agility += 1 + champion.stars.agility * 0.5;
+                champion.focus += 1 + champion.stars.focus * 0.5;
+                champion.intelligence += 1 + champion.stars.intelligence * 0.5;
+                champion.maxHealth = getStat(champion, 'maxHealth');
+                champion.health = champion.maxHealth;
+                champion.maxMana = getStat(champion, 'maxMana');
+                champion.mana = champion.maxMana;
+                champion.attack = getStat(champion, 'attack');
+                champion.defense = getStat(champion, 'defense');
+                champion.accuracy = getStat(champion, 'accuracy');
+                champion.evasion = getStat(champion, 'evasion');
+                champion.critChance = getStat(champion, 'critChance');
+                champion.magicPower = getStat(champion, 'magicPower');
+                champion.magicResist = getStat(champion, 'magicResist');
+                champion.expNeeded = Math.floor((champion.expNeeded || 15) * 1.5);
             }
         }
 
@@ -1946,7 +1986,7 @@ function killMonster(monster) {
                 x: -1,
                 y: -1,
                 level: monster.level,
-                stars: monster.isSuperior ? Object.assign({}, monster.stars) : {strength:0, agility:0, endurance:0, focus:0, intelligence:0},
+                stars: (monster.isSuperior || monster.isChampion) ? Object.assign({}, monster.stars) : {strength:0, agility:0, endurance:0, focus:0, intelligence:0},
                 endurance: monster.endurance,
                 focus: monster.focus,
                 strength: monster.strength,
@@ -2324,7 +2364,7 @@ function killMonster(monster) {
             while (monster.exp >= monster.expNeeded) {
                 monster.exp -= monster.expNeeded;
                 monster.level += 1;
-                if (monster.isSuperior && monster.stars) {
+                if ((monster.isSuperior || monster.isChampion) && monster.stars) {
                     monster.endurance += 2 + monster.stars.endurance * 0.5;
                     monster.strength += 1 + monster.stars.strength * 0.5;
                     monster.agility += 1 + monster.stars.agility * 0.5;
@@ -2339,6 +2379,13 @@ function killMonster(monster) {
                 }
                 monster.health = getStat(monster, 'maxHealth');
                 monster.mana = getStat(monster, 'maxMana');
+                monster.attack = getStat(monster, 'attack');
+                monster.defense = getStat(monster, 'defense');
+                monster.accuracy = getStat(monster, 'accuracy');
+                monster.evasion = getStat(monster, 'evasion');
+                monster.critChance = getStat(monster, 'critChance');
+                monster.magicPower = getStat(monster, 'magicPower');
+                monster.magicResist = getStat(monster, 'magicResist');
                 monster.expNeeded = Math.floor(monster.expNeeded * 1.5);
                 addMessage(`📈 ${monster.name}의 레벨이 ${monster.level}이(가) 되었습니다!`, 'combat');
                 if (window.currentDetailMonster && window.currentDetailMonster.id === monster.id) {
@@ -2771,6 +2818,9 @@ function killMonster(monster) {
             const randomBaseName = MERCENARY_NAMES[Math.floor(Math.random() * MERCENARY_NAMES.length)];
             const jobLabel = base.name.split(' ')[1] || base.name;
             const name = `${randomBaseName} (${jobLabel})`;
+            const endurance = base.baseHealth / 2;
+            const focus = (base.baseMaxMana || 0) / 2;
+            const agility = Math.max(0, Math.round((base.baseAccuracy - 0.7) / 0.02));
             const champion = {
                 id: Math.random().toString(36).substr(2, 9),
                 type,
@@ -2779,6 +2829,19 @@ function killMonster(monster) {
                 x,
                 y,
                 level: 1,
+                stars: generateStars(),
+                endurance: endurance,
+                focus: focus,
+                strength: base.baseAttack,
+                agility: agility,
+                intelligence: base.baseMagicPower,
+                baseDefense: base.baseDefense - Math.floor(endurance * 0.1),
+                maxHealth: base.baseHealth,
+                health: base.baseHealth,
+                maxMana: base.baseMaxMana || 0,
+                mana: base.baseMaxMana || 0,
+                healthRegen: base.baseHealthRegen || 0,
+                manaRegen: base.baseManaRegen || 1,
                 attack: base.baseAttack,
                 defense: base.baseDefense,
                 accuracy: base.baseAccuracy,
@@ -2786,8 +2849,6 @@ function killMonster(monster) {
                 critChance: base.baseCritChance,
                 magicPower: base.baseMagicPower,
                 magicResist: base.baseMagicResist,
-                maxHealth: base.baseHealth,
-                health: base.baseHealth,
                 range: base.range || 1,
                 exp: level * 10,
                 gold: level * 10,
@@ -2800,7 +2861,8 @@ function killMonster(monster) {
                 poison:false,burn:false,freeze:false,bleed:false,
                 paralysis:false,nightmare:false,silence:false,petrify:false,debuff:false,
                 poisonTurns:0,burnTurns:0,freezeTurns:0,bleedTurns:0,
-                paralysisTurns:0,nightmareTurns:0,silenceTurns:0,petrifyTurns:0,debuffTurns:0
+                paralysisTurns:0,nightmareTurns:0,silenceTurns:0,petrifyTurns:0,debuffTurns:0,
+                expNeeded: 15
             };
             const keys = Object.keys(ITEMS).filter(k =>
                 [ITEM_TYPES.WEAPON, ITEM_TYPES.ARMOR, ITEM_TYPES.ACCESSORY].includes(ITEMS[k].type) &&
@@ -2812,7 +2874,14 @@ function killMonster(monster) {
             if (weaponChoices.length) champion.equipped.weapon = createItem(weaponChoices[Math.floor(Math.random()*weaponChoices.length)], 0, 0);
             if (armorChoices.length) champion.equipped.armor = createItem(armorChoices[Math.floor(Math.random()*armorChoices.length)], 0, 0);
             if (accChoices.length) champion.equipped.accessory1 = createItem(accChoices[Math.floor(Math.random()*accChoices.length)], 0, 0);
-            setMercenaryLevel(champion, level);
+
+            const skillKeys = Object.keys(MONSTER_SKILLS);
+            const sk = skillKeys[Math.floor(Math.random() * skillKeys.length)];
+            champion.monsterSkill = sk;
+            champion.skillLevels = {};
+            champion.skillLevels[sk] = Math.floor((level - 1) / 3) + 1;
+
+            setChampionLevel(champion, level);
             return champion;
         }
 
@@ -4725,7 +4794,7 @@ loadGame, meleeAttackAction, monsterAttack, movePlayer, nextFloor,
 processMercenaryTurn, processProjectiles, processTurn, purifyTarget, 
 rangedAction, recallMercenaries, recruitHatchedSuperior, 
 removeEggFromIncubator, renderDungeon, reviveMercenary, reviveMonsterCorpse, 
-rollDice, saveGame, sellItem, setMercenaryLevel, setMonsterLevel, 
+rollDice, saveGame, sellItem, setMercenaryLevel, setMonsterLevel, setChampionLevel,
 showChampionDetails, showItemTargetPanel, showMercenaryDetails, 
 showMonsterDetails, showShop, showSkillDamage, showAuraDetails, skill1Action, skill2Action,
 spawnMercenaryNearPlayer, startGame, swapActiveAndStandby, tryApplyStatus,
