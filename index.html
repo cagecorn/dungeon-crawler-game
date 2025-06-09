@@ -921,6 +921,44 @@
                 special: 'magic',
                 statusEffect: 'freeze'
             },
+            GOBLIN_ARCHER: {
+                name: '🏹 고블린 궁수',
+                icon: '🏹',
+                color: '#6B8E23',
+                baseHealth: 4,
+                baseAttack: 3,
+                baseDefense: 0,
+                baseAccuracy: 0.7,
+                baseEvasion: 0.1,
+                baseCritChance: 0.05,
+                baseMagicPower: 0,
+                baseMagicResist: 0,
+                baseExp: 6,
+                damageDice: "1d6",
+                baseGold: 6,
+                range: 3,
+                special: 'ranged',
+                statusEffect: 'poison'
+            },
+            GOBLIN_WIZARD: {
+                name: '🧙‍♂️ 고블린 마법사',
+                icon: '🔮',
+                color: '#2E8B57',
+                baseHealth: 3,
+                baseAttack: 4,
+                baseDefense: 0,
+                baseAccuracy: 0.7,
+                baseEvasion: 0.1,
+                baseCritChance: 0.08,
+                baseMagicPower: 4,
+                baseMagicResist: 0,
+                baseExp: 8,
+                damageDice: "1d6",
+                baseGold: 8,
+                range: 4,
+                special: 'magic',
+                statusEffect: 'freeze'
+            },
             ORC: {
                 name: '💪 오크 전사',
                 icon: '👹',
@@ -939,6 +977,114 @@
                 range: 1,
                 special: 'strong',
                 statusEffect: 'bleed'
+            },
+            ORC_ARCHER: {
+                name: '🏹 오크 궁수',
+                icon: '🏹',
+                color: '#8B0000',
+                baseHealth: 10,
+                baseAttack: 5,
+                baseDefense: 1,
+                baseAccuracy: 0.75,
+                baseEvasion: 0.08,
+                baseCritChance: 0.05,
+                baseMagicPower: 0,
+                baseMagicResist: 0.2,
+                baseExp: 12,
+                damageDice: "1d6",
+                baseGold: 10,
+                range: 3,
+                special: 'ranged'
+            },
+            SKELETON: {
+                name: '💀 스켈레톤',
+                icon: '💀',
+                color: '#AAAAAA',
+                baseHealth: 6,
+                baseAttack: 3,
+                baseDefense: 1,
+                baseAccuracy: 0.65,
+                baseEvasion: 0.05,
+                baseCritChance: 0.03,
+                baseMagicPower: 0,
+                baseMagicResist: 0,
+                baseExp: 8,
+                damageDice: "1d6",
+                baseGold: 6,
+                range: 1,
+                special: 'undead'
+            },
+            SKELETON_MAGE: {
+                name: '☠️ 스켈레톤 메이지',
+                icon: '☠️',
+                color: '#CCCCCC',
+                baseHealth: 5,
+                baseAttack: 4,
+                baseDefense: 0,
+                baseAccuracy: 0.7,
+                baseEvasion: 0.05,
+                baseCritChance: 0.07,
+                baseMagicPower: 5,
+                baseMagicResist: 1,
+                baseExp: 12,
+                damageDice: "1d6",
+                baseGold: 9,
+                range: 4,
+                special: 'magic'
+            },
+            TROLL: {
+                name: '👹 트롤',
+                icon: '👺',
+                color: '#556B2F',
+                baseHealth: 18,
+                baseAttack: 7,
+                baseDefense: 3,
+                baseAccuracy: 0.65,
+                baseEvasion: 0.05,
+                baseCritChance: 0.05,
+                baseMagicPower: 0,
+                baseMagicResist: 0.3,
+                baseExp: 20,
+                damageDice: "1d8",
+                baseGold: 15,
+                range: 1,
+                special: 'regeneration'
+            },
+            DARK_MAGE: {
+                name: '🧙‍♂️ 다크 메이지',
+                icon: '🪄',
+                color: '#4B0082',
+                baseHealth: 8,
+                baseAttack: 6,
+                baseDefense: 1,
+                baseAccuracy: 0.75,
+                baseEvasion: 0.1,
+                baseCritChance: 0.1,
+                baseMagicPower: 7,
+                baseMagicResist: 2,
+                baseExp: 25,
+                damageDice: "1d8",
+                baseGold: 20,
+                range: 4,
+                special: 'curse'
+            },
+            DEMON_WARRIOR: {
+                name: '😈 데몬 전사',
+                icon: '😈',
+                color: '#8B0000',
+                baseHealth: 22,
+                baseAttack: 9,
+                baseDefense: 4,
+                baseAccuracy: 0.8,
+                baseEvasion: 0.1,
+                baseCritChance: 0.1,
+                baseMagicPower: 3,
+                baseMagicResist: 3,
+                baseExp: 35,
+                damageDice: "1d10",
+                baseGold: 25,
+                range: 2,
+                special: 'demonic'
             },
             BOSS: {
                 name: '👑 던전 보스',
@@ -2461,7 +2607,8 @@ function killMonster(monster) {
             const count = Math.floor(Math.random() * 3) + 1;
             for (let i = 0; i < count; i++) {
                 const mat = materialsPool[Math.floor(Math.random() * materialsPool.length)];
-                gameState.materials.push(mat);
+                if (!gameState.materials[mat]) gameState.materials[mat] = 0;
+                gameState.materials[mat] += 1;
                 gained.push(mat);
             }
             const idx = gameState.corpses.findIndex(c => c === corpse);
@@ -2495,7 +2642,7 @@ function killMonster(monster) {
         }
 
         function advanceIncubators() {
-            const monsterTypes = Object.keys(MONSTER_TYPES);
+            const monsterTypes = getMonsterPoolForFloor(gameState.floor);
             gameState.incubators.forEach((slot, i) => {
                 if (!slot) return;
                 slot.remainingTurns--;
@@ -2531,6 +2678,14 @@ function killMonster(monster) {
             updateMercenaryDisplay();
             updateIncubatorDisplay();
             renderDungeon();
+        }
+
+        function getMonsterPoolForFloor(floor) {
+            if (floor <= 2) return ['GOBLIN', 'GOBLIN_ARCHER', 'GOBLIN_WIZARD', 'ZOMBIE'];
+            if (floor <= 4) return ['SKELETON', 'SKELETON_MAGE', 'ORC', 'ORC_ARCHER'];
+            if (floor <= 6) return ['TROLL', 'ORC', 'ORC_ARCHER', 'SKELETON_MAGE'];
+            if (floor <= 8) return ['DARK_MAGE', 'TROLL', 'ORC', 'ORC_ARCHER'];
+            return ['DEMON_WARRIOR', 'DARK_MAGE', 'TROLL', 'ORC'];
         }
 
         function applyStatusEffects(entity) {
@@ -2779,7 +2934,7 @@ function killMonster(monster) {
             gameState.exitLocation = { x: exitX, y: exitY };
             gameState.dungeon[exitY][exitX] = 'exit';
 
-            const monsterTypes = Object.keys(MONSTER_TYPES);
+            const monsterTypes = getMonsterPoolForFloor(gameState.floor);
             // 몬스터는 던전 크기와 층수에 비례해 등장 수를 결정
             const monsterCount = Math.floor(size * 0.2) + gameState.floor;
             for (let i = 0; i < monsterCount; i++) {
@@ -2817,7 +2972,7 @@ function killMonster(monster) {
                 ex = Math.floor(Math.random() * size);
                 ey = Math.floor(Math.random() * size);
             } while (gameState.dungeon[ey][ex] !== 'empty');
-            const eType = monsterTypes[Math.floor(Math.random() * (monsterTypes.length - 1))];
+            const eType = monsterTypes[Math.floor(Math.random() * monsterTypes.length)];
             const elite = createEliteMonster(eType, ex, ey, gameState.floor);
             gameState.monsters.push(elite);
             gameState.dungeon[ey][ex] = 'monster';
@@ -2825,7 +2980,7 @@ function killMonster(monster) {
             for (let i = 0; i < around; i++) {
                 const pos = findAdjacentEmpty(ex, ey);
                 if (gameState.dungeon[pos.y][pos.x] !== 'empty') continue;
-                const t = monsterTypes[Math.floor(Math.random() * (monsterTypes.length - 1))];
+                const t = monsterTypes[Math.floor(Math.random() * monsterTypes.length)];
                 const m = createMonster(t, pos.x, pos.y, gameState.floor);
                 gameState.monsters.push(m);
                 gameState.dungeon[pos.y][pos.x] = 'monster';
@@ -4794,7 +4949,8 @@ function killMonster(monster) {
                 return;
             }
 
-            if (typeof prompt === 'function') {
+            const isTest = typeof navigator !== 'undefined' && /jsdom/i.test(navigator.userAgent);
+            if (isTest && typeof prompt === 'function') {
                 const msg = choices.map((c, i) => `${i}: ${c.label}`).join('\n');
                 const res = prompt(msg);
                 const idx = parseInt(res, 10);
