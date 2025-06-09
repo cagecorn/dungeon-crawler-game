@@ -1314,7 +1314,17 @@
 
         const ELEMENT_EMOJI = { fire: '🔥', ice: '❄️', lightning: '⚡' };
 
-        const STATUS_NAMES = { poison: "독", burn: "화상", freeze: "빙결", bleed: "출혈" };
+        const STATUS_NAMES = {
+            poison: "독",
+            burn: "화상",
+            freeze: "빙결",
+            bleed: "출혈",
+            paralysis: "마비",
+            nightmare: "악몽",
+            silence: "침묵",
+            petrify: "석화",
+            debuff: "약화"
+        };
 
         // 접두사/접미사 풀
         const PREFIXES = [
@@ -1379,15 +1389,25 @@
                 magicResist: 0,
                 job: null,
                 elementResistances: {fire:0, ice:0, lightning:0, earth:0, light:0, dark:0},
-                statusResistances: {poison:0, bleed:0, burn:0, freeze:0},
+                statusResistances: {poison:0, bleed:0, burn:0, freeze:0, paralysis:0, nightmare:0, silence:0, petrify:0, debuff:0},
                 poison: false,
                 burn: false,
                 freeze: false,
                 bleed: false,
+                paralysis: false,
+                nightmare: false,
+                silence: false,
+                petrify: false,
+                debuff: false,
                 poisonTurns: 0,
                 burnTurns: 0,
                 freezeTurns: 0,
                 bleedTurns: 0,
+                paralysisTurns: 0,
+                nightmareTurns: 0,
+                silenceTurns: 0,
+                petrifyTurns: 0,
+                debuffTurns: 0,
                 exp: 0,
                 expNeeded: 20,
                 gold: 1000,
@@ -1510,7 +1530,7 @@
         }
 
         function purifyTarget(healer, target, skillInfo) {
-            const statuses = ['poison','burn','freeze','bleed'];
+            const statuses = ['poison','burn','freeze','bleed','paralysis','nightmare','silence','petrify','debuff'];
             let removed = false;
             statuses.forEach(s => {
                 if (target[s]) {
@@ -2373,15 +2393,25 @@
                 magicPower: data.baseMagicPower,
                 magicResist: data.baseMagicResist,
                 elementResistances: {fire:0, ice:0, lightning:0, earth:0, light:0, dark:0},
-                statusResistances: {poison:0, bleed:0, burn:0, freeze:0},
+                statusResistances: {poison:0, bleed:0, burn:0, freeze:0, paralysis:0, nightmare:0, silence:0, petrify:0, debuff:0},
                 poison: false,
                 burn: false,
                 freeze: false,
                 bleed: false,
+                paralysis: false,
+                nightmare: false,
+                silence: false,
+                petrify: false,
+                debuff: false,
                 poisonTurns: 0,
                 burnTurns: 0,
                 freezeTurns: 0,
                 bleedTurns: 0,
+                paralysisTurns: 0,
+                nightmareTurns: 0,
+                silenceTurns: 0,
+                petrifyTurns: 0,
+                debuffTurns: 0,
                 exp: data.baseExp,
                 expNeeded: 15,
                 gold: data.baseGold,
@@ -2593,9 +2623,11 @@ function killMonster(monster) {
                 magicPower: monster.magicPower,
                 magicResist: monster.magicResist,
                 elementResistances: Object.assign({}, monster.elementResistances),
-                statusResistances: Object.assign({}, monster.statusResistances),
+                statusResistances: Object.assign({paralysis:0,nightmare:0,silence:0,petrify:0,debuff:0}, monster.statusResistances),
                 poison:false,burn:false,freeze:false,bleed:false,
+                paralysis:false,nightmare:false,silence:false,petrify:false,debuff:false,
                 poisonTurns:0,burnTurns:0,freezeTurns:0,bleedTurns:0,
+                paralysisTurns:0,nightmareTurns:0,silenceTurns:0,petrifyTurns:0,debuffTurns:0,
                 exp: 0,
                 expNeeded: 15,
                 skillPoints: 0,
@@ -2766,6 +2798,32 @@ function killMonster(monster) {
                 entity.bleedTurns--;
                 addMessage(`🩸 ${name}이(가) 출혈로 2의 피해를 입었습니다.`, 'combat');
                 if (entity.bleedTurns <= 0) entity.bleed = false;
+            }
+            if (entity.nightmare && entity.nightmareTurns > 0) {
+                entity.health -= 2;
+                entity.nightmareTurns--;
+                addMessage(`😱 ${name}이(가) 악몽으로 2의 피해를 입었습니다.`, 'combat');
+                if (entity.nightmareTurns <= 0) entity.nightmare = false;
+            }
+            if (entity.paralysis && entity.paralysisTurns > 0) {
+                entity.paralysisTurns--;
+                addMessage(`⚡ ${name}이(가) 마비되어 움직일 수 없습니다.`, 'combat');
+                if (entity.paralysisTurns <= 0) entity.paralysis = false;
+            }
+            if (entity.silence && entity.silenceTurns > 0) {
+                entity.silenceTurns--;
+                addMessage(`🤐 ${name}이(가) 침묵 상태입니다.`, 'combat');
+                if (entity.silenceTurns <= 0) entity.silence = false;
+            }
+            if (entity.petrify && entity.petrifyTurns > 0) {
+                entity.petrifyTurns--;
+                addMessage(`🪨 ${name}이(가) 석화되었습니다.`, 'combat');
+                if (entity.petrifyTurns <= 0) entity.petrify = false;
+            }
+            if (entity.debuff && entity.debuffTurns > 0) {
+                entity.debuffTurns--;
+                addMessage(`⬇️ ${name}이(가) 약화 상태입니다.`, 'combat');
+                if (entity.debuffTurns <= 0) entity.debuff = false;
             }
             if (entity.health <= 0) died = true;
             return died;
@@ -3250,15 +3308,25 @@ function killMonster(monster) {
                 magicPower: mercType.baseMagicPower,
                 magicResist: mercType.baseMagicResist,
                 elementResistances: {fire:0, ice:0, lightning:0, earth:0, light:0, dark:0},
-                statusResistances: {poison:0, bleed:0, burn:0, freeze:0},
+                statusResistances: {poison:0, bleed:0, burn:0, freeze:0, paralysis:0, nightmare:0, silence:0, petrify:0, debuff:0},
                 poison: false,
                 burn: false,
                 freeze: false,
                 bleed: false,
+                paralysis: false,
+                nightmare: false,
+                silence: false,
+                petrify: false,
+                debuff: false,
                 poisonTurns: 0,
                 burnTurns: 0,
                 freezeTurns: 0,
                 bleedTurns: 0,
+                paralysisTurns: 0,
+                nightmareTurns: 0,
+                silenceTurns: 0,
+                petrifyTurns: 0,
+                debuffTurns: 0,
                 exp: 0,
                 expNeeded: 15,
                 skillPoints: 0,
@@ -3370,9 +3438,11 @@ function killMonster(monster) {
                 isChampion: true,
                 equipped: { weapon: null, armor: null, accessory1: null, accessory2: null },
                 elementResistances: {fire:0, ice:0, lightning:0, earth:0, light:0, dark:0},
-                statusResistances: {poison:0, bleed:0, burn:0, freeze:0},
+                statusResistances: {poison:0, bleed:0, burn:0, freeze:0, paralysis:0, nightmare:0, silence:0, petrify:0, debuff:0},
                 poison:false,burn:false,freeze:false,bleed:false,
-                poisonTurns:0,burnTurns:0,freezeTurns:0,bleedTurns:0
+                paralysis:false,nightmare:false,silence:false,petrify:false,debuff:false,
+                poisonTurns:0,burnTurns:0,freezeTurns:0,bleedTurns:0,
+                paralysisTurns:0,nightmareTurns:0,silenceTurns:0,petrifyTurns:0,debuffTurns:0
             };
             const keys = Object.keys(ITEMS).filter(k =>
                 [ITEM_TYPES.WEAPON, ITEM_TYPES.ARMOR, ITEM_TYPES.ACCESSORY].includes(ITEMS[k].type) &&
@@ -3716,6 +3786,12 @@ function killMonster(monster) {
         // 플레이어 이동
         function movePlayer(dx, dy) {
             if (!gameState.gameRunning) return;
+            if ((gameState.player.paralysis && gameState.player.paralysisTurns > 0) ||
+                (gameState.player.petrify && gameState.player.petrifyTurns > 0)) {
+                addMessage('⚠️ 플레이어는 움직일 수 없습니다.', 'info');
+                processTurn();
+                return;
+            }
             if (!gameState.autoMoveActive) {
                 gameState.autoMovePath = null;
             }
@@ -3979,8 +4055,16 @@ function killMonster(monster) {
                 monster.hasActed = false;
             });
             
-            for (const monster of [...gameState.monsters]) {
+           for (const monster of [...gameState.monsters]) {
                 if (monster.hasActed || !gameState.gameRunning) continue;
+                if ((monster.paralysis && monster.paralysisTurns > 0) || (monster.petrify && monster.petrifyTurns > 0)) {
+                    monster.paralysisTurns && monster.paralysisTurns--;
+                    monster.petrifyTurns && monster.petrifyTurns--;
+                    if (monster.paralysisTurns <= 0) monster.paralysis = false;
+                    if (monster.petrifyTurns <= 0) monster.petrify = false;
+                    monster.hasActed = true;
+                    continue;
+                }
                 
                 let nearestTarget = null;
                 let nearestDistance = Infinity;
@@ -4111,9 +4195,22 @@ function killMonster(monster) {
         // 용병 AI (개선됨 - 장비 보너스 적용, 안전성 체크 추가)
         function processMercenaryTurn(mercenary) {
             if (!mercenary.alive || mercenary.hasActed) return;
+            if ((mercenary.paralysis && mercenary.paralysisTurns > 0) || (mercenary.petrify && mercenary.petrifyTurns > 0)) {
+                mercenary.paralysisTurns && mercenary.paralysisTurns--;
+                mercenary.petrifyTurns && mercenary.petrifyTurns--;
+                if (mercenary.paralysisTurns <= 0) mercenary.paralysis = false;
+                if (mercenary.petrifyTurns <= 0) mercenary.petrify = false;
+                mercenary.hasActed = true;
+                return;
+            }
             mercenary.nextX = mercenary.x;
             mercenary.nextY = mercenary.y;
             const moveTiles = 1;
+
+            if (mercenary.silence && mercenary.silenceTurns > 0) {
+                mercenary.silenceTurns--;
+                if (mercenary.silenceTurns <= 0) mercenary.silence = false;
+            }
 
             if (mercenary.bleedTurns && mercenary.bleedTurns > 0) {
                 mercenary.bleedTurns--;
@@ -4194,7 +4291,7 @@ function killMonster(monster) {
                 const purifyMana = purifyInfo ? purifyInfo.manaCost + purifyLevel - 1 : 0;
                 if (purifyInfo && mercenary.skill2 === 'Purify' && mercenary.mana >= purifyMana) {
                     const inRange = target => getDistance(mercenary.x, mercenary.y, target.x, target.y) <= purifyInfo.range;
-                    const hasStatus = t => t.poison || t.burn || t.freeze || t.bleed;
+                    const hasStatus = t => t.poison || t.burn || t.freeze || t.bleed || t.paralysis || t.nightmare || t.silence || t.petrify || t.debuff;
 
                     if (hasStatus(gameState.player) && inRange(gameState.player)) {
                         if (purifyTarget(mercenary, gameState.player, purifyInfo)) {
@@ -4249,7 +4346,9 @@ function killMonster(monster) {
             if (skillKey === 'HawkEye' && nearestMonster && nearestDistance > attackRange && nearestDistance <= skillInfo.range) {
                 forceSkill = true;
             }
-            if (skillInfo && mercenary.mana >= skillManaCost && (forceSkill || Math.random() < 0.5)) {
+            if (mercenary.silence && mercenary.silenceTurns > 0) {
+                // silence just decrements in applyStatusEffects
+            } else if (skillInfo && mercenary.mana >= skillManaCost && (forceSkill || Math.random() < 0.5)) {
                 if (skillKey === 'Heal') {
                     let target = null;
                     if (gameState.player.health < getStat(gameState.player, 'maxHealth') && getDistance(mercenary.x, mercenary.y, gameState.player.x, gameState.player.y) <= skillInfo.range) {
@@ -4678,7 +4777,13 @@ function killMonster(monster) {
             updateActionButtons();
             addMessage('📁 게임을 불러왔습니다.', 'info');
         }
-        function rangedAction() {
+       function rangedAction() {
+            if ((gameState.player.paralysis && gameState.player.paralysisTurns > 0) ||
+                (gameState.player.petrify && gameState.player.petrifyTurns > 0)) {
+                addMessage('⚠️ 플레이어는 공격할 수 없습니다.', 'info');
+                processTurn();
+                return;
+            }
             const range = 5;
             let target = null;
             let dist = Infinity;
@@ -4702,7 +4807,13 @@ function killMonster(monster) {
             processTurn();
         }
 
-        function meleeAttackAction() {
+       function meleeAttackAction() {
+            if ((gameState.player.paralysis && gameState.player.paralysisTurns > 0) ||
+                (gameState.player.petrify && gameState.player.petrifyTurns > 0)) {
+                addMessage('⚠️ 플레이어는 공격할 수 없습니다.', 'info');
+                processTurn();
+                return;
+            }
             let targetPos = null;
             const dirs = [
                 {x:1,y:0}, {x:-1,y:0}, {x:0,y:1}, {x:0,y:-1}
@@ -4733,7 +4844,18 @@ function killMonster(monster) {
             useSkill(skill);
         }
 
-        function useSkill(skillKey) {
+       function useSkill(skillKey) {
+            if ((gameState.player.paralysis && gameState.player.paralysisTurns > 0) ||
+                (gameState.player.petrify && gameState.player.petrifyTurns > 0)) {
+                addMessage('⚠️ 플레이어는 행동할 수 없습니다.', 'info');
+                processTurn();
+                return;
+            }
+            if (gameState.player.silence && gameState.player.silenceTurns > 0) {
+                addMessage('🤐 플레이어는 침묵 상태입니다.', 'info');
+                processTurn();
+                return;
+            }
             if (!skillKey) {
                 addMessage('스킬이 설정되어 있지 않습니다.', 'info');
                 processTurn();
@@ -4769,7 +4891,7 @@ function killMonster(monster) {
                 return;
             }
             if (skill.purify) {
-                const hasStatus = t => t.poison || t.burn || t.freeze || t.bleed;
+                const hasStatus = t => t.poison || t.burn || t.freeze || t.bleed || t.paralysis || t.nightmare || t.silence || t.petrify || t.debuff;
                 const targets = [gameState.player, ...gameState.activeMercenaries.filter(m => m.alive)]
                     .filter(t => getDistance(gameState.player.x, gameState.player.y, t.x, t.y) <= skill.range && hasStatus(t));
                 if (targets.length === 0) {
