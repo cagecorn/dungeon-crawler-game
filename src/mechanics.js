@@ -2412,6 +2412,8 @@ function killMonster(monster) {
                             } else if (cellType === 'item') {
                                 const it = gameState.items.find(it => it.x === x && it.y === y);
                                 if (it) div.textContent = it.icon;
+                            } else if (cellType === 'plant') {
+                                div.textContent = '🌿';
                             } else if (cellType === 'corpse') {
                                 div.textContent = '☠️';
                             } else if (cellType === 'treasure') {
@@ -2699,6 +2701,16 @@ function killMonster(monster) {
                 const item = createItem(key, x, y);
                 gameState.items.push(item);
                 gameState.dungeon[y][x] = 'item';
+            }
+
+            const plantCount = Math.floor(size * 0.05);
+            for (let i = 0; i < plantCount; i++) {
+                let x, y;
+                do {
+                    x = Math.floor(Math.random() * size);
+                    y = Math.floor(Math.random() * size);
+                } while (gameState.dungeon[y][x] !== 'empty');
+                gameState.dungeon[y][x] = 'plant';
             }
 
 
@@ -3560,6 +3572,21 @@ function killMonster(monster) {
                     }
                     gameState.dungeon[newY][newX] = 'empty';
                 }
+            }
+
+            if (cellType === 'plant') {
+                const materialsPool = ['herb', 'bread', 'meat', 'lettuce'];
+                const gained = [];
+                const count = Math.floor(Math.random() * 2) + 1;
+                for (let i = 0; i < count; i++) {
+                    const mat = materialsPool[Math.floor(Math.random() * materialsPool.length)];
+                    if (!gameState.materials[mat]) gameState.materials[mat] = 0;
+                    gameState.materials[mat] += 1;
+                    gained.push(mat);
+                }
+                addMessage(`🌿 식물을 채집하여 ${gained.join(', ')}을(를) 얻었습니다.`, 'item');
+                gameState.dungeon[newY][newX] = 'empty';
+                updateMaterialsDisplay();
             }
 
             if (cellType === 'corpse') {
