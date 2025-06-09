@@ -1062,6 +1062,14 @@
             alert(`${name} 예상 피해: ${formatNumber(dmg)}`);
         }
 
+        function showAuraDetails(key, lvl) {
+            const info = SKILL_DEFS[key] || MERCENARY_SKILLS[key] || MONSTER_SKILLS[key];
+            if (!info || !info.aura) return;
+            const parts = Object.entries(info.aura)
+                .map(([stat, val]) => `${stat} +${val * lvl}`);
+            alert(`${info.name} : ${parts.join(', ')}`);
+        }
+
 
         // 플레이어 체력 비율에 따른 표정 반환
         function getPlayerEmoji() {
@@ -1637,7 +1645,10 @@
             const addAura = (key, lvl) => {
                 const info = SKILL_DEFS[key] || MERCENARY_SKILLS[key] || MONSTER_SKILLS[key];
                 if (info && info.passive && info.aura) {
-                    auras.push(`${info.icon} ${info.name} Lv.${lvl}`);
+                    auras.push(
+                        `<span class="buff-icon" onclick="showAuraDetails('${key}',${lvl})"` +
+                        ` title="${info.name} Lv.${lvl}">${info.icon}</span>`
+                    );
                 }
             };
             ['1','2'].forEach(slot => {
@@ -1674,7 +1685,7 @@
                 }
             });
 
-            const auraText = auras.length ? auras.join(', ') : '없음';
+            const auraText = auras.length ? auras.join('') : '없음';
             const statusText = statusParts.length ? statusParts.join(', ') : '없음';
             panel.innerHTML = `<div>오라: ${auraText}</div><div>상태: ${statusText}</div>`;
         }
@@ -4702,12 +4713,12 @@ rangedAction, recallMercenaries, recruitHatchedSuperior,
 removeEggFromIncubator, renderDungeon, reviveMercenary, reviveMonsterCorpse, 
 rollDice, saveGame, sellItem, setMercenaryLevel, setMonsterLevel, 
 showChampionDetails, showItemTargetPanel, showMercenaryDetails, 
-showMonsterDetails, showShop, showSkillDamage, skill1Action, skill2Action, 
-spawnMercenaryNearPlayer, startGame, swapActiveAndStandby, tryApplyStatus, 
-unequipAccessory, unequipItemFromMercenary, updateActionButtons, updateCamera, 
-updateFogOfWar, updateIncubatorDisplay, 
-updateInventoryDisplay, updateMaterialsDisplay, updateMercenaryDisplay, 
-updateShopDisplay, updateSkillDisplay, updateStats, updateTurnEffects, 
+showMonsterDetails, showShop, showSkillDamage, showAuraDetails, skill1Action, skill2Action,
+spawnMercenaryNearPlayer, startGame, swapActiveAndStandby, tryApplyStatus,
+unequipAccessory, unequipItemFromMercenary, updateActionButtons, updateCamera,
+updateFogOfWar, updateIncubatorDisplay,
+updateInventoryDisplay, updateMaterialsDisplay, updateMercenaryDisplay,
+updateShopDisplay, updateSkillDisplay, updateStats, updateTurnEffects,
 upgradeMercenarySkill, useItem, useItemOnTarget, useSkill
 };
 Object.assign(window, exportsObj, {SKILL_DEFS, MERCENARY_SKILLS, MONSTER_SKILLS, MONSTER_SKILL_SETS, MONSTER_TRAITS, MONSTER_TRAIT_SETS, PREFIXES, SUFFIXES});
