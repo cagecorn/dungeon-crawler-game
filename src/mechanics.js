@@ -16,7 +16,7 @@
 const MERCENARY_NAMES = ['Aldo', 'Borin', 'Cara', 'Dain', 'Elin', 'Faris'];
 
         const MAX_FULLNESS = 100;
-        const FULLNESS_LOSS_PER_TURN = 0.1;
+        const FULLNESS_LOSS_PER_TURN = 0.01;
 
         // 용병 타입 정의
         const MERCENARY_TYPES = {
@@ -2189,7 +2189,7 @@ function killMonster(monster) {
                 })(),
                 alive: true,
                 affinity: 30,
-                fullness: 0,
+                fullness: 75,
                 hasActed: false,
                 equipped: { weapon: null, armor: null, accessory1: null, accessory2: null },
                 range: monster.range,
@@ -3725,14 +3725,16 @@ function processTurn() {
             });
 
             gameState.monsters.forEach(monster => {
-                monster.fullness = Math.max(0, (monster.fullness || 0) - FULLNESS_LOSS_PER_TURN);
-                if (monster.fullness <= 0) {
-                    starvedMonsters.push(monster);
-                } else if (monster.fullness <= 50) {
-                    const food = gameState.player.inventory.find(i => i.type === ITEM_TYPES.FOOD);
-                    if (food) {
-                        useItemOnTarget(food, monster);
-                        addMessage(`🍽️ ${monster.name}이(가) ${food.name}을(를) 먹었습니다.`, 'info');
+                if (monster.affinity !== undefined) {
+                    monster.fullness = Math.max(0, (monster.fullness || 0) - FULLNESS_LOSS_PER_TURN);
+                    if (monster.fullness <= 0) {
+                        starvedMonsters.push(monster);
+                    } else if (monster.fullness <= 50) {
+                        const food = gameState.player.inventory.find(i => i.type === ITEM_TYPES.FOOD);
+                        if (food) {
+                            useItemOnTarget(food, monster);
+                            addMessage(`🍽️ ${monster.name}이(가) ${food.name}을(를) 먹었습니다.`, 'info');
+                        }
                     }
                 }
             });
