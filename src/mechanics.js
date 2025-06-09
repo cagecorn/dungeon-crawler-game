@@ -1520,7 +1520,7 @@ const MERCENARY_NAMES = ['Aldo', 'Borin', 'Cara', 'Dain', 'Elin', 'Faris'];
                 const div = document.createElement('div');
                 div.className = 'incubator-slot clickable';
                 div.textContent = mon.name;
-                div.onclick = () => showMonsterDetails(mon);
+                div.dataset.id = mon.id;
                 const btn = document.createElement('button');
                 btn.textContent = '영입';
                 btn.className = 'sell-button';
@@ -1529,6 +1529,15 @@ const MERCENARY_NAMES = ['Aldo', 'Borin', 'Cara', 'Dain', 'Elin', 'Faris'];
                 waiting.appendChild(div);
             });
         }
+
+        document.getElementById('hatched-list').addEventListener('click', (e) => {
+            const slot = e.target.closest('.incubator-slot');
+            if (!slot) return;
+            const id = slot.dataset.id;
+            if (!id) return;
+            const monster = gameState.hatchedSuperiors.find(m => String(m.id) === id);
+            if (monster) showMonsterDetails(monster);
+        });
 
         // 용병 상세 정보 표시
         function showMercenaryDetails(merc) {
