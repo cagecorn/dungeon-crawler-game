@@ -2190,6 +2190,8 @@
         }
 
         function showMonsterDetails(monster) {
+            const auraInfo = monster.isElite && monster.auraSkill ? SKILL_DEFS[monster.auraSkill] : null;
+            const auraLine = auraInfo ? `<div>오라 스킬: ${auraInfo.icon} ${auraInfo.name}</div>` : '';
             const html = `
                 <h3>${monster.icon} ${monster.name} (Lv.${monster.level})</h3>
                 <div>❤️ HP: ${monster.health}/${monster.maxHealth}</div>
@@ -2207,6 +2209,7 @@
                 <div>📖 지능: ${monster.intelligence}${monster.isSuperior ? ' ' + '★'.repeat(monster.stars.intelligence) : ''}</div>
                 <div>📏 사거리: ${monster.range}</div>
                 <div>특수: ${monster.special || '없음'}</div>
+                ${auraLine}
             `;
             document.getElementById('monster-detail-content').innerHTML = html;
             document.getElementById('monster-detail-panel').style.display = 'block';
@@ -2566,6 +2569,7 @@ function killMonster(monster) {
                 mana: monster.maxMana,
                 healthRegen: monster.healthRegen || 0,
                 manaRegen: monster.manaRegen || 1,
+                auraSkill: monster.auraSkill || null,
                 skill: (() => {
                     if (monster.isSuperior) return monster.skill;
                     if (monster.isElite) return monster.auraSkill;
