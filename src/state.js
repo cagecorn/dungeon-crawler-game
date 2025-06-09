@@ -97,4 +97,4 @@
   if (typeof module !== 'undefined' && module.exports) {
     module.exports = { gameState, MONSTER_VISION, FOG_RADIUS, MERCENARY_TRIGGER_DISTANCE };
   }
-})(this);
+})(typeof globalThis !== 'undefined' ? globalThis : this);
