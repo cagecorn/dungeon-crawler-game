@@ -6,6 +6,9 @@ This project is a lightweight browser-based dungeon crawler. It lets players exp
 
 Open `index.html` in a modern web browser to start the game. The player now begins with every available skill already learned, so no class selection is required.
 
+### Dungeon Generation
+Each floor is carved from a depth-first search maze. Corridors span six tiles,
+and the exit is placed on a randomly chosen cell that the algorithm visited.
 
 ### Controls
 
