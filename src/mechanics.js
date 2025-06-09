@@ -493,6 +493,7 @@
             strengthEssence: {
                 name: '💪 힘의 정수',
                 type: ITEM_TYPES.ESSENCE,
+                strength: 1,
                 price: 20,
                 level: 1,
                 icon: '💪'
@@ -500,6 +501,7 @@
             agilityEssence: {
                 name: '🤸 민첩의 정수',
                 type: ITEM_TYPES.ESSENCE,
+                agility: 1,
                 price: 20,
                 level: 1,
                 icon: '🤸'
@@ -507,6 +509,7 @@
             enduranceEssence: {
                 name: '🛡️ 인내의 정수',
                 type: ITEM_TYPES.ESSENCE,
+                endurance: 1,
                 price: 20,
                 level: 1,
                 icon: '🛡️'
@@ -514,6 +517,7 @@
             focusEssence: {
                 name: '🎯 집중의 정수',
                 type: ITEM_TYPES.ESSENCE,
+                focus: 1,
                 price: 25,
                 level: 1,
                 icon: '🎯'
@@ -521,6 +525,7 @@
             intelligenceEssence: {
                 name: '🧠 지능의 정수',
                 type: ITEM_TYPES.ESSENCE,
+                intelligence: 1,
                 price: 25,
                 level: 1,
                 icon: '🧠'
@@ -528,6 +533,7 @@
             skillLevelEssence: {
                 name: '⭐ 스킬 레벨 정수',
                 type: ITEM_TYPES.ESSENCE,
+                skillLevelEssence: 1,
                 price: 30,
                 level: 1,
                 icon: '⭐'
@@ -1486,7 +1492,7 @@
 
             const actionBtn = merc.affinity >= 200
                 ? `<button class="sell-button" onclick="sacrifice(window.currentDetailMercenary)">희생</button>`
-                : `<button class="sell-button" onclick="removeMercenary(window.currentDetailMercenary)">해고</button>`;
+                : `<button class="sell-button" onclick="dismiss(window.currentDetailMercenary)">해고</button>`;
 
             const html = `
                 <h3>${merc.icon} ${merc.name} Lv.${formatNumber(merc.level)}</h3>
@@ -1566,7 +1572,7 @@
             const actionBtn = monster.affinity !== undefined
                 ? (monster.affinity >= 200
                     ? `<button class="sell-button" onclick="sacrifice(window.currentDetailMonster)">희생</button>`
-                    : `<button class="sell-button" onclick="removeMercenary(window.currentDetailMonster)">해고</button>`)
+                    : `<button class="sell-button" onclick="dismiss(window.currentDetailMonster)">해고</button>`)
                 : '';
             const html = `
                 <h3>${monster.icon} ${monster.name} (Lv.${monster.level})</h3>
@@ -3233,6 +3239,33 @@ function killMonster(monster) {
             updateMercenaryDisplay();
         }
 
+        function dismiss(entity) {
+            if (typeof confirm === 'function' && !confirm('정말 해고하시겠습니까?')) return;
+            let idx = gameState.activeMercenaries.indexOf(entity);
+            if (idx !== -1) {
+                gameState.activeMercenaries.splice(idx, 1);
+            } else {
+                idx = gameState.standbyMercenaries.indexOf(entity);
+                if (idx !== -1) {
+                    gameState.standbyMercenaries.splice(idx, 1);
+                } else {
+                    idx = gameState.hatchedSuperiors.indexOf(entity);
+                    if (idx !== -1) gameState.hatchedSuperiors.splice(idx, 1);
+                }
+            }
+            updateMercenaryDisplay();
+            updateIncubatorDisplay();
+        }
+
+        function sacrifice(entity) {
+            if (typeof confirm === 'function' && !confirm('정말 희생하시겠습니까?')) return;
+            dismiss(entity);
+            const essenceKeys = ['strengthEssence','agilityEssence','enduranceEssence','focusEssence','intelligenceEssence','skillLevelEssence'];
+            const key = essenceKeys[Math.floor(Math.random() * essenceKeys.length)];
+            addToInventory(createItem(key, 0, 0));
+            updateInventoryDisplay();
+        }
+
         // 기본 플레이어 대상 아이템 사용 (호환성)
         function useItem(item) {
             useItemOnTarget(item, gameState.player);
@@ -4828,6 +4861,12 @@ function killMonster(monster) {
             if (allSkills[1]) gameState.player.assignedSkills[2] = allSkills[1];
 
             generateDungeon();
+            const zombieMerc = convertMonsterToMercenary(createMonster('ZOMBIE', 0, 0, 1));
+            zombieMerc.affinity = 195;
+            gameState.standbyMercenaries.push(zombieMerc);
+            for (let i = 0; i < 5; i++) {
+                gameState.player.inventory.push(createItem('cookedMeal', 0, 0));
+            }
             for (let i = 0; i < 5; i++) {
                 gameState.player.inventory.push(createItem('smallExpScroll', 0, 0));
             }
@@ -4937,7 +4976,8 @@ unequipAccessory, unequipItemFromMercenary, updateActionButtons, updateCamera,
 updateFogOfWar, updateIncubatorDisplay,
 updateInventoryDisplay, updateMaterialsDisplay, updateMercenaryDisplay,
 updateShopDisplay, updateSkillDisplay, updateStats, updateTurnEffects,
-upgradeMercenarySkill, useItem, useItemOnTarget, useSkill, removeMercenary
+upgradeMercenarySkill, useItem, useItemOnTarget, useSkill, removeMercenary,
+dismiss, sacrifice
 };
 Object.assign(window, exportsObj, {SKILL_DEFS, MERCENARY_SKILLS, MONSTER_SKILLS, MONSTER_SKILL_SETS, MONSTER_TRAITS, MONSTER_TRAIT_SETS, PREFIXES, SUFFIXES});
 
