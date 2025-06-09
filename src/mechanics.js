@@ -2581,11 +2581,7 @@ function killMonster(monster) {
                 const fogRow = [];
                 const cellRow = [];
                 for (let x = 0; x < size; x++) {
-                    let cell = 'empty';
-                    if (x === 0 || y === 0 || x === size - 1 || y === size - 1 || Math.random() < 0.1) {
-                        cell = 'wall';
-                    }
-                    row.push(cell);
+                    row.push('wall');
                     fogRow.push(true);
 
                     if (dungeonEl) {
@@ -2600,6 +2596,90 @@ function killMonster(monster) {
                 gameState.dungeon.push(row);
                 gameState.fogOfWar.push(fogRow);
                 gameState.cellElements.push(cellRow);
+            }
+
+            const shuffleArray = arr => {
+                for (let i = arr.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [arr[i], arr[j]] = [arr[j], arr[i]];
+                }
+            };
+
+            const corridorWidth = 6;
+            const step = corridorWidth + 1;
+            const visited = Array.from({ length: size }, () => Array(size).fill(false));
+            const visitedCells = [];
+
+            const carveRect = (sx, sy, w, h) => {
+                for (let yy = sy; yy < sy + h && yy < size; yy++) {
+                    for (let xx = sx; xx < sx + w && xx < size; xx++) {
+                        if (xx >= 0 && yy >= 0) gameState.dungeon[yy][xx] = 'empty';
+                    }
+                }
+            };
+
+            const stack = [{ x: 1, y: 1 }];
+            visited[1][1] = true;
+            carveRect(1, 1, corridorWidth, corridorWidth);
+            visitedCells.push({ x: 1, y: 1 });
+
+            while (stack.length) {
+                const { x, y } = stack[stack.length - 1];
+                const dirs = [
+                    { dx: 1, dy: 0 },
+                    { dx: -1, dy: 0 },
+                    { dx: 0, dy: 1 },
+                    { dx: 0, dy: -1 }
+                ];
+                shuffleArray(dirs);
+                let carved = false;
+                for (const { dx, dy } of dirs) {
+                    const nx = x + dx * step;
+                    const ny = y + dy * step;
+                    if (nx > 0 && ny > 0 && nx < size - corridorWidth && ny < size - corridorWidth && !visited[ny][nx]) {
+                        visited[ny][nx] = true;
+                        carveRect(Math.min(x, nx), Math.min(y, ny), Math.abs(nx - x) + corridorWidth, Math.abs(ny - y) + corridorWidth);
+                        stack.push({ x: nx, y: ny });
+                        visitedCells.push({ x: nx, y: ny });
+                        carved = true;
+                        break;
+                    }
+                }
+                if (!carved) stack.pop();
+            }
+
+            const roomSize = 15;
+            const roomCount = Math.max(1, Math.floor(size / 50));
+            const halfRoom = Math.floor(roomSize / 2);
+            for (let i = 0; i < roomCount; i++) {
+                const base = visitedCells[Math.floor(Math.random() * visitedCells.length)];
+                let rx = base.x + Math.floor(corridorWidth / 2) - halfRoom;
+                let ry = base.y + Math.floor(corridorWidth / 2) - halfRoom;
+                rx = Math.max(1, Math.min(rx, size - roomSize - 1));
+                ry = Math.max(1, Math.min(ry, size - roomSize - 1));
+                carveRect(rx, ry, roomSize, roomSize);
+                visitedCells.push({ x: rx + halfRoom, y: ry + halfRoom });
+            }
+
+            const extraCount = Math.floor(size * size * 0.05);
+            for (let i = 0; i < extraCount; i++) {
+                const base = visitedCells[Math.floor(Math.random() * visitedCells.length)];
+                const dirs = [
+                    { dx: 1, dy: 0 },
+                    { dx: -1, dy: 0 },
+                    { dx: 0, dy: 1 },
+                    { dx: 0, dy: -1 }
+                ];
+                shuffleArray(dirs);
+                for (const { dx, dy } of dirs) {
+                    const nx = base.x + dx;
+                    const ny = base.y + dy;
+                    if (nx > 0 && ny > 0 && nx < size - 1 && ny < size - 1 && gameState.dungeon[ny][nx] === 'wall') {
+                        gameState.dungeon[ny][nx] = 'empty';
+                        visitedCells.push({ x: nx, y: ny });
+                        break;
+                    }
+                }
             }
 
             gameState.player.x = 1;
@@ -2623,11 +2703,15 @@ function killMonster(monster) {
                 });
             }
 
-            let exitX, exitY;
-            do {
-                exitX = Math.floor(Math.random() * size);
-                exitY = Math.floor(Math.random() * size);
-            } while (gameState.dungeon[exitY][exitX] !== 'empty' || (exitX === 1 && exitY === 1));
+            let exitX = 1, exitY = 1;
+            if (visitedCells.length > 1) {
+                let exitCell;
+                do {
+                    exitCell = visitedCells[Math.floor(Math.random() * visitedCells.length)];
+                } while (exitCell.x === 1 && exitCell.y === 1);
+                exitX = exitCell.x;
+                exitY = exitCell.y;
+            }
 
             gameState.exitLocation = { x: exitX, y: exitY };
             gameState.dungeon[exitY][exitX] = 'exit';
