@@ -1444,6 +1444,8 @@
 
         // 게임 상태
         const MONSTER_VISION = 6;
+        const FOG_RADIUS = 6; // increased player vision range
+        const MERCENARY_TRIGGER_DISTANCE = 5; // player distance to trigger ally attacks
         const gameState = {
             dungeon: [],
             fogOfWar: [],
@@ -2530,7 +2532,7 @@
             for (let y = 0; y < gameState.dungeonSize; y++) {
                 if (!gameState.fogOfWar[y]) gameState.fogOfWar[y] = [];
                 for (let x = 0; x < gameState.dungeonSize; x++) {
-                    if (getDistance(x, y, gameState.player.x, gameState.player.y) <= 4) {
+                    if (getDistance(x, y, gameState.player.x, gameState.player.y) <= FOG_RADIUS) {
                         gameState.fogOfWar[y][x] = false;
                     } else if (gameState.fogOfWar[y][x] === undefined) {
                         gameState.fogOfWar[y][x] = true;
@@ -4521,9 +4523,10 @@ function killMonster(monster) {
                 if (gameState.fogOfWar[monster.y] && gameState.fogOfWar[monster.y][monster.x]) {
                     return;
                 }
-                
+
                 const distance = getDistance(mercenary.x, mercenary.y, monster.x, monster.y);
-                if (distance < nearestDistance && hasLineOfSight(mercenary.x, mercenary.y, monster.x, monster.y)) {
+                const playerDist = getDistance(gameState.player.x, gameState.player.y, monster.x, monster.y);
+                if (playerDist <= MERCENARY_TRIGGER_DISTANCE && distance < nearestDistance && hasLineOfSight(mercenary.x, mercenary.y, monster.x, monster.y)) {
                     nearestDistance = distance;
                     nearestMonster = monster;
                 }
@@ -4896,7 +4899,8 @@ function killMonster(monster) {
                     mercenary.hasActed = true;
                     return;
                 } else {
-                    const path = findPath(mercenary.x, mercenary.y, nearestMonster.x, nearestMonster.y);
+                    const targetPos = findAdjacentEmpty(nearestMonster.x, nearestMonster.y);
+                    const path = findPath(mercenary.x, mercenary.y, targetPos.x, targetPos.y);
                     if (path && path.length > 1) {
                         const step = path[Math.min(moveTiles, path.length - 1)];
                         const newDistanceFromPlayer = getDistance(step.x, step.y, gameState.player.x, gameState.player.y);
