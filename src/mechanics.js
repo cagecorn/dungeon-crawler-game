@@ -614,6 +614,7 @@ const MERCENARY_NAMES = ['Aldo', 'Borin', 'Cara', 'Dain', 'Elin', 'Faris'];
             IceNova: { name: 'Ice Nova', icon: '❄️', damageDice: '1d6', radius: 3, magic: true, element: 'ice', manaCost: 4 },
             Heal: { name: 'Heal', icon: '💖', heal: 10, range: 2, manaCost: 3 },
             Purify: { name: 'Purify', icon: '🌀', purify: true, range: 2, manaCost: 2 },
+            Teleport: { name: 'Teleport', icon: '🌀', teleport: true, manaCost: 2 },
             DoubleStrike: { name: 'Double Strike', icon: '🔪', range: 1, manaCost: 3, melee: true, hits: 2 },
             ChargeAttack: { name: 'Charge Attack', icon: '⚡', range: 2, manaCost: 2, melee: true, multiplier: 1.5, dashRange: 4 },
             HawkEye: { name: 'Hawk Eye', icon: '🦅', range: 5, manaCost: 2, damageDice: '1d6' },
@@ -4745,6 +4746,34 @@ function processTurn() {
                 purifyTarget(gameState.player, target, skill);
                 updateStats();
                 updateMercenaryDisplay();
+                processTurn();
+                return;
+            }
+            if (skill.teleport) {
+                const p = gameState.player;
+                if (p.teleportSavedX === null) {
+                    p.teleportSavedX = p.x;
+                    p.teleportSavedY = p.y;
+                    addMessage('🌀 위치를 저장했습니다.', 'info');
+                } else if (p.teleportReturnX === null) {
+                    p.teleportReturnX = p.x;
+                    p.teleportReturnY = p.y;
+                    p.x = p.teleportSavedX;
+                    p.y = p.teleportSavedY;
+                    addMessage('🌀 저장된 위치로 이동했습니다.', 'info');
+                } else {
+                    const tx = p.teleportReturnX;
+                    const ty = p.teleportReturnY;
+                    p.teleportReturnX = null;
+                    p.teleportReturnY = null;
+                    p.x = tx;
+                    p.y = ty;
+                    addMessage('🌀 이전 위치로 돌아왔습니다.', 'info');
+                }
+                p.mana -= manaCost;
+                renderDungeon();
+                updateCamera();
+                updateStats();
                 processTurn();
                 return;
             }

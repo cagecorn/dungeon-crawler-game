@@ -64,7 +64,11 @@
         armor: null,
         accessory1: null,
         accessory2: null
-      }
+      },
+      teleportSavedX: null,
+      teleportSavedY: null,
+      teleportReturnX: null,
+      teleportReturnY: null
     },
     activeMercenaries: [],
     standbyMercenaries: [],
