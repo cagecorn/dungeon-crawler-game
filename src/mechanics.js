@@ -1645,7 +1645,8 @@
                 if (k) addAura(k, gameState.player.skillLevels[k] || 1);
             });
             gameState.activeMercenaries.filter(m=>m.alive).forEach(m=>{
-                [m.skill, m.skill2, m.auraSkill].filter(Boolean).forEach(k=>{
+                const skills = new Set([m.skill, m.skill2, m.auraSkill].filter(Boolean));
+                skills.forEach(k=>{
                     const info = SKILL_DEFS[k];
                     if (info && info.passive && info.aura) {
                         const dist = getDistance(m.x, m.y, gameState.player.x, gameState.player.y);
