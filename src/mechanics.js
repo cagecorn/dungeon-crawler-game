@@ -17,7 +17,34 @@ const MERCENARY_NAMES = ['Aldo', 'Borin', 'Cara', 'Dain', 'Elin', 'Faris'];
 
         const MAX_FULLNESS = 100;
         const FULLNESS_LOSS_PER_TURN = 0.01;
-        const CORRIDOR_WIDTH = 7; // width of dungeon corridors
+        const CORRIDOR_WIDTH = 5; // width of dungeon corridors
+
+        function carveWideCorridor(map, x1, y1, x2, y2) {
+            const width = CORRIDOR_WIDTH;
+            if (x1 === x2) {
+                const minY = Math.min(y1, y2);
+                const maxY = Math.max(y1, y2);
+                for (let y = minY; y <= maxY; y++) {
+                    for (let dx = -Math.floor(width / 2); dx <= Math.floor(width / 2); dx++) {
+                        const nx = x1 + dx;
+                        if (map[y] && map[y][nx] !== undefined) {
+                            map[y][nx] = 'empty';
+                        }
+                    }
+                }
+            } else if (y1 === y2) {
+                const minX = Math.min(x1, x2);
+                const maxX = Math.max(x1, x2);
+                for (let x = minX; x <= maxX; x++) {
+                    for (let dy = -Math.floor(width / 2); dy <= Math.floor(width / 2); dy++) {
+                        const ny = y1 + dy;
+                        if (map[ny] && map[ny][x] !== undefined) {
+                            map[ny][x] = 'empty';
+                        }
+                    }
+                }
+            }
+        }
 
         // 용병 타입 정의
         const MERCENARY_TYPES = {
@@ -1537,7 +1564,11 @@ const MERCENARY_NAMES = ['Aldo', 'Borin', 'Cara', 'Dain', 'Elin', 'Faris'];
             const id = slot.dataset.id;
             if (!id) return;
             const monster = gameState.hatchedSuperiors.find(m => String(m.id) === id);
-            if (monster) showMonsterDetails(monster);
+            if (monster) {
+                showMonsterDetails(monster);
+            } else {
+                console.warn('Monster not found or undefined:', id);
+            }
         });
 
         // 용병 상세 정보 표시
@@ -2562,30 +2593,6 @@ function killMonster(monster) {
         // 던전 생성
         function generateDungeon() {
             const size = gameState.dungeonSize;
-            const corridorRadius = Math.floor(CORRIDOR_WIDTH / 2);
-
-            function widenCorridors() {
-                const newDungeon = gameState.dungeon.map(row => row.slice());
-                for (let y = 0; y < size; y++) {
-                    for (let x = 0; x < size; x++) {
-                        if (gameState.dungeon[y][x] === 'empty') {
-                            for (let dx = -corridorRadius; dx <= corridorRadius; dx++) {
-                                const nx = x + dx;
-                                if (nx >= 0 && nx < size) {
-                                    newDungeon[y][nx] = 'empty';
-                                }
-                            }
-                            for (let dy = -corridorRadius; dy <= corridorRadius; dy++) {
-                                const ny = y + dy;
-                                if (ny >= 0 && ny < size) {
-                                    newDungeon[ny][x] = 'empty';
-                                }
-                            }
-                        }
-                    }
-                }
-                gameState.dungeon = newDungeon;
-            }
             const dungeonEl = document.getElementById('dungeon');
             if (dungeonEl) {
                 dungeonEl.style.setProperty('--dungeon-size', size);
@@ -2652,8 +2659,7 @@ function killMonster(monster) {
                     const ny = y + dy * 2;
                     if (nx > 0 && ny > 0 && nx < size - 1 && ny < size - 1 && !visited[ny][nx]) {
                         visited[ny][nx] = true;
-                        gameState.dungeon[y + dy][x + dx] = 'empty';
-                        gameState.dungeon[ny][nx] = 'empty';
+                        carveWideCorridor(gameState.dungeon, x, y, nx, ny);
                         stack.push({ x: nx, y: ny });
                         visitedCells.push({ x: nx, y: ny });
                         carved = true;
@@ -2677,7 +2683,7 @@ function killMonster(monster) {
                     const nx = base.x + dx;
                     const ny = base.y + dy;
                     if (nx > 0 && ny > 0 && nx < size - 1 && ny < size - 1 && gameState.dungeon[ny][nx] === 'wall') {
-                        gameState.dungeon[ny][nx] = 'empty';
+                        carveWideCorridor(gameState.dungeon, base.x, base.y, nx, ny);
                         visitedCells.push({ x: nx, y: ny });
                         break;
                     }
@@ -2834,7 +2840,7 @@ function killMonster(monster) {
                 gameState.shopItems.push(shopItem);
             }
 
-            widenCorridors();
+            // corridors are carved at the desired width during generation
             updateFogOfWar();
             updateStats();
             updateInventoryDisplay();
