@@ -3139,6 +3139,47 @@ function killMonster(monster) {
                     checkMercenaryLevelUp(target);
                     updateMercenaryDisplay();
                 }
+            } else if (item.type === ITEM_TYPES.ESSENCE) {
+                const stats = ['strength','agility','endurance','focus','intelligence','attack','defense','accuracy','evasion','critChance','magicPower','magicResist','maxHealth','maxMana','healthRegen','manaRegen'];
+                stats.forEach(stat => {
+                    if (item[stat] !== undefined) {
+                        target[stat] = (target[stat] || 0) + item[stat];
+                    }
+                });
+                if (item.skillLevelEssence) {
+                    target.skillPoints = (target.skillPoints || 0) + item.skillLevelEssence;
+                }
+
+                const name = target === gameState.player ? '플레이어' : target.name;
+                addMessage(`✨ ${item.name}을(를) 사용하여 ${name}의 능력치를 향상시켰습니다.`, 'item');
+
+                const index = gameState.player.inventory.findIndex(i => i.id === item.id);
+                if (index !== -1) {
+                    gameState.player.inventory.splice(index, 1);
+                }
+
+                updateInventoryDisplay();
+                if (target === gameState.player) {
+                    updateStats();
+                } else {
+                    updateMercenaryDisplay();
+                }
+            } else if (item.type === ITEM_TYPES.FOOD) {
+                const gain = item.affinityGain || 0;
+                target.affinity = Math.min(200, (target.affinity || 0) + gain);
+
+                const name = target === gameState.player ? '플레이어' : target.name;
+                addMessage(`🍖 ${item.name}을(를) 먹여 ${name}의 호감도를 ${formatNumber(gain)} 상승시켰습니다.`, 'item');
+
+                const index = gameState.player.inventory.findIndex(i => i.id === item.id);
+                if (index !== -1) {
+                    gameState.player.inventory.splice(index, 1);
+                }
+
+                updateInventoryDisplay();
+                if (target !== gameState.player) {
+                    updateMercenaryDisplay();
+                }
             }
         }
 
