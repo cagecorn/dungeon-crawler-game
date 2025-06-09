@@ -1531,6 +1531,7 @@
             autoMoveActive: false,
             turn: 0,
             incubators: [null, null],
+            monsterFarms: [null, null],
             hatchedSuperiors: [],
             gameRunning: true
         };
@@ -2924,6 +2925,47 @@ function killMonster(monster) {
                     gameState.hatchedSuperiors.push(monster);
                     addMessage(`🥚 ${monster.name}이(가) 부화했습니다!`, 'info');
                     gameState.incubators[i] = null;
+                }
+            });
+        }
+
+        function convertMonsterToFarmItem(monster) {
+            return {
+                id: Math.random().toString(36).substr(2, 9),
+                name: `${monster.name} 수확물`,
+                type: 'farm',
+                attack: monster.attack,
+                defense: monster.defense,
+                skill: monster.monsterSkill || monster.auraSkill || null,
+                x: monster.x,
+                y: monster.y
+            };
+        }
+
+        function plantMonsterInFarm(monster, turns) {
+            const idx = gameState.monsterFarms.findIndex(s => s === null);
+            if (idx === -1) return false;
+            gameState.monsterFarms[idx] = { monster, remainingTurns: turns };
+            const mIdx = gameState.monsters.findIndex(m => m === monster);
+            if (mIdx !== -1) gameState.monsters.splice(mIdx, 1);
+            if (gameState.dungeon[monster.y] && gameState.dungeon[monster.y][monster.x] === 'monster') {
+                gameState.dungeon[monster.y][monster.x] = 'empty';
+            }
+            return true;
+        }
+
+        function advanceMonsterFarms() {
+            gameState.monsterFarms.forEach((slot, i) => {
+                if (!slot) return;
+                slot.remainingTurns--;
+                if (slot.remainingTurns <= 0) {
+                    const item = convertMonsterToFarmItem(slot.monster);
+                    gameState.items.push(item);
+                    if (gameState.dungeon[item.y] && gameState.dungeon[item.y][item.x] === 'empty') {
+                        gameState.dungeon[item.y][item.x] = 'item';
+                    }
+                    addMessage(`🌱 ${item.name}을(를) 수확했습니다!`, 'item');
+                    gameState.monsterFarms[i] = null;
                 }
             });
         }
@@ -4378,6 +4420,7 @@ function killMonster(monster) {
                 }
             }
             updateMaterialsDisplay();
+            advanceMonsterFarms();
             advanceIncubators();
             updateIncubatorDisplay();
         }
