@@ -2774,6 +2774,7 @@ function killMonster(monster) {
                 for (let x = 0; x < gameState.dungeonSize; x++) {
                     const div = gameState.cellElements[y][x];
                     let cellType = gameState.dungeon[y][x];
+                    div.textContent = '';
 
                     if (x === gameState.player.x && y === gameState.player.y) {
                         cellType = 'player';
