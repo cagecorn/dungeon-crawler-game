@@ -1353,6 +1353,7 @@
         const gameState = {
             dungeon: [],
             fogOfWar: [],
+            cellElements: [],
             player: {
                 x: 0,
                 y: 0,
@@ -2763,12 +2764,10 @@ function killMonster(monster) {
         // 던전 렌더링
         function renderDungeon() {
             const dungeonEl = document.getElementById('dungeon');
-            dungeonEl.innerHTML = '';
+            if (!dungeonEl || !gameState.cellElements.length) return;
             for (let y = 0; y < gameState.dungeonSize; y++) {
                 for (let x = 0; x < gameState.dungeonSize; x++) {
-                    const div = document.createElement('div');
-                    div.dataset.x = x;
-                    div.dataset.y = y;
+                    const div = gameState.cellElements[y][x];
                     let cellType = gameState.dungeon[y][x];
 
                     if (x === gameState.player.x && y === gameState.player.y) {
@@ -2809,8 +2808,9 @@ function killMonster(monster) {
                     div.className = `cell ${cellType}`;
                     if (gameState.fogOfWar[y] && gameState.fogOfWar[y][x]) {
                         div.style.filter = 'brightness(0.2)';
+                    } else {
+                        div.style.filter = '';
                     }
-                    dungeonEl.appendChild(div);
                 }
             }
         }
@@ -2931,13 +2931,17 @@ function killMonster(monster) {
             }
             gameState.dungeon = [];
             gameState.fogOfWar = [];
+            gameState.cellElements = [];
             gameState.monsters = [];
             gameState.treasures = [];
             gameState.items = [];
 
+            if (dungeonEl) dungeonEl.innerHTML = '';
+
             for (let y = 0; y < size; y++) {
                 const row = [];
                 const fogRow = [];
+                const cellRow = [];
                 for (let x = 0; x < size; x++) {
                     let cell = 'empty';
                     if (x === 0 || y === 0 || x === size - 1 || y === size - 1 || Math.random() < 0.1) {
@@ -2945,9 +2949,19 @@ function killMonster(monster) {
                     }
                     row.push(cell);
                     fogRow.push(true);
+
+                    if (dungeonEl) {
+                        const cellDiv = document.createElement('div');
+                        cellDiv.dataset.x = x;
+                        cellDiv.dataset.y = y;
+                        cellDiv.className = 'cell';
+                        dungeonEl.appendChild(cellDiv);
+                        cellRow.push(cellDiv);
+                    }
                 }
                 gameState.dungeon.push(row);
                 gameState.fogOfWar.push(fogRow);
+                gameState.cellElements.push(cellRow);
             }
 
             gameState.player.x = 1;
