@@ -17,7 +17,7 @@ const MERCENARY_NAMES = ['Aldo', 'Borin', 'Cara', 'Dain', 'Elin', 'Faris'];
 
         const MAX_FULLNESS = 100;
         const FULLNESS_LOSS_PER_TURN = 0.01;
-        const CORRIDOR_WIDTH = 5; // width of dungeon corridors
+        const CORRIDOR_WIDTH = 7; // width of dungeon corridors
 
         function carveWideCorridor(map, x1, y1, x2, y2) {
             const width = CORRIDOR_WIDTH;
