@@ -1432,6 +1432,10 @@
                 return `<div><span class="merc-skill" onclick="showSkillDamage(window.currentDetailMercenary,'${key}',${defs})">${info.icon} ${info.name} Lv.${lvl}${mpText}</span>${levelUp}</div>`;
             }).join('');
 
+            const actionBtn = merc.affinity >= 200
+                ? `<button class="sell-button" onclick="sacrifice(window.currentDetailMercenary)">희생</button>`
+                : `<button class="sell-button" onclick="removeMercenary(window.currentDetailMercenary)">해고</button>`;
+
             const html = `
                 <h3>${merc.icon} ${merc.name} Lv.${formatNumber(merc.level)}</h3>
                 <div>💪 힘: ${formatNumber(merc.strength)} ${'★'.repeat(merc.stars.strength)}</div>
@@ -1459,6 +1463,7 @@
                 <div>악세1: ${accessory1} ${acc1Btn}</div>
                 <div>악세2: ${accessory2} ${acc2Btn}</div>
                 ${skillHtml || '<div>스킬: 없음</div>'}
+                <div>${actionBtn}</div>
             `;
 
             document.getElementById('mercenary-detail-content').innerHTML = html;
@@ -1506,6 +1511,11 @@
                 if (def) skills.push(def);
             }
             const skillLine = skills.map(s => `<div>스킬: ${s.icon} ${s.name}</div>`).join('');
+            const actionBtn = monster.affinity !== undefined
+                ? (monster.affinity >= 200
+                    ? `<button class="sell-button" onclick="sacrifice(window.currentDetailMonster)">희생</button>`
+                    : `<button class="sell-button" onclick="removeMercenary(window.currentDetailMonster)">해고</button>`)
+                : '';
             const html = `
                 <h3>${monster.icon} ${monster.name} (Lv.${monster.level})</h3>
                 <div>❤️ HP: ${monster.health}/${monster.maxHealth}</div>
@@ -1527,6 +1537,7 @@
                 ${traitLine}
                 ${skillLine}
                 ${auraLine}
+                ${actionBtn ? `<div>${actionBtn}</div>` : ''}
             `;
             document.getElementById('monster-detail-content').innerHTML = html;
             document.getElementById('monster-detail-panel').style.display = 'block';
