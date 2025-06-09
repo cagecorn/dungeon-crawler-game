@@ -54,8 +54,8 @@ appears near the top of the stats panel.
 
 Food items increase affinity. Simple drops like **Bread** provide small bonuses
 (+3 affinity), while cooked dishes from the **Crafting** tab grant larger
-amounts. For example, combining Bread, Carrot and Milk into a **Sandwich** yields
-**+15** affinity.
+amounts. For example, combining Bread, Meat and Lettuce into a **Sandwich** yields
+**+3** affinity and fullness.
 
 Ingredient items and cooking recipes drop randomly during exploration and are
 stored as crafting materials rather than in your main inventory.
