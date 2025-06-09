@@ -1,6 +1,8 @@
 const { rollDice } = require('../dice');
 const { JSDOM } = require('jsdom');
 const path = require('path');
+const fs = require('fs');
+const vm = require('vm');
 
 async function loadGame(options = {}) {
   const { confirmReturn = true } = options;
@@ -18,6 +20,14 @@ async function loadGame(options = {}) {
     if (dom.window.document.readyState === 'complete') resolve();
     else dom.window.addEventListener('load', resolve);
   });
+
+  const ctx = dom.getInternalVMContext();
+  const modules = ['src/gameState.js', 'src/ui.js', 'src/mechanics.js'];
+  for (const file of modules) {
+    const code = fs.readFileSync(path.join(__dirname, '..', file), 'utf8');
+    const script = new vm.Script(code, { filename: file });
+    script.runInContext(ctx);
+  }
 
   return dom.window;
 }
