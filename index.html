@@ -1273,6 +1273,7 @@
             NaturalAura: { name: 'Natural Aura', icon: '🌿', passive: true, radius: 6, aura: { defense: 1, magicResist: 1 } }
         };
 
+
         const MONSTER_SKILLS = {
             RottingBite: { name: 'Rotting Bite', icon: '🧟', range: 1, damageDice: '1d6', melee: true, status: 'poison' },
             PowerStrike: { name: 'Power Strike', icon: '💥', range: 1, damageDice: '1d8', melee: true },
@@ -1280,6 +1281,7 @@
             PoisonCloud: { name: 'Poison Cloud', icon: '☣️', radius: 2, damageDice: '1d4', magic: true, status: 'poison' },
             FireBreath: { name: 'Fire Breath', icon: '🔥', radius: 2, magic: true, element: 'fire', damageDice: '1d6', status: 'burn' }
         };
+
 
         const MERCENARY_SKILL_SETS = {
             WARRIOR: ['ChargeAttack', 'DoubleStrike'],
@@ -1289,20 +1291,37 @@
         };
 
         const MONSTER_SKILL_SETS = {
-            ZOMBIE: ['RottingBite', 'PoisonCloud'],
-            GOBLIN: ['PowerStrike'],
-            ARCHER: ['PowerStrike'],
-            GOBLIN_ARCHER: ['PowerStrike'],
-            GOBLIN_WIZARD: ['ShadowBolt', 'PoisonCloud'],
-            WIZARD: ['ShadowBolt', 'FireBreath'],
-            ORC: ['PowerStrike'],
-            ORC_ARCHER: ['PowerStrike'],
-            SKELETON: ['PowerStrike'],
-            SKELETON_MAGE: ['ShadowBolt'],
-            TROLL: ['PowerStrike', 'FireBreath'],
-            DARK_MAGE: ['ShadowBolt', 'PoisonCloud'],
-            DEMON_WARRIOR: ['ShadowBolt', 'FireBreath'],
-            BOSS: ['ShadowBolt', 'FireBreath']
+            ZOMBIE: ['RottingBite', 'PoisonCloud', 'PoisonStrike'],
+            GOBLIN: ['PowerStrike', 'WindStrike'],
+            ARCHER: ['PowerStrike', 'PoisonShot'],
+            GOBLIN_ARCHER: ['PowerStrike', 'PoisonShot'],
+            GOBLIN_WIZARD: ['ShadowBolt', 'PoisonCloud', 'FreezeMagic'],
+            WIZARD: ['ShadowBolt', 'FireBreath', 'FreezeMagic'],
+            ORC: ['PowerStrike', 'BleedStrike'],
+            ORC_ARCHER: ['PowerStrike', 'EarthShot'],
+            SKELETON: ['PowerStrike', 'DarkStrike'],
+            SKELETON_MAGE: ['ShadowBolt', 'DarkMagic'],
+            TROLL: ['PowerStrike', 'FireBreath', 'EarthStrike'],
+            DARK_MAGE: ['ShadowBolt', 'PoisonCloud', 'NightmareMagic'],
+            DEMON_WARRIOR: ['ShadowBolt', 'FireBreath', 'FireStrike'],
+            BOSS: ['ShadowBolt', 'FireBreath', 'BurnStrike']
+        };
+
+        const MONSTER_TRAIT_SETS = {
+            ZOMBIE: ['PoisonMelee'],
+            GOBLIN: ['WindMelee'],
+            ARCHER: ['PoisonRanged'],
+            GOBLIN_ARCHER: ['PoisonRanged'],
+            GOBLIN_WIZARD: ['FreezeMagic'],
+            WIZARD: ['FreezeMagic'],
+            ORC: ['BleedMelee'],
+            ORC_ARCHER: ['EarthRanged'],
+            SKELETON: ['DarkMelee'],
+            SKELETON_MAGE: ['DarkMagic'],
+            TROLL: ['EarthMelee'],
+            DARK_MAGE: ['NightmareMagic'],
+            DEMON_WARRIOR: ['FireMelee'],
+            BOSS: ['BurnMelee']
         };
 
         const RECIPES = {
@@ -1314,7 +1333,15 @@
 
         const HEAL_MANA_COST = 2;
 
-        const ELEMENT_EMOJI = { fire: '🔥', ice: '❄️', lightning: '⚡' };
+        const ELEMENT_EMOJI = {
+            fire: '🔥',
+            ice: '❄️',
+            lightning: '⚡',
+            wind: '💨',
+            earth: '🌱',
+            light: '✨',
+            dark: '🌑'
+        };
 
         const STATUS_NAMES = {
             poison: "독",
@@ -1327,6 +1354,52 @@
             petrify: "석화",
             debuff: "약화"
         };
+
+        const STATUS_ICONS = {
+            poison: '☠️',
+            burn: '🔥',
+            freeze: '❄️',
+            bleed: '🩸',
+            paralysis: '⚡',
+            nightmare: '😱',
+            silence: '🤐',
+            petrify: '🪨',
+            debuff: '⬇️'
+        };
+
+        const MONSTER_TRAITS = (() => {
+            const obj = {};
+            const elems = ['fire','ice','wind','earth','light','dark'];
+            const statuses = ['poison','freeze','burn','bleed','paralysis','nightmare','silence','petrify','debuff'];
+            const cap = s => s.charAt(0).toUpperCase() + s.slice(1);
+            elems.forEach(e => {
+                ['Melee','Ranged','Magic'].forEach(t => {
+                    obj[cap(e)+t] = { name: `${cap(e)} ${t}`, icon: ELEMENT_EMOJI[e], element: e };
+                });
+            });
+            statuses.forEach(s => {
+                ['Melee','Ranged','Magic'].forEach(t => {
+                    obj[cap(s)+t] = { name: `${STATUS_NAMES[s]} ${t}`, icon: STATUS_ICONS[s], status: s };
+                });
+            });
+            return obj;
+        })();
+
+        (() => {
+            const elems = ['fire','ice','wind','earth','light','dark'];
+            const statuses = ['poison','freeze','burn','bleed','paralysis','nightmare','silence','petrify','debuff'];
+            const cap = s => s.charAt(0).toUpperCase() + s.slice(1);
+            elems.forEach(e => {
+                MONSTER_SKILLS[cap(e)+'Strike'] = { name: `${cap(e)} Strike`, icon: ELEMENT_EMOJI[e], range: 1, damageDice: '1d6', melee: true, element: e, manaCost: 2 };
+                MONSTER_SKILLS[cap(e)+'Shot'] = { name: `${cap(e)} Shot`, icon: ELEMENT_EMOJI[e], range: 3, damageDice: '1d6', element: e, manaCost: 2 };
+                MONSTER_SKILLS[cap(e)+'Magic'] = { name: `${cap(e)} Magic`, icon: ELEMENT_EMOJI[e], range: 4, damageDice: '1d6', magic: true, element: e, manaCost: 2 };
+            });
+            statuses.forEach(s => {
+                MONSTER_SKILLS[cap(s)+'Strike'] = { name: `${STATUS_NAMES[s]} Strike`, icon: STATUS_ICONS[s], range: 1, damageDice: '1d6', melee: true, status: s, manaCost: 2 };
+                MONSTER_SKILLS[cap(s)+'Shot'] = { name: `${STATUS_NAMES[s]} Shot`, icon: STATUS_ICONS[s], range: 3, damageDice: '1d6', status: s, manaCost: 2 };
+                MONSTER_SKILLS[cap(s)+'Magic'] = { name: `${STATUS_NAMES[s]} Magic`, icon: STATUS_ICONS[s], range: 4, damageDice: '1d6', magic: true, status: s, manaCost: 2 };
+            });
+        })();
 
         // 접두사/접미사 풀
         const PREFIXES = [
@@ -2219,6 +2292,10 @@
         function showMonsterDetails(monster) {
             const auraInfo = monster.isElite && monster.auraSkill ? SKILL_DEFS[monster.auraSkill] : null;
             const auraLine = auraInfo ? `<div>오라 스킬: ${auraInfo.icon} ${auraInfo.name}</div>` : '';
+            const traitInfo = monster.trait ? MONSTER_TRAITS[monster.trait] : null;
+            const traitLine = traitInfo ? `<div>특성: ${traitInfo.icon} ${traitInfo.name}</div>` : '';
+            const skillInfo = monster.monsterSkill ? MONSTER_SKILLS[monster.monsterSkill] : null;
+            const skillLine = skillInfo ? `<div>스킬: ${skillInfo.icon} ${skillInfo.name}</div>` : '';
             const html = `
                 <h3>${monster.icon} ${monster.name} (Lv.${monster.level})</h3>
                 <div>❤️ HP: ${monster.health}/${monster.maxHealth}</div>
@@ -2236,6 +2313,8 @@
                 <div>📖 지능: ${monster.intelligence}${monster.isSuperior ? ' ' + '★'.repeat(monster.stars.intelligence) : ''}</div>
                 <div>📏 사거리: ${monster.range}</div>
                 <div>특수: ${monster.special || '없음'}</div>
+                ${traitLine}
+                ${skillLine}
                 ${auraLine}
             `;
             document.getElementById('monster-detail-content').innerHTML = html;
@@ -2430,6 +2509,13 @@
                 const sk = pool[Math.floor(Math.random() * pool.length)];
                 monster.monsterSkill = sk;
                 monster.skillLevels[sk] = Math.floor((level - 1) / 3) + 1;
+            }
+            const traitPool = MONSTER_TRAIT_SETS[type];
+            if (traitPool && traitPool.length) {
+                monster.trait = traitPool[Math.floor(Math.random() * traitPool.length)];
+                const tinfo = MONSTER_TRAITS[monster.trait];
+                if (tinfo && tinfo.status) monster.statusEffect = tinfo.status;
+                if (tinfo && tinfo.element) monster[`${tinfo.element}Damage`] = 2;
             }
             return monster;
         }
@@ -2649,7 +2735,9 @@ function killMonster(monster) {
                 equipped: { weapon: null, armor: null, accessory1: null, accessory2: null },
                 range: monster.range,
                 special: monster.special,
-                statusEffect: monster.statusEffect
+                trait: monster.trait || null,
+                statusEffect: monster.statusEffect,
+                ...(monster.trait && MONSTER_TRAITS[monster.trait] && MONSTER_TRAITS[monster.trait].element ? { [MONSTER_TRAITS[monster.trait].element + 'Damage']: monster[MONSTER_TRAITS[monster.trait].element + 'Damage'] } : {})
             };
         }
 
@@ -3718,11 +3806,13 @@ function killMonster(monster) {
                 let totalDefense = getStat(nearestTarget, 'defense');
 
                 const attackValue = monster.special === 'magic' ? monster.magicPower : monster.attack;
+                const traitInfo = monster.trait ? MONSTER_TRAITS[monster.trait] : null;
                 const result = performAttack(monster, nearestTarget, {
                     attackValue: attackValue,
                     magic: monster.special === 'magic',
                     defenseValue: totalDefense,
-                    status: monster.statusEffect
+                    status: traitInfo && traitInfo.status,
+                    element: traitInfo && traitInfo.element
                 });
 
                 let attackType = monster.special === 'magic' ? '🔮 마법 공격' :
