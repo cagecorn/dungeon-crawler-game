@@ -1,7 +1,8 @@
 (function(global){
   const MONSTER_VISION = 6;
   const FOG_RADIUS = 6; // increased player vision range
-  const MERCENARY_TRIGGER_DISTANCE = 5; // player distance to trigger ally attacks
+  // Mercenaries should react to any monster the player can see
+  const MERCENARY_TRIGGER_DISTANCE = FOG_RADIUS;
   const gameState = {
     dungeon: [],
     fogOfWar: [],
@@ -77,8 +78,8 @@
     exitLocation: { x: 0, y: 0 },
     shopLocation: { x: 0, y: 0 },
     shopItems: [],
-    materials: { herb: 5, wood: 3, iron: 0 },
-    knownRecipes: ['healthPotion'],
+    materials: { herb: 5, wood: 3, iron: 0, bread: 2, carrot: 2, milk: 2 },
+    knownRecipes: ['healthPotion', 'sandwich'],
     craftingQueue: [],
     floor: 1,
     dungeonSize: 80,

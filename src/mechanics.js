@@ -538,6 +538,42 @@
                 level: 1,
                 icon: '⭐'
             },
+            bread: {
+                name: '🍞 Bread',
+                type: ITEM_TYPES.FOOD,
+                affinityGain: 3,
+                fullnessGain: 2,
+                price: 5,
+                level: 1,
+                icon: '🍞'
+            },
+            carrot: {
+                name: '🥕 Carrot',
+                type: ITEM_TYPES.FOOD,
+                affinityGain: 2,
+                fullnessGain: 1,
+                price: 3,
+                level: 1,
+                icon: '🥕'
+            },
+            milk: {
+                name: '🥛 Milk',
+                type: ITEM_TYPES.FOOD,
+                affinityGain: 2,
+                fullnessGain: 1,
+                price: 3,
+                level: 1,
+                icon: '🥛'
+            },
+            sandwich: {
+                name: '🥪 Sandwich',
+                type: ITEM_TYPES.FOOD,
+                affinityGain: 15,
+                fullnessGain: 8,
+                price: 20,
+                level: 1,
+                icon: '🥪'
+            },
             cookedMeal: {
                 name: '🍲 요리',
                 type: ITEM_TYPES.FOOD,
@@ -640,7 +676,8 @@
 
         const RECIPES = {
             healthPotion: { name: 'Health Potion', output: 'healthPotion', materials: { herb: 2 }, turns: 3 },
-            shortSword: { name: 'Short Sword', output: 'shortSword', materials: { wood: 1, iron: 2 }, turns: 5 }
+            shortSword: { name: 'Short Sword', output: 'shortSword', materials: { wood: 1, iron: 2 }, turns: 5 },
+            sandwich: { name: 'Sandwich', output: 'sandwich', materials: { bread: 1, carrot: 1, milk: 1 }, turns: 2 }
         };
 
 
