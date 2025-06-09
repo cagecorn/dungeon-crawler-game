@@ -1276,7 +1276,9 @@
         const MONSTER_SKILLS = {
             RottingBite: { name: 'Rotting Bite', icon: '🧟', range: 1, damageDice: '1d6', melee: true, status: 'poison' },
             PowerStrike: { name: 'Power Strike', icon: '💥', range: 1, damageDice: '1d8', melee: true },
-            ShadowBolt: { name: 'Shadow Bolt', icon: '🌑', range: 3, damageDice: '1d6', magic: true, element: 'dark' }
+            ShadowBolt: { name: 'Shadow Bolt', icon: '🌑', range: 3, damageDice: '1d6', magic: true, element: 'dark' },
+            PoisonCloud: { name: 'Poison Cloud', icon: '☣️', radius: 2, damageDice: '1d4', magic: true, status: 'poison' },
+            FireBreath: { name: 'Fire Breath', icon: '🔥', radius: 2, magic: true, element: 'fire', damageDice: '1d6', status: 'burn' }
         };
 
         const MERCENARY_SKILL_SETS = {
@@ -1287,20 +1289,20 @@
         };
 
         const MONSTER_SKILL_SETS = {
-            ZOMBIE: ['RottingBite'],
+            ZOMBIE: ['RottingBite', 'PoisonCloud'],
             GOBLIN: ['PowerStrike'],
             ARCHER: ['PowerStrike'],
             GOBLIN_ARCHER: ['PowerStrike'],
-            GOBLIN_WIZARD: ['ShadowBolt'],
-            WIZARD: ['ShadowBolt'],
+            GOBLIN_WIZARD: ['ShadowBolt', 'PoisonCloud'],
+            WIZARD: ['ShadowBolt', 'FireBreath'],
             ORC: ['PowerStrike'],
             ORC_ARCHER: ['PowerStrike'],
             SKELETON: ['PowerStrike'],
             SKELETON_MAGE: ['ShadowBolt'],
-            TROLL: ['PowerStrike'],
-            DARK_MAGE: ['ShadowBolt'],
-            DEMON_WARRIOR: ['ShadowBolt'],
-            BOSS: ['ShadowBolt']
+            TROLL: ['PowerStrike', 'FireBreath'],
+            DARK_MAGE: ['ShadowBolt', 'PoisonCloud'],
+            DEMON_WARRIOR: ['ShadowBolt', 'FireBreath'],
+            BOSS: ['ShadowBolt', 'FireBreath']
         };
 
         const RECIPES = {
