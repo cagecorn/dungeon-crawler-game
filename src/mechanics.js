@@ -2697,7 +2697,14 @@ function killMonster(monster) {
 
             gameState.shopItems = [];
             const availableItems = itemKeys.filter(k => ITEMS[k].level <= Math.ceil(gameState.floor / 2 + 1));
-            for (let i = 0; i < 3; i++) {
+            const basicFoodKeys = ['bread', 'meat', 'lettuce', 'sandwich', 'salad', 'cookedMeal'];
+            basicFoodKeys.forEach(key => {
+                if (ITEMS[key] && !availableItems.includes(key)) {
+                    availableItems.push(key);
+                }
+            });
+            const shopItemCount = 5 + Math.floor(Math.random() * 5); // 5-9 items
+            for (let i = 0; i < shopItemCount; i++) {
                 const k = availableItems[Math.floor(Math.random() * availableItems.length)];
                 const shopItem = createItem(k, 0, 0);
                 gameState.shopItems.push(shopItem);
