@@ -67,7 +67,13 @@ npm install
 
 ## Testing
 
-Run `npm install` to install **jsdom** and other dependencies, then execute `npm test` to run the test suite.
+Before running the tests you must install the project dependencies manually:
+
+```bash
+npm install
+```
+
+After installation execute `npm test` to run the test suite.
 
 ## License
 
