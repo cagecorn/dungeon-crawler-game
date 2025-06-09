@@ -1455,14 +1455,15 @@
         function findPath(startX, startY, targetX, targetY) {
             const size = gameState.dungeonSize;
             const queue = [[startX, startY]];
+            let head = 0;
             const visited = Array.from({ length: size }, () => Array(size).fill(false));
             const cameFrom = {};
             const key = (x, y) => `${x},${y}`;
             visited[startY][startX] = true;
             cameFrom[key(startX, startY)] = null;
 
-            while (queue.length) {
-                const [x, y] = queue.shift();
+            while (head < queue.length) {
+                const [x, y] = queue[head++];
                 if (x === targetX && y === targetY) {
                     const path = [];
                     let cur = [x, y];
