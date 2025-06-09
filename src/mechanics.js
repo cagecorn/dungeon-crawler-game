@@ -542,6 +542,7 @@
                 name: '🍲 요리',
                 type: ITEM_TYPES.FOOD,
                 affinityGain: 5,
+                fullnessGain: 5,
                 price: 15,
                 level: 1,
                 icon: '🍲'
@@ -2112,6 +2113,7 @@ function killMonster(monster) {
                 })(),
                 alive: true,
                 affinity: 30,
+                fullness: 0,
                 hasActed: false,
                 equipped: { weapon: null, armor: null, accessory1: null, accessory2: null },
                 range: monster.range,
@@ -2818,6 +2820,7 @@ function killMonster(monster) {
                 alive: true,
                 hasActed: false,
                 affinity: 50,
+                fullness: 0,
                 equipped: {
                     weapon: null,
                     armor: null,
@@ -3183,7 +3186,9 @@ function killMonster(monster) {
                 }
             } else if (item.type === ITEM_TYPES.FOOD) {
                 const gain = item.affinityGain || 0;
+                const fullnessGain = item.fullnessGain || 0;
                 target.affinity = Math.min(200, (target.affinity || 0) + gain);
+                target.fullness = (target.fullness || 0) + fullnessGain;
 
                 const name = target === gameState.player ? '플레이어' : target.name;
                 addMessage(`🍖 ${item.name}을(를) 먹여 ${name}의 호감도를 ${formatNumber(gain)} 상승시켰습니다.`, 'item');

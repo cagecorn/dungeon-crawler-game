@@ -30,6 +30,7 @@
       magicPower: 0,
       magicResist: 0,
       job: null,
+      fullness: 0,
       elementResistances: {fire:0, ice:0, lightning:0, earth:0, light:0, dark:0},
       statusResistances: {poison:0, bleed:0, burn:0, freeze:0, paralysis:0, nightmare:0, silence:0, petrify:0, debuff:0},
       poison: false,
