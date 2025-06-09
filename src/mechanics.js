@@ -6,7 +6,9 @@
             REVIVE: 'revive',
             EXP_SCROLL: 'expScroll',
             EGG: 'egg',
-            FERTILIZER: 'fertilizer'
+            FERTILIZER: 'fertilizer',
+            FOOD: 'food',
+            ESSENCE: 'essence'
         };
 
         const SHOP_PRICE_MULTIPLIER = 3;
@@ -488,6 +490,21 @@
                 level: 1,
                 icon: '🌱'
             },
+            meal: {
+                name: '🍖 요리',
+                type: ITEM_TYPES.FOOD,
+                price: 0,
+                level: 1,
+                icon: '🍖'
+            },
+            strengthEssence: {
+                name: '💎 힘의 정수',
+                type: ITEM_TYPES.ESSENCE,
+                stat: 'strength',
+                price: 0,
+                level: 1,
+                icon: '💎'
+            }
 
         };
 
@@ -1459,6 +1476,7 @@
                 <div>악세1: ${accessory1} ${acc1Btn}</div>
                 <div>악세2: ${accessory2} ${acc2Btn}</div>
                 ${skillHtml || '<div>스킬: 없음</div>'}
+                ${merc.affinity >= 200 ? '<button id="sacrifice-button" onclick="sacrificeMercenary(window.currentDetailMercenary)">희생</button>' : ''}
             `;
 
             document.getElementById('mercenary-detail-content').innerHTML = html;
@@ -3087,6 +3105,24 @@ function killMonster(monster) {
                     checkMercenaryLevelUp(target);
                     updateMercenaryDisplay();
                 }
+            } else if (item.type === ITEM_TYPES.ESSENCE) {
+                if (item.stat && typeof target[item.stat] === 'number') {
+                    target[item.stat] += 1;
+                    const name = target === gameState.player ? '플레이어' : target.name;
+                    addMessage(`💎 ${item.name}을(를) 사용하여 ${name}의 ${item.stat}이(가) 1 증가했습니다.`, 'item');
+
+                    const index = gameState.player.inventory.findIndex(i => i.id === item.id);
+                    if (index !== -1) {
+                        gameState.player.inventory.splice(index, 1);
+                    }
+
+                    updateInventoryDisplay();
+                    if (target === gameState.player) {
+                        updateStats();
+                    } else {
+                        updateMercenaryDisplay();
+                    }
+                }
             }
         }
 
@@ -3127,6 +3163,15 @@ function killMonster(monster) {
                 if (idx !== -1) gameState.standbyMercenaries.splice(idx, 1);
             }
             updateMercenaryDisplay();
+        }
+
+        function sacrificeMercenary(mercenary) {
+            removeMercenary(mercenary);
+            const essence = createItem('strengthEssence', 0, 0);
+            addToInventory(essence);
+            addMessage(`💀 ${mercenary.name}을(를) 희생하여 정수를 얻었습니다.`, 'mercenary');
+            hideMercenaryDetails();
+            updateInventoryDisplay();
         }
 
         // 기본 플레이어 대상 아이템 사용 (호환성)
@@ -4658,7 +4703,7 @@ function killMonster(monster) {
                 dead.forEach(m => {
                     addBtn(m.name, () => reviveMercenary(m));
                 });
-            } else if (item.type === ITEM_TYPES.POTION || item.type === ITEM_TYPES.EXP_SCROLL) {
+            } else if (item.type === ITEM_TYPES.POTION || item.type === ITEM_TYPES.EXP_SCROLL || item.type === ITEM_TYPES.ESSENCE) {
                 addBtn('플레이어', () => useItemOnTarget(item, gameState.player));
                 gameState.activeMercenaries.forEach(m => {
                     addBtn(m.name, () => useItemOnTarget(item, m));
@@ -4724,8 +4769,12 @@ function killMonster(monster) {
             if (allSkills[1]) gameState.player.assignedSkills[2] = allSkills[1];
 
             generateDungeon();
+            const zombie = convertMonsterToMercenary(createMonster('ZOMBIE', -1, -1, 1));
+            zombie.affinity = 195;
+            spawnMercenaryNearPlayer(zombie);
+            gameState.activeMercenaries.push(zombie);
             for (let i = 0; i < 5; i++) {
-                gameState.player.inventory.push(createItem('smallExpScroll', 0, 0));
+                gameState.player.inventory.push(createItem('meal', 0, 0));
             }
             updateInventoryDisplay();
             updateSkillDisplay();
@@ -4833,7 +4882,8 @@ unequipAccessory, unequipItemFromMercenary, updateActionButtons, updateCamera,
 updateFogOfWar, updateIncubatorDisplay,
 updateInventoryDisplay, updateMaterialsDisplay, updateMercenaryDisplay,
 updateShopDisplay, updateSkillDisplay, updateStats, updateTurnEffects,
-upgradeMercenarySkill, useItem, useItemOnTarget, useSkill, removeMercenary
+upgradeMercenarySkill, useItem, useItemOnTarget, useSkill, removeMercenary,
+sacrificeMercenary
 };
 Object.assign(window, exportsObj, {SKILL_DEFS, MERCENARY_SKILLS, MONSTER_SKILLS, MONSTER_SKILL_SETS, MONSTER_TRAITS, MONSTER_TRAIT_SETS, PREFIXES, SUFFIXES});
 

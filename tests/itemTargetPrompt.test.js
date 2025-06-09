@@ -12,6 +12,7 @@ async function run() {
 
   const { hireMercenary, createItem, addToInventory, handleItemClick, gameState } = win;
 
+  gameState.activeMercenaries = [];
   hireMercenary('WARRIOR');
   const merc = gameState.activeMercenaries[0];
 

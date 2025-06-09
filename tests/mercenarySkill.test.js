@@ -32,6 +32,7 @@ async function run() {
   gameState.player.y = 1;
   gameState.dungeon[1][1] = 'empty';
 
+  gameState.activeMercenaries = [];
   hireMercenary('WIZARD');
   const merc = gameState.activeMercenaries[0];
 

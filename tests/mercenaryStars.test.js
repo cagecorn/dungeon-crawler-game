@@ -12,6 +12,7 @@ async function run() {
   const { hireMercenary, gameState, checkMercenaryLevelUp, showMercenaryDetails, saveGame, loadGame: loadGameGame, localStorage } = win;
 
   gameState.player.gold = 500;
+  gameState.activeMercenaries = [];
   hireMercenary('WARRIOR');
   const merc = gameState.activeMercenaries[0];
 
