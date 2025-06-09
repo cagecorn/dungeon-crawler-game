@@ -2110,8 +2110,8 @@
                 const accessory2 = merc.equipped && merc.equipped.accessory2 ? merc.equipped.accessory2.name : '없음';
             const totalAttack = formatNumber(getStat(merc, 'attack'));
             const totalDefense = formatNumber(getStat(merc, 'defense'));
-                const skillInfo = MERCENARY_SKILLS[merc.skill];
-                const skillInfo2 = MERCENARY_SKILLS[merc.skill2];
+                const skillInfo = MERCENARY_SKILLS[merc.skill] || MONSTER_SKILLS[merc.skill];
+                const skillInfo2 = MERCENARY_SKILLS[merc.skill2] || MONSTER_SKILLS[merc.skill2];
                 let skillText = skillInfo ? `스킬:${skillInfo.name}(MP ${skillInfo.manaCost})` : '스킬: 없음';
                 if (skillInfo2) skillText += ` / ${skillInfo2.name}(MP ${skillInfo2.manaCost})`;
 
@@ -2141,8 +2141,8 @@
             gameState.standbyMercenaries.forEach((merc, i) => {
                 const div = document.createElement('div');
                 div.className = 'mercenary-info alive';
-                const skillInfo = MERCENARY_SKILLS[merc.skill];
-                const skillInfo2 = MERCENARY_SKILLS[merc.skill2];
+                const skillInfo = MERCENARY_SKILLS[merc.skill] || MONSTER_SKILLS[merc.skill];
+                const skillInfo2 = MERCENARY_SKILLS[merc.skill2] || MONSTER_SKILLS[merc.skill2];
                 let skillText = skillInfo ? `스킬:${skillInfo.name}(MP ${skillInfo.manaCost})` : '스킬: 없음';
                 if (skillInfo2) skillText += ` / ${skillInfo2.name}(MP ${skillInfo2.manaCost})`;
                 div.textContent = `${merc.icon} ${merc.name} (대기) [${skillText}]`;
