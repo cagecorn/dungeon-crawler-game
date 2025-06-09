@@ -1388,12 +1388,13 @@
             waiting.innerHTML = '';
             gameState.hatchedSuperiors.forEach(mon => {
                 const div = document.createElement('div');
-                div.className = 'incubator-slot';
+                div.className = 'incubator-slot clickable';
                 div.textContent = mon.name;
+                div.onclick = () => showMonsterDetails(mon);
                 const btn = document.createElement('button');
                 btn.textContent = '영입';
                 btn.className = 'sell-button';
-                btn.onclick = () => recruitHatchedSuperior(mon);
+                btn.onclick = (e) => { e.stopPropagation(); recruitHatchedSuperior(mon); };
                 div.appendChild(btn);
                 waiting.appendChild(div);
             });
