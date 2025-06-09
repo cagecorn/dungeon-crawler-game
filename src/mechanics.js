@@ -4638,6 +4638,14 @@ function killMonster(monster) {
         startGame();
         document.getElementById('save-game').onclick = saveGame;
         document.getElementById('load-game').onclick = loadGame;
+        const newBtn = document.getElementById('new-game');
+        if (newBtn) {
+            newBtn.onclick = () => {
+                if (typeof confirm !== 'function' || confirm('새 게임을 시작하시겠습니까? 진행 중인 내용이 사라집니다.')) {
+                    location.reload();
+                }
+            };
+        }
         document.getElementById('attack').onclick = meleeAttackAction;
         document.getElementById('ranged').onclick = rangedAction;
         document.getElementById('skill1').onclick = skill1Action;
