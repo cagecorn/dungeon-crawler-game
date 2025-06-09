@@ -1561,6 +1561,7 @@
                 <div>🔮 집중: ${formatNumber(merc.focus)} ${'★'.repeat(merc.stars.focus)}</div>
                 <div>📖 지능: ${formatNumber(merc.intelligence)} ${'★'.repeat(merc.stars.intelligence)}</div>
                 <div>💕 호감도: ${formatNumber(merc.affinity)}</div>
+                <div>🍗 배부름: ${formatNumber(merc.fullness)}</div>
                 <hr>
                 <div>❤️ HP: ${formatNumber(merc.health)}/${formatNumber(getStat(merc, 'maxHealth'))}</div>
                 <div>🔋 MP: ${formatNumber(merc.mana)}/${formatNumber(getStat(merc, 'maxMana'))}</div>
@@ -1646,6 +1647,7 @@
                 <div>🔮 마법공격: ${formatNumber(getStat(monster,'magicPower'))}</div>
                 <div>✨ 마법방어: ${formatNumber(getStat(monster,'magicResist'))}</div>
                 ${monster.affinity !== undefined ? `<div>💕 호감도: ${formatNumber(monster.affinity)}</div>` : ''}
+                ${monster.fullness !== undefined ? `<div>🍗 배부름: ${formatNumber(monster.fullness)}</div>` : ''}
                 <div>💪 힘: ${monster.strength}${monster.isSuperior ? ' ' + '★'.repeat(stars.strength) : ''}</div>
                 <div>🏃 민첩: ${monster.agility}${monster.isSuperior ? ' ' + '★'.repeat(stars.agility) : ''}</div>
                 <div>🛡 체력: ${monster.endurance}${monster.isSuperior ? ' ' + '★'.repeat(stars.endurance) : ''}</div>
@@ -1764,6 +1766,7 @@
             document.getElementById('maxHealth').textContent = formatNumber(getStat(gameState.player, 'maxHealth'));
             document.getElementById('mana').textContent = formatNumber(gameState.player.mana);
             document.getElementById('maxMana').textContent = formatNumber(getStat(gameState.player, 'maxMana'));
+            document.getElementById('fullness').textContent = formatNumber(gameState.player.fullness);
             document.getElementById('healthRegen').textContent = formatNumber(getStat(gameState.player, 'healthRegen'));
             document.getElementById('manaRegen').textContent = formatNumber(getStat(gameState.player, 'manaRegen'));
             document.getElementById('attackStat').textContent = formatNumber(getStat(gameState.player, 'attack'));
