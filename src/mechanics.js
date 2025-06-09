@@ -1616,7 +1616,7 @@
             const auraLine = auraInfo ? `<div>오라 스킬: ${auraInfo.icon} ${auraInfo.name}</div>` : '';
             const traitInfo = monster.trait ? MONSTER_TRAITS[monster.trait] : null;
             const traitLine = traitInfo ? `<div>특성: ${traitInfo.icon} ${traitInfo.name}</div>` : '';
-            const stars = monster.stars || { strength:0, agility:0, endurance:0, focus:0, intelligence:0 };
+            const stars = monster.stars || {strength:0, agility:0, endurance:0, focus:0, intelligence:0};
             const skills = [];
             if (monster.monsterSkill && MONSTER_SKILLS[monster.monsterSkill]) {
                 skills.push(MONSTER_SKILLS[monster.monsterSkill]);
