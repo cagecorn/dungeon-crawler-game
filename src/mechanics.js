@@ -546,6 +546,51 @@
                 price: 15,
                 level: 1,
                 icon: '🍲'
+            },
+            bread: {
+                name: '🍞 빵',
+                type: ITEM_TYPES.FOOD,
+                affinityGain: 1,
+                fullnessGain: 1,
+                price: 3,
+                level: 1,
+                icon: '🍞'
+            },
+            meat: {
+                name: '🍖 고기',
+                type: ITEM_TYPES.FOOD,
+                affinityGain: 1,
+                fullnessGain: 2,
+                price: 4,
+                level: 1,
+                icon: '🍖'
+            },
+            lettuce: {
+                name: '🥬 양상추',
+                type: ITEM_TYPES.FOOD,
+                affinityGain: 1,
+                fullnessGain: 1,
+                price: 2,
+                level: 1,
+                icon: '🥬'
+            },
+            salad: {
+                name: '🥗 샐러드',
+                type: ITEM_TYPES.FOOD,
+                affinityGain: 2,
+                fullnessGain: 2,
+                price: 6,
+                level: 1,
+                icon: '🥗'
+            },
+            sandwich: {
+                name: '🥪 샌드위치',
+                type: ITEM_TYPES.FOOD,
+                affinityGain: 3,
+                fullnessGain: 3,
+                price: 8,
+                level: 1,
+                icon: '🥪'
             }
 
         };
@@ -640,7 +685,9 @@
 
         const RECIPES = {
             healthPotion: { name: 'Health Potion', output: 'healthPotion', materials: { herb: 2 }, turns: 3 },
-            shortSword: { name: 'Short Sword', output: 'shortSword', materials: { wood: 1, iron: 2 }, turns: 5 }
+            shortSword: { name: 'Short Sword', output: 'shortSword', materials: { wood: 1, iron: 2 }, turns: 5 },
+            sandwich: { name: 'Sandwich', output: 'sandwich', materials: { bread: 1, meat: 1, lettuce: 1 }, turns: 2 },
+            salad: { name: 'Salad', output: 'salad', materials: { lettuce: 2, herb: 1 }, turns: 2 }
         };
 
 
@@ -1208,11 +1255,19 @@
 
 
 
+            const groups = {};
             gameState.player.inventory.forEach(item => {
+                const key = `${item.key}-${item.prefix || ''}-${item.suffix || ''}`;
+                if (!groups[key]) groups[key] = { item, count: 0 };
+                groups[key].count += 1;
+            });
+
+            Object.values(groups).forEach(({ item, count }) => {
                 const div = document.createElement('div');
                 div.className = 'inventory-item';
                 const span = document.createElement('span');
-                span.textContent = formatItem(item);
+                const label = count > 1 ? `${formatItem(item)} x ${count}` : formatItem(item);
+                span.textContent = label;
                 div.appendChild(span);
                 const sellBtn = document.createElement('button');
                 sellBtn.textContent = '판매';
@@ -1561,6 +1616,7 @@
             const auraLine = auraInfo ? `<div>오라 스킬: ${auraInfo.icon} ${auraInfo.name}</div>` : '';
             const traitInfo = monster.trait ? MONSTER_TRAITS[monster.trait] : null;
             const traitLine = traitInfo ? `<div>특성: ${traitInfo.icon} ${traitInfo.name}</div>` : '';
+            const stars = monster.stars || { strength:0, agility:0, endurance:0, focus:0, intelligence:0 };
             const skills = [];
             if (monster.monsterSkill && MONSTER_SKILLS[monster.monsterSkill]) {
                 skills.push(MONSTER_SKILLS[monster.monsterSkill]);
@@ -1587,11 +1643,11 @@
                 <div>🔮 마법공격: ${formatNumber(getStat(monster,'magicPower'))}</div>
                 <div>✨ 마법방어: ${formatNumber(getStat(monster,'magicResist'))}</div>
                 ${monster.affinity !== undefined ? `<div>💕 호감도: ${formatNumber(monster.affinity)}</div>` : ''}
-                <div>💪 힘: ${monster.strength}${monster.isSuperior ? ' ' + '★'.repeat(monster.stars.strength) : ''}</div>
-                <div>🏃 민첩: ${monster.agility}${monster.isSuperior ? ' ' + '★'.repeat(monster.stars.agility) : ''}</div>
-                <div>🛡 체력: ${monster.endurance}${monster.isSuperior ? ' ' + '★'.repeat(monster.stars.endurance) : ''}</div>
-                <div>🔮 집중: ${monster.focus}${monster.isSuperior ? ' ' + '★'.repeat(monster.stars.focus) : ''}</div>
-                <div>📖 지능: ${monster.intelligence}${monster.isSuperior ? ' ' + '★'.repeat(monster.stars.intelligence) : ''}</div>
+                <div>💪 힘: ${monster.strength}${monster.isSuperior ? ' ' + '★'.repeat(stars.strength) : ''}</div>
+                <div>🏃 민첩: ${monster.agility}${monster.isSuperior ? ' ' + '★'.repeat(stars.agility) : ''}</div>
+                <div>🛡 체력: ${monster.endurance}${monster.isSuperior ? ' ' + '★'.repeat(stars.endurance) : ''}</div>
+                <div>🔮 집중: ${monster.focus}${monster.isSuperior ? ' ' + '★'.repeat(stars.focus) : ''}</div>
+                <div>📖 지능: ${monster.intelligence}${monster.isSuperior ? ' ' + '★'.repeat(stars.intelligence) : ''}</div>
                 <div>📏 사거리: ${monster.range}</div>
                 <div>특수: ${monster.special || '없음'}</div>
                 ${traitLine}
@@ -2160,7 +2216,7 @@ function killMonster(monster) {
         }
 
         function dissectCorpse(corpse) {
-            const materialsPool = ['뼈', '가죽', '정수'];
+            const materialsPool = ['뼈', '가죽', '정수', 'bread', 'meat', 'lettuce'];
             const gained = [];
             const count = Math.floor(Math.random() * 3) + 1;
             for (let i = 0; i < count; i++) {
