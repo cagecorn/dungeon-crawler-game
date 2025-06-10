@@ -9,7 +9,8 @@
             EGG: 'egg',
             FERTILIZER: 'fertilizer',
             ESSENCE: 'essence',
-            FOOD: 'food'
+            FOOD: 'food',
+            MAP: 'map'
         };
 
         const SHOP_PRICE_MULTIPLIER = 3;
@@ -873,6 +874,18 @@ const MERCENARY_NAMES = [
                 price: 50,
                 level: 2,
                 icon: '👑'
+            },
+            graveyardMap: {
+                name: '🗺️ 묘지 지도',
+                type: ITEM_TYPES.MAP,
+                level: 1,
+                icon: '🗺️'
+            },
+            ruinsMap: {
+                name: '🗺️ 폐허 지도',
+                type: ITEM_TYPES.MAP,
+                level: 2,
+                icon: '🗺️'
             }
 
         };
@@ -1097,6 +1110,20 @@ const MERCENARY_NAMES = [
             { name: 'of Bleed Resistance', modifiers: { bleedResist: 0.3 } },
             { name: 'of Burn Resistance', modifiers: { burnResist: 0.3 } },
             { name: 'of Frost Resistance', modifiers: { freezeResist: 0.3 } }
+        ];
+
+        const MAP_PREFIXES = [
+            { name: 'Populous', modifiers: { monsterMultiplier: 1.5 } },
+            { name: 'Elite', modifiers: { eliteChanceBonus: 0.2 } },
+            { name: 'Resistant', modifiers: { monsterDefenseBonus: 2 } },
+            { name: 'Vicious', modifiers: { monsterAttackBonus: 2 } }
+        ];
+
+        const MAP_SUFFIXES = [
+            { name: 'of Treasures', modifiers: { treasureMultiplier: 2.0 } },
+            { name: 'of Riches', modifiers: { goldMultiplier: 1.5 } },
+            { name: 'of Items', modifiers: { lootChanceBonus: 0.15 } },
+            { name: 'of Haste', modifiers: { monsterSpeedBonus: 2 } }
         ];
 
         function getDistance(x1, y1, x2, y2) {
@@ -2527,6 +2554,9 @@ function killMonster(monster) {
             addMessage(`💀 ${monster.name}을(를) 처치했습니다!`, 'combat');
             gameState.player.exp += monster.exp;
             let goldGain = monster.gold;
+            if (gameState.currentMapModifiers && gameState.currentMapModifiers.goldMultiplier) {
+                goldGain = Math.floor(goldGain * gameState.currentMapModifiers.goldMultiplier);
+            }
             gameState.player.gold += goldGain;
             checkLevelUp();
             updateStats();
@@ -2550,7 +2580,7 @@ function killMonster(monster) {
                 gameState.dungeon[pos.y][pos.x] = 'item';
                 addMessage(`🎁 ${monster.name}이(가) ${bossItem.name}을(를) 떨어뜨렸습니다!`, 'treasure');
             } else {
-                let lootChance = monster.lootChance;
+                let lootChance = monster.lootChance + (gameState.currentMapModifiers?.lootChanceBonus || 0);
                 if (Math.random() < lootChance) {
                     const itemKeys = Object.keys(ITEMS).filter(k => k !== 'reviveScroll');
                     const availableItems = itemKeys.filter(key =>
@@ -3033,8 +3063,11 @@ function killMonster(monster) {
         }
 
         // 던전 생성
-        function generateDungeon() {
+        function generateDungeon(mapData = null) {
             const size = gameState.dungeonSize;
+            const modifiers = mapData ? (mapData.modifiers || {}) : {};
+            const dungeonLevel = mapData ? mapData.level : gameState.floor;
+            gameState.currentMapModifiers = modifiers;
             const dungeonEl = document.getElementById('dungeon');
             if (dungeonEl) {
                 dungeonEl.style.setProperty('--dungeon-size', size);
@@ -3169,9 +3202,10 @@ function killMonster(monster) {
             gameState.exitLocation = { x: exitX, y: exitY };
             gameState.dungeon[exitY][exitX] = 'exit';
 
-            const monsterTypes = getMonsterPoolForFloor(gameState.floor);
+            const monsterTypes = getMonsterPoolForFloor(dungeonLevel);
             // 몬스터는 던전 크기와 층수에 비례해 등장 수를 결정
-            const monsterCount = Math.floor(size * 0.2) + gameState.floor;
+            let monsterCount = Math.floor(size * 0.2) + dungeonLevel;
+            monsterCount = Math.floor(monsterCount * (modifiers.monsterMultiplier || 1));
             for (let i = 0; i < monsterCount; i++) {
                 let x, y;
                 do {
@@ -3179,8 +3213,20 @@ function killMonster(monster) {
                     y = Math.floor(Math.random() * size);
                 } while (gameState.dungeon[y][x] !== 'empty' || (x === 1 && y === 1));
                 const type = monsterTypes[Math.floor(Math.random() * (monsterTypes.length - 1))];
-                const monster = createMonster(type, x, y, gameState.floor);
-                gameState.monsters.push(monster);
+                const eliteRoll = Math.random();
+                if (eliteRoll < (0.05 + (modifiers.eliteChanceBonus || 0))) {
+                    const elite = createEliteMonster(type, x, y, dungeonLevel);
+                    elite.speed += modifiers.monsterSpeedBonus || 0;
+                    elite.attack += modifiers.monsterAttackBonus || 0;
+                    elite.defense += modifiers.monsterDefenseBonus || 0;
+                    gameState.monsters.push(elite);
+                } else {
+                    const monster = createMonster(type, x, y, dungeonLevel);
+                    monster.speed += modifiers.monsterSpeedBonus || 0;
+                    monster.attack += modifiers.monsterAttackBonus || 0;
+                    monster.defense += modifiers.monsterDefenseBonus || 0;
+                    gameState.monsters.push(monster);
+                }
                 gameState.dungeon[y][x] = 'monster';
             }
 
@@ -3196,7 +3242,7 @@ function killMonster(monster) {
             }
             if (gameState.dungeon[cy][cx] === 'empty') {
                 const ct = champTypes[Math.floor(Math.random() * champTypes.length)];
-                const champ = createChampion(ct, cx, cy, gameState.floor);
+                const champ = createChampion(ct, cx, cy, dungeonLevel);
                 gameState.monsters.push(champ);
                 gameState.dungeon[cy][cx] = 'monster';
             }
@@ -3208,7 +3254,7 @@ function killMonster(monster) {
                 ey = Math.floor(Math.random() * size);
             } while (gameState.dungeon[ey][ex] !== 'empty');
             const eType = monsterTypes[Math.floor(Math.random() * monsterTypes.length)];
-            const elite = createEliteMonster(eType, ex, ey, gameState.floor);
+            const elite = createEliteMonster(eType, ex, ey, dungeonLevel);
             gameState.monsters.push(elite);
             gameState.dungeon[ey][ex] = 'monster';
             const around = 2 + Math.floor(Math.random() * 4);
@@ -3216,13 +3262,14 @@ function killMonster(monster) {
                 const pos = findAdjacentEmpty(ex, ey);
                 if (gameState.dungeon[pos.y][pos.x] !== 'empty') continue;
                 const t = monsterTypes[Math.floor(Math.random() * monsterTypes.length)];
-                const m = createMonster(t, pos.x, pos.y, gameState.floor);
+                const m = createMonster(t, pos.x, pos.y, dungeonLevel);
                 gameState.monsters.push(m);
                 gameState.dungeon[pos.y][pos.x] = 'monster';
             }
 
             // 보물은 던전 크기와 층수에 따라 적당히 배치
-            const treasureCount = Math.floor(size * 0.1) + Math.floor(gameState.floor * 0.5);
+            let treasureCount = Math.floor(size * 0.1) + Math.floor(dungeonLevel * 0.5);
+            treasureCount = Math.floor(treasureCount * (modifiers.treasureMultiplier || 1));
             for (let i = 0; i < treasureCount; i++) {
                 let x, y;
                 do {
@@ -3236,7 +3283,7 @@ function killMonster(monster) {
 
             const itemKeys = Object.keys(ITEMS);
             // 맵에 떨어지는 아이템 수를 줄임
-            const itemCount = Math.floor(size * 0.05) + Math.floor(gameState.floor * 0.25);
+            const itemCount = Math.floor(size * 0.05) + Math.floor(dungeonLevel * 0.25);
             const spawnKeys = itemKeys.filter(k => k !== 'reviveScroll' && ITEMS[k].type !== ITEM_TYPES.ESSENCE);
             for (let i = 0; i < itemCount; i++) {
                 let x, y;
@@ -3245,7 +3292,7 @@ function killMonster(monster) {
                     y = Math.floor(Math.random() * size);
                 } while (gameState.dungeon[y][x] !== 'empty');
                 const key = spawnKeys[Math.floor(Math.random() * spawnKeys.length)];
-                const item = createItem(key, x, y, null, Math.floor(gameState.floor / 5));
+                const item = createItem(key, x, y, null, Math.floor(dungeonLevel / 5));
                 gameState.items.push(item);
                 gameState.dungeon[y][x] = 'item';
             }
@@ -3562,7 +3609,22 @@ function killMonster(monster) {
                 ...itemData
             };
 
-            if (item.type === ITEM_TYPES.WEAPON || item.type === ITEM_TYPES.ARMOR || item.type === ITEM_TYPES.ACCESSORY) {
+            if (item.type === ITEM_TYPES.MAP) {
+                item.modifiers = {};
+
+                if (Math.random() < 0.3) {
+                    const prefix = MAP_PREFIXES[Math.floor(Math.random() * MAP_PREFIXES.length)];
+                    item.name = `${prefix.name} ${item.name}`;
+                    Object.assign(item.modifiers, prefix.modifiers);
+                    item.prefix = prefix.name;
+                }
+                if (Math.random() < 0.3) {
+                    const suffix = MAP_SUFFIXES[Math.floor(Math.random() * MAP_SUFFIXES.length)];
+                    item.name = `${item.name} ${suffix.name}`;
+                    Object.assign(item.modifiers, suffix.modifiers);
+                    item.suffix = suffix.name;
+                }
+            } else if (item.type === ITEM_TYPES.WEAPON || item.type === ITEM_TYPES.ARMOR || item.type === ITEM_TYPES.ACCESSORY) {
                 if (prefixName) {
                     const prefix = PREFIXES.find(p => p.name === prefixName);
                     if (prefix) {
@@ -6301,5 +6363,5 @@ updateShopDisplay, updateSkillDisplay, updateStats, updateTurnEffects,
 upgradeMercenarySkill, upgradeMonsterSkill, useItem, useItemOnTarget, useSkill, removeMercenary,
     dismiss, sacrifice, allocateStat, exitMap
 };
-Object.assign(window, exportsObj, {SKILL_DEFS, MERCENARY_SKILLS, MONSTER_SKILLS, MONSTER_SKILL_SETS, MONSTER_TRAITS, MONSTER_TRAIT_SETS, PREFIXES, SUFFIXES});
+Object.assign(window, exportsObj, {SKILL_DEFS, MERCENARY_SKILLS, MONSTER_SKILLS, MONSTER_SKILL_SETS, MONSTER_TRAITS, MONSTER_TRAIT_SETS, PREFIXES, SUFFIXES, MAP_PREFIXES, MAP_SUFFIXES});
 
