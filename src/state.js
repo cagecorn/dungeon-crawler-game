@@ -81,7 +81,7 @@
     exitLocation: { x: 0, y: 0 },
     shopLocation: { x: 0, y: 0 },
     shopItems: [],
-    materials: { herb: 5, wood: 3, iron: 0, bread: 0, meat: 0, lettuce: 0 },
+    materials: { herb: 5, wood: 3, iron: 0, bone: 0, bread: 0, meat: 0, lettuce: 0 },
     knownRecipes: ['healthPotion', 'sandwich', 'salad'],
     craftingQueue: [],
     floor: 1,

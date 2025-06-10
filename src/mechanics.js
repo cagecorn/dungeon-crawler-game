@@ -1286,7 +1286,8 @@ const MERCENARY_NAMES = [
             if (item.burnResist !== undefined) stats.push(`화상저항+${formatNumber(item.burnResist * 100)}%`);
             if (item.freezeResist !== undefined) stats.push(`동결저항+${formatNumber(item.freezeResist * 100)}%`);
             if (item.status) stats.push(`${item.status} 부여`);
-            return `${item.name}${stats.length ? ' (' + stats.join(', ') + ')' : ''}`;
+            const levelText = item.enhanceLevel ? ` +Lv.${item.enhanceLevel}` : '';
+            return `${item.name}${levelText}${stats.length ? ' (' + stats.join(', ') + ')' : ''}`;
         }
 
         function getStat(character, stat) {
@@ -1462,7 +1463,7 @@ const MERCENARY_NAMES = [
             // group identical items together so they can be displayed as stacks
             const groups = new Map();
             for (const item of gameState.player.inventory) {
-                const key = `${item.key}-${item.prefix || ''}-${item.suffix || ''}`;
+                const key = `${item.key}-${item.prefix || ''}-${item.suffix || ''}-${item.enhanceLevel || 0}`;
                 if (!groups.has(key)) {
                     groups.set(key, { item, count: 0 });
                 }
@@ -1483,8 +1484,16 @@ const MERCENARY_NAMES = [
                     e.stopPropagation();
                     sellItem(item);
                 };
+                const enhanceBtn = document.createElement('button');
+                enhanceBtn.textContent = '강화';
+                enhanceBtn.className = 'enhance-button';
+                enhanceBtn.onclick = (e) => {
+                    e.stopPropagation();
+                    enhanceItem(item);
+                };
                 div.onclick = () => handleItemClick(item);
                 div.appendChild(sellBtn);
+                div.appendChild(enhanceBtn);
                 container.appendChild(div);
             }
 
@@ -2309,7 +2318,7 @@ function killMonster(monster) {
                 if (Math.random() < 0.2) bossItems.push('reviveScroll');
                 const bossItemKey = bossItems[Math.floor(Math.random() * bossItems.length)];
                 const pos = findAdjacentEmpty(monster.x, monster.y);
-                const bossItem = createItem(bossItemKey, pos.x, pos.y);
+                const bossItem = createItem(bossItemKey, pos.x, pos.y, null, Math.floor(gameState.floor / 5));
                 gameState.items.push(bossItem);
                 gameState.dungeon[pos.y][pos.x] = 'item';
                 addMessage(`🎁 ${monster.name}이(가) ${bossItem.name}을(를) 떨어뜨렸습니다!`, 'treasure');
@@ -2328,7 +2337,7 @@ function killMonster(monster) {
                         randomItemKey = 'reviveScroll';
                     }
                     const pos = findAdjacentEmpty(monster.x, monster.y);
-                    const droppedItem = createItem(randomItemKey, pos.x, pos.y);
+                    const droppedItem = createItem(randomItemKey, pos.x, pos.y, null, Math.floor(gameState.floor / 5));
                     gameState.items.push(droppedItem);
                     gameState.dungeon[pos.y][pos.x] = 'item';
                     addMessage(`📦 ${monster.name}이(가) ${droppedItem.name}을(를) 떨어뜨렸습니다!`, 'item');
@@ -2450,7 +2459,7 @@ function killMonster(monster) {
         }
 
         function dissectCorpse(corpse) {
-            const materialsPool = ['뼈', '가죽', 'bread', 'meat', 'rawMeat', 'lettuce'];
+            const materialsPool = ['bone', '가죽', 'bread', 'meat', 'rawMeat', 'lettuce'];
             const gained = [];
             const count = Math.floor(Math.random() * 3) + 1;
             for (let i = 0; i < count; i++) {
@@ -2976,7 +2985,7 @@ function killMonster(monster) {
                     y = Math.floor(Math.random() * size);
                 } while (gameState.dungeon[y][x] !== 'empty');
                 const key = spawnKeys[Math.floor(Math.random() * spawnKeys.length)];
-                const item = createItem(key, x, y);
+                const item = createItem(key, x, y, null, Math.floor(gameState.floor / 5));
                 gameState.items.push(item);
                 gameState.dungeon[y][x] = 'item';
             }
@@ -3213,7 +3222,7 @@ function killMonster(monster) {
         }
 
         // 아이템 생성 함수
-        function createItem(itemKey, x, y, prefixName) {
+        function createItem(itemKey, x, y, prefixName, enhanceLevel = 0) {
             const itemData = ITEMS[itemKey];
             const item = {
                 id: Math.random().toString(36).substr(2, 9),
@@ -3223,6 +3232,8 @@ function killMonster(monster) {
                 type: itemData.type,
                 x: x,
                 y: y,
+                enhanceLevel: enhanceLevel,
+                baseStats: {},
                 ...itemData
             };
 
@@ -3269,6 +3280,12 @@ function killMonster(monster) {
                 }
             }
 
+            for (const [k, v] of Object.entries(item)) {
+                if (typeof v === 'number' && !['x','y','level','price','incubation','enhanceLevel'].includes(k)) {
+                    item.baseStats[k] = v;
+                }
+            }
+            applyEnhancement(item);
             return item;
         }
 
@@ -3331,9 +3348,10 @@ function killMonster(monster) {
             const weaponChoices = keys.filter(k => ITEMS[k].type === ITEM_TYPES.WEAPON);
             const armorChoices = keys.filter(k => ITEMS[k].type === ITEM_TYPES.ARMOR);
             const accChoices = keys.filter(k => ITEMS[k].type === ITEM_TYPES.ACCESSORY);
-            if (weaponChoices.length) champion.equipped.weapon = createItem(weaponChoices[Math.floor(Math.random()*weaponChoices.length)], 0, 0);
-            if (armorChoices.length) champion.equipped.armor = createItem(armorChoices[Math.floor(Math.random()*armorChoices.length)], 0, 0);
-            if (accChoices.length) champion.equipped.accessory1 = createItem(accChoices[Math.floor(Math.random()*accChoices.length)], 0, 0);
+            const enhanceLv = Math.floor(level / 5);
+            if (weaponChoices.length) champion.equipped.weapon = createItem(weaponChoices[Math.floor(Math.random()*weaponChoices.length)], 0, 0, null, enhanceLv);
+            if (armorChoices.length) champion.equipped.armor = createItem(armorChoices[Math.floor(Math.random()*armorChoices.length)], 0, 0, null, enhanceLv);
+            if (accChoices.length) champion.equipped.accessory1 = createItem(accChoices[Math.floor(Math.random()*accChoices.length)], 0, 0, null, enhanceLv);
 
             const skillKeys = Object.keys(MONSTER_SKILLS);
             const sk = skillKeys[Math.floor(Math.random() * skillKeys.length)];
@@ -3385,6 +3403,37 @@ function killMonster(monster) {
                 updateInventoryDisplay();
                 updateStats();
             }
+        }
+
+        function getEnhanceCost(level) {
+            const qty = Math.pow(2, level - 1);
+            return { iron: qty, bone: qty };
+        }
+
+        function applyEnhancement(item) {
+            if (!item.baseStats) return;
+            for (const stat in item.baseStats) {
+                item[stat] = item.baseStats[stat] * Math.pow(1.5, item.enhanceLevel);
+            }
+        }
+
+        function enhanceItem(item) {
+            const next = (item.enhanceLevel || 0) + 1;
+            const cost = getEnhanceCost(next);
+            for (const [mat, qty] of Object.entries(cost)) {
+                if ((gameState.materials[mat] || 0) < qty) {
+                    addMessage('재료가 부족합니다.', 'info');
+                    return;
+                }
+            }
+            for (const [mat, qty] of Object.entries(cost)) {
+                gameState.materials[mat] -= qty;
+            }
+            item.enhanceLevel = next;
+            applyEnhancement(item);
+            addMessage(`🛠️ ${item.name} 강화 성공! (Lv.${next})`, 'item');
+            updateMaterialsDisplay();
+            updateInventoryDisplay();
         }
 
         // 아이템 클릭 시 대상 패널 표시
@@ -4478,7 +4527,7 @@ function processTurn() {
                             if (Math.random() < 0.2) bossItems.push('reviveScroll');
                             const bossItemKey = bossItems[Math.floor(Math.random() * bossItems.length)];
                             const pos = findAdjacentEmpty(nearestMonster.x, nearestMonster.y);
-                            const bossItem = createItem(bossItemKey, pos.x, pos.y);
+                            const bossItem = createItem(bossItemKey, pos.x, pos.y, null, Math.floor(gameState.floor / 5));
                             gameState.items.push(bossItem);
                             gameState.dungeon[pos.y][pos.x] = 'item';
                             addMessage(`🎁 ${nearestMonster.name}이(가) ${bossItem.name}을(를) 떨어뜨렸습니다!`, "treasure");
@@ -4494,7 +4543,7 @@ function processTurn() {
                             }
 
                             const pos = findAdjacentEmpty(nearestMonster.x, nearestMonster.y);
-                            const droppedItem = createItem(randomItemKey, pos.x, pos.y);
+                            const droppedItem = createItem(randomItemKey, pos.x, pos.y, null, Math.floor(gameState.floor / 5));
                             gameState.items.push(droppedItem);
                             gameState.dungeon[pos.y][pos.x] = 'item';
                             addMessage(`📦 ${nearestMonster.name}이(가) ${droppedItem.name}을(를) 떨어뜨렸습니다!`, "item");
@@ -4556,7 +4605,7 @@ function processTurn() {
                             if (Math.random() < 0.2) bossItems.push('reviveScroll');
                             const bossItemKey = bossItems[Math.floor(Math.random() * bossItems.length)];
                             const pos = findAdjacentEmpty(nearestMonster.x, nearestMonster.y);
-                            const bossItem = createItem(bossItemKey, pos.x, pos.y);
+                            const bossItem = createItem(bossItemKey, pos.x, pos.y, null, Math.floor(gameState.floor / 5));
                             gameState.items.push(bossItem);
                             gameState.dungeon[pos.y][pos.x] = 'item';
                             addMessage(`🎁 ${nearestMonster.name}이(가) ${bossItem.name}을(를) 떨어뜨렸습니다!`, "treasure");
@@ -4572,7 +4621,7 @@ function processTurn() {
                             }
 
                             const pos = findAdjacentEmpty(nearestMonster.x, nearestMonster.y);
-                            const droppedItem = createItem(randomItemKey, pos.x, pos.y);
+                            const droppedItem = createItem(randomItemKey, pos.x, pos.y, null, Math.floor(gameState.floor / 5));
                             gameState.items.push(droppedItem);
                             gameState.dungeon[pos.y][pos.x] = 'item';
                             addMessage(`📦 ${nearestMonster.name}이(가) ${droppedItem.name}을(를) 떨어뜨렸습니다!`, "item");
@@ -4643,7 +4692,7 @@ function processTurn() {
                             if (Math.random() < 0.2) bossItems.push('reviveScroll');
                             const bossItemKey = bossItems[Math.floor(Math.random() * bossItems.length)];
                             const pos = findAdjacentEmpty(nearestMonster.x, nearestMonster.y);
-                            const bossItem = createItem(bossItemKey, pos.x, pos.y);
+                            const bossItem = createItem(bossItemKey, pos.x, pos.y, null, Math.floor(gameState.floor / 5));
                             gameState.items.push(bossItem);
                             gameState.dungeon[pos.y][pos.x] = 'item';
                             addMessage(`🎁 ${nearestMonster.name}이(가) ${bossItem.name}을(를) 떨어뜨렸습니다!`, "treasure");
@@ -4659,7 +4708,7 @@ function processTurn() {
                             }
 
                             const pos = findAdjacentEmpty(nearestMonster.x, nearestMonster.y);
-                            const droppedItem = createItem(randomItemKey, pos.x, pos.y);
+                            const droppedItem = createItem(randomItemKey, pos.x, pos.y, null, Math.floor(gameState.floor / 5));
                             gameState.items.push(droppedItem);
                             gameState.dungeon[pos.y][pos.x] = 'item';
                             addMessage(`📦 ${nearestMonster.name}이(가) ${droppedItem.name}을(를) 떨어뜨렸습니다!`, "item");
@@ -4720,7 +4769,7 @@ function processTurn() {
                             if (Math.random() < 0.2) bossItems.push('reviveScroll');
                             const bossItemKey = bossItems[Math.floor(Math.random() * bossItems.length)];
                             const pos = findAdjacentEmpty(nearestMonster.x, nearestMonster.y);
-                            const bossItem = createItem(bossItemKey, pos.x, pos.y);
+                            const bossItem = createItem(bossItemKey, pos.x, pos.y, null, Math.floor(gameState.floor / 5));
                             gameState.items.push(bossItem);
                             gameState.dungeon[pos.y][pos.x] = 'item';
                             addMessage(`🎁 ${nearestMonster.name}이(가) ${bossItem.name}을(를) 떨어뜨렸습니다!`, "treasure");
@@ -4736,7 +4785,7 @@ function processTurn() {
                             }
 
                             const pos = findAdjacentEmpty(nearestMonster.x, nearestMonster.y);
-                            const droppedItem = createItem(randomItemKey, pos.x, pos.y);
+                            const droppedItem = createItem(randomItemKey, pos.x, pos.y, null, Math.floor(gameState.floor / 5));
                             gameState.items.push(droppedItem);
                             gameState.dungeon[pos.y][pos.x] = 'item';
                             addMessage(`📦 ${nearestMonster.name}이(가) ${droppedItem.name}을(를) 떨어뜨렸습니다!`, "item");
@@ -5450,7 +5499,7 @@ loadGame, meleeAttackAction, monsterAttack, movePlayer, nextFloor,
 processMercenaryTurn, processProjectiles, processTurn, purifyTarget, 
 rangedAction, recallMercenaries, recruitHatchedSuperior, handleHatchedMonsterClick,
 removeEggFromIncubator, renderDungeon, reviveMercenary, reviveMonsterCorpse,
-rollDice, saveGame, sellItem, setMercenaryLevel, setMonsterLevel, setChampionLevel,
+rollDice, saveGame, sellItem, enhanceItem, setMercenaryLevel, setMonsterLevel, setChampionLevel,
 showChampionDetails, showItemTargetPanel, showMercenaryDetails,
 showMonsterDetails, showShop, showSkillDamage, showAuraDetails, skill1Action, skill2Action,
 spawnMercenaryNearPlayer, startGame, swapActiveAndStandby, tryApplyStatus,
