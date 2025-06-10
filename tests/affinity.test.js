@@ -16,7 +16,7 @@ async function run() {
     killMonster,
     reviveMonsterCorpse,
     monsterAttack,
-    processTurn,
+    advanceGameLoop,
     showMercenaryDetails,
     gameState
   } = win;
@@ -40,7 +40,8 @@ async function run() {
     process.exit(1);
   }
   const before = merc.affinity;
-  processTurn();
+  gameState.player.energy = 100;
+  advanceGameLoop();
   if (merc.affinity <= before) {
     console.error('affinity did not increase');
     process.exit(1);
@@ -68,6 +69,8 @@ async function run() {
   const killer1 = createMonster('ZOMBIE', merc.x + 1, merc.y, 1);
   killer1.attack = 999;
   gameState.monsters.push(killer1);
+  win.Math.random = () => 0;
+  win.rollDice = () => 20;
   const beforeDeath = merc.affinity;
   monsterAttack(killer1);
   if (merc.affinity !== beforeDeath - 5) {
