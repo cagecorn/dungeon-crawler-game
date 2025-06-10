@@ -1870,7 +1870,11 @@ const MERCENARY_NAMES = [
         }
 
         function showMonsterDetails(monster) {
-            const auraInfo = monster.isElite && monster.auraSkill ? SKILL_DEFS[monster.auraSkill] : null;
+            const auraInfo = monster.isElite && monster.auraSkill
+                ? (SKILL_DEFS[monster.auraSkill] ||
+                   MERCENARY_SKILLS[monster.auraSkill] ||
+                   MONSTER_SKILLS[monster.auraSkill])
+                : null;
             const lvl = monster.skillLevels[monster.auraSkill] || 1;
             const auraLine = auraInfo
                 ? `<div>오라 스킬: <span class="merc-skill"
