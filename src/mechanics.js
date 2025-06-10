@@ -1674,7 +1674,7 @@ const MERCENARY_NAMES = ['Aldo', 'Borin', 'Cara', 'Dain', 'Elin', 'Faris'];
                 const nameSpan = document.createElement('span');
                 nameSpan.textContent = mon.name;
                 div.appendChild(nameSpan);
-                div.addEventListener('click', () => showMonsterDetails(mon));
+                div.addEventListener('click', () => handleHatchedMonsterClick(mon));
 
                 const btn = document.createElement('button');
                 btn.textContent = '영입';
@@ -1689,6 +1689,16 @@ const MERCENARY_NAMES = ['Aldo', 'Borin', 'Cara', 'Dain', 'Elin', 'Faris'];
             });
         }
 
+        function handleHatchedMonsterClick(mon) {
+            showMonsterDetails(mon);
+            const panel = document.getElementById('monster-detail-panel');
+            if (!panel || panel.style.display !== 'block') {
+                addMessage('알의 부화에 실패했습니다.', 'info');
+                const idx = gameState.hatchedSuperiors.indexOf(mon);
+                if (idx !== -1) gameState.hatchedSuperiors.splice(idx, 1);
+                updateIncubatorDisplay();
+            }
+        }
 
 
         // 용병 상세 정보 표시
@@ -5398,7 +5408,7 @@ hasLineOfSight, healAction, healTarget, hideItemTargetPanel,
 hideMercenaryDetails, hideMonsterDetails, hideShop, hireMercenary, killMonster, 
 loadGame, meleeAttackAction, monsterAttack, movePlayer, nextFloor, 
 processMercenaryTurn, processProjectiles, processTurn, purifyTarget, 
-rangedAction, recallMercenaries, recruitHatchedSuperior, 
+rangedAction, recallMercenaries, recruitHatchedSuperior, handleHatchedMonsterClick,
 removeEggFromIncubator, renderDungeon, reviveMercenary, reviveMonsterCorpse,
 rollDice, saveGame, sellItem, setMercenaryLevel, setMonsterLevel, setChampionLevel,
 showChampionDetails, showItemTargetPanel, showMercenaryDetails,
