@@ -3180,7 +3180,6 @@ function killMonster(monster) {
                 } while (gameState.dungeon[y][x] !== 'empty' || (x === 1 && y === 1));
                 const type = monsterTypes[Math.floor(Math.random() * (monsterTypes.length - 1))];
                 const monster = createMonster(type, x, y, gameState.floor);
-                monster.speed = (monster.speed || 0) + (mapModifiers.monsterSpeedBonus || 0);
                 gameState.monsters.push(monster);
                 gameState.dungeon[y][x] = 'monster';
             }
@@ -3198,7 +3197,6 @@ function killMonster(monster) {
             if (gameState.dungeon[cy][cx] === 'empty') {
                 const ct = champTypes[Math.floor(Math.random() * champTypes.length)];
                 const champ = createChampion(ct, cx, cy, gameState.floor);
-                champ.speed = (champ.speed || 0) + (mapModifiers.monsterSpeedBonus || 0);
                 gameState.monsters.push(champ);
                 gameState.dungeon[cy][cx] = 'monster';
             }
@@ -3211,7 +3209,6 @@ function killMonster(monster) {
             } while (gameState.dungeon[ey][ex] !== 'empty');
             const eType = monsterTypes[Math.floor(Math.random() * monsterTypes.length)];
             const elite = createEliteMonster(eType, ex, ey, gameState.floor);
-            elite.speed = (elite.speed || 0) + (mapModifiers.monsterSpeedBonus || 0);
             gameState.monsters.push(elite);
             gameState.dungeon[ey][ex] = 'monster';
             const around = 2 + Math.floor(Math.random() * 4);
@@ -3220,7 +3217,6 @@ function killMonster(monster) {
                 if (gameState.dungeon[pos.y][pos.x] !== 'empty') continue;
                 const t = monsterTypes[Math.floor(Math.random() * monsterTypes.length)];
                 const m = createMonster(t, pos.x, pos.y, gameState.floor);
-                m.speed = (m.speed || 0) + (mapModifiers.monsterSpeedBonus || 0);
                 gameState.monsters.push(m);
                 gameState.dungeon[pos.y][pos.x] = 'monster';
             }
