@@ -630,6 +630,15 @@
             background-color: #2196F3;
             width: 100%;
         }
+        .health-bar-container, .mana-bar-container {
+            width: 100%;
+            height: 10px;
+            background-color: #333;
+            border-radius: 5px;
+            margin: 2px 0;
+        }
+        .health-bar { background-color: #f44336; }
+        .mana-bar { background-color: #2196F3; }
         .turn-effects {
             background: #333;
             padding: 6px;
@@ -647,10 +656,6 @@
 <body>
     <h1>🏰 던전 크롤러 🗡️</h1>
     <div id="turn-effects" class="turn-effects"></div>
-    <div id="player-bars">
-        <div class="bar hp"><div id="hp-bar"></div></div>
-        <div class="bar mp"><div id="mp-bar"></div></div>
-    </div>
     <div class="main-container">
         <div class="game-area">
             <div class="dungeon-container">
@@ -720,6 +725,12 @@
                 <div>📖 지능: <span id="intelligenceStat">0</span></div>
                 <div>❤️ 체력: <span id="health">20</span>/<span id="maxHealth">20</span></div>
                 <div>🔋 마나: <span id="mana">10</span>/<span id="maxMana">10</span></div>
+                <div class="health-bar-container">
+                    <div class="health-bar" id="hp-bar"></div>
+                </div>
+                <div class="mana-bar-container">
+                    <div class="mana-bar" id="mp-bar"></div>
+                </div>
                 <div>🍗 배부름: <span id="fullness">0</span></div>
                 <div>❤️‍🩹 회복력: <span id="healthRegen">0</span></div>
                 <div>🔁 마나회복: <span id="manaRegen">1</span></div>
