@@ -3734,6 +3734,13 @@ function killMonster(monster) {
             const endurance = base.baseHealth / 2;
             const focus = (base.baseMaxMana || 0) / 2;
             const agility = Math.max(0, Math.round((base.baseAccuracy - 0.7) / 0.02));
+            let range = base.range || 1;
+            let special = base.special;
+            if (!special) {
+                if (type === 'WIZARD') { special = 'magic'; range = 4; }
+                else if (type === 'ARCHER') { special = 'ranged'; range = 3; }
+                else if (type === 'HEALER') { special = 'ranged'; range = 3; }
+            }
             const champion = {
                 id: Math.random().toString(36).substr(2, 9),
                 type,
@@ -3762,7 +3769,8 @@ function killMonster(monster) {
                 critChance: base.baseCritChance,
                 magicPower: base.baseMagicPower,
                 magicResist: base.baseMagicResist,
-                range: base.range || 1,
+                range: range,
+                special: special,
                 exp: level * 10,
                 gold: level * 10,
                 lootChance: 1,
