@@ -1546,8 +1546,11 @@ const MERCENARY_NAMES = ['Aldo', 'Borin', 'Cara', 'Dain', 'Elin', 'Faris'];
             waiting.innerHTML = '';
             gameState.hatchedSuperiors.forEach(mon => {
                 const div = document.createElement('div');
-                div.textContent = mon.name;
                 div.className = 'incubator-slot clickable';
+
+                const nameSpan = document.createElement('span');
+                nameSpan.textContent = mon.name;
+                div.appendChild(nameSpan);
                 div.addEventListener('click', () => showMonsterDetails(mon));
 
                 const btn = document.createElement('button');
@@ -1559,7 +1562,6 @@ const MERCENARY_NAMES = ['Aldo', 'Borin', 'Cara', 'Dain', 'Elin', 'Faris'];
                 });
                 div.appendChild(btn);
 
-                // div.addEventListener('click', () => showMonsterDetails(mon));
                 waiting.appendChild(div);
             });
         }
@@ -2700,8 +2702,11 @@ function killMonster(monster) {
                 gameState.player.equipped.weapon = fireSword;
                 const leatherArmor = createItem('leatherArmor', 0, 0);
                 gameState.player.equipped.armor = leatherArmor;
-                const egg = createItem('superiorEgg', 0, 0);
-                placeEggInIncubator(egg, 1);
+                // 시작 슈페리어 알을 플레이어 앞에 드랍하도록 수정
+                const starterEgg = createItem('superiorEgg', gameState.player.x + 1, gameState.player.y);
+                starterEgg.incubation = 1; // 이 알의 부화 시간을 1턴으로 특별히 설정
+                gameState.items.push(starterEgg);
+                gameState.dungeon[starterEgg.y][starterEgg.x] = 'item';
 
                 const essences = ['strengthEssence','agilityEssence','enduranceEssence','focusEssence','intelligenceEssence','skillLevelEssence'];
                 essences.forEach(k => {
