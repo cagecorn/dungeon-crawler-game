@@ -2366,7 +2366,8 @@ const MERCENARY_NAMES = [
                 statusEffect: data.statusEffect,
                 lootChance: 0.3,
                 fullness: 75,
-                hasActed: false
+                hasActed: false,
+                energy: 0
             };
             setMonsterLevel(monster, level);
             monster.skillLevels = {};
@@ -2640,6 +2641,7 @@ function killMonster(monster) {
                 affinity: 30,
                 fullness: 75,
                 hasActed: false,
+                energy: 0,
                 equipped: { weapon: null, armor: null, accessory1: null, accessory2: null },
                 range: monster.range,
                 special: monster.special,
@@ -3526,6 +3528,7 @@ function killMonster(monster) {
                 })(),
                 alive: true,
                 hasActed: false,
+                energy: 0,
                 affinity: 50,
                 fullness: 75,
                 equipped: {
@@ -4939,6 +4942,19 @@ function processTurn() {
             updateIncubatorDisplay();
         }
 
+        function advanceGameLoop() {
+            if (!gameState.gameRunning) return;
+            const playerEnergy = gameState.player.energy || 0;
+            const mercHasEnergy = gameState.activeMercenaries.some(m => (m.energy || 0) >= 100);
+            const monsterHasEnergy = gameState.monsters.some(m => (m.energy || 0) >= 100);
+            if (playerEnergy >= 100 || mercHasEnergy || monsterHasEnergy) {
+                processTurn();
+                gameState.player.energy = Math.max(0, playerEnergy - 100);
+                gameState.activeMercenaries.forEach(m => { m.energy = Math.max(0, (m.energy || 0) - 100); });
+                gameState.monsters.forEach(m => { m.energy = Math.max(0, (m.energy || 0) - 100); });
+            }
+        }
+
         // 용병 AI (개선됨 - 장비 보너스 적용, 안전성 체크 추가)
         function processMercenaryTurn(mercenary) {
             if (!mercenary.alive || mercenary.hasActed) return;
@@ -6189,7 +6205,7 @@ function processTurn() {
             }
         });
 const exportsObj = {
-gameState, addMessage, addToInventory, advanceIncubators, 
+gameState, addMessage, addToInventory, advanceIncubators, advanceGameLoop,
 applyStatusEffects, assignSkill, autoMoveStep, averageDice, buildAttackDetail, 
 buyShopItem, checkLevelUp, checkMercenaryLevelUp, checkMonsterLevelUp, 
 convertMonsterToMercenary, craftItem, createChampion, createEliteMonster, 

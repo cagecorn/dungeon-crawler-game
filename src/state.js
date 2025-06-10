@@ -18,6 +18,7 @@
       baseDefense: 0,
       maxHealth: 20,
       health: 20,
+      energy: 0,
       maxMana: 10,
       mana: 10,
       healthRegen: 0.3,
