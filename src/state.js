@@ -85,6 +85,7 @@
     shopItems: [],
     materials: { herb: 5, wood: 3, iron: 100, bone: 100, bread: 0, meat: 0, lettuce: 0 },
     knownRecipes: ['healthPotion', 'sandwich', 'salad'],
+    activeRecipes: ['healthPotion', 'sandwich', 'salad'],
     craftingQueue: [],
     floor: 1,
     dungeonSize: 80,

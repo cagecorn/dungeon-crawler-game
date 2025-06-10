@@ -1778,7 +1778,7 @@ const MERCENARY_NAMES = [
 
             const recipes = document.getElementById('recipe-list');
             recipes.innerHTML = '';
-            gameState.knownRecipes.forEach(key => {
+            gameState.activeRecipes.forEach(key => {
                 const r = RECIPES[key];
                 if (!r) return;
                 const div = document.createElement('div');
@@ -1827,6 +1827,23 @@ const MERCENARY_NAMES = [
                 const name = RECIPES[key]?.name || key;
                 addMessage(`📖 ${name} 레시피를 배웠습니다!`, 'item');
                 updateMaterialsDisplay();
+            }
+        }
+
+        function addRecipeToTab(key) {
+            if (!gameState.activeRecipes.includes(key)) {
+                gameState.activeRecipes.push(key);
+                updateMaterialsDisplay();
+                updateCraftingDetailDisplay();
+            }
+        }
+
+        function removeRecipeFromTab(key) {
+            const idx = gameState.activeRecipes.indexOf(key);
+            if (idx !== -1) {
+                gameState.activeRecipes.splice(idx, 1);
+                updateMaterialsDisplay();
+                updateCraftingDetailDisplay();
             }
         }
 
@@ -5669,6 +5686,7 @@ function processTurn() {
             const saved = JSON.parse(data);
             delete saved.mercenaries;
             Object.assign(gameState, saved);
+            gameState.activeRecipes = saved.activeRecipes || saved.knownRecipes;
             if (saved.player.statPoints === undefined) {
                 gameState.player.statPoints = 0;
             }
@@ -6232,6 +6250,39 @@ function processTurn() {
             gameState.gameRunning = true;
         }
 
+        function updateCraftingDetailDisplay() {
+            const list = document.getElementById('crafting-detail-list');
+            if (!list) return;
+            list.innerHTML = '';
+            gameState.knownRecipes.forEach(key => {
+                const r = RECIPES[key];
+                if (!r) return;
+                const div = document.createElement('div');
+                const btn = document.createElement('button');
+                if (gameState.activeRecipes.includes(key)) {
+                    btn.textContent = '빼기';
+                    btn.onclick = () => removeRecipeFromTab(key);
+                } else {
+                    btn.textContent = '넣기';
+                    btn.onclick = () => addRecipeToTab(key);
+                }
+                div.textContent = r.name + ' ';
+                div.appendChild(btn);
+                list.appendChild(div);
+            });
+        }
+
+        function showCraftingDetailPanel() {
+            updateCraftingDetailDisplay();
+            document.getElementById('crafting-detail-panel').style.display = 'block';
+            gameState.gameRunning = false;
+        }
+
+        function hideCraftingDetailPanel() {
+            document.getElementById('crafting-detail-panel').style.display = 'none';
+            gameState.gameRunning = true;
+        }
+
         function buyShopItem(index) {
             const item = gameState.shopItems[index];
             if (!item) return;
@@ -6306,6 +6357,13 @@ function processTurn() {
         document.getElementById('close-item-target').onclick = hideItemTargetPanel;
         document.getElementById('dungeon').addEventListener('click', handleDungeonClick);
         document.getElementById('pickup').onclick = pickUpAction;
+        const matPanel = document.getElementById('materials-panel');
+        matPanel.addEventListener('click', e => {
+            if (e.target === matPanel || e.target.tagName === 'H2') {
+                showCraftingDetailPanel();
+            }
+        });
+        document.getElementById('close-crafting-detail').onclick = hideCraftingDetailPanel;
 
         document.addEventListener('keydown', (e) => {
             if (e.key === 'ArrowUp') {
@@ -6383,7 +6441,9 @@ updateFogOfWar, updateIncubatorDisplay,
 updateInventoryDisplay, updateMaterialsDisplay, updateMercenaryDisplay,
 updateShopDisplay, updateSkillDisplay, updateStats, updateTurnEffects,
 upgradeMercenarySkill, upgradeMonsterSkill, useItem, useItemOnTarget, useSkill, removeMercenary,
-    dismiss, sacrifice, allocateStat, exitMap
+    dismiss, sacrifice, allocateStat, exitMap,
+    addRecipeToTab, removeRecipeFromTab,
+    updateCraftingDetailDisplay, showCraftingDetailPanel, hideCraftingDetailPanel
 };
 Object.assign(window, exportsObj, {SKILL_DEFS, MERCENARY_SKILLS, MONSTER_SKILLS, MONSTER_SKILL_SETS, MONSTER_TRAITS, MONSTER_TRAIT_SETS, PREFIXES, SUFFIXES, MAP_PREFIXES, MAP_SUFFIXES});
 
