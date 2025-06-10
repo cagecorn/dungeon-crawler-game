@@ -1761,15 +1761,16 @@ const MERCENARY_NAMES = [
                 : '';
             const skills = [merc.skill, merc.skill2].filter(Boolean);
             const skillHtml = skills.map(key => {
-                const info = MERCENARY_SKILLS[key] || MONSTER_SKILLS[key];
+                const info = MERCENARY_SKILLS[key] || MONSTER_SKILLS[key] || SKILL_DEFS[key];
+                if (!info) return `<div>스킬: ${key}</div>`;
                 const lvl = merc.skillLevels && merc.skillLevels[key] || 1;
                 const cost = (info.manaCost || 0) + lvl - 1;
                 const mpText = info.manaCost ? ` (MP ${cost})` : '';
-                const defs = MERCENARY_SKILLS[key] ? 'MERCENARY_SKILLS' : 'MONSTER_SKILLS';
+                const defs = MERCENARY_SKILLS[key] ? 'MERCENARY_SKILLS' : MONSTER_SKILLS[key] ? 'MONSTER_SKILLS' : 'SKILL_DEFS';
                 const levelUp = (MERCENARY_SKILLS[key] || MONSTER_SKILLS[key])
                     ? ` <button onclick="upgradeMercenarySkill(window.currentDetailMercenary,'${key}')">레벨업</button>`
                     : '';
-                return `<div><span class="merc-skill" onclick="showSkillDamage(window.currentDetailMercenary,'${key}',${defs})">${info.icon} ${info.name} Lv.${lvl}${mpText}</span>${levelUp}</div>`;
+                return `<div><span class="merc-skill" onclick="showSkillDamage(window.currentDetailMercenary,'${key}',${defs})">${info.icon || ''} ${info.name || key} Lv.${lvl}${mpText}</span>${levelUp}</div>`;
             }).join('');
 
             const actionBtn = merc.affinity >= 200
