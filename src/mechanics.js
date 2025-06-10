@@ -1484,16 +1484,18 @@ const MERCENARY_NAMES = [
                     e.stopPropagation();
                     sellItem(item);
                 };
-                const enhanceBtn = document.createElement('button');
-                enhanceBtn.textContent = '강화';
-                enhanceBtn.className = 'enhance-button';
-                enhanceBtn.onclick = (e) => {
-                    e.stopPropagation();
-                    enhanceItem(item);
-                };
                 div.onclick = () => handleItemClick(item);
                 div.appendChild(sellBtn);
-                div.appendChild(enhanceBtn);
+                if (item.type === ITEM_TYPES.WEAPON || item.type === ITEM_TYPES.ARMOR || item.type === ITEM_TYPES.ACCESSORY) {
+                    const enhanceBtn = document.createElement('button');
+                    enhanceBtn.textContent = '강화';
+                    enhanceBtn.className = 'enhance-button';
+                    enhanceBtn.onclick = (e) => {
+                        e.stopPropagation();
+                        enhanceItem(item);
+                    };
+                    div.appendChild(enhanceBtn);
+                }
                 container.appendChild(div);
             }
 
@@ -3418,6 +3420,10 @@ function killMonster(monster) {
         }
 
         function enhanceItem(item) {
+            if (item.type !== ITEM_TYPES.WEAPON && item.type !== ITEM_TYPES.ARMOR && item.type !== ITEM_TYPES.ACCESSORY) {
+                addMessage('강화할 수 없는 아이템입니다.', 'info');
+                return;
+            }
             const next = (item.enhanceLevel || 0) + 1;
             const cost = getEnhanceCost(next);
             for (const [mat, qty] of Object.entries(cost)) {
