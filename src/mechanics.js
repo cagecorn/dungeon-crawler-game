@@ -1646,7 +1646,7 @@ const MERCENARY_NAMES = [
                 sellBtn.className = 'sell-button';
                 sellBtn.onclick = (e) => {
                     e.stopPropagation();
-                    sellItem(item);
+                    confirmAndSell(item);
                 };
                 div.onclick = () => handleItemClick(item);
                 div.appendChild(sellBtn);
@@ -3789,6 +3789,11 @@ function killMonster(monster) {
                 updateInventoryDisplay();
                 updateStats();
             }
+        }
+
+        function confirmAndSell(item) {
+            if (typeof confirm === 'function' && !confirm(`${item.name}을(를) 판매하시겠습니까?`)) return;
+            sellItem(item);
         }
 
         function getEnhanceCost(level) {
@@ -6042,7 +6047,7 @@ loadGame, meleeAttackAction, monsterAttack, movePlayer, nextFloor,
 processMercenaryTurn, processProjectiles, processTurn, purifyTarget, 
 rangedAction, recallMercenaries, recruitHatchedSuperior, handleHatchedMonsterClick,
 removeEggFromIncubator, renderDungeon, reviveMercenary, reviveMonsterCorpse,
-rollDice, saveGame, sellItem, enhanceItem, setMercenaryLevel, setMonsterLevel, setChampionLevel,
+rollDice, saveGame, sellItem, confirmAndSell, enhanceItem, setMercenaryLevel, setMonsterLevel, setChampionLevel,
 showChampionDetails, showItemTargetPanel, showMercenaryDetails,
 showMonsterDetails, showShop, showSkillDamage, showAuraDetails, skill1Action, skill2Action,
 spawnMercenaryNearPlayer, startGame, swapActiveAndStandby, tryApplyStatus,
