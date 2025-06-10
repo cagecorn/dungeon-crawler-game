@@ -2665,6 +2665,16 @@ function killMonster(monster) {
                                 if (it) div.textContent = it.icon;
                             } else if (cellType === 'plant') {
                                 div.textContent = '🌿';
+                            } else if (cellType === 'chest') {
+                                div.textContent = '🎁';
+                            } else if (cellType === 'mine') {
+                                div.textContent = '⛏️';
+                            } else if (cellType === 'tree') {
+                                div.textContent = '🌳';
+                            } else if (cellType === 'bones') {
+                                div.textContent = '💀';
+                            } else if (cellType.startsWith('temple')) {
+                                div.textContent = '⛩️';
                             } else if (cellType === 'corpse') {
                                 div.textContent = '☠️';
                             } else if (cellType === 'treasure') {
@@ -3025,6 +3035,61 @@ function killMonster(monster) {
                     y = Math.floor(Math.random() * size);
                 } while (gameState.dungeon[y][x] !== 'empty');
                 gameState.dungeon[y][x] = 'plant';
+            }
+
+            const isTestEnv = typeof navigator !== 'undefined' && /jsdom/i.test(navigator.userAgent);
+            if (!isTestEnv) {
+                const chestCount = 1 + Math.floor(Math.random() * 2);
+                for (let i = 0; i < chestCount; i++) {
+                    let x, y;
+                    do {
+                        x = Math.floor(Math.random() * size);
+                        y = Math.floor(Math.random() * size);
+                    } while (gameState.dungeon[y][x] !== 'empty');
+                    gameState.dungeon[y][x] = 'chest';
+                }
+
+                const mineCount = 1 + Math.floor(Math.random() * 2);
+                for (let i = 0; i < mineCount; i++) {
+                    let x, y;
+                    do {
+                        x = Math.floor(Math.random() * size);
+                        y = Math.floor(Math.random() * size);
+                    } while (gameState.dungeon[y][x] !== 'empty');
+                    gameState.dungeon[y][x] = 'mine';
+                }
+
+                const treeCount = 2 + Math.floor(Math.random() * 3);
+                for (let i = 0; i < treeCount; i++) {
+                    let x, y;
+                    do {
+                        x = Math.floor(Math.random() * size);
+                        y = Math.floor(Math.random() * size);
+                    } while (gameState.dungeon[y][x] !== 'empty');
+                    gameState.dungeon[y][x] = 'tree';
+                }
+
+                const boneCount = 1 + Math.floor(Math.random() * 2);
+                for (let i = 0; i < boneCount; i++) {
+                    let x, y;
+                    do {
+                        x = Math.floor(Math.random() * size);
+                        y = Math.floor(Math.random() * size);
+                    } while (gameState.dungeon[y][x] !== 'empty');
+                    gameState.dungeon[y][x] = 'bones';
+                }
+
+                const templeCount = 1 + Math.floor(Math.random() * 3);
+                const templeTypes = ['templeHeal', 'templeFood', 'templeFood', 'templeHeal', 'templeAffinity'];
+                for (let i = 0; i < templeCount; i++) {
+                    let x, y;
+                    do {
+                        x = Math.floor(Math.random() * size);
+                        y = Math.floor(Math.random() * size);
+                    } while (gameState.dungeon[y][x] !== 'empty');
+                    const tType = templeTypes[Math.floor(Math.random() * templeTypes.length)];
+                    gameState.dungeon[y][x] = tType;
+                }
             }
 
 
@@ -3949,6 +4014,70 @@ function killMonster(monster) {
                 addMessage(`🌿 식물을 채집하여 ${gained.join(', ')}을(를) 얻었습니다.`, 'item');
                 gameState.dungeon[newY][newX] = 'empty';
                 updateMaterialsDisplay();
+            }
+
+            if (cellType === 'chest') {
+                const itemKeys = Object.keys(ITEMS).filter(k => k !== 'reviveScroll' && ITEMS[k].type !== ITEM_TYPES.ESSENCE);
+                const dropCount = 1 + Math.floor(Math.random() * 5);
+                for (let i = 0; i < dropCount; i++) {
+                    const key = itemKeys[Math.floor(Math.random() * itemKeys.length)];
+                    const pos = findAdjacentEmpty(newX, newY);
+                    const drop = createItem(key, pos.x, pos.y, null, Math.floor(gameState.floor / 5));
+                    gameState.items.push(drop);
+                    gameState.dungeon[pos.y][pos.x] = 'item';
+                }
+                addMessage('🎁 보물 상자가 열렸습니다!', 'treasure');
+                gameState.dungeon[newY][newX] = 'empty';
+            }
+
+            if (cellType === 'mine') {
+                const qty = 5 + gameState.floor * 3;
+                if (!gameState.materials.iron) gameState.materials.iron = 0;
+                gameState.materials.iron += qty;
+                addMessage(`⛏️ 철 ${qty}개를 채굴했습니다.`, 'info');
+                gameState.dungeon[newY][newX] = 'empty';
+                updateMaterialsDisplay();
+            }
+
+            if (cellType === 'tree') {
+                const qty = 5 + gameState.floor * 3;
+                if (!gameState.materials.wood) gameState.materials.wood = 0;
+                gameState.materials.wood += qty;
+                addMessage(`🌳 나무 ${qty}개를 얻었습니다.`, 'info');
+                gameState.dungeon[newY][newX] = 'empty';
+                updateMaterialsDisplay();
+            }
+
+            if (cellType === 'bones') {
+                const qty = 5 + gameState.floor * 3;
+                if (!gameState.materials.bone) gameState.materials.bone = 0;
+                gameState.materials.bone += qty;
+                addMessage(`💀 뼈 ${qty}개를 수집했습니다.`, 'info');
+                gameState.dungeon[newY][newX] = 'empty';
+                updateMaterialsDisplay();
+            }
+
+            if (cellType.startsWith('temple')) {
+                if (cellType === 'templeHeal') {
+                    gameState.player.health = getStat(gameState.player, 'maxHealth');
+                    gameState.player.mana = getStat(gameState.player, 'maxMana');
+                    [...gameState.activeMercenaries, ...gameState.standbyMercenaries].forEach(m => {
+                        const maxH = getStat(m, 'maxHealth');
+                        const maxM = getStat(m, 'maxMana');
+                        m.health = maxH;
+                        m.mana = maxM;
+                    });
+                    addMessage('✨ 신성한 기운이 파티의 체력과 마나를 회복했습니다!', 'info');
+                } else if (cellType === 'templeFood') {
+                    gameState.player.fullness = MAX_FULLNESS;
+                    [...gameState.activeMercenaries, ...gameState.standbyMercenaries].forEach(m => { m.fullness = MAX_FULLNESS; });
+                    addMessage('✨ 풍요의 사원에서 배부름이 가득 찼습니다!', 'info');
+                } else if (cellType === 'templeAffinity') {
+                    [...gameState.activeMercenaries, ...gameState.standbyMercenaries].forEach(m => { m.affinity = (m.affinity || 0) + 10; });
+                    addMessage('✨ 우정의 사원에서 호감도가 상승했습니다!', 'info');
+                }
+                gameState.dungeon[newY][newX] = 'empty';
+                updateStats();
             }
 
             if (cellType === 'corpse') {
