@@ -2366,8 +2366,7 @@ const MERCENARY_NAMES = [
                 statusEffect: data.statusEffect,
                 lootChance: 0.3,
                 fullness: 75,
-                hasActed: false,
-                energy: 0
+                hasActed: false
             };
             setMonsterLevel(monster, level);
             monster.skillLevels = {};
@@ -2515,6 +2514,32 @@ function findAdjacentEmpty(x, y) {
             return {x, y};
         }
 
+function findNearestEmpty(x, y) {
+            const size = gameState.dungeonSize;
+            const visited = Array.from({ length: size }, () => Array(size).fill(false));
+            const queue = [{x, y}];
+            visited[y][x] = true;
+            const dirs = [
+                {dx:1, dy:0}, {dx:-1, dy:0}, {dx:0, dy:1}, {dx:0, dy:-1},
+                {dx:1, dy:1}, {dx:-1, dy:-1}, {dx:1, dy:-1}, {dx:-1, dy:1}
+            ];
+            while (queue.length) {
+                const cur = queue.shift();
+                if (gameState.dungeon[cur.y] && gameState.dungeon[cur.y][cur.x] === 'empty') {
+                    return {x: cur.x, y: cur.y};
+                }
+                for (const d of dirs) {
+                    const nx = cur.x + d.dx;
+                    const ny = cur.y + d.dy;
+                    if (nx >= 0 && nx < size && ny >= 0 && ny < size && !visited[ny][nx]) {
+                        visited[ny][nx] = true;
+                        queue.push({x:nx, y:ny});
+                    }
+                }
+            }
+            return {x, y};
+        }
+
 function killMonster(monster) {
             addMessage(`💀 ${monster.name}을(를) 처치했습니다!`, 'combat');
             gameState.player.exp += monster.exp;
@@ -2641,7 +2666,6 @@ function killMonster(monster) {
                 affinity: 30,
                 fullness: 75,
                 hasActed: false,
-                energy: 0,
                 equipped: { weapon: null, armor: null, accessory1: null, accessory2: null },
                 range: monster.range,
                 special: monster.special,
@@ -3528,7 +3552,6 @@ function killMonster(monster) {
                 })(),
                 alive: true,
                 hasActed: false,
-                energy: 0,
                 affinity: 50,
                 fullness: 75,
                 equipped: {
@@ -4658,6 +4681,19 @@ function killMonster(monster) {
             renderDungeon();
         }
 
+        function exitMap(returnState) {
+            generateDungeon();
+            let { x, y } = returnState;
+            if (!gameState.dungeon[y] || gameState.dungeon[y][x] !== 'empty') {
+                const pos = findNearestEmpty(x, y);
+                x = pos.x;
+                y = pos.y;
+            }
+            gameState.player.x = x;
+            gameState.player.y = y;
+            renderDungeon();
+        }
+
         // 턴 처리 (최적화됨)
 function processTurn() {
     if (!gameState.gameRunning) return;
@@ -4940,19 +4976,6 @@ function processTurn() {
             updateMaterialsDisplay();
             advanceIncubators();
             updateIncubatorDisplay();
-        }
-
-        function advanceGameLoop() {
-            if (!gameState.gameRunning) return;
-            const playerEnergy = gameState.player.energy || 0;
-            const mercHasEnergy = gameState.activeMercenaries.some(m => (m.energy || 0) >= 100);
-            const monsterHasEnergy = gameState.monsters.some(m => (m.energy || 0) >= 100);
-            if (playerEnergy >= 100 || mercHasEnergy || monsterHasEnergy) {
-                processTurn();
-                gameState.player.energy = Math.max(0, playerEnergy - 100);
-                gameState.activeMercenaries.forEach(m => { m.energy = Math.max(0, (m.energy || 0) - 100); });
-                gameState.monsters.forEach(m => { m.energy = Math.max(0, (m.energy || 0) - 100); });
-            }
         }
 
         // 용병 AI (개선됨 - 장비 보너스 적용, 안전성 체크 추가)
@@ -6205,15 +6228,15 @@ function processTurn() {
             }
         });
 const exportsObj = {
-gameState, addMessage, addToInventory, advanceIncubators, advanceGameLoop,
+gameState, addMessage, addToInventory, advanceIncubators, 
 applyStatusEffects, assignSkill, autoMoveStep, averageDice, buildAttackDetail, 
 buyShopItem, checkLevelUp, checkMercenaryLevelUp, checkMonsterLevelUp, 
 convertMonsterToMercenary, craftItem, createChampion, createEliteMonster, 
 createHomingProjectile, createItem, createMercenary, createMonster,
 createRecipeScroll, learnRecipe,
 createSuperiorMonster, createTreasure, createNovaEffect, createScreenShake, dissectCorpse, equipItem,
-equipItemToMercenary, estimateSkillDamage, findAdjacentEmpty, findPath,
-formatItem, formatNumber, generateDungeon, generateStars, getAuraBonus, 
+equipItemToMercenary, estimateSkillDamage, findAdjacentEmpty, findNearestEmpty, findPath,
+formatItem, formatNumber, generateDungeon, generateStars, getAuraBonus,
 getDistance, getMonsterPoolForFloor, getPlayerEmoji, getStat, getStatusResist, 
 handleDungeonClick, handleItemClick, handlePlayerDeath, 
 hasLineOfSight, healAction, healTarget, hideItemTargetPanel, 
@@ -6231,7 +6254,7 @@ updateFogOfWar, updateIncubatorDisplay,
 updateInventoryDisplay, updateMaterialsDisplay, updateMercenaryDisplay,
 updateShopDisplay, updateSkillDisplay, updateStats, updateTurnEffects,
 upgradeMercenarySkill, upgradeMonsterSkill, useItem, useItemOnTarget, useSkill, removeMercenary,
-    dismiss, sacrifice, allocateStat
+    dismiss, sacrifice, allocateStat, exitMap
 };
 Object.assign(window, exportsObj, {SKILL_DEFS, MERCENARY_SKILLS, MONSTER_SKILLS, MONSTER_SKILL_SETS, MONSTER_TRAITS, MONSTER_TRAIT_SETS, PREFIXES, SUFFIXES});
 
