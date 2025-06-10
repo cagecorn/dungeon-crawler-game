@@ -111,6 +111,16 @@ You can now cultivate monsters for equipment. Bury a defeated foe on a farm tile
 
 Gear can be leveled up using materials like **iron** and **bone**. Each enhancement level increases all of an item's stats by **50%**. Press the **강화** button beside an item in your inventory to spend the materials and apply the upgrade. Players now begin the game with **100** iron and **100** bone so you can enhance equipment right away.
 
+### Special Tiles
+
+Dungeon floors contain several interactive tiles:
+
+- **Treasure Chests** scatter 1–5 random items around them when opened.
+- **Mines** grant large amounts of **iron**.
+- **Trees** provide plenty of **wood**.
+- **Bone Piles** yield lots of **bone**.
+- **Temples** come in three colors and either fully heal the party, restore fullness or raise affinity by 10. Each temple disappears after use.
+
 ## Development
 
 Install dependencies with:
