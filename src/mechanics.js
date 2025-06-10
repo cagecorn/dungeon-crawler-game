@@ -5244,7 +5244,17 @@ function processTurn() {
 
             const dx = Math.sign(target.x - gameState.player.x);
             const dy = Math.sign(target.y - gameState.player.y);
-            gameState.projectiles.push({ x: gameState.player.x, y: gameState.player.y, dx, dy, rangeLeft: dist, icon: '➡️', element: null });
+            gameState.projectiles.push({
+                x: gameState.player.x,
+                y: gameState.player.y,
+                dx,
+                dy,
+                rangeLeft: dist,
+                icon: '➡️',
+                element: null,
+                homing: true,
+                target
+            });
             processTurn();
         }
 
@@ -5489,7 +5499,24 @@ function processTurn() {
             const dx = Math.sign(target.x - gameState.player.x);
             const dy = Math.sign(target.y - gameState.player.y);
             gameState.player.mana -= manaCost;
-            gameState.projectiles.push({ x: gameState.player.x, y: gameState.player.y, dx, dy, rangeLeft: dist, icon: skill.icon, damageDice: skill.damageDice, magic: skill.magic, skill: skillKey, element: skill.element, level });
+            const proj = {
+                x: gameState.player.x,
+                y: gameState.player.y,
+                dx,
+                dy,
+                rangeLeft: dist,
+                icon: skill.icon,
+                damageDice: skill.damageDice,
+                magic: skill.magic,
+                skill: skillKey,
+                element: skill.element,
+                level
+            };
+            if (skillKey === 'Fireball' || skillKey === 'Iceball') {
+                proj.homing = true;
+                proj.target = target;
+            }
+            gameState.projectiles.push(proj);
             processTurn();
         }
 
