@@ -97,11 +97,13 @@
     hatchedSuperiors: [],
     gameRunning: true
   };
+  const mapModifiers = { monsterSpeedBonus: 0 };
   global.gameState = gameState;
+  global.mapModifiers = mapModifiers;
   global.MONSTER_VISION = MONSTER_VISION;
   global.FOG_RADIUS = FOG_RADIUS;
   global.MERCENARY_TRIGGER_DISTANCE = MERCENARY_TRIGGER_DISTANCE;
   if (typeof module !== 'undefined' && module.exports) {
-    module.exports = { gameState, MONSTER_VISION, FOG_RADIUS, MERCENARY_TRIGGER_DISTANCE };
+    module.exports = { gameState, MONSTER_VISION, FOG_RADIUS, MERCENARY_TRIGGER_DISTANCE, mapModifiers };
   }
 })(typeof globalThis !== 'undefined' ? globalThis : this);
