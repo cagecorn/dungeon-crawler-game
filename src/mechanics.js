@@ -2681,6 +2681,8 @@ function killMonster(monster) {
                                 div.textContent = '🌳';
                             } else if (cellType === 'bones') {
                                 div.textContent = '💀';
+                            } else if (cellType === 'grave') {
+                                div.textContent = '🪦';
                             } else if (cellType.startsWith('temple')) {
                                 div.textContent = '⛩️';
                             } else if (cellType === 'corpse') {
@@ -3097,6 +3099,16 @@ function killMonster(monster) {
                     } while (gameState.dungeon[y][x] !== 'empty');
                     const tType = templeTypes[Math.floor(Math.random() * templeTypes.length)];
                     gameState.dungeon[y][x] = tType;
+                }
+
+                const graveCount = 1 + Math.floor(Math.random() * 2);
+                for (let i = 0; i < graveCount; i++) {
+                    let x, y;
+                    do {
+                        x = Math.floor(Math.random() * size);
+                        y = Math.floor(Math.random() * size);
+                    } while (gameState.dungeon[y][x] !== 'empty');
+                    gameState.dungeon[y][x] = 'grave';
                 }
             }
 
@@ -4161,6 +4173,45 @@ function killMonster(monster) {
                 addMessage(`💀 뼈 ${qty}개를 수집했습니다.`, 'info');
                 gameState.dungeon[newY][newX] = 'empty';
                 updateMaterialsDisplay();
+            }
+
+            if (cellType === 'grave') {
+                const accept = (typeof confirm === 'function' ? confirm('무덤을 조사하시겠습니까?') : true);
+                if (accept) {
+                    const itemKeys = Object.keys(ITEMS).filter(k => ITEMS[k].level > Math.ceil(gameState.floor / 2 + 1));
+                    const dropCount = 2 + Math.floor(Math.random() * 2);
+                    for (let i = 0; i < dropCount; i++) {
+                        let key = itemKeys[Math.floor(Math.random() * itemKeys.length)];
+                        if (Math.random() < 0.2) key = 'superiorEgg';
+                        const pos = findAdjacentEmpty(newX, newY);
+                        const drop = createItem(key, pos.x, pos.y, null, Math.floor(gameState.floor / 5) + 1);
+                        gameState.items.push(drop);
+                        gameState.dungeon[pos.y][pos.x] = 'item';
+                    }
+
+                    const matQty = 10 + gameState.floor * 5;
+                    ['wood', 'iron', 'bone'].forEach(mat => {
+                        if (!gameState.materials[mat]) gameState.materials[mat] = 0;
+                        gameState.materials[mat] += matQty;
+                    });
+                    const goldGain = 100 + gameState.floor * 50;
+                    gameState.player.gold += goldGain;
+
+                    const monsterTypes = getMonsterPoolForFloor(gameState.floor + 1);
+                    const spawn = 3 + Math.floor(Math.random() * 3);
+                    for (let i = 0; i < spawn; i++) {
+                        const pos = findAdjacentEmpty(newX, newY);
+                        if (gameState.dungeon[pos.y][pos.x] !== 'empty') continue;
+                        const t = monsterTypes[Math.floor(Math.random() * monsterTypes.length)];
+                        const m = createMonster(t, pos.x, pos.y, gameState.floor + 1);
+                        gameState.monsters.push(m);
+                        gameState.dungeon[pos.y][pos.x] = 'monster';
+                    }
+
+                    updateMaterialsDisplay();
+                    updateStats();
+                }
+                gameState.dungeon[newY][newX] = 'empty';
             }
 
             if (cellType.startsWith('temple')) {
