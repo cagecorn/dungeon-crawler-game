@@ -25,9 +25,10 @@ async function run() {
   win.rollDice = () => 10;
 
   let captured;
-  win.performAttack = (attacker, defender, opts) => {
+  const origPerform = win.performAttack;
+  win.performAttack = (attacker, defender, opts, skillName) => {
     captured = opts;
-    return { hit: true, crit: false, baseDamage: 0, elementDamage: 0 };
+    return origPerform(attacker, defender, opts, skillName);
   };
 
   processProjectiles();

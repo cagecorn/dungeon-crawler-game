@@ -23,7 +23,7 @@ async function run() {
   win.rollDice = notation => (notation.includes('20') ? 20 : 1);
   win.Math.random = () => 0;
 
-  const result = performAttack(gameState.player, monster, { element: 'wind', damageDice: '1d4' });
+  const result = performAttack(gameState.player, monster, { element: 'wind', damageDice: '1d4' }, 'test');
   if (result.elementDamage !== getStat(gameState.player, 'windDamage')) {
     console.error('element damage not applied');
     process.exit(1);
