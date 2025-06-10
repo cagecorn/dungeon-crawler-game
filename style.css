@@ -5,3 +5,10 @@
   background-repeat: no-repeat;
   color: transparent;
 }
+
+/* Floor tile image for empty cells */
+.cell.empty {
+  background-image: url("assets/images/floor-tile.png");
+  background-size: cover;
+  background-color: transparent;
+}
