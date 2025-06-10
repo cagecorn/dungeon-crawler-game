@@ -20,6 +20,16 @@ async function loadGame(options = {}) {
     else dom.window.addEventListener('load', resolve);
   });
 
+  Object.defineProperty(dom.window, 'localStorage', {
+    configurable: true,
+    value: {
+      _data: {},
+      getItem(key) { return this._data[key] || null; },
+      setItem(key, value) { this._data[key] = String(value); },
+      removeItem(key) { delete this._data[key]; }
+    }
+  });
+
   const ctx = dom.getInternalVMContext();
   const modules = ['src/state.js', 'src/ui.js', 'src/mechanics.js'];
   for (const file of modules) {
