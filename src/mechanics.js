@@ -1,4 +1,102 @@
-        const ITEM_TYPES = {
+/**
+ * Web Audio API를 사용한 간단한 사운드 엔진
+ * 오디오 파일 없이 효과음을 생성합니다.
+ */
+const SoundEngine = {
+    audioContext: null,
+    isInitialized: false,
+
+    // 게임 시작 시 한 번만 호출되어야 합니다. (사용자 상호작용 후)
+    initialize() {
+        if (this.isInitialized) return;
+        try {
+            this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            this.isInitialized = true;
+            console.log("Sound Engine Initialized.");
+        } catch (e) {
+            console.error("Web Audio API is not supported in this browser.");
+        }
+    },
+
+    // 지정된 이름의 사운드를 재생하는 핵심 함수
+    playSound(soundName) {
+        if (!this.isInitialized) return;
+
+        const now = this.audioContext.currentTime;
+        const gainNode = this.audioContext.createGain();
+        gainNode.connect(this.audioContext.destination);
+
+        // 사운드 '레시피'에 따라 소리를 디자인합니다.
+        switch (soundName) {
+            case 'playerAttack':
+                // 짧고 날카로운 '휙' 소리
+                gainNode.gain.setValueAtTime(0.3, now);
+                gainNode.gain.exponentialRampToValueAtTime(0.001, now + 0.15);
+                this.createOscillator('sawtooth', 440, gainNode, now, 0.15);
+                this.createOscillator('sawtooth', 880, gainNode, now, 0.15, 0.02);
+                break;
+
+            case 'takeDamage':
+                // 낮고 둔탁한 '퍽' 소리
+                gainNode.gain.setValueAtTime(0.4, now);
+                gainNode.gain.exponentialRampToValueAtTime(0.001, now + 0.2);
+                this.createOscillator('square', 100, gainNode, now, 0.2);
+                break;
+            
+            case 'getItem':
+                // 밝고 높은 '뿅' 소리
+                gainNode.gain.setValueAtTime(0.2, now);
+                gainNode.gain.exponentialRampToValueAtTime(0.001, now + 0.2);
+                this.createOscillator('sine', 900, gainNode, now, 0.1);
+                this.createOscillator('sine', 1200, gainNode, now + 0.1, 0.1);
+                break;
+
+            case 'levelUp':
+                // 상승하는 '따라란~' 소리
+                this.playNote('triangle', 523, 0.2, now);      // C5
+                this.playNote('triangle', 659, 0.2, now + 0.1); // E5
+                this.playNote('triangle', 784, 0.2, now + 0.2); // G5
+                this.playNote('triangle', 1046, 0.3, now + 0.3); // C6
+                break;
+            
+            case 'monsterDie':
+                 // 힘이 빠지는 '푸슉' 소리
+                gainNode.gain.setValueAtTime(0.3, now);
+                gainNode.gain.linearRampToValueAtTime(0, now + 0.4);
+                const osc = this.audioContext.createOscillator();
+                osc.type = 'noise'; // 화이트 노이즈 사용
+                osc.connect(gainNode);
+                osc.start(now);
+                osc.stop(now + 0.4);
+                break;
+        }
+    },
+
+    // Oscillator(소리 톤) 생성을 돕는 헬퍼 함수
+    createOscillator(type, frequency, destination, startTime, duration, detune = 0) {
+        const osc = this.audioContext.createOscillator();
+        osc.type = type; // 'sine', 'square', 'sawtooth', 'triangle' 또는 'noise'
+        osc.frequency.setValueAtTime(frequency, startTime);
+        osc.detune.setValueAtTime(detune, startTime);
+        osc.connect(destination);
+        osc.start(startTime);
+        osc.stop(startTime + duration);
+    },
+
+    // 단일 노트를 재생하는 헬퍼 함수 (레벨업 효과용)
+    playNote(type, frequency, volume, startTime) {
+        const gainNode = this.audioContext.createGain();
+        gainNode.connect(this.audioContext.destination);
+        gainNode.gain.setValueAtTime(volume, startTime);
+        gainNode.gain.exponentialRampToValueAtTime(0.001, startTime + 0.5);
+        this.createOscillator(type, frequency, gainNode, startTime, 0.5);
+    }
+};
+if (typeof window !== 'undefined') {
+    window.SoundEngine = SoundEngine;
+}
+
+const ITEM_TYPES = {
             WEAPON: 'weapon',
             ARMOR: 'armor',
             ACCESSORY: 'accessory',
@@ -1407,6 +1505,7 @@ const MERCENARY_NAMES = [
 
             let damage = baseDamage + elementDamage;
             defender.health -= damage;
+            SoundEngine.playSound('takeDamage'); // 데미지 입는 소리 재생
 
             let statusApplied = false;
             const statusEffects = [];
@@ -2582,6 +2681,7 @@ function findNearestEmpty(x, y) {
         }
 
 function killMonster(monster) {
+            SoundEngine.playSound('monsterDie'); // 몬스터 사망음 재생
             addMessage(`💀 ${monster.name}을(를) 처치했습니다!`, 'combat');
             gameState.player.exp += monster.exp;
             let goldGain = monster.gold;
@@ -3027,6 +3127,7 @@ function killMonster(monster) {
                 gameState.player.health = getStat(gameState.player, 'maxHealth');
                 gameState.player.mana = getStat(gameState.player, 'maxMana');
                 gameState.player.expNeeded = Math.floor(gameState.player.expNeeded * 1.5);
+                SoundEngine.playSound('levelUp'); // 레벨업 효과음 재생
                 addMessage(`🎉 플레이어 레벨이 ${gameState.player.level}이(가) 되었습니다!`, 'level');
 
                 updateStats();
@@ -4484,6 +4585,7 @@ function killMonster(monster) {
             if (cellType === 'monster') {
                 const monster = gameState.monsters.find(m => m.x === newX && m.y === newY);
                 if (monster) {
+                    SoundEngine.playSound('playerAttack'); // 플레이어 공격음 재생
                     const totalAttack = getStat(gameState.player, 'attack');
 
                     const result = performAttack(gameState.player, monster, { attackValue: totalAttack, status: gameState.player.equipped.weapon && gameState.player.equipped.weapon.status });
@@ -4531,6 +4633,7 @@ function killMonster(monster) {
                 const item = gameState.items.find(i => i.x === newX && i.y === newY);
                 if (item) {
                     addToInventory(item);
+                    SoundEngine.playSound('getItem'); // 아이템 획득음 재생
                     addMessage(`📦 ${item.name}을(를) 획득했습니다!`, 'item');
 
                     const itemIndex = gameState.items.findIndex(i => i === item);
@@ -6321,6 +6424,7 @@ function processTurn() {
         }
 
         function startGame() {
+            SoundEngine.initialize(); // 사운드 엔진 초기화
             gameState.player.job = null;
             const allSkills = Object.keys(SKILL_DEFS);
             gameState.player.skillPoints = 0;
