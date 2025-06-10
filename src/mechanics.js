@@ -1848,9 +1848,34 @@ const MERCENARY_NAMES = [
             showMercenaryDetails(merc);
         }
 
+        function upgradeMonsterSkill(monster, key) {
+            const level = monster.skillLevels[key] || 1;
+            const baseCost = 50;
+            const cost = baseCost * level * level;
+            if (monster.skillPoints <= 0) {
+                addMessage('❌ 스킬포인트가 부족합니다.', 'monster');
+                return;
+            }
+            if (gameState.player.gold < cost) {
+                addMessage(`💸 골드가 부족합니다. 업그레이드에는 ${formatNumber(cost)} 골드가 필요합니다.`, 'info');
+                return;
+            }
+            monster.skillPoints -= 1;
+            gameState.player.gold -= cost;
+            monster.skillLevels[key] = level + 1;
+            updateStats();
+            showMonsterDetails(monster);
+        }
+
         function showMonsterDetails(monster) {
             const auraInfo = monster.isElite && monster.auraSkill ? SKILL_DEFS[monster.auraSkill] : null;
-            const auraLine = auraInfo ? `<div>오라 스킬: ${auraInfo.icon} ${auraInfo.name}</div>` : '';
+            const lvl = monster.skillLevels[monster.auraSkill] || 1;
+            const auraLine = auraInfo
+                ? `<div>오라 스킬: <span class="merc-skill"
+            onclick="showAuraDetails('${monster.auraSkill}',${lvl})">
+            ${auraInfo.icon} ${auraInfo.name} Lv.${lvl}</span>
+            <button onclick="upgradeMonsterSkill(window.currentDetailMonster,'${monster.auraSkill}')">레벨업</button></div>`
+                : '';
             const traitInfo = monster.trait ? MONSTER_TRAITS[monster.trait] : null;
             const traitLine = traitInfo ? `<div>특성: ${traitInfo.icon} ${traitInfo.name}</div>` : '';
             const stars = monster.stars || {strength:0, agility:0, endurance:0, focus:0, intelligence:0};
@@ -5507,7 +5532,7 @@ unequipAccessory, unequipItemFromMercenary, updateActionButtons, updateCamera,
 updateFogOfWar, updateIncubatorDisplay,
 updateInventoryDisplay, updateMaterialsDisplay, updateMercenaryDisplay,
 updateShopDisplay, updateSkillDisplay, updateStats, updateTurnEffects,
-upgradeMercenarySkill, useItem, useItemOnTarget, useSkill, removeMercenary,
+upgradeMercenarySkill, upgradeMonsterSkill, useItem, useItemOnTarget, useSkill, removeMercenary,
 dismiss, sacrifice
 };
 Object.assign(window, exportsObj, {SKILL_DEFS, MERCENARY_SKILLS, MONSTER_SKILLS, MONSTER_SKILL_SETS, MONSTER_TRAITS, MONSTER_TRAIT_SETS, PREFIXES, SUFFIXES});
