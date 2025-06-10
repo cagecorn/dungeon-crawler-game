@@ -1659,6 +1659,15 @@ const MERCENARY_NAMES = [
                         enhanceItem(item);
                     };
                     div.appendChild(enhanceBtn);
+
+                    const disBtn = document.createElement('button');
+                    disBtn.textContent = '분해';
+                    disBtn.className = 'disassemble-button';
+                    disBtn.onclick = (e) => {
+                        e.stopPropagation();
+                        disassembleItem(item);
+                    };
+                    div.appendChild(disBtn);
                 }
                 container.appendChild(div);
             }
@@ -3746,6 +3755,9 @@ function killMonster(monster) {
         function createScreenShake(intensity = 5, duration = 300) {
             const dungeonEl = document.getElementById('dungeon');
             if (!dungeonEl) return;
+            if (typeof requestAnimationFrame !== 'function' || !/\[native code\]/.test(requestAnimationFrame.toString())) {
+                return;
+            }
 
             const originalTransform = dungeonEl.style.transform;
             let startTime = Date.now();
@@ -3840,6 +3852,28 @@ function killMonster(monster) {
             addMessage(`🛠️ ${item.name} 강화 성공! (Lv.${next})`, 'item');
             updateMaterialsDisplay();
             updateInventoryDisplay();
+        }
+
+        function disassembleItem(item) {
+            if (item.type !== ITEM_TYPES.WEAPON && item.type !== ITEM_TYPES.ARMOR && item.type !== ITEM_TYPES.ACCESSORY) {
+                addMessage('분해할 수 없는 아이템입니다.', 'info');
+                return;
+            }
+
+            const qty = (item.level || 1) + (item.enhanceLevel || 0);
+            if (!gameState.materials.iron) gameState.materials.iron = 0;
+            if (!gameState.materials.bone) gameState.materials.bone = 0;
+            gameState.materials.iron += qty;
+            gameState.materials.bone += qty;
+
+            const index = gameState.player.inventory.findIndex(i => i.id === item.id);
+            if (index !== -1) {
+                gameState.player.inventory.splice(index, 1);
+            }
+
+            addMessage(`🔧 ${item.name}을(를) 분해하여 철 ${qty}개와 뼈 ${qty}개를 얻었습니다.`, 'item');
+            updateInventoryDisplay();
+            updateMaterialsDisplay();
         }
 
         // 아이템 클릭 시 대상 패널 표시
@@ -6172,7 +6206,7 @@ loadGame, meleeAttackAction, monsterAttack, performMonsterSkill, movePlayer, nex
 processMercenaryTurn, processProjectiles, processTurn, purifyTarget, 
 rangedAction, recallMercenaries, recruitHatchedSuperior, handleHatchedMonsterClick,
 removeEggFromIncubator, renderDungeon, reviveMercenary, reviveMonsterCorpse,
-rollDice, saveGame, sellItem, confirmAndSell, enhanceItem, setMercenaryLevel, setMonsterLevel, setChampionLevel,
+ rollDice, saveGame, sellItem, confirmAndSell, enhanceItem, disassembleItem, setMercenaryLevel, setMonsterLevel, setChampionLevel,
 showChampionDetails, showItemTargetPanel, showMercenaryDetails,
 showMonsterDetails, showShop, showSkillDamage, showAuraDetails, skill1Action, skill2Action,
 spawnMercenaryNearPlayer, startGame, swapActiveAndStandby, tryApplyStatus,

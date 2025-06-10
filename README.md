@@ -111,6 +111,10 @@ You can now cultivate monsters for equipment. Bury a defeated foe on a farm tile
 
 Gear can be leveled up using materials like **iron** and **bone**. Each enhancement level increases all of an item's stats by **5%**. Press the **강화** button beside an item in your inventory to spend the materials and apply the upgrade. Players now begin the game with **100** iron and **100** bone so you can enhance equipment right away.
 
+### Disassembling Gear
+
+Equipment can be broken down for extra materials. Click the **분해** button next to a weapon, armor or accessory to dismantle it. You gain both **iron** and **bone** equal to the item's base level plus its enhancement level. The item is removed from your inventory after disassembly.
+
 ### Special Tiles
 
 Dungeon floors contain several interactive tiles:
