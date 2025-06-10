@@ -2388,9 +2388,14 @@ const MERCENARY_NAMES = [
             for (const pos of positions) {
                 if (pos.x >= 0 && pos.x < gameState.dungeonSize &&
                     pos.y >= 0 && pos.y < gameState.dungeonSize &&
-                    gameState.dungeon[pos.y] && gameState.dungeon[pos.y][pos.x] === 'empty' &&
+                    gameState.dungeon[pos.y] && ['empty','item'].includes(gameState.dungeon[pos.y][pos.x]) &&
                     !gameState.activeMercenaries.some(m => m.x === pos.x && m.y === pos.y && m.alive) &&
                     !gameState.monsters.some(m => m.x === pos.x && m.y === pos.y)) {
+                    if (gameState.dungeon[pos.y][pos.x] === 'item') {
+                        const idx = gameState.items.findIndex(it => it.x === pos.x && it.y === pos.y);
+                        if (idx !== -1) gameState.items.splice(idx, 1);
+                    }
+                    gameState.dungeon[pos.y][pos.x] = 'empty';
                     mercenary.x = pos.x;
                     mercenary.y = pos.y;
                     return true;
@@ -4123,6 +4128,8 @@ function killMonster(monster) {
             for (const stat in item.baseStats) {
                 if (stat === 'attack' || stat === 'defense') {
                     item[stat] = item.baseStats[stat] + item.enhanceLevel * 1;
+                } else if (stat.endsWith('Resist')) {
+                    item[stat] = item.baseStats[stat] + item.enhanceLevel * 0.025;
                 } else {
                     item[stat] = item.baseStats[stat] + item.enhanceLevel * 0.5;
                 }

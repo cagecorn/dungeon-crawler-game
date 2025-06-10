@@ -9,6 +9,7 @@ async function loadGame(options = {}) {
   const htmlPath = path.join(__dirname, '..', 'index.html');
   let html = fs.readFileSync(htmlPath, 'utf8');
   html = html.replace(/<link rel="stylesheet" href="style.css">/, '');
+  html = html.replace('<script src="dice.js"></script>', '');
   const dom = new JSDOM(html, {
     runScripts: 'dangerously',
     resources: 'usable',
@@ -41,6 +42,8 @@ async function loadGame(options = {}) {
     const script = new vm.Script(code, { filename: file });
     script.runInContext(ctx);
   }
+
+  dom.window.generateStars = () => ({ strength: 0, agility: 0, endurance: 0, focus: 0, intelligence: 0 });
 
   return dom.window;
 }
