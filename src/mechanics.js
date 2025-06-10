@@ -3265,8 +3265,8 @@ function killMonster(monster) {
             const dungeonEl = document.getElementById('dungeon');
             if (dungeonEl) {
                 dungeonEl.style.setProperty('--dungeon-size', size);
-                dungeonEl.style.gridTemplateColumns = `repeat(${size}, 24px)`;
-                dungeonEl.style.gridTemplateRows = `repeat(${size}, 24px)`;
+                dungeonEl.style.gridTemplateColumns = `repeat(${size}, 32px)`;
+                dungeonEl.style.gridTemplateRows = `repeat(${size}, 32px)`;
             }
             gameState.dungeon = [];
             gameState.fogOfWar = [];
@@ -3609,7 +3609,7 @@ function killMonster(monster) {
             const dungeonElement = document.getElementById('dungeon');
             if (!dungeonElement) return;
             
-            const cellSize = 25; // 24px + 1px gap
+            const cellSize = 33; // 32px + 1px gap
             
             // 플레이어를 중심으로 카메라 위치 계산
             const centerX = Math.floor(gameState.viewportSize / 2);
@@ -3980,14 +3980,14 @@ function killMonster(monster) {
             const dungeonEl = document.getElementById('dungeon');
             if (!dungeonEl) return;
 
-            const cellSize = 25;
+            const cellSize = 33;
             const centerX = (x - gameState.camera.x) * cellSize + cellSize / 2;
             const centerY = (y - gameState.camera.y) * cellSize + cellSize / 2;
 
             const novaDiv = document.createElement('div');
             novaDiv.className = `nova-effect ${type}-nova`;
-            novaDiv.style.left = `${centerX - 12.5}px`;
-            novaDiv.style.top = `${centerY - 12.5}px`;
+            novaDiv.style.left = `${centerX - 16.5}px`;
+            novaDiv.style.top = `${centerY - 16.5}px`;
             dungeonEl.appendChild(novaDiv);
 
             createNovaParticles(centerX, centerY, type, radius);
@@ -4005,7 +4005,7 @@ function killMonster(monster) {
 
             for (let i = 0; i < particleCount; i++) {
                 const angle = (i / particleCount) * Math.PI * 2;
-                const distance = (radius * 12.5) + (Math.random() * 25);
+                const distance = (radius * 16.5) + (Math.random() * 33);
                 const particleX = centerX + Math.cos(angle) * distance;
                 const particleY = centerY + Math.sin(angle) * distance;
 
