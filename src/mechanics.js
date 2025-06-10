@@ -1028,11 +1028,43 @@ const MERCENARY_NAMES = ['Aldo', 'Borin', 'Cara', 'Dain', 'Elin', 'Faris'];
             if (element) {
                 elementDamage = getStat(attacker, `${element}Damage`);
                 elementBaseDamage = elementDamage;
-                if (defender.elementResistances && defender.elementResistances[element] !== undefined) {
-                    const resist = defender.elementResistances[element];
-                    elementResist = resist;
-                    elementDamage = Math.floor(elementDamage * (1 - resist));
+
+                const naturalInfo = SKILL_DEFS['NaturalAura'];
+
+                function checkAura(entity) {
+                    if (!entity || !naturalInfo) return 0;
+                    let lvl = 0;
+
+                    if (entity === gameState.player) {
+                        ['1', '2'].forEach(slot => {
+                            const key = gameState.player.assignedSkills[slot];
+                            if (key === 'NaturalAura') lvl += gameState.player.skillLevels[key] || 1;
+                        });
+                    }
+
+                    const skills = [entity.skill, entity.skill2, entity.auraSkill];
+                    skills.filter(Boolean).forEach(key => {
+                        if (key === 'NaturalAura') lvl += (entity.skillLevels && entity.skillLevels[key]) || 1;
+                    });
+
+                    if (!lvl) return 0;
+                    const dist = getDistance(entity.x, entity.y, defender.x, defender.y);
+                    return dist <= (naturalInfo.radius || 0) ? lvl : 0;
                 }
+
+                let totalResist = defender.elementResistances[element] || 0;
+                let auraBonus = 0;
+                auraBonus += checkAura(gameState.player);
+                gameState.activeMercenaries.filter(m => m.alive).forEach(m => {
+                    auraBonus += checkAura(m);
+                });
+                gameState.monsters.filter(m => m.isElite || m.isSuperior).forEach(mon => {
+                    auraBonus += checkAura(mon);
+                });
+
+                totalResist += auraBonus;
+                elementResist = totalResist;
+                elementDamage = Math.floor(elementDamage * (1 - totalResist));
             }
 
 
