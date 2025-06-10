@@ -2813,6 +2813,8 @@ function killMonster(monster) {
             return {
                 id: monster.id,
                 type: 'MONSTER',
+                monsterType: monster.type,
+                isMonster: true,
                 name: monster.name,
                 icon: monster.icon,
                 role: monster.special === 'ranged' ? 'ranged' : monster.special === 'magic' ? 'caster' : 'tank',
@@ -3092,11 +3094,13 @@ function killMonster(monster) {
                         } else {
                             const merc = gameState.activeMercenaries.find(m => m.x === x && m.y === y && m.alive);
                             if (merc) {
-                                finalClasses.push('mercenary'); // 기본 클래스
-                                if (merc.type) {
-                                    finalClasses.push(merc.type.toLowerCase()); // 타입별 클래스 추가
+                                finalClasses.push('mercenary');
+                                if (merc.isMonster && merc.monsterType) {
+                                    finalClasses.push('monster', merc.monsterType.toLowerCase());
+                                } else if (merc.type) {
+                                    finalClasses.push(merc.type.toLowerCase());
                                 }
-                                div.textContent = ''; // 이미지는 배경으로 사용
+                                div.textContent = '';
                             } else if (baseCellType === 'monster') {
                                 const m = gameState.monsters.find(mon => mon.x === x && mon.y === y);
                                 if (m) {
