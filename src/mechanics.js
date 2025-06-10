@@ -1984,7 +1984,7 @@ const MERCENARY_NAMES = [
                 gameState.knownRecipes.push(key);
                 const name = RECIPES[key]?.name || key;
                 addMessage(`📖 ${name} 레시피를 배웠습니다!`, 'item');
-                updateMaterialsDisplay();
+                addRecipeToTab(key);
             }
         }
 
@@ -3073,58 +3073,58 @@ function killMonster(monster) {
             for (let y = 0; y < gameState.dungeonSize; y++) {
                 for (let x = 0; x < gameState.dungeonSize; x++) {
                     const div = gameState.cellElements[y][x];
-                    let cellType = gameState.dungeon[y][x];
+                    const baseCellType = gameState.dungeon[y][x];
+                    const finalClasses = ['cell', baseCellType];
                     div.textContent = '';
 
                     if (x === gameState.player.x && y === gameState.player.y) {
-                        cellType = 'player';
+                        finalClasses.push('player');
                     } else {
                         const proj = gameState.projectiles.find(p => p.x === x && p.y === y);
                         if (proj) {
-                            cellType = 'projectile';
+                            finalClasses.push('projectile');
                             div.textContent = proj.icon;
                         } else {
                             const merc = gameState.activeMercenaries.find(m => m.x === x && m.y === y && m.alive);
                             if (merc) {
-                                cellType = 'mercenary';
-                                div.textContent = merc.icon;
-                            } else if (cellType === 'monster') {
+                                finalClasses.push('mercenary');
+                            } else if (baseCellType === 'monster') {
                                 const m = gameState.monsters.find(mon => mon.x === x && mon.y === y);
                                 if (m) {
                                     div.textContent = m.icon;
-                                    if (m.isChampion) cellType = 'champion';
-                                    else if (m.isElite) cellType = 'elite';
+                                    if (m.isChampion) finalClasses.push('champion');
+                                    else if (m.isElite) finalClasses.push('elite');
                                 }
-                            } else if (cellType === 'item') {
+                            } else if (baseCellType === 'item') {
                                 const it = gameState.items.find(it => it.x === x && it.y === y);
                                 if (it) div.textContent = it.icon;
-                            } else if (cellType === 'plant') {
+                            } else if (baseCellType === 'plant') {
                                 div.textContent = '🌿';
-                            } else if (cellType === 'chest') {
+                            } else if (baseCellType === 'chest') {
                                 div.textContent = '🎁';
-                            } else if (cellType === 'mine') {
+                            } else if (baseCellType === 'mine') {
                                 div.textContent = '⛏️';
-                            } else if (cellType === 'tree') {
+                            } else if (baseCellType === 'tree') {
                                 div.textContent = '🌳';
-                            } else if (cellType === 'bones') {
+                            } else if (baseCellType === 'bones') {
                                 div.textContent = '💀';
-                            } else if (cellType === 'grave') {
+                            } else if (baseCellType === 'grave') {
                                 div.textContent = '🪦';
-                            } else if (cellType.startsWith('temple')) {
+                            } else if (baseCellType.startsWith('temple')) {
                                 div.textContent = '⛩️';
-                            } else if (cellType === 'corpse') {
+                            } else if (baseCellType === 'corpse') {
                                 div.textContent = '☠️';
-                            } else if (cellType === 'treasure') {
+                            } else if (baseCellType === 'treasure') {
                                 div.textContent = '💰';
-                            } else if (cellType === 'exit') {
+                            } else if (baseCellType === 'exit') {
                                 div.textContent = '🚪';
-                            } else if (cellType === 'shop') {
+                            } else if (baseCellType === 'shop') {
                                 div.textContent = '🏪';
                             }
                         }
                     }
 
-                    div.className = `cell ${cellType}`;
+                    div.className = finalClasses.join(' ');
                     if (gameState.fogOfWar[y] && gameState.fogOfWar[y][x]) {
                         div.style.filter = 'brightness(0.2)';
                     } else {

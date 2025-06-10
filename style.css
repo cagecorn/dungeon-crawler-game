@@ -1,14 +1,15 @@
 .player {
-  background-image: url("assets/images/player.png");
-  background-size: cover;
-  background-position: center;
-  background-repeat: no-repeat;
+  /* background-image: url("assets/images/player.png"); */
+  /* background-size: cover; */
+  /* background-position: center; */
+  /* background-repeat: no-repeat; */
+  background-color: transparent;
   color: transparent;
 }
 
 /* Mercenary tile image */
 .mercenary {
-  background-image: url("assets/images/warrior.png");
+  /* background-image: url("assets/images/warrior.png"); */
   background-repeat: no-repeat;
   background-size: contain;
   background-position: center;
@@ -30,5 +31,19 @@
   background-size: cover;
   color: unset;
   font-size: unset;
-  border: 1px solid #000;
+  /* border: 1px solid #000; */
+}
+
+.cell.empty.player {
+  background-image: url("assets/images/player.png"), url("assets/images/floor-tile.png");
+  background-size: contain, cover;
+  background-position: center, center;
+  background-repeat: no-repeat, no-repeat;
+}
+
+.cell.empty.mercenary {
+  background-image: url("assets/images/warrior.png"), url("assets/images/floor-tile.png");
+  background-size: contain, cover;
+  background-position: center, center;
+  background-repeat: no-repeat, no-repeat;
 }
