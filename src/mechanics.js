@@ -385,6 +385,157 @@ const MERCENARY_NAMES = ['Aldo', 'Borin', 'Cara', 'Dain', 'Elin', 'Faris'];
                 range: 2,
                 special: 'boss',
                 statusEffect: 'burn'
+            },
+            SLIME: {
+                name: '🟢 슬라임',
+                icon: '🟢',
+                color: '#32CD32',
+                baseHealth: 6,
+                baseAttack: 2,
+                baseDefense: 0,
+                baseAccuracy: 0.7,
+                baseEvasion: 0.15,
+                baseCritChance: 0.02,
+                baseMagicPower: 0,
+                baseMagicResist: 0.5,
+                baseExp: 5,
+                baseGold: 4,
+                damageDice: "1d4",
+                range: 1,
+                special: 'regeneration'
+            },
+            KOBOLD: {
+                name: '🐕 코볼드',
+                icon: '🐕',
+                color: '#8B4513',
+                baseHealth: 7,
+                baseAttack: 3,
+                baseDefense: 1,
+                baseAccuracy: 0.75,
+                baseEvasion: 0.12,
+                baseCritChance: 0.08,
+                baseMagicPower: 0,
+                baseMagicResist: 0,
+                baseExp: 7,
+                baseGold: 6,
+                damageDice: "1d6",
+                range: 1,
+                special: 'pack',
+                statusEffect: 'bleed'
+            },
+            GARGOYLE: {
+                name: '🗿 가고일',
+                icon: '🗿',
+                color: '#696969',
+                baseHealth: 16,
+                baseAttack: 6,
+                baseDefense: 4,
+                baseAccuracy: 0.7,
+                baseEvasion: 0.05,
+                baseCritChance: 0.05,
+                baseMagicPower: 0,
+                baseMagicResist: 1,
+                baseExp: 18,
+                baseGold: 14,
+                damageDice: "1d8",
+                range: 1,
+                special: 'stone',
+                statusEffect: 'petrify'
+            },
+            BANSHEE: {
+                name: '👻 밴시',
+                icon: '👻',
+                color: '#E6E6FA',
+                baseHealth: 10,
+                baseAttack: 5,
+                baseDefense: 0,
+                baseAccuracy: 0.8,
+                baseEvasion: 0.2,
+                baseCritChance: 0.1,
+                baseMagicPower: 6,
+                baseMagicResist: 2,
+                baseExp: 20,
+                baseGold: 16,
+                damageDice: "1d8",
+                range: 4,
+                special: 'ethereal',
+                statusEffect: 'nightmare'
+            },
+            MINOTAUR: {
+                name: '🐂 미노타우르스',
+                icon: '🐂',
+                color: '#8B0000',
+                baseHealth: 25,
+                baseAttack: 8,
+                baseDefense: 3,
+                baseAccuracy: 0.75,
+                baseEvasion: 0.05,
+                baseCritChance: 0.1,
+                baseMagicPower: 0,
+                baseMagicResist: 0.3,
+                baseExp: 25,
+                baseGold: 20,
+                damageDice: "1d10",
+                range: 1,
+                special: 'charge',
+                statusEffect: 'paralysis'
+            },
+            LICH: {
+                name: '💀 리치',
+                icon: '💀',
+                color: '#4B0082',
+                baseHealth: 18,
+                baseAttack: 4,
+                baseDefense: 2,
+                baseAccuracy: 0.85,
+                baseEvasion: 0.1,
+                baseCritChance: 0.15,
+                baseMagicPower: 10,
+                baseMagicResist: 3,
+                baseExp: 35,
+                baseGold: 30,
+                damageDice: "1d10",
+                range: 5,
+                special: 'undead_magic',
+                statusEffect: 'debuff'
+            },
+            DRAGON_WHELP: {
+                name: '🐲 드래곤 새끼',
+                icon: '🐲',
+                color: '#FF4500',
+                baseHealth: 28,
+                baseAttack: 10,
+                baseDefense: 5,
+                baseAccuracy: 0.8,
+                baseEvasion: 0.1,
+                baseCritChance: 0.15,
+                baseMagicPower: 8,
+                baseMagicResist: 4,
+                baseExp: 40,
+                baseGold: 35,
+                damageDice: "1d12",
+                range: 3,
+                special: 'dragon',
+                statusEffect: 'burn'
+            },
+            ELEMENTAL_GOLEM: {
+                name: '⚡ 정령 골렘',
+                icon: '⚡',
+                color: '#FFD700',
+                baseHealth: 35,
+                baseAttack: 12,
+                baseDefense: 8,
+                baseAccuracy: 0.75,
+                baseEvasion: 0.05,
+                baseCritChance: 0.1,
+                baseMagicPower: 12,
+                baseMagicResist: 5,
+                baseExp: 50,
+                baseGold: 40,
+                damageDice: "1d12",
+                range: 2,
+                special: 'elemental',
+                statusEffect: 'silence'
             }
         };
 
@@ -679,7 +830,8 @@ const MERCENARY_NAMES = ['Aldo', 'Borin', 'Cara', 'Dain', 'Elin', 'Faris'];
             PowerStrike: { name: 'Power Strike', icon: '💥', range: 1, damageDice: '1d8', melee: true },
             ShadowBolt: { name: 'Shadow Bolt', icon: '🌑', range: 3, damageDice: '1d6', magic: true, element: 'dark' },
             PoisonCloud: { name: 'Poison Cloud', icon: '☣️', radius: 2, damageDice: '1d4', magic: true, status: 'poison' },
-            FireBreath: { name: 'Fire Breath', icon: '🔥', radius: 2, magic: true, element: 'fire', damageDice: '1d6', status: 'burn' }
+            FireBreath: { name: 'Fire Breath', icon: '🔥', radius: 2, magic: true, element: 'fire', damageDice: '1d6', status: 'burn' },
+            RegenerationStrike: { name: 'Regeneration Strike', icon: '💚', range: 1, damageDice: '1d6', melee: true }
         };
 
 
@@ -704,7 +856,15 @@ const MERCENARY_NAMES = ['Aldo', 'Borin', 'Cara', 'Dain', 'Elin', 'Faris'];
             TROLL: ['PowerStrike', 'FireBreath', 'EarthStrike'],
             DARK_MAGE: ['ShadowBolt', 'PoisonCloud', 'NightmareMagic'],
             DEMON_WARRIOR: ['ShadowBolt', 'FireBreath', 'FireStrike'],
-            BOSS: ['ShadowBolt', 'FireBreath', 'BurnStrike']
+            BOSS: ['ShadowBolt', 'FireBreath', 'BurnStrike'],
+            SLIME: ['RegenerationStrike', 'PoisonStrike'],
+            KOBOLD: ['BleedStrike', 'PowerStrike', 'WindStrike'],
+            GARGOYLE: ['EarthStrike', 'PetrifyStrike', 'PowerStrike'],
+            BANSHEE: ['NightmareStrike', 'DarkMagic', 'ShadowBolt'],
+            MINOTAUR: ['PowerStrike', 'ParalysisStrike', 'EarthStrike'],
+            LICH: ['DarkMagic', 'DebuffMagic', 'ShadowBolt', 'NightmareMagic'],
+            DRAGON_WHELP: ['FireBreath', 'BurnStrike', 'FireMagic'],
+            ELEMENTAL_GOLEM: ['LightningMagic', 'SilenceMagic', 'FireMagic', 'IceMagic']
         };
 
         const MONSTER_TRAIT_SETS = {
@@ -721,7 +881,15 @@ const MERCENARY_NAMES = ['Aldo', 'Borin', 'Cara', 'Dain', 'Elin', 'Faris'];
             TROLL: ['EarthMelee'],
             DARK_MAGE: ['NightmareMagic'],
             DEMON_WARRIOR: ['FireMelee'],
-            BOSS: ['BurnMelee']
+            BOSS: ['BurnMelee'],
+            SLIME: ['PoisonMelee'],
+            KOBOLD: ['BleedMelee', 'WindMelee'],
+            GARGOYLE: ['EarthMelee', 'PetrifyMelee'],
+            BANSHEE: ['DarkMagic', 'NightmareMagic'],
+            MINOTAUR: ['EarthMelee', 'ParalysisMelee'],
+            LICH: ['DarkMagic', 'DebuffMagic'],
+            DRAGON_WHELP: ['FireMelee', 'BurnMelee'],
+            ELEMENTAL_GOLEM: ['LightMagic', 'SilenceMagic']
         };
 
         const RECIPES = {
@@ -771,7 +939,7 @@ const MERCENARY_NAMES = ['Aldo', 'Borin', 'Cara', 'Dain', 'Elin', 'Faris'];
 
         const MONSTER_TRAITS = (() => {
             const obj = {};
-            const elems = ['fire','ice','wind','earth','light','dark'];
+            const elems = ['fire','ice','lightning','wind','earth','light','dark'];
             const statuses = ['poison','freeze','burn','bleed','paralysis','nightmare','silence','petrify','debuff'];
             const cap = s => s.charAt(0).toUpperCase() + s.slice(1);
             elems.forEach(e => {
@@ -788,7 +956,7 @@ const MERCENARY_NAMES = ['Aldo', 'Borin', 'Cara', 'Dain', 'Elin', 'Faris'];
         })();
 
         (() => {
-            const elems = ['fire','ice','wind','earth','light','dark'];
+            const elems = ['fire','ice','lightning','wind','earth','light','dark'];
             const statuses = ['poison','freeze','burn','bleed','paralysis','nightmare','silence','petrify','debuff'];
             const cap = s => s.charAt(0).toUpperCase() + s.slice(1);
             elems.forEach(e => {
@@ -1609,8 +1777,10 @@ const MERCENARY_NAMES = ['Aldo', 'Borin', 'Cara', 'Dain', 'Elin', 'Faris'];
             waiting.innerHTML = '';
             gameState.hatchedSuperiors.forEach(mon => {
                 const div = document.createElement('div');
-                div.textContent = mon.name;
+                const span = document.createElement('span');
+                span.textContent = mon.name;
                 div.className = 'incubator-slot clickable';
+                div.appendChild(span);
                 div.addEventListener('click', () => showMonsterDetails(mon));
 
                 const btn = document.createElement('button');
@@ -2418,11 +2588,12 @@ function killMonster(monster) {
         }
 
         function getMonsterPoolForFloor(floor) {
-            if (floor <= 2) return ['GOBLIN', 'GOBLIN_ARCHER', 'GOBLIN_WIZARD', 'ZOMBIE'];
-            if (floor <= 4) return ['SKELETON', 'SKELETON_MAGE', 'ORC', 'ORC_ARCHER'];
-            if (floor <= 6) return ['TROLL', 'ORC', 'ORC_ARCHER', 'SKELETON_MAGE'];
-            if (floor <= 8) return ['DARK_MAGE', 'TROLL', 'ORC', 'ORC_ARCHER'];
-            return ['DEMON_WARRIOR', 'DARK_MAGE', 'TROLL', 'ORC'];
+            if (floor <= 2) return ['GOBLIN', 'GOBLIN_ARCHER', 'GOBLIN_WIZARD', 'ZOMBIE', 'SLIME'];
+            if (floor <= 4) return ['SKELETON', 'SKELETON_MAGE', 'ORC', 'ORC_ARCHER', 'KOBOLD'];
+            if (floor <= 6) return ['TROLL', 'ORC', 'ORC_ARCHER', 'SKELETON_MAGE', 'GARGOYLE', 'BANSHEE'];
+            if (floor <= 8) return ['DARK_MAGE', 'TROLL', 'MINOTAUR', 'GARGOYLE', 'BANSHEE'];
+            if (floor <= 10) return ['DEMON_WARRIOR', 'DARK_MAGE', 'LICH', 'DRAGON_WHELP'];
+            return ['DEMON_WARRIOR', 'LICH', 'DRAGON_WHELP', 'ELEMENTAL_GOLEM'];
         }
 
         function applyStatusEffects(entity) {
