@@ -33,7 +33,7 @@ async function run() {
 
   const origRandom = win.Math.random;
   win.Math.random = () => 0;
-  processMercenaryTurn(healer);
+  processMercenaryTurn(healer, gameState.monsters);
   win.Math.random = origRandom;
 
   if (healer.health <= beforeHealth || healer.mana !== beforeMana - 2) {

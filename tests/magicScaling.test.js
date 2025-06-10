@@ -65,7 +65,7 @@ async function run() {
   win.rollDice = () => 8;
   const origRandom = win.Math.random;
   win.Math.random = () => 0;
-  processMercenaryTurn(fireCaster);
+  processMercenaryTurn(fireCaster, gameState.monsters);
   win.Math.random = origRandom;
   win.performAttack = origPerform;
 
@@ -94,7 +94,7 @@ async function run() {
   };
   win.rollDice = () => 6;
   win.Math.random = () => 0;
-  processMercenaryTurn(iceCaster);
+  processMercenaryTurn(iceCaster, gameState.monsters);
   win.Math.random = origRandom;
   win.performAttack = origPerform;
 

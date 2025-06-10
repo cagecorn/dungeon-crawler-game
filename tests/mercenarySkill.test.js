@@ -50,7 +50,7 @@ async function run() {
   const origRandom = win.Math.random;
   win.Math.random = () => 0;
 
-  processMercenaryTurn(merc);
+  processMercenaryTurn(merc, gameState.monsters);
 
   win.Math.random = origRandom;
 
