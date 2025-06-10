@@ -6,6 +6,17 @@
   color: transparent;
 }
 
+/* Mercenary tile image */
+.mercenary {
+  background-image: url("assets/images/warrior.png");
+  background-repeat: no-repeat;
+  background-size: contain;
+  background-position: center;
+  background-color: transparent;
+  box-shadow: none;
+  animation: none;
+}
+
 /* Floor tile image for empty cells */
 .cell.empty {
   background-image: url("assets/images/floor-tile.png");
