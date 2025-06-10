@@ -1286,7 +1286,8 @@ const MERCENARY_NAMES = [
             if (item.burnResist !== undefined) stats.push(`화상저항+${formatNumber(item.burnResist * 100)}%`);
             if (item.freezeResist !== undefined) stats.push(`동결저항+${formatNumber(item.freezeResist * 100)}%`);
             if (item.status) stats.push(`${item.status} 부여`);
-            return `${item.name}${stats.length ? ' (' + stats.join(', ') + ')' : ''}`;
+            const name = item.upgradeLevel ? `${item.name}+${item.upgradeLevel}` : item.name;
+            return `${name}${stats.length ? ' (' + stats.join(', ') + ')' : ''}`;
         }
 
         function getStat(character, stat) {
@@ -3387,6 +3388,26 @@ function killMonster(monster) {
             }
         }
 
+        function enhanceItem(item) {
+            const level = item.upgradeLevel || 0;
+            const cost = level + 1;
+            if ((gameState.materials.iron || 0) < cost) {
+                addMessage('재료가 부족합니다.', 'info');
+                return false;
+            }
+            gameState.materials.iron -= cost;
+            const stats = ['attack','defense','healing','fireDamage','iceDamage','lightningDamage','maxHealth','healthRegen','accuracy','evasion','critChance','magicPower','magicResist','manaRegen'];
+            stats.forEach(stat => {
+                if (item[stat] !== undefined) {
+                    item[stat] = Math.round(item[stat] * 1.5 * 100) / 100;
+                }
+            });
+            item.upgradeLevel = level + 1;
+            updateMaterialsDisplay();
+            updateInventoryDisplay();
+            return true;
+        }
+
         // 아이템 클릭 시 대상 패널 표시
         function handleItemClick(item) {
             showItemTargetPanel(item);
@@ -5451,6 +5472,7 @@ processMercenaryTurn, processProjectiles, processTurn, purifyTarget,
 rangedAction, recallMercenaries, recruitHatchedSuperior, handleHatchedMonsterClick,
 removeEggFromIncubator, renderDungeon, reviveMercenary, reviveMonsterCorpse,
 rollDice, saveGame, sellItem, setMercenaryLevel, setMonsterLevel, setChampionLevel,
+enhanceItem,
 showChampionDetails, showItemTargetPanel, showMercenaryDetails,
 showMonsterDetails, showShop, showSkillDamage, showAuraDetails, skill1Action, skill2Action,
 spawnMercenaryNearPlayer, startGame, swapActiveAndStandby, tryApplyStatus,
