@@ -6307,6 +6307,19 @@ function processTurn() {
             updateShopDisplay();
         }
 
+        function spawnStartingRecipes(count = 3) {
+            const unknown = Object.keys(RECIPES).filter(r => !gameState.knownRecipes.includes(r));
+            for (let i = 0; i < count && unknown.length; i++) {
+                const idx = Math.floor(Math.random() * unknown.length);
+                const key = unknown.splice(idx, 1)[0];
+                const pos = findAdjacentEmpty(gameState.player.x, gameState.player.y);
+                if (pos.x === gameState.player.x && pos.y === gameState.player.y) break;
+                const scroll = createRecipeScroll(key, pos.x, pos.y);
+                gameState.items.push(scroll);
+                gameState.dungeon[pos.y][pos.x] = 'item';
+            }
+        }
+
         function startGame() {
             gameState.player.job = null;
             const allSkills = Object.keys(SKILL_DEFS);
@@ -6332,6 +6345,7 @@ function processTurn() {
             for (let i = 0; i < 5; i++) {
                 gameState.player.inventory.push(createItem('smallExpScroll', 0, 0));
             }
+            spawnStartingRecipes();
             updateInventoryDisplay();
             updateSkillDisplay();
             updateIncubatorDisplay();
@@ -6443,7 +6457,7 @@ removeEggFromIncubator, renderDungeon, reviveMercenary, reviveMonsterCorpse,
  rollDice, saveGame, sellItem, confirmAndSell, enhanceItem, disassembleItem, setMercenaryLevel, setMonsterLevel, setChampionLevel,
 showChampionDetails, showItemDetailPanel, showItemTargetPanel, showMercenaryDetails,
 showMonsterDetails, showShop, showSkillDamage, showAuraDetails, skill1Action, skill2Action,
-spawnMercenaryNearPlayer, startGame, swapActiveAndStandby, tryApplyStatus,
+spawnMercenaryNearPlayer, spawnStartingRecipes, startGame, swapActiveAndStandby, tryApplyStatus,
 unequipAccessory, unequipWeapon, unequipArmor, unequipItemFromMercenary, updateActionButtons, updateCamera,
 updateFogOfWar, updateIncubatorDisplay,
 updateInventoryDisplay, updateMaterialsDisplay, updateMercenaryDisplay,
