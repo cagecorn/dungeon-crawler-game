@@ -105,12 +105,12 @@
 
 /* 힐러 용병 이미지 적용 */
 .cell.mercenary.healer {
-  background-image: url('../assets/images/healer.png');
+  background-image: url('assets/images/healer.png');
 }
 
 /* 마법사 용병 이미지 적용 */
 .cell.mercenary.wizard {
-  background-image: url('../assets/images/wizard.png');
+  background-image: url('assets/images/wizard.png');
 }
 
 /* --- 신규 몬스터 이미지 스타일 --- */
