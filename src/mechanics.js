@@ -1502,14 +1502,18 @@ const MERCENARY_NAMES = [
             const weaponSlot = document.getElementById('equipped-weapon');
             if (gameState.player.equipped.weapon) {
                 weaponSlot.textContent = `무기: ${formatItem(gameState.player.equipped.weapon)}`;
+                weaponSlot.onclick = unequipWeapon;
             } else {
                 weaponSlot.textContent = '무기: 없음';
+                weaponSlot.onclick = null;
             }
             const armorSlot = document.getElementById('equipped-armor');
             if (gameState.player.equipped.armor) {
                 armorSlot.textContent = `방어구: ${formatItem(gameState.player.equipped.armor)}`;
+                armorSlot.onclick = unequipArmor;
             } else {
                 armorSlot.textContent = '방어구: 없음';
+                armorSlot.onclick = null;
             }
             const acc1Slot = document.getElementById('equipped-accessory1');
             if (gameState.player.equipped.accessory1) {
@@ -3518,6 +3522,28 @@ function killMonster(monster) {
             if (item) {
                 addToInventory(item);
                 gameState.player.equipped[slot] = null;
+                addMessage(`📦 ${item.name}을(를) 해제했습니다.`, 'item');
+                updateInventoryDisplay();
+                updateStats();
+            }
+        }
+
+        function unequipWeapon() {
+            const item = gameState.player.equipped.weapon;
+            if (item) {
+                addToInventory(item);
+                gameState.player.equipped.weapon = null;
+                addMessage(`📦 ${item.name}을(를) 해제했습니다.`, 'item');
+                updateInventoryDisplay();
+                updateStats();
+            }
+        }
+
+        function unequipArmor() {
+            const item = gameState.player.equipped.armor;
+            if (item) {
+                addToInventory(item);
+                gameState.player.equipped.armor = null;
                 addMessage(`📦 ${item.name}을(를) 해제했습니다.`, 'item');
                 updateInventoryDisplay();
                 updateStats();
@@ -5538,7 +5564,7 @@ rollDice, saveGame, sellItem, enhanceItem, setMercenaryLevel, setMonsterLevel, s
 showChampionDetails, showItemTargetPanel, showMercenaryDetails,
 showMonsterDetails, showShop, showSkillDamage, showAuraDetails, skill1Action, skill2Action,
 spawnMercenaryNearPlayer, startGame, swapActiveAndStandby, tryApplyStatus,
-unequipAccessory, unequipItemFromMercenary, updateActionButtons, updateCamera,
+unequipAccessory, unequipWeapon, unequipArmor, unequipItemFromMercenary, updateActionButtons, updateCamera,
 updateFogOfWar, updateIncubatorDisplay,
 updateInventoryDisplay, updateMaterialsDisplay, updateMercenaryDisplay,
 updateShopDisplay, updateSkillDisplay, updateStats, updateTurnEffects,
