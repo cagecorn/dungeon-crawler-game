@@ -60,7 +60,7 @@ async function run() {
   const healthBefore = merc.health;
   const origRandom = win.Math.random;
   win.Math.random = () => 0;
-  processMercenaryTurn(merc);
+  processMercenaryTurn(merc, gameState.monsters);
   win.Math.random = origRandom;
   const startMana = Math.min(manaBefore + getStat(merc, 'manaRegen'), getStat(merc, 'maxMana'));
   const manaExpected = startMana - (MERCENARY_SKILLS[skillKey].manaCost + healLevel - 1);
