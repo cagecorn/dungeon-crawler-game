@@ -631,6 +631,60 @@ const MERCENARY_NAMES = ['Aldo', 'Borin', 'Cara', 'Dain', 'Elin', 'Faris'];
                 price: 8,
                 level: 1,
                 icon: '🥪'
+            },
+            breadSoup: {
+                name: '🍲 빵 수프',
+                type: ITEM_TYPES.FOOD,
+                affinityGain: 3,
+                fullnessGain: 4,
+                price: 8,
+                level: 1,
+                icon: '🍲'
+            },
+            meatStew: {
+                name: '🍖 고기 스튜',
+                type: ITEM_TYPES.FOOD,
+                affinityGain: 6,
+                fullnessGain: 8,
+                price: 18,
+                level: 1,
+                icon: '🍖'
+            },
+            grilledMeat: {
+                name: '🥩 구운 고기',
+                type: ITEM_TYPES.FOOD,
+                affinityGain: 4,
+                fullnessGain: 6,
+                price: 12,
+                level: 1,
+                icon: '🥩'
+            },
+            vegetableSoup: {
+                name: '🥬 야채 수프',
+                type: ITEM_TYPES.FOOD,
+                affinityGain: 4,
+                fullnessGain: 5,
+                price: 10,
+                level: 1,
+                icon: '🥬'
+            },
+            feastPlatter: {
+                name: '🍽️ 성찬',
+                type: ITEM_TYPES.FOOD,
+                affinityGain: 12,
+                fullnessGain: 15,
+                price: 35,
+                level: 2,
+                icon: '🍽️'
+            },
+            royalBanquet: {
+                name: '👑 왕실 연회',
+                type: ITEM_TYPES.FOOD,
+                affinityGain: 20,
+                fullnessGain: 25,
+                price: 50,
+                level: 2,
+                icon: '👑'
             }
 
         };
@@ -728,7 +782,13 @@ const MERCENARY_NAMES = ['Aldo', 'Borin', 'Cara', 'Dain', 'Elin', 'Faris'];
             healthPotion: { name: 'Health Potion', output: 'healthPotion', materials: { herb: 2 }, turns: 3 },
             shortSword: { name: 'Short Sword', output: 'shortSword', materials: { wood: 1, iron: 2 }, turns: 5 },
             sandwich: { name: 'Sandwich', output: 'sandwich', materials: { bread: 1, meat: 1, lettuce: 1 }, turns: 2 },
-            salad: { name: 'Salad', output: 'salad', materials: { lettuce: 2, herb: 1 }, turns: 2 }
+            salad: { name: 'Salad', output: 'salad', materials: { lettuce: 2, herb: 1 }, turns: 2 },
+            breadSoup: { name: 'Bread Soup', output: 'breadSoup', materials: { bread: 2, herb: 1 }, turns: 2 },
+            meatStew: { name: 'Meat Stew', output: 'meatStew', materials: { meat: 2, lettuce: 1, herb: 1 }, turns: 3 },
+            grilledMeat: { name: 'Grilled Meat', output: 'grilledMeat', materials: { rawMeat: 2 }, turns: 2 },
+            vegetableSoup: { name: 'Vegetable Soup', output: 'vegetableSoup', materials: { lettuce: 3, herb: 2 }, turns: 3 },
+            feastPlatter: { name: 'Feast Platter', output: 'feastPlatter', materials: { grilledMeat: 1, salad: 1, bread: 2 }, turns: 4 },
+            royalBanquet: { name: 'Royal Banquet', output: 'royalBanquet', materials: { meatStew: 1, vegetableSoup: 1, sandwich: 1 }, turns: 5 }
         };
 
 
