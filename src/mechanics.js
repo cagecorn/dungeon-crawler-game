@@ -3087,10 +3087,11 @@ function killMonster(monster) {
                         } else {
                             const merc = gameState.activeMercenaries.find(m => m.x === x && m.y === y && m.alive);
                             if (merc) {
-                                finalClasses.push('mercenary');
+                                finalClasses.push('mercenary'); // 기본 클래스
                                 if (merc.type) {
-                                    finalClasses.push(merc.type.toLowerCase());
+                                    finalClasses.push(merc.type.toLowerCase()); // 타입별 클래스 추가
                                 }
+                                div.textContent = ''; // 이미지는 배경으로 사용
                             } else if (baseCellType === 'monster') {
                                 const m = gameState.monsters.find(mon => mon.x === x && mon.y === y);
                                 if (m) {

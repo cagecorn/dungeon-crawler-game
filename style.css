@@ -92,3 +92,23 @@
 .mercenary.wizard {
   background-image: url("assets/images/wizard.png");
 }
+
+/* --- Mercenary Sprite Styling --- */
+
+/* 모든 용병 셀에 적용될 공통 스타일 */
+.cell.mercenary {
+  background-color: transparent;
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+}
+
+/* 힐러 용병 이미지 적용 */
+.cell.mercenary.healer {
+  background-image: url('../assets/images/healer.png');
+}
+
+/* 마법사 용병 이미지 적용 */
+.cell.mercenary.wizard {
+  background-image: url('../assets/images/wizard.png');
+}
