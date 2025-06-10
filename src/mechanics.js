@@ -407,6 +407,153 @@ const MERCENARY_NAMES = [
                 range: 2,
                 special: 'demonic'
             },
+            SLIME: {
+                name: '🟢 슬라임',
+                icon: '🟢',
+                color: '#7FFF00',
+                baseHealth: 5,
+                baseAttack: 2,
+                baseDefense: 0,
+                baseAccuracy: 0.55,
+                baseEvasion: 0.05,
+                baseCritChance: 0.02,
+                baseMagicPower: 0,
+                baseMagicResist: 0,
+                baseExp: 3,
+                damageDice: "1d4",
+                baseGold: 2,
+                range: 1,
+                special: 'slow'
+            },
+            KOBOLD: {
+                name: '🦎 코볼트',
+                icon: '🦎',
+                color: '#DEB887',
+                baseHealth: 7,
+                baseAttack: 3,
+                baseDefense: 1,
+                baseAccuracy: 0.65,
+                baseEvasion: 0.1,
+                baseCritChance: 0.05,
+                baseMagicPower: 0,
+                baseMagicResist: 0,
+                baseExp: 5,
+                damageDice: "1d4",
+                baseGold: 4,
+                range: 1,
+                special: 'fast'
+            },
+            GARGOYLE: {
+                name: '🗿 가고일',
+                icon: '🗿',
+                color: '#708090',
+                baseHealth: 14,
+                baseAttack: 6,
+                baseDefense: 5,
+                baseAccuracy: 0.7,
+                baseEvasion: 0.05,
+                baseCritChance: 0.05,
+                baseMagicPower: 0,
+                baseMagicResist: 2,
+                baseExp: 16,
+                damageDice: "1d6",
+                baseGold: 12,
+                range: 1,
+                special: 'strong',
+                statusEffect: 'petrify'
+            },
+            BANSHEE: {
+                name: '👻 밴시',
+                icon: '👻',
+                color: '#E6E6FA',
+                baseHealth: 12,
+                baseAttack: 6,
+                baseDefense: 1,
+                baseAccuracy: 0.75,
+                baseEvasion: 0.1,
+                baseCritChance: 0.1,
+                baseMagicPower: 6,
+                baseMagicResist: 3,
+                baseExp: 18,
+                damageDice: "1d6",
+                baseGold: 14,
+                range: 4,
+                special: 'curse',
+                statusEffect: 'nightmare'
+            },
+            MINOTAUR: {
+                name: '🐂 미노타우로스',
+                icon: '🐂',
+                color: '#A52A2A',
+                baseHealth: 20,
+                baseAttack: 8,
+                baseDefense: 4,
+                baseAccuracy: 0.7,
+                baseEvasion: 0.05,
+                baseCritChance: 0.05,
+                baseMagicPower: 0,
+                baseMagicResist: 1,
+                baseExp: 24,
+                damageDice: "1d8",
+                baseGold: 18,
+                range: 1,
+                special: 'strong'
+            },
+            LICH: {
+                name: '☠️ 리치',
+                icon: '☠️',
+                color: '#9400D3',
+                baseHealth: 18,
+                baseAttack: 7,
+                baseDefense: 2,
+                baseAccuracy: 0.75,
+                baseEvasion: 0.1,
+                baseCritChance: 0.1,
+                baseMagicPower: 8,
+                baseMagicResist: 4,
+                baseExp: 28,
+                damageDice: "1d8",
+                baseGold: 22,
+                range: 4,
+                special: 'curse'
+            },
+            DRAGON_WHELP: {
+                name: '🐉 새끼 용',
+                icon: '🐉',
+                color: '#FF8C00',
+                baseHealth: 22,
+                baseAttack: 9,
+                baseDefense: 4,
+                baseAccuracy: 0.75,
+                baseEvasion: 0.1,
+                baseCritChance: 0.1,
+                baseMagicPower: 6,
+                baseMagicResist: 3,
+                baseExp: 32,
+                damageDice: "1d8",
+                baseGold: 26,
+                range: 3,
+                special: 'magic',
+                statusEffect: 'burn'
+            },
+            ELEMENTAL_GOLEM: {
+                name: '🪨 정령 골렘',
+                icon: '🪨',
+                color: '#696969',
+                baseHealth: 26,
+                baseAttack: 10,
+                baseDefense: 6,
+                baseAccuracy: 0.75,
+                baseEvasion: 0.05,
+                baseCritChance: 0.1,
+                baseMagicPower: 5,
+                baseMagicResist: 5,
+                baseExp: 40,
+                damageDice: "1d10",
+                baseGold: 30,
+                range: 2,
+                special: 'strong'
+            },
             BOSS: {
                 name: '👑 던전 보스',
                 icon: '💀',
@@ -798,6 +945,14 @@ const MERCENARY_NAMES = [
             TROLL: ['PowerStrike', 'FireBreath', 'EarthStrike'],
             DARK_MAGE: ['ShadowBolt', 'PoisonCloud', 'NightmareMagic'],
             DEMON_WARRIOR: ['ShadowBolt', 'FireBreath', 'FireStrike'],
+            SLIME: ['PoisonStrike'],
+            KOBOLD: ['PowerStrike', 'WindStrike'],
+            GARGOYLE: ['EarthStrike', 'PetrifyStrike'],
+            BANSHEE: ['NightmareMagic', 'FreezeMagic'],
+            MINOTAUR: ['PowerStrike', 'BleedStrike'],
+            LICH: ['DarkMagic', 'NightmareMagic', 'PoisonCloud'],
+            DRAGON_WHELP: ['FireBreath', 'FireStrike'],
+            ELEMENTAL_GOLEM: ['EarthStrike', 'FireBreath'],
             BOSS: ['ShadowBolt', 'FireBreath', 'BurnStrike']
         };
 
@@ -815,6 +970,14 @@ const MERCENARY_NAMES = [
             TROLL: ['EarthMelee'],
             DARK_MAGE: ['NightmareMagic'],
             DEMON_WARRIOR: ['FireMelee'],
+            SLIME: ['PoisonMelee'],
+            KOBOLD: ['WindMelee'],
+            GARGOYLE: ['PetrifyMelee'],
+            BANSHEE: ['NightmareMagic'],
+            MINOTAUR: ['BleedMelee'],
+            LICH: ['DarkMagic'],
+            DRAGON_WHELP: ['FireMelee'],
+            ELEMENTAL_GOLEM: ['EarthMelee'],
             BOSS: ['BurnMelee']
         };
 
@@ -2574,11 +2737,16 @@ function killMonster(monster) {
         }
 
         function getMonsterPoolForFloor(floor) {
-            if (floor <= 2) return ['GOBLIN', 'GOBLIN_ARCHER', 'GOBLIN_WIZARD', 'ZOMBIE'];
-            if (floor <= 4) return ['SKELETON', 'SKELETON_MAGE', 'ORC', 'ORC_ARCHER'];
-            if (floor <= 6) return ['TROLL', 'ORC', 'ORC_ARCHER', 'SKELETON_MAGE'];
-            if (floor <= 8) return ['DARK_MAGE', 'TROLL', 'ORC', 'ORC_ARCHER'];
-            return ['DEMON_WARRIOR', 'DARK_MAGE', 'TROLL', 'ORC'];
+            if (floor <= 2) return ['SLIME', 'GOBLIN', 'GOBLIN_ARCHER', 'ZOMBIE'];
+            if (floor <= 4) return ['KOBOLD', 'GOBLIN_WIZARD', 'SKELETON', 'ZOMBIE'];
+            if (floor <= 6) return ['GARGOYLE', 'SKELETON', 'SKELETON_MAGE', 'ORC'];
+            if (floor <= 8) return ['BANSHEE', 'ORC', 'ORC_ARCHER', 'TROLL'];
+            if (floor <= 10) return ['MINOTAUR', 'TROLL', 'ORC_ARCHER', 'DARK_MAGE'];
+            if (floor <= 12) return ['LICH', 'DARK_MAGE', 'TROLL', 'DEMON_WARRIOR'];
+            if (floor <= 14) return ['DRAGON_WHELP', 'DEMON_WARRIOR', 'DARK_MAGE', 'TROLL'];
+            if (floor <= 16) return ['ELEMENTAL_GOLEM', 'DEMON_WARRIOR', 'DARK_MAGE', 'TROLL'];
+            if (floor <= 18) return ['ELEMENTAL_GOLEM', 'DEMON_WARRIOR', 'MINOTAUR', 'DRAGON_WHELP'];
+            return ['ELEMENTAL_GOLEM', 'DEMON_WARRIOR', 'DRAGON_WHELP', 'LICH'];
         }
 
         function applyStatusEffects(entity) {
