@@ -10,6 +10,17 @@ Open `index.html` in a modern web browser to start the game. The player now begi
 Each floor is carved from a depth-first search maze. Corridors span seven tiles,
 and the exit is placed on a randomly chosen cell that the algorithm visited.
 
+### Monster Progression
+
+As you descend the dungeon, tougher monsters appear on each floor.
+
+- **Floors 1-2** – Goblins, Goblin Archers, Goblin Wizards and Zombies.
+- **Floors 3-4** – Skeletons, Skeleton Mages and Orcs (with Orc Archers).
+- **Floors 5-6** – Trolls begin to appear alongside Orcs and Skeleton Mages.
+- **Floors 7-8** – Dark Mages join the mix with Trolls and Orcs.
+- **Floors 9-10** – Demon Warriors lead groups of Dark Mages and Orcs.
+- **Beyond floor 10** – ELEMENTAL_GOLEM and other high-level foes may appear.
+
 ### Controls
 
 - Use the arrow keys or on-screen arrows to move your character.
