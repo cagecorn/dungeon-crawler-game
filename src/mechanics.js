@@ -4206,6 +4206,58 @@ function killMonster(monster) {
             return false;
         }
 
+        // 몬스터 스킬 사용
+        function performMonsterSkill(monster, target) {
+            if (!monster.monsterSkill) return false;
+            const skillInfo = MONSTER_SKILLS[monster.monsterSkill];
+            if (!skillInfo) return false;
+
+            const manaCost = skillInfo.manaCost || 0;
+            if (monster.mana < manaCost) return false;
+
+            monster.mana -= manaCost;
+
+            const level = monster.skillLevels[monster.monsterSkill] || 1;
+            const base = skillInfo.magic ? getStat(monster, 'magicPower') : getStat(monster, 'attack');
+            const attackValue = (skillInfo.damageDice ? rollDice(skillInfo.damageDice) * level : 0) + base;
+
+            const result = performAttack(monster, target, {
+                attackValue: attackValue,
+                magic: !!skillInfo.magic,
+                element: skillInfo.element,
+                status: skillInfo.status,
+                damageDice: skillInfo.damageDice
+            });
+
+            const targetName = target === gameState.player ? "플레이어" : target.name;
+            const detail = buildAttackDetail(skillInfo.icon, skillInfo.name, result);
+
+            if (!result.hit) {
+                addMessage(`${skillInfo.icon} ${monster.name}의 ${skillInfo.name} 스킬이 ${targetName}에게 빗나갔습니다!`, "combat", detail);
+            } else {
+                const critMsg = result.crit ? ' (치명타!)' : '';
+                const dmgStr = formatNumber(result.damage);
+                addMessage(`${skillInfo.icon} ${monster.name}이(가) ${skillInfo.name} 스킬로 ${targetName}에게 ${dmgStr}의 피해를 입혔습니다${critMsg}!`, "combat", detail);
+            }
+
+            if (target.health <= 0) {
+                if (target === gameState.player) {
+                    handlePlayerDeath();
+                    return true;
+                } else {
+                    addMessage(`💀 ${monster.name}이(가) ${target.name}을(를) 처치했습니다!`, "combat");
+                    target.alive = false;
+                    target.health = 0;
+                    target.affinity = Math.max(0, (target.affinity || 0) - 5);
+                    if (target.affinity <= 0) {
+                        removeMercenary(target);
+                    }
+                    updateMercenaryDisplay();
+                }
+            }
+            return true;
+        }
+
         // 플레이어 사망 처리
         function handlePlayerDeath() {
             gameState.gameRunning = false;
@@ -4707,10 +4759,21 @@ function processTurn() {
                 
                 if (nearestTarget) {
                     // 공격 범위 내에 있으면 공격
-                    if (nearestDistance <= monster.range && 
+                    if (nearestDistance <= monster.range &&
                         hasLineOfSight(monster.x, monster.y, nearestTarget.x, nearestTarget.y)) {
-                        if (monsterAttack(monster)) {
-                            return; // 플레이어가 죽으면 게임 종료
+
+                        const skillInfo = monster.monsterSkill ? MONSTER_SKILLS[monster.monsterSkill] : null;
+                        const canUseSkill = skillInfo && monster.mana >= (skillInfo.manaCost || 0);
+                        let playerDied = false;
+
+                        if (canUseSkill && Math.random() < 0.5) {
+                            playerDied = performMonsterSkill(monster, nearestTarget);
+                        } else {
+                            playerDied = monsterAttack(monster);
+                        }
+
+                        if (playerDied) {
+                            return;
                         }
                     } else {
                         // 대상에게 접근
@@ -4747,7 +4810,17 @@ function processTurn() {
                             const newDistance = getDistance(monster.x, monster.y, nearestTarget.x, nearestTarget.y);
                             if (newDistance <= monster.range &&
                                 hasLineOfSight(monster.x, monster.y, nearestTarget.x, nearestTarget.y)) {
-                                if (monsterAttack(monster)) {
+                                const skillInfo = monster.monsterSkill ? MONSTER_SKILLS[monster.monsterSkill] : null;
+                                const canUseSkill = skillInfo && monster.mana >= (skillInfo.manaCost || 0);
+                                let playerDied = false;
+
+                                if (canUseSkill && Math.random() < 0.5) {
+                                    playerDied = performMonsterSkill(monster, nearestTarget);
+                                } else {
+                                    playerDied = monsterAttack(monster);
+                                }
+
+                                if (playerDied) {
                                     return;
                                 }
                             }
@@ -4770,7 +4843,17 @@ function processTurn() {
                                     const newDistance = getDistance(monster.x, monster.y, nearestTarget.x, nearestTarget.y);
                                     if (newDistance <= monster.range &&
                                         hasLineOfSight(monster.x, monster.y, nearestTarget.x, nearestTarget.y)) {
-                                        if (monsterAttack(monster)) {
+                                        const skillInfo = monster.monsterSkill ? MONSTER_SKILLS[monster.monsterSkill] : null;
+                                        const canUseSkill = skillInfo && monster.mana >= (skillInfo.manaCost || 0);
+                                        let playerDied = false;
+
+                                        if (canUseSkill && Math.random() < 0.5) {
+                                            playerDied = performMonsterSkill(monster, nearestTarget);
+                                        } else {
+                                            playerDied = monsterAttack(monster);
+                                        }
+
+                                        if (playerDied) {
                                             return;
                                         }
                                     }
@@ -6069,8 +6152,8 @@ formatItem, formatNumber, generateDungeon, generateStars, getAuraBonus,
 getDistance, getMonsterPoolForFloor, getPlayerEmoji, getStat, getStatusResist, 
 handleDungeonClick, handleItemClick, handlePlayerDeath, 
 hasLineOfSight, healAction, healTarget, hideItemTargetPanel, 
-hideMercenaryDetails, hideMonsterDetails, hideShop, hireMercenary, killMonster, 
-loadGame, meleeAttackAction, monsterAttack, movePlayer, nextFloor, 
+hideMercenaryDetails, hideMonsterDetails, hideShop, hireMercenary, killMonster,
+loadGame, meleeAttackAction, monsterAttack, performMonsterSkill, movePlayer, nextFloor,
 processMercenaryTurn, processProjectiles, processTurn, purifyTarget, 
 rangedAction, recallMercenaries, recruitHatchedSuperior, handleHatchedMonsterClick,
 removeEggFromIncubator, renderDungeon, reviveMercenary, reviveMonsterCorpse,
