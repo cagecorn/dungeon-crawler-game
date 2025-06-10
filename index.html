@@ -792,11 +792,12 @@
                 <h2>🛡️ 플레이어 정보</h2>
                 <div>📊 레벨: <span id="level">1</span></div>
                 <div>📚 스킬포인트: <span id="skillPoints">0</span></div>
-                <div>💪 힘: <span id="strengthStat">5</span></div>
-                <div>🏃 민첩: <span id="agilityStat">5</span></div>
-                <div>🛡 체력: <span id="enduranceStat">10</span></div>
-                <div>🔮 집중: <span id="focusStat">5</span></div>
-                <div>📖 지능: <span id="intelligenceStat">0</span></div>
+                <div>✨ 스탯포인트: <span id="statPoints">0</span></div>
+                <div>💪 힘: <span id="strengthStat" onclick="allocateStat('strength')">5</span></div>
+                <div>🏃 민첩: <span id="agilityStat" onclick="allocateStat('agility')">5</span></div>
+                <div>🛡 체력: <span id="enduranceStat" onclick="allocateStat('endurance')">10</span></div>
+                <div>🔮 집중: <span id="focusStat" onclick="allocateStat('focus')">5</span></div>
+                <div>📖 지능: <span id="intelligenceStat" onclick="allocateStat('intelligence')">0</span></div>
                 <div>❤️ 체력: <span id="health">20</span>/<span id="maxHealth">20</span></div>
                 <div>🔋 마나: <span id="mana">10</span>/<span id="maxMana">10</span></div>
                 <div class="health-bar-container">

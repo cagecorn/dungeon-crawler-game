@@ -2197,6 +2197,8 @@ const MERCENARY_NAMES = [
         function updateStats() {
             document.getElementById('level').textContent = formatNumber(gameState.player.level);
             document.getElementById('skillPoints').textContent = formatNumber(gameState.player.skillPoints);
+            const spEl = document.getElementById('statPoints');
+            if (spEl) spEl.textContent = formatNumber(gameState.player.statPoints);
             document.getElementById('strengthStat').textContent = formatNumber(gameState.player.strength);
             document.getElementById('agilityStat').textContent = formatNumber(gameState.player.agility);
             document.getElementById('enduranceStat').textContent = formatNumber(gameState.player.endurance);
@@ -2933,6 +2935,7 @@ function killMonster(monster) {
                 gameState.player.level += 1;
 
                 gameState.player.skillPoints += 1;
+                gameState.player.statPoints = (gameState.player.statPoints || 0) + 5;
 
                 gameState.player.endurance += 2;
                 gameState.player.strength += 1;
@@ -2946,6 +2949,14 @@ function killMonster(monster) {
                 updateStats();
                 updateSkillDisplay();
             }
+        }
+
+        function allocateStat(stat) {
+            if (gameState.player.statPoints <= 0) return;
+            if (!['strength','agility','endurance','focus','intelligence'].includes(stat)) return;
+            gameState.player[stat] += 1;
+            gameState.player.statPoints -= 1;
+            updateStats();
         }
 
         function checkMercenaryLevelUp(mercenary) {
@@ -5513,6 +5524,9 @@ function processTurn() {
             const saved = JSON.parse(data);
             delete saved.mercenaries;
             Object.assign(gameState, saved);
+            if (saved.player.statPoints === undefined) {
+                gameState.player.statPoints = 0;
+            }
             if (saved.activeMercenaries) gameState.activeMercenaries = saved.activeMercenaries;
             else if (saved.mercenaries) gameState.activeMercenaries = saved.mercenaries;
             if (saved.standbyMercenaries) gameState.standbyMercenaries = saved.standbyMercenaries;
@@ -6037,6 +6051,7 @@ function processTurn() {
             gameState.player.job = null;
             const allSkills = Object.keys(SKILL_DEFS);
             gameState.player.skillPoints = 0;
+            gameState.player.statPoints = 0;
             allSkills.forEach(s => {
                 if (!gameState.player.skills.includes(s)) {
                     gameState.player.skills.push(s);
@@ -6166,7 +6181,7 @@ updateFogOfWar, updateIncubatorDisplay,
 updateInventoryDisplay, updateMaterialsDisplay, updateMercenaryDisplay,
 updateShopDisplay, updateSkillDisplay, updateStats, updateTurnEffects,
 upgradeMercenarySkill, upgradeMonsterSkill, useItem, useItemOnTarget, useSkill, removeMercenary,
-dismiss, sacrifice
+    dismiss, sacrifice, allocateStat
 };
 Object.assign(window, exportsObj, {SKILL_DEFS, MERCENARY_SKILLS, MONSTER_SKILLS, MONSTER_SKILL_SETS, MONSTER_TRAITS, MONSTER_TRAIT_SETS, PREFIXES, SUFFIXES});
 

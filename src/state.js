@@ -56,6 +56,7 @@
       gold: 1000,
       inventory: [],
       skillPoints: 0,
+      statPoints: 0,
       skillLevels: {},
       skills: [],
       assignedSkills: {1: null, 2: null},
