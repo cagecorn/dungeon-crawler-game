@@ -1546,10 +1546,13 @@ const MERCENARY_NAMES = ['Aldo', 'Borin', 'Cara', 'Dain', 'Elin', 'Faris'];
             waiting.innerHTML = '';
             gameState.hatchedSuperiors.forEach(mon => {
                 const div = document.createElement('div');
-                div.className = 'incubator-slot clickable';
+                div.className = 'incubator-slot'; // div의 'clickable' 클래스 제거
                 const nameSpan = document.createElement('span');
+                nameSpan.className = 'clickable'; // nameSpan에 'clickable' 클래스 추가
                 nameSpan.textContent = mon.name;
+                nameSpan.addEventListener('click', () => showMonsterDetails(mon)); // nameSpan에 이벤트 리스너 할당
                 div.appendChild(nameSpan);
+
                 const btn = document.createElement('button');
                 btn.textContent = '영입';
                 btn.className = 'sell-button';
@@ -1558,7 +1561,8 @@ const MERCENARY_NAMES = ['Aldo', 'Borin', 'Cara', 'Dain', 'Elin', 'Faris'];
                     recruitHatchedSuperior(mon);
                 });
                 div.appendChild(btn);
-                div.addEventListener('click', () => showMonsterDetails(mon));
+
+                // div.addEventListener('click', () => showMonsterDetails(mon));
                 waiting.appendChild(div);
             });
         }
@@ -2649,8 +2653,8 @@ function killMonster(monster) {
                 shuffleArray(dirs);
                 let carved = false;
                 for (const { dx, dy } of dirs) {
-                    const nx = x + dx * 2;
-                    const ny = y + dy * 2;
+                    const nx = x + dx * 8; // 값을 2에서 8로 변경
+                    const ny = y + dy * 8; // 값을 2에서 8로 변경
                     if (nx > 0 && ny > 0 && nx < size - 1 && ny < size - 1 && !visited[ny][nx]) {
                         visited[ny][nx] = true;
                         carveWideCorridor(gameState.dungeon, x, y, nx, ny);
