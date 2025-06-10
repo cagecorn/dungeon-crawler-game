@@ -3472,6 +3472,82 @@ function killMonster(monster) {
             return proj;
         }
 
+        // Visual effect helpers
+        function createNovaEffect(x, y, type, radius) {
+            const dungeonEl = document.getElementById('dungeon');
+            if (!dungeonEl) return;
+
+            const cellSize = 25;
+            const centerX = (x - gameState.camera.x) * cellSize + cellSize / 2;
+            const centerY = (y - gameState.camera.y) * cellSize + cellSize / 2;
+
+            const novaDiv = document.createElement('div');
+            novaDiv.className = `nova-effect ${type}-nova`;
+            novaDiv.style.left = `${centerX - 12.5}px`;
+            novaDiv.style.top = `${centerY - 12.5}px`;
+            dungeonEl.appendChild(novaDiv);
+
+            createNovaParticles(centerX, centerY, type, radius);
+
+            setTimeout(() => {
+                if (novaDiv.parentNode) {
+                    novaDiv.parentNode.removeChild(novaDiv);
+                }
+            }, 800);
+        }
+
+        function createNovaParticles(centerX, centerY, type, radius) {
+            const dungeonEl = document.getElementById('dungeon');
+            const particleCount = radius * 8;
+
+            for (let i = 0; i < particleCount; i++) {
+                const angle = (i / particleCount) * Math.PI * 2;
+                const distance = (radius * 12.5) + (Math.random() * 25);
+                const particleX = centerX + Math.cos(angle) * distance;
+                const particleY = centerY + Math.sin(angle) * distance;
+
+                const particle = document.createElement('div');
+                particle.className = `${type}-particle`;
+                particle.style.left = `${particleX}px`;
+                particle.style.top = `${particleY}px`;
+
+                dungeonEl.appendChild(particle);
+
+                const removeTime = type === 'fire' ? 600 : 800;
+                setTimeout(() => {
+                    if (particle.parentNode) {
+                        particle.parentNode.removeChild(particle);
+                    }
+                }, removeTime);
+            }
+        }
+
+        function createScreenShake(intensity = 5, duration = 300) {
+            const dungeonEl = document.getElementById('dungeon');
+            if (!dungeonEl) return;
+
+            const originalTransform = dungeonEl.style.transform;
+            let startTime = Date.now();
+
+            function shake() {
+                const elapsed = Date.now() - startTime;
+                if (elapsed >= duration) {
+                    dungeonEl.style.transform = originalTransform;
+                    return;
+                }
+
+                const progress = elapsed / duration;
+                const currentIntensity = intensity * (1 - progress);
+                const shakeX = (Math.random() - 0.5) * currentIntensity;
+                const shakeY = (Math.random() - 0.5) * currentIntensity;
+
+                dungeonEl.style.transform = originalTransform + ` translate(${shakeX}px, ${shakeY}px)`;
+                requestAnimationFrame(shake);
+            }
+
+            shake();
+        }
+
         // 메시지 로그 추가
         function addMessage(text, type = 'info', detail = null) {
             const messageLog = document.getElementById('message-log');
@@ -5308,25 +5384,41 @@ function processTurn() {
                     return;
                 }
                 gameState.player.mana -= manaCost;
-                targets.slice().forEach(monster => {
-                    const attackValue = rollDice(skill.damageDice) * level + getStat(gameState.player, 'magicPower');
-                    const result = performAttack(gameState.player, monster, { attackValue, magic: skill.magic, element: skill.element, damageDice: skill.damageDice, status: gameState.player.equipped.weapon && gameState.player.equipped.weapon.status });
-                    const detail = buildAttackDetail(skill.icon, skill.name, result);
-                    if (!result.hit) {
-                        addMessage(`❌ ${monster.name}에게 ${skill.name}이 빗나갔습니다!`, 'combat', detail);
-                    } else {
-                        const critMsg = result.crit ? ' (치명타!)' : '';
-                        let dmgStr = formatNumber(result.baseDamage);
-                        if (result.elementDamage) {
-                            const emoji = ELEMENT_EMOJI[result.element] || '';
-                            dmgStr = `${formatNumber(result.baseDamage)}+${emoji}${formatNumber(result.elementDamage)}`;
+
+                if (skillKey === 'FireNova') {
+                    createNovaEffect(gameState.player.x, gameState.player.y, 'fire', skill.radius);
+                    createScreenShake(3, 200);
+                } else if (skillKey === 'IceNova') {
+                    createNovaEffect(gameState.player.x, gameState.player.y, 'ice', skill.radius);
+                }
+
+                setTimeout(() => {
+                    targets.slice().forEach(monster => {
+                        const attackValue = rollDice(skill.damageDice) * level + getStat(gameState.player, 'magicPower');
+                        const result = performAttack(gameState.player, monster, { 
+                            attackValue, 
+                            magic: skill.magic, 
+                            element: skill.element, 
+                            damageDice: skill.damageDice, 
+                            status: gameState.player.equipped.weapon && gameState.player.equipped.weapon.status 
+                        });
+                        const detail = buildAttackDetail(skill.icon, skill.name, result);
+                        if (!result.hit) {
+                            addMessage(`❌ ${monster.name}에게 ${skill.name}이 빗나갔습니다!`, 'combat', detail);
+                        } else {
+                            const critMsg = result.crit ? ' (치명타!)' : '';
+                            let dmgStr = formatNumber(result.baseDamage);
+                            if (result.elementDamage) {
+                                const emoji = ELEMENT_EMOJI[result.element] || '';
+                                dmgStr = `${formatNumber(result.baseDamage)}+${emoji}${formatNumber(result.elementDamage)}`;
+                            }
+                            addMessage(`${skill.icon} ${monster.name}에게 ${dmgStr}의 피해를 입혔습니다${critMsg}!`, 'combat', detail);
                         }
-                        addMessage(`${skill.icon} ${monster.name}에게 ${dmgStr}의 피해를 입혔습니다${critMsg}!`, 'combat', detail);
-                    }
-                    if (monster.health <= 0) {
-                        killMonster(monster);
-                    }
-                });
+                        if (monster.health <= 0) {
+                            killMonster(monster);
+                        }
+                    });
+                }, 200);
                 processTurn();
                 return;
             }
@@ -5677,9 +5769,9 @@ gameState, addMessage, addToInventory, advanceIncubators,
 applyStatusEffects, assignSkill, autoMoveStep, averageDice, buildAttackDetail, 
 buyShopItem, checkLevelUp, checkMercenaryLevelUp, checkMonsterLevelUp, 
 convertMonsterToMercenary, craftItem, createChampion, createEliteMonster, 
-createHomingProjectile, createItem, createMercenary, createMonster, 
-createSuperiorMonster, createTreasure, dissectCorpse, equipItem, 
-equipItemToMercenary, estimateSkillDamage, findAdjacentEmpty, findPath, 
+createHomingProjectile, createItem, createMercenary, createMonster,
+createSuperiorMonster, createTreasure, createNovaEffect, createScreenShake, dissectCorpse, equipItem,
+equipItemToMercenary, estimateSkillDamage, findAdjacentEmpty, findPath,
 formatItem, formatNumber, generateDungeon, generateStars, getAuraBonus, 
 getDistance, getMonsterPoolForFloor, getPlayerEmoji, getStat, getStatusResist, 
 handleDungeonClick, handleItemClick, handlePlayerDeath, 
