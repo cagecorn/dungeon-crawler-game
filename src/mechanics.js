@@ -653,7 +653,7 @@ const MERCENARY_NAMES = ['Aldo', 'Borin', 'Cara', 'Dain', 'Elin', 'Faris'];
             HasteAura: { name: 'Haste Aura', icon: '💨', passive: true, radius: 6, aura: { evasion: 0.05 } },
             ConcentrationAura: { name: 'Concentration Aura', icon: '🎯', passive: true, radius: 6, aura: { accuracy: 0.05 } },
             CondemnAura: { name: 'Condemn Aura', icon: '⚔️', passive: true, radius: 6, aura: { critChance: 0.05 } },
-            NaturalAura: { name: 'Natural Aura', icon: '🌿', passive: true, radius: 6, aura: { defense: 1, magicResist: 1 } }
+            NaturalAura: { name: 'Natural Aura', icon: '🌿', passive: true, radius: 6, aura: { allResist: 0.05 } } // 레벨당 5% 저항
         };
 
         // 용병 전용 스킬 정의
@@ -670,7 +670,7 @@ const MERCENARY_NAMES = ['Aldo', 'Borin', 'Cara', 'Dain', 'Elin', 'Faris'];
             HasteAura: { name: 'Haste Aura', icon: '💨', passive: true, radius: 6, aura: { evasion: 0.05 } },
             ConcentrationAura: { name: 'Concentration Aura', icon: '🎯', passive: true, radius: 6, aura: { accuracy: 0.05 } },
             CondemnAura: { name: 'Condemn Aura', icon: '⚔️', passive: true, radius: 6, aura: { critChance: 0.05 } },
-            NaturalAura: { name: 'Natural Aura', icon: '🌿', passive: true, radius: 6, aura: { defense: 1, magicResist: 1 } }
+            NaturalAura: { name: 'Natural Aura', icon: '🌿', passive: true, radius: 6, aura: { allResist: 0.05 } } // 레벨당 5% 저항
         };
 
 
