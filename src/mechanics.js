@@ -345,7 +345,7 @@ const MERCENARY_NAMES = [
             },
             GOBLIN: {
                 name: '👹 고블린',
-                icon: '👹',
+                icon: '',
                 color: '#32CD32',
                 baseHealth: 4,
                 baseAttack: 2,
@@ -3097,7 +3097,7 @@ function killMonster(monster) {
                                 if (m) {
                                     const monsterClass = m.type.replace('_', '-').toLowerCase();
                                     finalClasses.push('monster', monsterClass);
-                                    if (monsterClass !== 'slime' && monsterClass !== 'goblin-archer') {
+                                    if (monsterClass !== 'slime' && monsterClass !== 'goblin-archer' && monsterClass !== 'goblin') {
                                          div.textContent = m.icon;
                                     }
                                     if (m.isChampion) finalClasses.push('champion');

@@ -139,3 +139,8 @@
 .cell.empty.monster.goblin-archer {
   background-image: url("assets/images/goblin-archer.png"), url("assets/images/floor-tile.png");
 }
+
+/* 고블린 이미지 적용 */
+.cell.empty.monster.goblin {
+  background-image: url("assets/images/goblin.png"), url("assets/images/floor-tile.png");
+}
