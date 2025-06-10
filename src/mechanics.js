@@ -631,6 +631,243 @@ const MERCENARY_NAMES = ['Aldo', 'Borin', 'Cara', 'Dain', 'Elin', 'Faris'];
                 price: 8,
                 level: 1,
                 icon: '🥪'
+            },
+            dagger: {
+                name: '🗡️ 단도',
+                type: ITEM_TYPES.WEAPON,
+                attack: 1,
+                damageDice: "1d4",
+                price: 5,
+                level: 1,
+                icon: '🗡️'
+            },
+            battleAxe: {
+                name: '🪓 전투도끼',
+                type: ITEM_TYPES.WEAPON,
+                attack: 5,
+                damageDice: "1d10",
+                price: 40,
+                level: 3,
+                icon: '🪓'
+            },
+            warhammer: {
+                name: '🔨 전쟁망치',
+                type: ITEM_TYPES.WEAPON,
+                attack: 6,
+                damageDice: "1d8",
+                price: 45,
+                level: 3,
+                icon: '🔨'
+            },
+            spear: {
+                name: '🪃 창',
+                type: ITEM_TYPES.WEAPON,
+                attack: 3,
+                damageDice: "1d6",
+                price: 20,
+                level: 2,
+                icon: '🪃'
+            },
+            bow: {
+                name: '🏹 활',
+                type: ITEM_TYPES.WEAPON,
+                attack: 4,
+                damageDice: "1d8",
+                price: 30,
+                level: 2,
+                icon: '🏹'
+            },
+            crossbow: {
+                name: '🏹 석궁',
+                type: ITEM_TYPES.WEAPON,
+                attack: 5,
+                damageDice: "1d10",
+                price: 50,
+                level: 3,
+                icon: '🏹'
+            },
+            greatSword: {
+                name: '⚔️ 대검',
+                type: ITEM_TYPES.WEAPON,
+                attack: 7,
+                damageDice: "1d12",
+                price: 60,
+                level: 4,
+                icon: '⚔️'
+            },
+            arcaneStaff: {
+                name: '🔮 비전 지팡이',
+                type: ITEM_TYPES.WEAPON,
+                magicPower: 5,
+                manaRegen: 2,
+                damageDice: "1d6",
+                price: 55,
+                level: 3,
+                icon: '🔮'
+            },
+            holyMace: {
+                name: '💫 성스러운 철퇴',
+                type: ITEM_TYPES.WEAPON,
+                attack: 4,
+                magicPower: 2,
+                damageDice: "1d8",
+                price: 45,
+                level: 3,
+                icon: '💫'
+            },
+            runicBlade: {
+                name: '🔤 룬 검',
+                type: ITEM_TYPES.WEAPON,
+                attack: 5,
+                magicPower: 3,
+                damageDice: "1d10",
+                price: 70,
+                level: 4,
+                icon: '🔤'
+            },
+            paddedArmor: {
+                name: '🧥 솜옷',
+                type: ITEM_TYPES.ARMOR,
+                defense: 1,
+                price: 8,
+                level: 1,
+                icon: '🧥'
+            },
+            studiedLeather: {
+                name: '🦺 스터드 가죽갑옷',
+                type: ITEM_TYPES.ARMOR,
+                defense: 3,
+                price: 25,
+                level: 2,
+                icon: '🦺'
+            },
+            scaleMail: {
+                name: '⚖️ 비늘갑옷',
+                type: ITEM_TYPES.ARMOR,
+                defense: 5,
+                price: 50,
+                level: 3,
+                icon: '⚖️'
+            },
+            splintArmor: {
+                name: '🛡️ 판금갑옷',
+                type: ITEM_TYPES.ARMOR,
+                defense: 7,
+                price: 80,
+                level: 4,
+                icon: '🛡️'
+            },
+            robes: {
+                name: '👘 로브',
+                type: ITEM_TYPES.ARMOR,
+                defense: 1,
+                magicResist: 2,
+                price: 20,
+                level: 1,
+                icon: '👘'
+            },
+            enchantedRobes: {
+                name: '✨ 마법 로브',
+                type: ITEM_TYPES.ARMOR,
+                defense: 2,
+                magicResist: 4,
+                manaRegen: 1,
+                price: 45,
+                level: 3,
+                icon: '✨'
+            },
+            dragonscale: {
+                name: '🐉 용비늘갑옷',
+                type: ITEM_TYPES.ARMOR,
+                defense: 8,
+                magicResist: 3,
+                price: 120,
+                level: 5,
+                icon: '🐉'
+            },
+            strengthRing: {
+                name: '💍 힘의 반지',
+                type: ITEM_TYPES.ACCESSORY,
+                attack: 1,
+                price: 15,
+                level: 1,
+                icon: '💍'
+            },
+            defenseRing: {
+                name: '🛡️ 방어의 반지',
+                type: ITEM_TYPES.ACCESSORY,
+                defense: 1,
+                price: 15,
+                level: 1,
+                icon: '🛡️'
+            },
+            speedBoots: {
+                name: '👟 신속의 부츠',
+                type: ITEM_TYPES.ACCESSORY,
+                evasion: 0.1,
+                price: 30,
+                level: 2,
+                icon: '👟'
+            },
+            manaAmulet: {
+                name: '🔮 마나 목걸이',
+                type: ITEM_TYPES.ACCESSORY,
+                manaRegen: 2,
+                price: 25,
+                level: 2,
+                icon: '🔮'
+            },
+            healthBracelet: {
+                name: '❤️ 생명력 팔찌',
+                type: ITEM_TYPES.ACCESSORY,
+                healthRegen: 1,
+                maxHealth: 5,
+                price: 35,
+                level: 2,
+                icon: '❤️'
+            },
+            luckyCharm: {
+                name: '🍀 행운의 부적',
+                type: ITEM_TYPES.ACCESSORY,
+                critChance: 0.1,
+                price: 40,
+                level: 3,
+                icon: '🍀'
+            },
+            wizardHat: {
+                name: '🎩 마법사 모자',
+                type: ITEM_TYPES.ACCESSORY,
+                magicPower: 2,
+                price: 30,
+                level: 2,
+                icon: '🎩'
+            },
+            berserkerBelt: {
+                name: '🔥 광전사 벨트',
+                type: ITEM_TYPES.ACCESSORY,
+                attack: 2,
+                critChance: 0.05,
+                price: 45,
+                level: 3,
+                icon: '🔥'
+            },
+            shadowCloak: {
+                name: '🌑 그림자 망토',
+                type: ITEM_TYPES.ACCESSORY,
+                evasion: 0.15,
+                magicResist: 1,
+                price: 50,
+                level: 3,
+                icon: '🌑'
+            },
+            dragonEye: {
+                name: '👁️ 용의 눈',
+                type: ITEM_TYPES.ACCESSORY,
+                accuracy: 0.1,
+                critChance: 0.08,
+                price: 60,
+                level: 4,
+                icon: '👁️'
             }
 
         };
@@ -817,7 +1054,30 @@ const MERCENARY_NAMES = ['Aldo', 'Borin', 'Cara', 'Dain', 'Elin', 'Faris'];
             { name: 'Poison Resistant', modifiers: { poisonResist: 0.3 } },
             { name: 'Bleed Resistant', modifiers: { bleedResist: 0.3 } },
             { name: 'Burn Resistant', modifiers: { burnResist: 0.3 } },
-            { name: 'Freeze Resistant', modifiers: { freezeResist: 0.3 } }
+            { name: 'Freeze Resistant', modifiers: { freezeResist: 0.3 } },
+            { name: 'Blazing', modifiers: { attack: 2, status: 'burn' } },
+            { name: 'Frozen', modifiers: { magicPower: 1, status: 'freeze' } },
+            { name: 'Lightning', modifiers: { attack: 1, critChance: 0.03 } },
+            { name: 'Vampiric', modifiers: { healthRegen: 1, status: 'bleed' } },
+            { name: 'Blessed', modifiers: { defense: 1, healthRegen: 0.5 } },
+            { name: 'Cursed', modifiers: { attack: 3, defense: -1 } },
+            { name: 'Ancient', modifiers: { magicPower: 2, manaRegen: 0.5 } },
+            { name: 'Demonic', modifiers: { attack: 2, critChance: 0.05, defense: -1 } },
+            { name: 'Angelic', modifiers: { defense: 2, magicResist: 1 } },
+            { name: 'Ethereal', modifiers: { evasion: 0.05, magicPower: 1 } },
+            { name: 'Brutal', modifiers: { attack: 2, accuracy: -0.05 } },
+            { name: 'Precise', modifiers: { accuracy: 0.1, critChance: 0.03 } },
+            { name: 'Heavy', modifiers: { attack: 1, defense: 1, evasion: -0.05 } },
+            { name: 'Light', modifiers: { evasion: 0.08, defense: -1 } },
+            { name: 'Masterwork', modifiers: { attack: 1, defense: 1, accuracy: 0.02 } },
+            { name: 'Rusted', modifiers: { attack: -1, price: -5 } },
+            { name: 'Polished', modifiers: { accuracy: 0.05, critChance: 0.02 } },
+            { name: 'Reinforced', modifiers: { defense: 2, maxHealth: 3 } },
+            { name: 'Quicksilver', modifiers: { evasion: 0.1, attack: 1 } },
+            { name: 'Titanium', modifiers: { defense: 3, attack: 1 } },
+            { name: 'Fire-Forged', modifiers: { attack: 1, burnResist: 0.5 } },
+            { name: 'Ice-Tempered', modifiers: { defense: 1, freezeResist: 0.5 } },
+            { name: 'Storm-Blessed', modifiers: { evasion: 0.03, paralysisResist: 0.4 } }
         ];
         const SUFFIXES = [
             { name: 'of Protection', modifiers: { defense: 2 } },
@@ -832,7 +1092,31 @@ const MERCENARY_NAMES = ['Aldo', 'Borin', 'Cara', 'Dain', 'Elin', 'Faris'];
             { name: 'of Poison Resistance', modifiers: { poisonResist: 0.3 } },
             { name: 'of Bleed Resistance', modifiers: { bleedResist: 0.3 } },
             { name: 'of Burn Resistance', modifiers: { burnResist: 0.3 } },
-            { name: 'of Frost Resistance', modifiers: { freezeResist: 0.3 } }
+            { name: 'of Frost Resistance', modifiers: { freezeResist: 0.3 } },
+            { name: 'of the Dragon', modifiers: { attack: 3, status: 'burn' } },
+            { name: 'of the Phoenix', modifiers: { healthRegen: 2, status: 'burn' } },
+            { name: 'of the Void', modifiers: { magicPower: 3, status: 'silence' } },
+            { name: 'of Lightning', modifiers: { attack: 2, evasion: 0.05 } },
+            { name: 'of the Storm', modifiers: { magicPower: 2, status: 'paralysis' } },
+            { name: 'of Slaying', modifiers: { attack: 4, critChance: 0.1 } },
+            { name: 'of Warding', modifiers: { defense: 3, magicResist: 2 } },
+            { name: 'of Speed', modifiers: { evasion: 0.1, accuracy: 0.05 } },
+            { name: 'of Power', modifiers: { attack: 2, magicPower: 2 } },
+            { name: 'of Endurance', modifiers: { maxHealth: 8, healthRegen: 1 } },
+            { name: 'of Wisdom', modifiers: { manaRegen: 2, magicPower: 1 } },
+            { name: 'of the Berserker', modifiers: { attack: 3, critChance: 0.08, defense: -1 } },
+            { name: 'of the Guardian', modifiers: { defense: 4, maxHealth: 5 } },
+            { name: 'of the Assassin', modifiers: { critChance: 0.15, evasion: 0.08 } },
+            { name: 'of the Archmage', modifiers: { magicPower: 4, manaRegen: 1 } },
+            { name: 'of Etherealness', modifiers: { evasion: 0.12, magicResist: 2 } },
+            { name: 'of Giant Strength', modifiers: { attack: 5, accuracy: -0.03 } },
+            { name: 'of True Sight', modifiers: { accuracy: 0.15, critChance: 0.05 } },
+            { name: 'of Immortality', modifiers: { healthRegen: 3, maxHealth: 10 } },
+            { name: 'of Devastation', modifiers: { attack: 4, critChance: 0.12, status: 'bleed' } },
+            { name: 'of Fire Immunity', modifiers: { burnResist: 0.8, freezeResist: -0.2 } },
+            { name: 'of Ice Immunity', modifiers: { freezeResist: 0.8, burnResist: -0.2 } },
+            { name: 'of Poison Immunity', modifiers: { poisonResist: 0.9 } },
+            { name: 'of Mental Fortitude', modifiers: { nightmareResist: 0.6, silenceResist: 0.6 } }
         ];
 
         function getDistance(x1, y1, x2, y2) {
@@ -1609,9 +1893,12 @@ const MERCENARY_NAMES = ['Aldo', 'Borin', 'Cara', 'Dain', 'Elin', 'Faris'];
             waiting.innerHTML = '';
             gameState.hatchedSuperiors.forEach(mon => {
                 const div = document.createElement('div');
-                div.textContent = mon.name;
                 div.className = 'incubator-slot clickable';
-                div.addEventListener('click', () => showMonsterDetails(mon));
+
+                const nameSpan = document.createElement('span');
+                nameSpan.textContent = mon.name;
+                nameSpan.addEventListener('click', () => showMonsterDetails(mon));
+                div.appendChild(nameSpan);
 
                 const btn = document.createElement('button');
                 btn.textContent = '영입';
@@ -1622,7 +1909,6 @@ const MERCENARY_NAMES = ['Aldo', 'Borin', 'Cara', 'Dain', 'Elin', 'Faris'];
                 });
                 div.appendChild(btn);
 
-                // div.addEventListener('click', () => showMonsterDetails(mon));
                 waiting.appendChild(div);
             });
         }
