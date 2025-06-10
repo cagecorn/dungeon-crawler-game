@@ -3078,7 +3078,6 @@ function killMonster(monster) {
 
                     if (x === gameState.player.x && y === gameState.player.y) {
                         cellType = 'player';
-                        div.textContent = getPlayerEmoji();
                     } else {
                         const proj = gameState.projectiles.find(p => p.x === x && p.y === y);
                         if (proj) {
