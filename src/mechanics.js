@@ -1547,14 +1547,18 @@ const MERCENARY_NAMES = ['Aldo', 'Borin', 'Cara', 'Dain', 'Elin', 'Faris'];
             gameState.hatchedSuperiors.forEach(mon => {
                 const div = document.createElement('div');
                 div.className = 'incubator-slot clickable';
-                div.textContent = mon.name;
-                div.onclick = () => showMonsterDetails(mon);
-                div.dataset.id = mon.id;
+                const nameSpan = document.createElement('span');
+                nameSpan.textContent = mon.name;
+                div.appendChild(nameSpan);
                 const btn = document.createElement('button');
                 btn.textContent = '영입';
                 btn.className = 'sell-button';
-                btn.onclick = (e) => { e.stopPropagation(); recruitHatchedSuperior(mon); };
+                btn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    recruitHatchedSuperior(mon);
+                });
                 div.appendChild(btn);
+                div.addEventListener('click', () => showMonsterDetails(mon));
                 waiting.appendChild(div);
             });
         }
