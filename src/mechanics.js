@@ -3903,7 +3903,11 @@ function killMonster(monster) {
         function applyEnhancement(item) {
             if (!item.baseStats) return;
             for (const stat in item.baseStats) {
-                item[stat] = item.baseStats[stat] * Math.pow(1.05, item.enhanceLevel);
+                if (stat === 'attack' || stat === 'defense') {
+                    item[stat] = item.baseStats[stat] + item.enhanceLevel * 1;
+                } else {
+                    item[stat] = item.baseStats[stat] + item.enhanceLevel * 0.5;
+                }
             }
         }
 
