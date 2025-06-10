@@ -1546,12 +1546,9 @@ const MERCENARY_NAMES = ['Aldo', 'Borin', 'Cara', 'Dain', 'Elin', 'Faris'];
             waiting.innerHTML = '';
             gameState.hatchedSuperiors.forEach(mon => {
                 const div = document.createElement('div');
-                div.className = 'incubator-slot'; // div의 'clickable' 클래스 제거
-                const nameSpan = document.createElement('span');
-                nameSpan.className = 'clickable'; // nameSpan에 'clickable' 클래스 추가
-                nameSpan.textContent = mon.name;
-                nameSpan.addEventListener('click', () => showMonsterDetails(mon)); // nameSpan에 이벤트 리스너 할당
-                div.appendChild(nameSpan);
+                div.textContent = mon.name;
+                div.className = 'incubator-slot clickable';
+                div.addEventListener('click', () => showMonsterDetails(mon));
 
                 const btn = document.createElement('button');
                 btn.textContent = '영입';
@@ -2145,7 +2142,10 @@ function killMonster(monster) {
                 let lootChance = monster.lootChance;
                 if (Math.random() < lootChance) {
                     const itemKeys = Object.keys(ITEMS).filter(k => k !== 'reviveScroll');
-                    const availableItems = itemKeys.filter(key => ITEMS[key].level <= Math.ceil(gameState.floor / 2 + 1));
+                    const availableItems = itemKeys.filter(key =>
+                        ITEMS[key].level <= Math.ceil(gameState.floor / 2 + 1) &&
+                        ITEMS[key].type !== ITEM_TYPES.ESSENCE
+                    );
                     let randomItemKey = availableItems[Math.floor(Math.random() * availableItems.length)];
                     if (Math.random() < 0.05) {
                         randomItemKey = 'superiorEgg';
@@ -2275,7 +2275,7 @@ function killMonster(monster) {
         }
 
         function dissectCorpse(corpse) {
-            const materialsPool = ['뼈', '가죽', '정수', 'bread', 'meat', 'rawMeat', 'lettuce'];
+            const materialsPool = ['뼈', '가죽', 'bread', 'meat', 'rawMeat', 'lettuce'];
             const gained = [];
             const count = Math.floor(Math.random() * 3) + 1;
             for (let i = 0; i < count; i++) {
@@ -2790,7 +2790,7 @@ function killMonster(monster) {
             const itemKeys = Object.keys(ITEMS);
             // 맵에 떨어지는 아이템 수를 줄임
             const itemCount = Math.floor(size * 0.05) + Math.floor(gameState.floor * 0.25);
-            const spawnKeys = itemKeys.filter(k => k !== 'reviveScroll');
+            const spawnKeys = itemKeys.filter(k => k !== 'reviveScroll' && ITEMS[k].type !== ITEM_TYPES.ESSENCE);
             for (let i = 0; i < itemCount; i++) {
                 let x, y;
                 do {
@@ -2824,7 +2824,10 @@ function killMonster(monster) {
             gameState.dungeon[sy][sx] = 'shop';
 
             gameState.shopItems = [];
-            const availableItems = itemKeys.filter(k => ITEMS[k].level <= Math.ceil(gameState.floor / 2 + 1));
+            const availableItems = itemKeys.filter(k =>
+                ITEMS[k].level <= Math.ceil(gameState.floor / 2 + 1) &&
+                ITEMS[k].type !== ITEM_TYPES.ESSENCE
+            );
             const basicFoodKeys = ['bread', 'meat', 'lettuce', 'sandwich', 'salad', 'cookedMeal'];
             basicFoodKeys.forEach(key => {
                 if (ITEMS[key] && !availableItems.includes(key)) {
@@ -4197,8 +4200,7 @@ function processTurn() {
                 }
 
                 const distance = getDistance(mercenary.x, mercenary.y, monster.x, monster.y);
-                const playerDist = getDistance(gameState.player.x, gameState.player.y, monster.x, monster.y);
-                if (playerDist <= MERCENARY_TRIGGER_DISTANCE && distance < nearestDistance && hasLineOfSight(mercenary.x, mercenary.y, monster.x, monster.y)) {
+                if (distance < nearestDistance && hasLineOfSight(mercenary.x, mercenary.y, monster.x, monster.y)) {
                     nearestDistance = distance;
                     nearestMonster = monster;
                 }
@@ -4305,7 +4307,8 @@ function processTurn() {
                         } else if (Math.random() < nearestMonster.lootChance) {
                             const itemKeys = Object.keys(ITEMS).filter(k => k !== 'reviveScroll');
                             const availableItems = itemKeys.filter(key =>
-                                ITEMS[key].level <= Math.ceil(gameState.floor / 2 + 1)
+                                ITEMS[key].level <= Math.ceil(gameState.floor / 2 + 1) &&
+                                ITEMS[key].type !== ITEM_TYPES.ESSENCE
                             );
                             let randomItemKey = availableItems[Math.floor(Math.random() * availableItems.length)];
                             if (Math.random() < 0.1 && ITEMS.reviveScroll.level <= Math.ceil(gameState.floor / 2 + 1)) {
@@ -4382,7 +4385,8 @@ function processTurn() {
                         } else if (Math.random() < nearestMonster.lootChance) {
                             const itemKeys = Object.keys(ITEMS).filter(k => k !== 'reviveScroll');
                             const availableItems = itemKeys.filter(key =>
-                                ITEMS[key].level <= Math.ceil(gameState.floor / 2 + 1)
+                                ITEMS[key].level <= Math.ceil(gameState.floor / 2 + 1) &&
+                                ITEMS[key].type !== ITEM_TYPES.ESSENCE
                             );
                             let randomItemKey = availableItems[Math.floor(Math.random() * availableItems.length)];
                             if (Math.random() < 0.1 && ITEMS.reviveScroll.level <= Math.ceil(gameState.floor / 2 + 1)) {
@@ -4468,7 +4472,8 @@ function processTurn() {
                         } else if (Math.random() < nearestMonster.lootChance) {
                             const itemKeys = Object.keys(ITEMS).filter(k => k !== 'reviveScroll');
                             const availableItems = itemKeys.filter(key =>
-                                ITEMS[key].level <= Math.ceil(gameState.floor / 2 + 1)
+                                ITEMS[key].level <= Math.ceil(gameState.floor / 2 + 1) &&
+                                ITEMS[key].type !== ITEM_TYPES.ESSENCE
                             );
                             let randomItemKey = availableItems[Math.floor(Math.random() * availableItems.length)];
                             if (Math.random() < 0.1 && ITEMS.reviveScroll.level <= Math.ceil(gameState.floor / 2 + 1)) {
@@ -4544,7 +4549,8 @@ function processTurn() {
                         } else if (Math.random() < nearestMonster.lootChance) {
                             const itemKeys = Object.keys(ITEMS).filter(k => k !== 'reviveScroll');
                             const availableItems = itemKeys.filter(key =>
-                                ITEMS[key].level <= Math.ceil(gameState.floor / 2 + 1)
+                                ITEMS[key].level <= Math.ceil(gameState.floor / 2 + 1) &&
+                                ITEMS[key].type !== ITEM_TYPES.ESSENCE
                             );
                             let randomItemKey = availableItems[Math.floor(Math.random() * availableItems.length)];
                             if (Math.random() < 0.1 && ITEMS.reviveScroll.level <= Math.ceil(gameState.floor / 2 + 1)) {
