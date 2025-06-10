@@ -107,6 +107,10 @@ Recipe scrolls may drop from monsters or appear in dungeons. Picking one up auto
 
 You can now cultivate monsters for equipment. Bury a defeated foe on a farm tile to start growing loot. The monster slowly decomposes over a set number of turns. Using fertilizer items reduces this time or improves the drop quality. When the growth is complete, harvest the plot to receive equipment influenced by the planted monster.
 
+### Equipment Enhancement
+
+Gear can be leveled up using materials like **iron** and **bone**. Each enhancement level increases all of an item's stats by **50%**. Press the **강화** button beside an item in your inventory to spend the materials and apply the upgrade.
+
 ## Development
 
 Install dependencies with:
