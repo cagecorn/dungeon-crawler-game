@@ -12,3 +12,11 @@
   background-size: cover;
   background-color: transparent;
 }
+
+/* Wall tile image for wall cells */
+.cell.wall {
+  background-image: url("assets/images/wall-tile.png");
+  background-size: cover;
+  color: unset;
+  font-size: unset;
+}
