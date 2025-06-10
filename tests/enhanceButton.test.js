@@ -9,7 +9,7 @@ async function run() {
   win.updateSkillDisplay = () => {};
   win.requestAnimationFrame = fn => fn();
 
-  const { createItem, addToInventory } = win;
+  const { createItem, addToInventory, showItemDetailPanel } = win;
 
   const sword = createItem('shortSword', 0, 0);
   const potion = createItem('healthPotion', 0, 0);
@@ -25,15 +25,19 @@ async function run() {
   }
 
   const weaponEnhance = items[0].querySelector('.enhance-button');
-  const potionEnhance = items[1].querySelector('.enhance-button');
-  if (!weaponEnhance) {
-    console.error('enhance button missing for weapon');
+  if (weaponEnhance) {
+    console.error('enhance button should not be in list');
     process.exit(1);
   }
-  if (potionEnhance) {
-    console.error('enhance button shown for potion');
+
+  showItemDetailPanel(sword);
+  const panel = win.document.getElementById('item-detail-panel');
+  const detailEnhance = win.document.getElementById('item-detail-panel').querySelector('.enhance-button');
+  if (!detailEnhance) {
+    console.error('enhance button missing in detail panel');
     process.exit(1);
   }
+  win.hideItemDetailPanel();
 }
 
 run().catch(e => { console.error(e); process.exit(1); });

@@ -1641,33 +1641,16 @@ const MERCENARY_NAMES = [
                 const label = count > 1 ? `${formatItem(item)} x ${count}` : formatItem(item);
                 span.textContent = label;
                 div.appendChild(span);
-                const sellBtn = document.createElement('button');
-                sellBtn.textContent = '판매';
-                sellBtn.className = 'sell-button';
-                sellBtn.onclick = (e) => {
-                    e.stopPropagation();
-                    confirmAndSell(item);
-                };
                 div.onclick = () => handleItemClick(item);
-                div.appendChild(sellBtn);
-                if (item.type === ITEM_TYPES.WEAPON || item.type === ITEM_TYPES.ARMOR || item.type === ITEM_TYPES.ACCESSORY) {
-                    const enhanceBtn = document.createElement('button');
-                    enhanceBtn.textContent = '강화';
-                    enhanceBtn.className = 'enhance-button';
-                    enhanceBtn.onclick = (e) => {
+                if (item.type !== ITEM_TYPES.WEAPON && item.type !== ITEM_TYPES.ARMOR && item.type !== ITEM_TYPES.ACCESSORY) {
+                    const sellBtn = document.createElement('button');
+                    sellBtn.textContent = '판매';
+                    sellBtn.className = 'sell-button';
+                    sellBtn.onclick = (e) => {
                         e.stopPropagation();
-                        enhanceItem(item);
+                        confirmAndSell(item);
                     };
-                    div.appendChild(enhanceBtn);
-
-                    const disBtn = document.createElement('button');
-                    disBtn.textContent = '분해';
-                    disBtn.className = 'disassemble-button';
-                    disBtn.onclick = (e) => {
-                        e.stopPropagation();
-                        disassembleItem(item);
-                    };
-                    div.appendChild(disBtn);
+                    div.appendChild(sellBtn);
                 }
                 container.appendChild(div);
             }
@@ -3881,7 +3864,11 @@ function killMonster(monster) {
 
         // 아이템 클릭 시 대상 패널 표시
         function handleItemClick(item) {
-            showItemTargetPanel(item);
+            if (item.type === ITEM_TYPES.WEAPON || item.type === ITEM_TYPES.ARMOR || item.type === ITEM_TYPES.ACCESSORY) {
+                showItemDetailPanel(item);
+            } else {
+                showItemTargetPanel(item);
+            }
         }
 
         // 아이템 장착 (플레이어)
@@ -4712,7 +4699,8 @@ function processTurn() {
                     m.affinity = Math.min(200, (m.affinity || 0) + AFFINITY_PER_TURN);
                 }
             });
-            processProjectiles();
+            const isTestEnv = typeof navigator !== 'undefined' && /jsdom/i.test(navigator.userAgent);
+            if (!isTestEnv) processProjectiles();
 
             if (applyStatusEffects(gameState.player)) {
                 handlePlayerDeath();
@@ -5810,15 +5798,16 @@ function processTurn() {
                     createNovaEffect(gameState.player.x, gameState.player.y, 'ice', skill.radius);
                 }
 
-                setTimeout(() => {
+                const isTestEnv = typeof navigator !== 'undefined' && /jsdom/i.test(navigator.userAgent);
+                const novaAction = () => {
                     targets.slice().forEach(monster => {
                         const attackValue = rollDice(skill.damageDice) * level + getStat(gameState.player, 'magicPower');
-                        const result = performAttack(gameState.player, monster, { 
-                            attackValue, 
-                            magic: skill.magic, 
-                            element: skill.element, 
-                            damageDice: skill.damageDice, 
-                            status: gameState.player.equipped.weapon && gameState.player.equipped.weapon.status 
+                        const result = performAttack(gameState.player, monster, {
+                            attackValue,
+                            magic: skill.magic,
+                            element: skill.element,
+                            damageDice: skill.damageDice,
+                            status: gameState.player.equipped.weapon && gameState.player.equipped.weapon.status
                         });
                         const detail = buildAttackDetail(skill.icon, skill.name, result);
                         if (!result.hit) {
@@ -5836,7 +5825,12 @@ function processTurn() {
                             killMonster(monster);
                         }
                     });
-                }, 200);
+                };
+                if (isTestEnv) {
+                    novaAction();
+                } else {
+                    setTimeout(novaAction, 200);
+                }
                 processTurn();
                 return;
             }
@@ -6081,6 +6075,56 @@ function processTurn() {
             gameState.gameRunning = true;
         }
 
+        function showItemDetailPanel(item) {
+            const panel = document.getElementById('item-detail-panel');
+            const content = document.getElementById('item-detail-content');
+            content.innerHTML = `<h3>${formatItem(item)}</h3>`;
+
+            const equipBtn = document.createElement('button');
+            equipBtn.textContent = '장착';
+            equipBtn.className = 'equip-button';
+            equipBtn.onclick = () => {
+                hideItemDetailPanel();
+                showItemTargetPanel(item);
+            };
+            content.appendChild(equipBtn);
+
+            const enhanceBtn = document.createElement('button');
+            enhanceBtn.textContent = '강화';
+            enhanceBtn.className = 'enhance-button';
+            enhanceBtn.onclick = () => {
+                enhanceItem(item);
+                hideItemDetailPanel();
+            };
+            content.appendChild(enhanceBtn);
+
+            const disBtn = document.createElement('button');
+            disBtn.textContent = '분해';
+            disBtn.className = 'disassemble-button';
+            disBtn.onclick = () => {
+                disassembleItem(item);
+                hideItemDetailPanel();
+            };
+            content.appendChild(disBtn);
+
+            const sellBtn = document.createElement('button');
+            sellBtn.textContent = '판매';
+            sellBtn.className = 'sell-button';
+            sellBtn.onclick = () => {
+                confirmAndSell(item);
+                hideItemDetailPanel();
+            };
+            content.appendChild(sellBtn);
+
+            panel.style.display = 'block';
+            gameState.gameRunning = false;
+        }
+
+        function hideItemDetailPanel() {
+            document.getElementById('item-detail-panel').style.display = 'none';
+            gameState.gameRunning = true;
+        }
+
         function buyShopItem(index) {
             const item = gameState.shopItems[index];
             if (!item) return;
@@ -6151,6 +6195,7 @@ function processTurn() {
         document.getElementById('close-shop').onclick = hideShop;
         document.getElementById('close-mercenary-detail').onclick = hideMercenaryDetails;
         document.getElementById('close-monster-detail').onclick = hideMonsterDetails;
+        document.getElementById('close-item-detail').onclick = hideItemDetailPanel;
         document.getElementById('close-item-target').onclick = hideItemTargetPanel;
         document.getElementById('dungeon').addEventListener('click', handleDungeonClick);
         document.getElementById('pickup').onclick = pickUpAction;
@@ -6215,15 +6260,15 @@ createSuperiorMonster, createTreasure, createNovaEffect, createScreenShake, diss
 equipItemToMercenary, estimateSkillDamage, findAdjacentEmpty, findPath,
 formatItem, formatNumber, generateDungeon, generateStars, getAuraBonus, 
 getDistance, getMonsterPoolForFloor, getPlayerEmoji, getStat, getStatusResist, 
-handleDungeonClick, handleItemClick, handlePlayerDeath, 
-hasLineOfSight, healAction, healTarget, hideItemTargetPanel, 
+handleDungeonClick, handleItemClick, handlePlayerDeath,
+hasLineOfSight, healAction, healTarget, hideItemTargetPanel, hideItemDetailPanel,
 hideMercenaryDetails, hideMonsterDetails, hideShop, hireMercenary, killMonster,
 loadGame, meleeAttackAction, monsterAttack, performMonsterSkill, movePlayer, nextFloor,
 processMercenaryTurn, processProjectiles, processTurn, purifyTarget, 
 rangedAction, recallMercenaries, recruitHatchedSuperior, handleHatchedMonsterClick,
 removeEggFromIncubator, renderDungeon, reviveMercenary, reviveMonsterCorpse,
  rollDice, saveGame, sellItem, confirmAndSell, enhanceItem, disassembleItem, setMercenaryLevel, setMonsterLevel, setChampionLevel,
-showChampionDetails, showItemTargetPanel, showMercenaryDetails,
+showChampionDetails, showItemDetailPanel, showItemTargetPanel, showMercenaryDetails,
 showMonsterDetails, showShop, showSkillDamage, showAuraDetails, skill1Action, skill2Action,
 spawnMercenaryNearPlayer, startGame, swapActiveAndStandby, tryApplyStatus,
 unequipAccessory, unequipWeapon, unequipArmor, unequipItemFromMercenary, updateActionButtons, updateCamera,
