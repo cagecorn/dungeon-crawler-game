@@ -26,48 +26,105 @@ const SoundEngine = {
         const gainNode = this.audioContext.createGain();
         gainNode.connect(this.audioContext.destination);
 
-        // 사운드 '레시피'에 따라 소리를 디자인합니다.
+        // Sound recipes
         switch (soundName) {
+            // --- 기존 사운드 ---
             case 'playerAttack':
-                // 짧고 날카로운 '휙' 소리
                 gainNode.gain.setValueAtTime(0.3, now);
                 gainNode.gain.exponentialRampToValueAtTime(0.001, now + 0.15);
                 this.createOscillator('sawtooth', 440, gainNode, now, 0.15);
                 this.createOscillator('sawtooth', 880, gainNode, now, 0.15, 0.02);
                 break;
-
             case 'takeDamage':
-                // 낮고 둔탁한 '퍽' 소리
                 gainNode.gain.setValueAtTime(0.4, now);
                 gainNode.gain.exponentialRampToValueAtTime(0.001, now + 0.2);
                 this.createOscillator('square', 100, gainNode, now, 0.2);
                 break;
-            
             case 'getItem':
-                // 밝고 높은 '뿅' 소리
                 gainNode.gain.setValueAtTime(0.2, now);
                 gainNode.gain.exponentialRampToValueAtTime(0.001, now + 0.2);
                 this.createOscillator('sine', 900, gainNode, now, 0.1);
                 this.createOscillator('sine', 1200, gainNode, now + 0.1, 0.1);
                 break;
-
             case 'levelUp':
-                // 상승하는 '따라란~' 소리
                 this.playNote('triangle', 523, 0.2, now);      // C5
                 this.playNote('triangle', 659, 0.2, now + 0.1); // E5
                 this.playNote('triangle', 784, 0.2, now + 0.2); // G5
                 this.playNote('triangle', 1046, 0.3, now + 0.3); // C6
                 break;
-            
             case 'monsterDie':
-                 // 힘이 빠지는 '푸슉' 소리
                 gainNode.gain.setValueAtTime(0.3, now);
                 gainNode.gain.linearRampToValueAtTime(0, now + 0.4);
-                const osc = this.audioContext.createOscillator();
-                osc.type = 'noise'; // 화이트 노이즈 사용
-                osc.connect(gainNode);
-                osc.start(now);
-                osc.stop(now + 0.4);
+                const oscDie = this.audioContext.createOscillator();
+                oscDie.type = 'noise';
+                oscDie.connect(gainNode);
+                oscDie.start(now);
+                oscDie.stop(now + 0.4);
+                break;
+
+            // --- 신규 사운드 ---
+
+            case 'playerMiss':
+                gainNode.gain.setValueAtTime(0.2, now);
+                gainNode.gain.exponentialRampToValueAtTime(0.001, now + 0.15);
+                const oscMiss = this.audioContext.createOscillator();
+                oscMiss.type = 'sine';
+                oscMiss.frequency.setValueAtTime(1200, now);
+                oscMiss.frequency.exponentialRampToValueAtTime(300, now + 0.15);
+                oscMiss.connect(gainNode);
+                oscMiss.start(now);
+                oscMiss.stop(now + 0.15);
+                break;
+
+            case 'criticalHit':
+                gainNode.gain.setValueAtTime(0.5, now);
+                gainNode.gain.exponentialRampToValueAtTime(0.001, now + 0.1);
+                this.createOscillator('square', 1200, gainNode, now, 0.1);
+                this.createOscillator('noise', 100, gainNode, now, 0.05);
+                break;
+
+            case 'spellFire':
+                gainNode.gain.setValueAtTime(0.3, now);
+                gainNode.gain.linearRampToValueAtTime(0, now + 0.5);
+                const noiseOsc = this.audioContext.createOscillator();
+                noiseOsc.type = 'noise';
+                const filter = this.audioContext.createBiquadFilter();
+                filter.type = 'bandpass';
+                filter.frequency.setValueAtTime(600, now);
+                filter.Q.setValueAtTime(20, now);
+                noiseOsc.connect(filter).connect(gainNode);
+                noiseOsc.start(now);
+                noiseOsc.stop(now + 0.5);
+                break;
+
+            case 'spellHeal':
+                this.playNote('sine', 600, 0.3, now);
+                this.playNote('sine', 800, 0.3, now + 0.15);
+                this.playNote('sine', 1000, 0.3, now + 0.3);
+                break;
+
+            case 'nextFloor':
+                gainNode.gain.setValueAtTime(0.4, now);
+                gainNode.gain.linearRampToValueAtTime(0, now + 1.5);
+                this.createOscillator('sawtooth', 60, gainNode, now, 1.5);
+                this.createOscillator('sawtooth', 65, gainNode, now, 1.5);
+                break;
+
+            case 'uiClick':
+                gainNode.gain.setValueAtTime(0.2, now);
+                gainNode.gain.exponentialRampToValueAtTime(0.001, now + 0.05);
+                this.createOscillator('triangle', 1500, gainNode, now, 0.05);
+                break;
+
+            case 'buyItem':
+                this.playNote('square', 1200, 0.2, now);
+                this.playNote('square', 1600, 0.2, now + 0.1);
+                break;
+
+            case 'error':
+                gainNode.gain.setValueAtTime(0.3, now);
+                gainNode.gain.exponentialRampToValueAtTime(0.001, now + 0.15);
+                this.createOscillator('square', 80, gainNode, now, 0.15);
                 break;
         }
     },
@@ -1444,6 +1501,7 @@ const MERCENARY_NAMES = [
             const defenseTarget = 10 + Math.floor(defenderEva * 5);
             const hitRoll = rollDice('1d20') + attackBonus;
             if (hitRoll < defenseTarget) {
+                SoundEngine.playSound(attacker === gameState.player ? 'playerMiss' : 'error');
                 return { hit: false, hitRoll, defenseTarget, attackBonus };
             }
 
@@ -1455,6 +1513,7 @@ const MERCENARY_NAMES = [
             if (Math.random() < critChance) {
                 baseDamage = Math.floor(baseDamage * 1.5);
                 crit = true;
+                SoundEngine.playSound('criticalHit');
             }
 
             let elementDamage = 0;
@@ -1505,7 +1564,7 @@ const MERCENARY_NAMES = [
 
             let damage = baseDamage + elementDamage;
             defender.health -= damage;
-            SoundEngine.playSound('takeDamage'); // 데미지 입는 소리 재생
+            if (!crit) SoundEngine.playSound('takeDamage');
 
             let statusApplied = false;
             const statusEffects = [];
@@ -4835,6 +4894,7 @@ function killMonster(monster) {
 
         // 다음 층으로
         function nextFloor() {
+            SoundEngine.playSound('nextFloor');
             gameState.floor++;
             addMessage(`🌀 던전 ${gameState.floor}층으로 내려갑니다...`, "level");
             
@@ -5957,6 +6017,12 @@ function processTurn() {
                 processTurn();
                 return;
             }
+
+            if (skill.element === 'fire') {
+                SoundEngine.playSound('spellFire');
+            } else if (skill.heal !== undefined) {
+                SoundEngine.playSound('spellHeal');
+            }
             if (skill.heal !== undefined) {
                 const targets = [gameState.player, ...gameState.activeMercenaries.filter(m => m.alive)]
                     .filter(t => getDistance(gameState.player.x, gameState.player.y, t.x, t.y) <= skill.range && t.health < getStat(t, 'maxHealth'));
@@ -6399,11 +6465,13 @@ function processTurn() {
             if (!item) return;
             const cost = item.price * SHOP_PRICE_MULTIPLIER;
             if (gameState.player.gold < cost) {
+                SoundEngine.playSound('error');
                 addMessage('💸 골드가 부족합니다.', 'info');
                 return;
             }
             gameState.player.gold -= cost;
             addToInventory(item);
+            SoundEngine.playSound('buyItem');
             addMessage(`🛒 ${item.name}을(를) 구입했습니다!`, 'item');
             gameState.shopItems.splice(index, 1);
             updateStats();
