@@ -5072,7 +5072,7 @@ function processTurn() {
             });
 
             sortedMercenaries.forEach(mercenary => {
-                processMercenaryTurn(mercenary);
+                processMercenaryTurn(mercenary, gameState.monsters);
             });
 
             const occupied = new Set();
@@ -5259,7 +5259,7 @@ function processTurn() {
         }
 
         // 용병 AI (개선됨 - 장비 보너스 적용, 안전성 체크 추가)
-        function processMercenaryTurn(mercenary) {
+        function processMercenaryTurn(mercenary, visibleMonsters = gameState.monsters) {
             if (!mercenary.alive || mercenary.hasActed) return;
             if ((mercenary.paralysis && mercenary.paralysisTurns > 0) || (mercenary.petrify && mercenary.petrifyTurns > 0)) {
                 mercenary.paralysisTurns && mercenary.paralysisTurns--;
@@ -5394,15 +5394,10 @@ function processTurn() {
             let nearestMonster = null;
             let nearestDistance = Infinity;
             
-            gameState.monsters.forEach(monster => {
-                // 몬스터가 시야 밖(fog of war)에 있으면 무시
-                if (gameState.fogOfWar[monster.y] && gameState.fogOfWar[monster.y][monster.x]) {
-                    return;
-                }
-
-                const distance = getDistance(mercenary.x, mercenary.y, monster.x, monster.y);
-                if (distance < nearestDistance && hasLineOfSight(mercenary.x, mercenary.y, monster.x, monster.y)) {
-                    nearestDistance = distance;
+            visibleMonsters.forEach(monster => {
+                const dist = getDistance(mercenary.x, mercenary.y, monster.x, monster.y);
+                if (dist < nearestDistance && hasLineOfSight(mercenary.x, mercenary.y, monster.x, monster.y)) {
+                    nearestDistance = dist;
                     nearestMonster = monster;
                 }
             });
