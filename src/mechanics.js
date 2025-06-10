@@ -1711,10 +1711,9 @@ const MERCENARY_NAMES = [
                 const div = document.createElement('div');
                 div.className = 'incubator-slot clickable';
 
-                const nameSpan = document.createElement('span');
-                nameSpan.textContent = mon.name;
-                div.appendChild(nameSpan);
-                div.addEventListener('click', () => handleHatchedMonsterClick(mon));
+                // 이 부분을 수정
+                div.textContent = mon.name;
+                div.addEventListener('click', () => showMonsterDetails(mon));
 
                 const btn = document.createElement('button');
                 btn.textContent = '영입';

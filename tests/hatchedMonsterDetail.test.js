@@ -23,8 +23,7 @@ async function run() {
     process.exit(1);
   }
 
-  const nameSpan = entry.querySelector('span');
-  nameSpan.click();
+  entry.click();
   const panel = win.document.getElementById('monster-detail-panel');
   if (panel.style.display !== 'block') {
     console.error('detail panel not shown');

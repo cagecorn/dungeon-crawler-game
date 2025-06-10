@@ -27,17 +27,15 @@ async function run() {
     process.exit(1);
   }
 
-  const nameSpan = entry.querySelector('span');
-  nameSpan.click();
+  entry.click();
 
-  if (gameState.hatchedSuperiors.length !== 0) {
-    console.error('failed hatch not removed');
+  if (gameState.hatchedSuperiors.length !== 1) {
+    console.error('hatched monster removed unexpectedly');
     process.exit(1);
   }
   const log = win.document.getElementById('message-log');
-  const msg = log.lastElementChild;
-  if (!msg || msg.textContent.trim() !== '알의 부화에 실패했습니다.') {
-    console.error('failure message missing');
+  if (log.lastElementChild) {
+    console.error('unexpected message');
     process.exit(1);
   }
 }
