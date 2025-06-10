@@ -94,7 +94,9 @@
     turn: 0,
     incubators: [null, null],
     hatchedSuperiors: [],
-    gameRunning: true
+    gameRunning: true,
+    isInMap: false,
+    preMapState: null
   };
   global.gameState = gameState;
   global.MONSTER_VISION = MONSTER_VISION;

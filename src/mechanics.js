@@ -9,7 +9,8 @@
             EGG: 'egg',
             FERTILIZER: 'fertilizer',
             ESSENCE: 'essence',
-            FOOD: 'food'
+            FOOD: 'food',
+            MAP: 'map' // 지도 아이템 타입
         };
 
         const SHOP_PRICE_MULTIPLIER = 3;
@@ -873,6 +874,21 @@ const MERCENARY_NAMES = [
                 price: 50,
                 level: 2,
                 icon: '👑'
+            },
+            // 기본 지도 아이템들
+            tier1Map: {
+                name: '🗺️ 묘지 지도',
+                type: ITEM_TYPES.MAP,
+                level: 1,
+                price: 50,
+                icon: '🗺️'
+            },
+            tier2Map: {
+                name: '🗺️ 동굴 지도',
+                type: ITEM_TYPES.MAP,
+                level: 3,
+                price: 100,
+                icon: '🗺️'
             }
 
         };
@@ -1097,6 +1113,16 @@ const MERCENARY_NAMES = [
             { name: 'of Bleed Resistance', modifiers: { bleedResist: 0.3 } },
             { name: 'of Burn Resistance', modifiers: { burnResist: 0.3 } },
             { name: 'of Frost Resistance', modifiers: { freezeResist: 0.3 } }
+        ];
+
+        // 지도 전용 접두사/접미사
+        const MAP_PREFIXES = [
+            { name: 'Populous', modifiers: { monsterMultiplier: 1.5 } },
+            { name: 'Elite', modifiers: { eliteChanceBonus: 0.2 } }
+        ];
+        const MAP_SUFFIXES = [
+            { name: 'of Treasures', modifiers: { treasureMultiplier: 2.0 } },
+            { name: 'of Haste', modifiers: { monsterSpeedBonus: 2 } }
         ];
 
         function getDistance(x1, y1, x2, y2) {
@@ -2871,6 +2897,8 @@ function killMonster(monster) {
                                 div.textContent = '🪦';
                             } else if (cellType.startsWith('temple')) {
                                 div.textContent = '⛩️';
+                            } else if (cellType === 'map_altar') {
+                                div.textContent = '📜';
                             } else if (cellType === 'corpse') {
                                 div.textContent = '☠️';
                             } else if (cellType === 'treasure') {
@@ -3015,7 +3043,7 @@ function killMonster(monster) {
         }
 
         // 던전 생성
-        function generateDungeon() {
+        function generateDungeon(mapData = null) {
             const size = gameState.dungeonSize;
             const dungeonEl = document.getElementById('dungeon');
             if (dungeonEl) {
@@ -3029,6 +3057,9 @@ function killMonster(monster) {
             gameState.monsters = [];
             gameState.treasures = [];
             gameState.items = [];
+
+            const dungeonLevel = mapData ? mapData.level : gameState.floor;
+            const mapModifiers = mapData ? mapData.modifiers || {} : {};
 
             if (dungeonEl) dungeonEl.innerHTML = '';
 
@@ -3151,9 +3182,19 @@ function killMonster(monster) {
             gameState.exitLocation = { x: exitX, y: exitY };
             gameState.dungeon[exitY][exitX] = 'exit';
 
-            const monsterTypes = getMonsterPoolForFloor(gameState.floor);
+            if (!mapData && gameState.floor % 5 === 0) {
+                let ax, ay;
+                do {
+                    ax = Math.floor(Math.random() * size);
+                    ay = Math.floor(Math.random() * size);
+                } while (gameState.dungeon[ay][ax] !== 'empty' || (ax === 1 && ay === 1));
+                gameState.dungeon[ay][ax] = 'map_altar';
+            }
+
+            const monsterTypes = getMonsterPoolForFloor(dungeonLevel);
             // 몬스터는 던전 크기와 층수에 비례해 등장 수를 결정
-            const monsterCount = Math.floor(size * 0.2) + gameState.floor;
+            let monsterCount = Math.floor(size * 0.2) + dungeonLevel;
+            monsterCount *= mapModifiers.monsterMultiplier || 1;
             for (let i = 0; i < monsterCount; i++) {
                 let x, y;
                 do {
@@ -3161,7 +3202,9 @@ function killMonster(monster) {
                     y = Math.floor(Math.random() * size);
                 } while (gameState.dungeon[y][x] !== 'empty' || (x === 1 && y === 1));
                 const type = monsterTypes[Math.floor(Math.random() * (monsterTypes.length - 1))];
-                const monster = createMonster(type, x, y, gameState.floor);
+                const isElite = Math.random() < (0.1 + (mapModifiers.eliteChanceBonus || 0));
+                const monster = isElite ? createEliteMonster(type, x, y, dungeonLevel) : createMonster(type, x, y, dungeonLevel);
+                monster.speed += mapModifiers.monsterSpeedBonus || 0;
                 gameState.monsters.push(monster);
                 gameState.dungeon[y][x] = 'monster';
             }
@@ -3178,7 +3221,7 @@ function killMonster(monster) {
             }
             if (gameState.dungeon[cy][cx] === 'empty') {
                 const ct = champTypes[Math.floor(Math.random() * champTypes.length)];
-                const champ = createChampion(ct, cx, cy, gameState.floor);
+                const champ = createChampion(ct, cx, cy, dungeonLevel);
                 gameState.monsters.push(champ);
                 gameState.dungeon[cy][cx] = 'monster';
             }
@@ -3190,7 +3233,7 @@ function killMonster(monster) {
                 ey = Math.floor(Math.random() * size);
             } while (gameState.dungeon[ey][ex] !== 'empty');
             const eType = monsterTypes[Math.floor(Math.random() * monsterTypes.length)];
-            const elite = createEliteMonster(eType, ex, ey, gameState.floor);
+            const elite = createEliteMonster(eType, ex, ey, dungeonLevel);
             gameState.monsters.push(elite);
             gameState.dungeon[ey][ex] = 'monster';
             const around = 2 + Math.floor(Math.random() * 4);
@@ -3198,13 +3241,15 @@ function killMonster(monster) {
                 const pos = findAdjacentEmpty(ex, ey);
                 if (gameState.dungeon[pos.y][pos.x] !== 'empty') continue;
                 const t = monsterTypes[Math.floor(Math.random() * monsterTypes.length)];
-                const m = createMonster(t, pos.x, pos.y, gameState.floor);
+                const m = createMonster(t, pos.x, pos.y, dungeonLevel);
+                m.speed += mapModifiers.monsterSpeedBonus || 0;
                 gameState.monsters.push(m);
                 gameState.dungeon[pos.y][pos.x] = 'monster';
             }
 
             // 보물은 던전 크기와 층수에 따라 적당히 배치
-            const treasureCount = Math.floor(size * 0.1) + Math.floor(gameState.floor * 0.5);
+            let treasureCount = Math.floor(size * 0.1) + Math.floor(dungeonLevel * 0.5);
+            treasureCount = Math.floor(treasureCount * (mapModifiers.treasureMultiplier || 1));
             for (let i = 0; i < treasureCount; i++) {
                 let x, y;
                 do {
@@ -3218,7 +3263,7 @@ function killMonster(monster) {
 
             const itemKeys = Object.keys(ITEMS);
             // 맵에 떨어지는 아이템 수를 줄임
-            const itemCount = Math.floor(size * 0.05) + Math.floor(gameState.floor * 0.25);
+            const itemCount = Math.floor(size * 0.05) + Math.floor(dungeonLevel * 0.25);
             const spawnKeys = itemKeys.filter(k => k !== 'reviveScroll' && ITEMS[k].type !== ITEM_TYPES.ESSENCE);
             for (let i = 0; i < itemCount; i++) {
                 let x, y;
@@ -3227,7 +3272,7 @@ function killMonster(monster) {
                     y = Math.floor(Math.random() * size);
                 } while (gameState.dungeon[y][x] !== 'empty');
                 const key = spawnKeys[Math.floor(Math.random() * spawnKeys.length)];
-                const item = createItem(key, x, y, null, Math.floor(gameState.floor / 5));
+                const item = createItem(key, x, y, null, Math.floor(dungeonLevel / 5));
                 gameState.items.push(item);
                 gameState.dungeon[y][x] = 'item';
             }
@@ -3544,7 +3589,21 @@ function killMonster(monster) {
                 ...itemData
             };
 
-            if (item.type === ITEM_TYPES.WEAPON || item.type === ITEM_TYPES.ARMOR || item.type === ITEM_TYPES.ACCESSORY) {
+            if (item.type === ITEM_TYPES.MAP) {
+                item.modifiers = {};
+                if (Math.random() < 0.3) {
+                    const prefix = MAP_PREFIXES[Math.floor(Math.random() * MAP_PREFIXES.length)];
+                    item.prefix = prefix.name;
+                    item.name = `${prefix.name} ${item.name}`;
+                    Object.assign(item.modifiers, prefix.modifiers);
+                }
+                if (Math.random() < 0.3) {
+                    const suffix = MAP_SUFFIXES[Math.floor(Math.random() * MAP_SUFFIXES.length)];
+                    item.suffix = suffix.name;
+                    item.name = `${item.name} ${suffix.name}`;
+                    Object.assign(item.modifiers, suffix.modifiers);
+                }
+            } else if (item.type === ITEM_TYPES.WEAPON || item.type === ITEM_TYPES.ARMOR || item.type === ITEM_TYPES.ACCESSORY) {
                 if (prefixName) {
                     const prefix = PREFIXES.find(p => p.name === prefixName);
                     if (prefix) {
@@ -3844,7 +3903,11 @@ function killMonster(monster) {
 
         // 아이템 클릭 시 대상 패널 표시
         function handleItemClick(item) {
-            showItemTargetPanel(item);
+            if (item.type === ITEM_TYPES.MAP) {
+                activateMap(item);
+            } else {
+                showItemTargetPanel(item);
+            }
         }
 
         // 아이템 장착 (플레이어)
@@ -4510,6 +4573,10 @@ function killMonster(monster) {
                 updateStats();
             }
 
+            if (cellType === 'map_altar') {
+                addMessage('📜 지도 제단입니다. 지도를 사용할 수 있습니다.', 'info');
+            }
+
             if (cellType === 'corpse') {
                 const corpse = gameState.corpses.find(c => c.x === newX && c.y === newY);
                 if (corpse) {
@@ -4576,6 +4643,11 @@ function killMonster(monster) {
 
         // 다음 층으로
         function nextFloor() {
+            if (gameState.isInMap) {
+                exitMap();
+                return;
+            }
+
             gameState.floor++;
             addMessage(`🌀 던전 ${gameState.floor}층으로 내려갑니다...`, "level");
             
@@ -4619,6 +4691,48 @@ function killMonster(monster) {
 
             // 변경된 위치 반영
             renderDungeon();
+        }
+
+        function activateMap(mapItem) {
+            if (gameState.dungeon[gameState.player.y][gameState.player.x] !== 'map_altar') {
+                addMessage('📜 지도 제단 위에서만 지도를 사용할 수 있습니다.', 'info');
+                return;
+            }
+
+            addMessage(`🚪 ${mapItem.name}의 포탈을 엽니다...`, 'level');
+
+            gameState.preMapState = {
+                floor: gameState.floor,
+                x: gameState.player.x,
+                y: gameState.player.y
+            };
+            gameState.isInMap = true;
+
+            const mapIndex = gameState.player.inventory.findIndex(i => i.id === mapItem.id);
+            if (mapIndex > -1) {
+                gameState.player.inventory.splice(mapIndex, 1);
+            }
+            updateInventoryDisplay();
+
+            generateDungeon(mapItem);
+        }
+
+        function exitMap() {
+            addMessage('🌀 원래 세계로 돌아갑니다...', 'level');
+            const returnState = gameState.preMapState;
+
+            gameState.isInMap = false;
+            gameState.preMapState = null;
+            gameState.floor = returnState.floor;
+
+            generateDungeon();
+
+            gameState.player.x = returnState.x;
+            gameState.player.y = returnState.y;
+
+            updateStats();
+            renderDungeon();
+            updateCamera();
         }
 
         // 턴 처리 (최적화됨)
@@ -6180,7 +6294,7 @@ unequipAccessory, unequipWeapon, unequipArmor, unequipItemFromMercenary, updateA
 updateFogOfWar, updateIncubatorDisplay,
 updateInventoryDisplay, updateMaterialsDisplay, updateMercenaryDisplay,
 updateShopDisplay, updateSkillDisplay, updateStats, updateTurnEffects,
-upgradeMercenarySkill, upgradeMonsterSkill, useItem, useItemOnTarget, useSkill, removeMercenary,
+        upgradeMercenarySkill, upgradeMonsterSkill, useItem, useItemOnTarget, useSkill, removeMercenary, activateMap, exitMap,
     dismiss, sacrifice, allocateStat
 };
 Object.assign(window, exportsObj, {SKILL_DEFS, MERCENARY_SKILLS, MONSTER_SKILLS, MONSTER_SKILL_SETS, MONSTER_TRAITS, MONSTER_TRAIT_SETS, PREFIXES, SUFFIXES});
