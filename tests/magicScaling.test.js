@@ -58,9 +58,9 @@ async function run() {
 
   let captured = null;
   const origPerform = win.performAttack;
-  win.performAttack = (att, def, opts) => {
+  win.performAttack = (att, def, opts, skillName) => {
     captured = opts;
-    return { hit: true, crit: false, baseDamage: 0, elementDamage: 0 };
+    return origPerform(att, def, opts, skillName);
   };
   win.rollDice = () => 8;
   const origRandom = win.Math.random;
@@ -88,9 +88,9 @@ async function run() {
   gameState.dungeon[monster2.y][monster2.x] = 'monster';
 
   captured = null;
-  win.performAttack = (att, def, opts) => {
+  win.performAttack = (att, def, opts, skillName) => {
     captured = opts;
-    return { hit: true, crit: false, baseDamage: 0, elementDamage: 0 };
+    return origPerform(att, def, opts, skillName);
   };
   win.rollDice = () => 6;
   win.Math.random = () => 0;

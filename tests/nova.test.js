@@ -35,7 +35,8 @@ async function run() {
   gameState.dungeon[m2.y][m2.x] = 'monster';
 
   let captured = [];
-  win.performAttack = (att, def, opts) => { captured.push(opts); return { hit: true, crit: false, baseDamage: 0, elementDamage: 0 }; };
+  const origPerform = win.performAttack;
+  win.performAttack = (att, def, opts, skillName) => { captured.push(opts); return origPerform(att, def, opts, skillName); };
   win.rollDice = () => 4;
   skill1Action();
 
