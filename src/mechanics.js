@@ -930,11 +930,11 @@ const MERCENARY_NAMES = [
 
 
         const MONSTER_SKILLS = {
-            RottingBite: { name: 'Rotting Bite', icon: '🧟', range: 1, damageDice: '1d6', melee: true, status: 'poison' },
-            PowerStrike: { name: 'Power Strike', icon: '💥', range: 1, damageDice: '1d8', melee: true },
-            ShadowBolt: { name: 'Shadow Bolt', icon: '🌑', range: 3, damageDice: '1d6', magic: true, element: 'dark' },
-            PoisonCloud: { name: 'Poison Cloud', icon: '☣️', radius: 2, damageDice: '1d4', magic: true, status: 'poison' },
-            FireBreath: { name: 'Fire Breath', icon: '🔥', radius: 2, magic: true, element: 'fire', damageDice: '1d6', status: 'burn' }
+            RottingBite: { name: 'Rotting Bite', icon: '🧟', range: 1, damageDice: '1d6', melee: true, status: 'poison', manaCost: 2 },
+            PowerStrike: { name: 'Power Strike', icon: '💥', range: 1, damageDice: '1d8', melee: true, manaCost: 2 },
+            ShadowBolt: { name: 'Shadow Bolt', icon: '🌑', range: 3, damageDice: '1d6', magic: true, element: 'dark', manaCost: 2 },
+            PoisonCloud: { name: 'Poison Cloud', icon: '☣️', radius: 2, damageDice: '1d4', magic: true, status: 'poison', manaCost: 2 },
+            FireBreath: { name: 'Fire Breath', icon: '🔥', radius: 2, magic: true, element: 'fire', damageDice: '1d6', status: 'burn', manaCost: 2 }
         };
 
 
