@@ -81,6 +81,7 @@
     items: [],
     projectiles: [],
     exitLocation: { x: 0, y: 0 },
+    altarLocation: { x: 0, y: 0 },
     shopLocation: { x: 0, y: 0 },
     shopItems: [],
     materials: { herb: 5, wood: 3, iron: 100, bone: 100, bread: 0, meat: 0, lettuce: 0 },
@@ -96,6 +97,7 @@
     turn: 0,
     incubators: [null, null],
     hatchedSuperiors: [],
+    pendingMap: null,
     currentMapModifiers: null,
     gameRunning: true
   };

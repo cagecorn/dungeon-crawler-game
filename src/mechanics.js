@@ -3133,6 +3133,8 @@ function killMonster(monster) {
                                 div.textContent = '🪦';
                             } else if (baseCellType.startsWith('temple')) {
                                 div.textContent = '⛩️';
+                            } else if (baseCellType === 'altar') {
+                                div.textContent = '🗺️';
                             } else if (baseCellType === 'corpse') {
                                 div.textContent = '☠️';
                             } else if (baseCellType === 'treasure') {
@@ -3585,6 +3587,16 @@ function killMonster(monster) {
                     } while (gameState.dungeon[y][x] !== 'empty');
                     gameState.dungeon[y][x] = 'grave';
                 }
+            }
+
+            if (gameState.floor % 5 === 0) {
+                let ax, ay;
+                do {
+                    ax = Math.floor(Math.random() * size);
+                    ay = Math.floor(Math.random() * size);
+                } while (gameState.dungeon[ay][ax] !== 'empty');
+                gameState.altarLocation = { x: ax, y: ay };
+                gameState.dungeon[ay][ax] = 'altar';
             }
 
 
@@ -4397,6 +4409,18 @@ function killMonster(monster) {
                 if (target !== gameState.player) {
                     updateMercenaryDisplay();
                 }
+            } else if (item.type === ITEM_TYPES.MAP) {
+                if (target !== gameState.player || gameState.dungeon[gameState.player.y][gameState.player.x] !== 'altar') {
+                    addMessage('🗺️ 이 지도는 제단 위에서만 사용할 수 있습니다.', 'info');
+                } else {
+                    gameState.pendingMap = { level: item.level, modifiers: item.modifiers || {} };
+                    const index = gameState.player.inventory.findIndex(i => i.id === item.id);
+                    if (index !== -1) {
+                        gameState.player.inventory.splice(index, 1);
+                    }
+                    addMessage(`🗺️ ${item.name}을(를) 활성화했습니다.`, 'info');
+                    updateInventoryDisplay();
+                }
             }
         }
 
@@ -4848,6 +4872,10 @@ function killMonster(monster) {
                 updateStats();
             }
 
+            if (cellType === 'altar') {
+                addMessage('🗺️ 제단 위에서 지도를 사용하면 다음 층에 적용됩니다.', 'info');
+            }
+
             if (cellType === 'corpse') {
                 const corpse = gameState.corpses.find(c => c.x === newX && c.y === newY);
                 if (corpse) {
@@ -4916,6 +4944,11 @@ function killMonster(monster) {
         function nextFloor() {
             SoundEngine.playSound('nextFloor');
             gameState.floor++;
+            const mapData = gameState.pendingMap ? {
+                level: gameState.pendingMap.level || gameState.floor,
+                modifiers: gameState.pendingMap.modifiers || {}
+            } : null;
+            gameState.pendingMap = null;
             addMessage(`🌀 던전 ${gameState.floor}층으로 내려갑니다...`, "level");
             
             // 용병들 체력 약간 회복
@@ -4926,7 +4959,7 @@ function killMonster(monster) {
                 }
             });
             
-            generateDungeon();
+            generateDungeon(mapData);
 
             // 새 층에서 살아있는 용병들을 플레이어 근처로 이동
             gameState.activeMercenaries.forEach(mercenary => {
@@ -4961,7 +4994,7 @@ function killMonster(monster) {
         }
 
         function exitMap(returnState) {
-            generateDungeon();
+            generateDungeon(mapData);
             let { x, y } = returnState;
             if (!gameState.dungeon[y] || gameState.dungeon[y][x] !== 'empty') {
                 const pos = findNearestEmpty(x, y);
