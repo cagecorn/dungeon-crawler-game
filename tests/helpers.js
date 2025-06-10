@@ -9,7 +9,6 @@ async function loadGame(options = {}) {
   const dom = await JSDOM.fromFile(path.join(__dirname, '..', 'index.html'), {
     runScripts: 'dangerously',
     resources: 'usable',
-    url: 'http://localhost',
     beforeParse(window) {
       window.rollDice = rollDice;
       window.confirm = () => confirmReturn;
