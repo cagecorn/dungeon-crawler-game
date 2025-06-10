@@ -14,11 +14,16 @@ async function run() {
   const MONSTER_TRAIT_SETS = win.eval('MONSTER_TRAIT_SETS');
 
   const expectations = [
-    { floor: 1, pool: ['GOBLIN', 'GOBLIN_ARCHER', 'GOBLIN_WIZARD', 'ZOMBIE'] },
-    { floor: 3, pool: ['SKELETON', 'SKELETON_MAGE', 'ORC', 'ORC_ARCHER'] },
-    { floor: 5, pool: ['TROLL', 'ORC', 'ORC_ARCHER', 'SKELETON_MAGE'] },
-    { floor: 7, pool: ['DARK_MAGE', 'TROLL', 'ORC', 'ORC_ARCHER'] },
-    { floor: 9, pool: ['DEMON_WARRIOR', 'DARK_MAGE', 'TROLL', 'ORC'] }
+    { floor: 1, pool: ['SLIME','GOBLIN','GOBLIN_ARCHER','ZOMBIE'] },
+    { floor: 3, pool: ['KOBOLD','GOBLIN_WIZARD','SKELETON','ZOMBIE'] },
+    { floor: 5, pool: ['GARGOYLE','SKELETON','SKELETON_MAGE','ORC'] },
+    { floor: 7, pool: ['BANSHEE','ORC','ORC_ARCHER','TROLL'] },
+    { floor: 9, pool: ['MINOTAUR','TROLL','ORC_ARCHER','DARK_MAGE'] },
+    { floor: 11, pool: ['LICH','DARK_MAGE','TROLL','DEMON_WARRIOR'] },
+    { floor: 13, pool: ['DRAGON_WHELP','DEMON_WARRIOR','DARK_MAGE','TROLL'] },
+    { floor: 15, pool: ['ELEMENTAL_GOLEM','DEMON_WARRIOR','DARK_MAGE','TROLL'] },
+    { floor: 17, pool: ['ELEMENTAL_GOLEM','DEMON_WARRIOR','MINOTAUR','DRAGON_WHELP'] },
+    { floor: 19, pool: ['ELEMENTAL_GOLEM','DEMON_WARRIOR','DRAGON_WHELP','LICH'] }
   ];
 
   for (const { floor, pool } of expectations) {
@@ -29,7 +34,10 @@ async function run() {
     }
   }
 
-  const newMonsters = ['GOBLIN_ARCHER','GOBLIN_WIZARD','ORC_ARCHER','SKELETON','SKELETON_MAGE','TROLL','DARK_MAGE','DEMON_WARRIOR'];
+  const newMonsters = [
+    'GOBLIN_ARCHER','GOBLIN_WIZARD','ORC_ARCHER','SKELETON','SKELETON_MAGE','TROLL','DARK_MAGE','DEMON_WARRIOR',
+    'SLIME','KOBOLD','GARGOYLE','BANSHEE','MINOTAUR','LICH','DRAGON_WHELP','ELEMENTAL_GOLEM'
+  ];
   for (const key of newMonsters) {
     if (!MONSTER_SKILL_SETS[key]) {
       console.error('missing skill set for', key);
