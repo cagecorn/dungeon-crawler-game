@@ -6,9 +6,13 @@ const vm = require('vm');
 
 async function loadGame(options = {}) {
   const { confirmReturn = true } = options;
-  const dom = await JSDOM.fromFile(path.join(__dirname, '..', 'index.html'), {
+  const htmlPath = path.join(__dirname, '..', 'index.html');
+  let html = fs.readFileSync(htmlPath, 'utf8');
+  html = html.replace(/<link rel="stylesheet" href="style.css">/, '');
+  const dom = new JSDOM(html, {
     runScripts: 'dangerously',
     resources: 'usable',
+    url: 'http://localhost',
     beforeParse(window) {
       window.rollDice = rollDice;
       window.confirm = () => confirmReturn;

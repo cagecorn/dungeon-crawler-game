@@ -47,3 +47,20 @@
   background-position: center, center;
   background-repeat: no-repeat, no-repeat;
 }
+
+/* Individual mercenary sprites */
+.mercenary.warrior {
+  background-image: url("assets/images/warrior.png");
+}
+
+.mercenary.archer {
+  background-image: url("assets/images/archer.png");
+}
+
+.mercenary.healer {
+  background-image: url("assets/images/healer.png");
+}
+
+.mercenary.wizard {
+  background-image: url("assets/images/wizard.png");
+}

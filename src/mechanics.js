@@ -3088,6 +3088,9 @@ function killMonster(monster) {
                             const merc = gameState.activeMercenaries.find(m => m.x === x && m.y === y && m.alive);
                             if (merc) {
                                 finalClasses.push('mercenary');
+                                if (merc.type) {
+                                    finalClasses.push(merc.type.toLowerCase());
+                                }
                             } else if (baseCellType === 'monster') {
                                 const m = gameState.monsters.find(mon => mon.x === x && mon.y === y);
                                 if (m) {
