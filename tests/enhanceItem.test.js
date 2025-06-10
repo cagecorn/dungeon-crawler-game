@@ -19,7 +19,7 @@ async function run() {
     console.error('enhance level not incremented');
     process.exit(1);
   }
-  if (sword.attack !== sword.baseStats.attack * 1.5) {
+  if (sword.attack !== sword.baseStats.attack * 1.05) {
     console.error('stats not increased');
     process.exit(1);
   }

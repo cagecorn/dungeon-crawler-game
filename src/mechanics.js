@@ -3513,7 +3513,7 @@ function killMonster(monster) {
         function applyEnhancement(item) {
             if (!item.baseStats) return;
             for (const stat in item.baseStats) {
-                item[stat] = item.baseStats[stat] * Math.pow(1.5, item.enhanceLevel);
+                item[stat] = item.baseStats[stat] * Math.pow(1.05, item.enhanceLevel);
             }
         }
 
