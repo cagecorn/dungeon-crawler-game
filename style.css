@@ -112,3 +112,30 @@
 .cell.mercenary.wizard {
   background-image: url('../assets/images/wizard.png');
 }
+
+/* --- 신규 몬스터 이미지 스타일 --- */
+
+/* 이미지를 사용하는 모든 몬스터의 기본 스타일 초기화 */
+.cell.monster {
+  background: transparent;
+  color: transparent;
+  box-shadow: none;
+  animation: none;
+}
+
+/* 몬스터가 바닥 타일 위에 있을 때의 스타일 */
+.cell.empty.monster {
+  background-size: contain, cover;
+  background-position: center, center;
+  background-repeat: no-repeat, no-repeat;
+}
+
+/* 슬라임 이미지 적용 */
+.cell.empty.monster.slime {
+  background-image: url("assets/images/slime.png"), url("assets/images/floor-tile.png");
+}
+
+/* 고블린 궁수 이미지 적용 */
+.cell.empty.monster.goblin-archer {
+  background-image: url("assets/images/goblin-archer.png"), url("assets/images/floor-tile.png");
+}

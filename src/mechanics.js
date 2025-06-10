@@ -401,7 +401,7 @@ const MERCENARY_NAMES = [
             },
             GOBLIN_ARCHER: {
                 name: '🏹 고블린 궁수',
-                icon: '🏹',
+                icon: '',
                 color: '#6B8E23',
                 baseHealth: 4,
                 baseAttack: 3,
@@ -566,7 +566,7 @@ const MERCENARY_NAMES = [
             },
             SLIME: {
                 name: '🟢 슬라임',
-                icon: '🟢',
+                icon: '',
                 color: '#7FFF00',
                 baseHealth: 5,
                 baseAttack: 2,
@@ -3095,7 +3095,11 @@ function killMonster(monster) {
                             } else if (baseCellType === 'monster') {
                                 const m = gameState.monsters.find(mon => mon.x === x && mon.y === y);
                                 if (m) {
-                                    div.textContent = m.icon;
+                                    const monsterClass = m.type.replace('_', '-').toLowerCase();
+                                    finalClasses.push('monster', monsterClass);
+                                    if (monsterClass !== 'slime' && monsterClass !== 'goblin-archer') {
+                                         div.textContent = m.icon;
+                                    }
                                     if (m.isChampion) finalClasses.push('champion');
                                     else if (m.isElite) finalClasses.push('elite');
                                 }
