@@ -1083,6 +1083,11 @@ const MERCENARY_NAMES = [
         // 접두사/접미사 풀
         const PREFIXES = [
             { name: 'Flaming', modifiers: { fireDamage: 2 } },
+            { name: 'Chilling', modifiers: { iceDamage: 2 } },
+            { name: 'Gusty', modifiers: { windDamage: 2 } },
+            { name: 'Earthen', modifiers: { earthDamage: 2 } },
+            { name: 'Radiant', modifiers: { lightDamage: 2 } },
+            { name: 'Shadowy', modifiers: { darkDamage: 2 } },
             { name: 'Sharp', modifiers: { attack: 1 } },
             { name: 'Sturdy', modifiers: { defense: 1 } },
             { name: 'Refreshing', modifiers: { healthRegen: 1 } },
@@ -1304,16 +1309,14 @@ const MERCENARY_NAMES = [
                 }
             });
 
-            if (!isPlayerSide(character)) {
-                gameState.monsters.filter(m => m.isElite).forEach(elite => {
-                    const key = elite.auraSkill;
-                    const skill = SKILL_DEFS[key];
-                    if (skill && skill.passive && skill.aura && skill.aura[stat] !== undefined) {
-                        const dist = getDistance(elite.x, elite.y, character.x, character.y);
-                        if (dist <= (skill.radius || 0)) bonus += skill.aura[stat];
-                    }
-                });
-            }
+            gameState.monsters.filter(m => m.isElite).forEach(elite => {
+                const key = elite.auraSkill;
+                const skill = SKILL_DEFS[key];
+                if (skill && skill.passive && skill.aura && skill.aura[stat] !== undefined) {
+                    const dist = getDistance(elite.x, elite.y, character.x, character.y);
+                    if (dist <= (skill.radius || 0)) bonus += skill.aura[stat];
+                }
+            });
 
             gameState.activeMercenaries.filter(m => m.alive).forEach(merc => {
                 const skills = [merc.skill, merc.skill2, merc.auraSkill];
@@ -1475,6 +1478,10 @@ const MERCENARY_NAMES = [
             if (item.healing !== undefined) stats.push(`회복+${formatNumber(item.healing)}`);
             if (item.fireDamage !== undefined) stats.push(`🔥+${formatNumber(item.fireDamage)}`);
             if (item.iceDamage !== undefined) stats.push(`❄️+${formatNumber(item.iceDamage)}`);
+            if (item.windDamage !== undefined) stats.push(`💨+${formatNumber(item.windDamage)}`);
+            if (item.earthDamage !== undefined) stats.push(`🌱+${formatNumber(item.earthDamage)}`);
+            if (item.lightDamage !== undefined) stats.push(`✨+${formatNumber(item.lightDamage)}`);
+            if (item.darkDamage !== undefined) stats.push(`🌑+${formatNumber(item.darkDamage)}`);
             if (item.lightningDamage !== undefined) stats.push(`⚡+${formatNumber(item.lightningDamage)}`);
             if (item.maxHealth !== undefined && item.type !== ITEM_TYPES.POTION && item.type !== ITEM_TYPES.REVIVE) stats.push(`HP+${formatNumber(item.maxHealth)}`);
             if (item.healthRegen !== undefined) stats.push(`HP회복+${formatNumber(item.healthRegen)}`);
