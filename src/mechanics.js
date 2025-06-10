@@ -1237,6 +1237,13 @@ const MERCENARY_NAMES = [
             }
             return { applied: false, roll, dc };
         }
+        function isPlayerSide(entity) {
+            if (!entity) return false;
+            if (entity === gameState.player) return true;
+            if (gameState.activeMercenaries.includes(entity)) return true;
+            return false;
+        }
+
         function getStatusResist(character, status) {
             let value = character.statusResistances && character.statusResistances[status] ? character.statusResistances[status] : 0;
             if (character.equipped) {
@@ -1270,13 +1277,16 @@ const MERCENARY_NAMES = [
             }
 
             let auraBonus = 0;
+            const friendly = isPlayerSide(character);
             auraBonus += checkAura(gameState.player, character);
             gameState.activeMercenaries.filter(m => m.alive).forEach(m => {
                 auraBonus += checkAura(m, character);
             });
-            gameState.monsters.filter(m => m.isElite).forEach(elite => {
-                auraBonus += checkAura(elite, character);
-            });
+            if (!friendly) {
+                gameState.monsters.filter(m => m.isElite).forEach(elite => {
+                    auraBonus += checkAura(elite, character);
+                });
+            }
             value += auraBonus;
             return value;
         }
@@ -1294,14 +1304,16 @@ const MERCENARY_NAMES = [
                 }
             });
 
-            gameState.monsters.filter(m => m.isElite).forEach(elite => {
-                const key = elite.auraSkill;
-                const skill = SKILL_DEFS[key];
-                if (skill && skill.passive && skill.aura && skill.aura[stat] !== undefined) {
-                    const dist = getDistance(elite.x, elite.y, character.x, character.y);
-                    if (dist <= (skill.radius || 0)) bonus += skill.aura[stat];
-                }
-            });
+            if (!isPlayerSide(character)) {
+                gameState.monsters.filter(m => m.isElite).forEach(elite => {
+                    const key = elite.auraSkill;
+                    const skill = SKILL_DEFS[key];
+                    if (skill && skill.passive && skill.aura && skill.aura[stat] !== undefined) {
+                        const dist = getDistance(elite.x, elite.y, character.x, character.y);
+                        if (dist <= (skill.radius || 0)) bonus += skill.aura[stat];
+                    }
+                });
+            }
 
             gameState.activeMercenaries.filter(m => m.alive).forEach(merc => {
                 const skills = [merc.skill, merc.skill2, merc.auraSkill];
@@ -2072,11 +2084,13 @@ const MERCENARY_NAMES = [
                    MONSTER_SKILLS[monster.auraSkill])
                 : null;
             const lvl = monster.skillLevels[monster.auraSkill] || 1;
+            const isAlly = !gameState.monsters.includes(monster);
             const auraLine = auraInfo
                 ? `<div>오라 스킬: <span class="merc-skill"
             onclick="showAuraDetails('${monster.auraSkill}',${lvl})">
-            ${auraInfo.icon} ${auraInfo.name} Lv.${lvl}</span>
-            <button onclick="upgradeMonsterSkill(window.currentDetailMonster,'${monster.auraSkill}')">레벨업</button></div>`
+            ${auraInfo.icon} ${auraInfo.name} Lv.${lvl}</span>` +
+            (isAlly ? `<button onclick="upgradeMonsterSkill(window.currentDetailMonster,'${monster.auraSkill}')">레벨업</button>` : '') +
+            `</div>`
                 : '';
             const traitInfo = monster.trait ? MONSTER_TRAITS[monster.trait] : null;
             const traitLine = traitInfo ? `<div>특성: ${traitInfo.icon} ${traitInfo.name}</div>` : '';
@@ -2279,14 +2293,6 @@ const MERCENARY_NAMES = [
                         if (dist <= (info.radius || 0)) addAura(k, m.skillLevels[k] || 1);
                     }
                 });
-            });
-            gameState.monsters.filter(m=>m.isElite).forEach(el=>{
-                const k = el.auraSkill;
-                const info = SKILL_DEFS[k];
-                if (info && info.passive && info.aura) {
-                    const dist = getDistance(el.x, el.y, gameState.player.x, gameState.player.y);
-                    if (dist <= (info.radius || 0)) addAura(k, el.skillLevels[k] || 1);
-                }
             });
 
             const statusParts = [];
