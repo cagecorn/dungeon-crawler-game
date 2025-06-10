@@ -120,6 +120,7 @@ Dungeon floors contain several interactive tiles:
 - **Trees** provide plenty of **wood**.
 - **Bone Piles** yield lots of **bone**.
 - **Temples** come in three colors and either fully heal the party, restore fullness or raise affinity by 10. Each temple disappears after use.
+- **Graves** present a risky challenge. Accepting it spawns monsters but rewards high level items, materials and gold.
 
 ## Development
 
