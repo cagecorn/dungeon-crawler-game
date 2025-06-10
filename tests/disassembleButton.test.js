@@ -9,7 +9,7 @@ async function run() {
   win.renderDungeon = () => {};
   win.requestAnimationFrame = fn => fn();
 
-  const { createItem, addToInventory } = win;
+  const { createItem, addToInventory, showItemDetailPanel } = win;
 
   const sword = createItem('shortSword', 0, 0);
   const potion = createItem('healthPotion', 0, 0);
@@ -25,16 +25,18 @@ async function run() {
   }
 
   const swordBtn = items[0].querySelector('.disassemble-button');
-  const potionBtn = items[1].querySelector('.disassemble-button');
+  if (swordBtn) {
+    console.error('disassemble button should not be in list');
+    process.exit(1);
+  }
 
-  if (!swordBtn) {
-    console.error('disassemble button missing for weapon');
+  showItemDetailPanel(sword);
+  const detailBtn = win.document.getElementById('item-detail-panel').querySelector('.disassemble-button');
+  if (!detailBtn) {
+    console.error('disassemble button missing in detail panel');
     process.exit(1);
   }
-  if (potionBtn) {
-    console.error('disassemble button shown for potion');
-    process.exit(1);
-  }
+  win.hideItemDetailPanel();
 }
 
 run().catch(e => { console.error(e); process.exit(1); });
