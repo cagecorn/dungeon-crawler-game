@@ -5,6 +5,7 @@
             POTION: 'potion',
             REVIVE: 'revive',
             EXP_SCROLL: 'expScroll',
+            RECIPE_SCROLL: 'recipeScroll',
             EGG: 'egg',
             FERTILIZER: 'fertilizer',
             ESSENCE: 'essence',
@@ -1619,6 +1620,14 @@ const MERCENARY_NAMES = [
             updateMaterialsDisplay();
         }
 
+        function learnRecipe(key) {
+            if (!gameState.knownRecipes.includes(key)) {
+                gameState.knownRecipes.push(key);
+                const name = RECIPES[key]?.name || key;
+                addMessage(`📖 ${name} 레시피를 배웠습니다!`, 'item');
+            }
+        }
+
         function assignSkill(slot, skill) {
             const other = slot === 1 ? 2 : 1;
             if (gameState.player.assignedSkills[other] === skill) {
@@ -2377,6 +2386,13 @@ function killMonster(monster) {
                     gameState.dungeon[pos.y][pos.x] = 'item';
                     addMessage(`📦 ${monster.name}이(가) ${droppedItem.name}을(를) 떨어뜨렸습니다!`, 'item');
                 }
+            }
+            const unknown = Object.keys(RECIPES).filter(r => !gameState.knownRecipes.includes(r));
+            if (!monster.isChampion && unknown.length && Math.random() < 0.25) {
+                const pos = findAdjacentEmpty(monster.x, monster.y);
+                const scroll = createRecipeScroll(unknown[Math.floor(Math.random() * unknown.length)], pos.x, pos.y);
+                gameState.items.push(scroll);
+                gameState.dungeon[pos.y][pos.x] = 'item';
             }
             const idx = gameState.monsters.findIndex(m => m === monster);
             if (idx !== -1) gameState.monsters.splice(idx, 1);
@@ -3401,6 +3417,20 @@ function killMonster(monster) {
             return item;
         }
 
+        function createRecipeScroll(recipeKey, x, y) {
+            const name = RECIPES[recipeKey]?.name || recipeKey;
+            return {
+                id: Math.random().toString(36).substr(2, 9),
+                type: ITEM_TYPES.RECIPE_SCROLL,
+                recipe: recipeKey,
+                baseName: `${name} Recipe`,
+                name: `📜 ${name} Recipe`,
+                icon: '📜',
+                x,
+                y
+            };
+        }
+
         // 챔피언 생성 함수
         function createChampion(type, x, y, level) {
             const base = CHAMPION_TYPES[type];
@@ -4142,6 +4172,13 @@ function killMonster(monster) {
                     const pos = findAdjacentEmpty(newX, newY);
                     const drop = createItem(key, pos.x, pos.y, null, Math.floor(gameState.floor / 5));
                     gameState.items.push(drop);
+                    gameState.dungeon[pos.y][pos.x] = 'item';
+                }
+                const unknown = Object.keys(RECIPES).filter(r => !gameState.knownRecipes.includes(r));
+                if (unknown.length && Math.random() < 0.25) {
+                    const pos = findAdjacentEmpty(newX, newY);
+                    const scroll = createRecipeScroll(unknown[Math.floor(Math.random() * unknown.length)], pos.x, pos.y);
+                    gameState.items.push(scroll);
                     gameState.dungeon[pos.y][pos.x] = 'item';
                 }
                 addMessage('🎁 보물 상자가 열렸습니다!', 'treasure');
@@ -5595,9 +5632,13 @@ function processTurn() {
                 return;
             }
             items.forEach(item => {
-                addToInventory(item);
-                addMessage(`📦 ${item.name}을(를) 획득했습니다!`, 'item');
                 const idx = gameState.items.indexOf(item);
+                if (item.type === ITEM_TYPES.RECIPE_SCROLL) {
+                    learnRecipe(item.recipe);
+                } else {
+                    addToInventory(item);
+                    addMessage(`📦 ${item.name}을(를) 획득했습니다!`, 'item');
+                }
                 if (idx !== -1) gameState.items.splice(idx, 1);
                 if (gameState.dungeon[item.y] && gameState.dungeon[item.y][item.x] === 'item') {
                     gameState.dungeon[item.y][item.x] = 'empty';
@@ -5821,6 +5862,7 @@ applyStatusEffects, assignSkill, autoMoveStep, averageDice, buildAttackDetail,
 buyShopItem, checkLevelUp, checkMercenaryLevelUp, checkMonsterLevelUp, 
 convertMonsterToMercenary, craftItem, createChampion, createEliteMonster, 
 createHomingProjectile, createItem, createMercenary, createMonster,
+createRecipeScroll, learnRecipe,
 createSuperiorMonster, createTreasure, createNovaEffect, createScreenShake, dissectCorpse, equipItem,
 equipItemToMercenary, estimateSkillDamage, findAdjacentEmpty, findPath,
 formatItem, formatNumber, generateDungeon, generateStars, getAuraBonus, 
