@@ -956,6 +956,37 @@ const MERCENARY_NAMES = ['Aldo', 'Borin', 'Cara', 'Dain', 'Elin', 'Faris'];
                     }
                 });
             }
+            function checkAura(source, target) {
+                let bonus = 0;
+                if (!source) return bonus;
+                let keys = [];
+                if (source === gameState.player) {
+                    keys = [gameState.player.assignedSkills['1'], gameState.player.assignedSkills['2']];
+                } else {
+                    keys = [source.skill, source.skill2, source.auraSkill];
+                }
+                keys.filter(Boolean).forEach(key => {
+                    if (key !== 'NaturalAura') return;
+                    const skill = SKILL_DEFS[key];
+                    if (!skill || !skill.passive || !skill.aura || skill.aura.allResist === undefined) return;
+                    const dist = getDistance(source.x, source.y, target.x, target.y);
+                    if (dist <= (skill.radius || 0)) {
+                        const lvl = (source.skillLevels && source.skillLevels[key]) || 1;
+                        bonus += skill.aura.allResist * lvl;
+                    }
+                });
+                return bonus;
+            }
+
+            let auraBonus = 0;
+            auraBonus += checkAura(gameState.player, character);
+            gameState.activeMercenaries.filter(m => m.alive).forEach(m => {
+                auraBonus += checkAura(m, character);
+            });
+            gameState.monsters.filter(m => m.isElite).forEach(elite => {
+                auraBonus += checkAura(elite, character);
+            });
+            value += auraBonus;
             return value;
         }
 
