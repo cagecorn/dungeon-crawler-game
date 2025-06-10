@@ -21,6 +21,18 @@ As you descend the dungeon, tougher monsters appear on each floor.
 - **Floors 9-10** – Demon Warriors lead groups of Dark Mages and Orcs.
 - **Beyond floor 10** – ELEMENTAL_GOLEM and other high-level foes may appear.
 
+The full roster of monsters appears on progressively higher floors as defined in
+`getMonsterPoolForFloor` in [src/mechanics.js](src/mechanics.js):
+
+- **SLIME** – A weak blob that slowly slides toward the player.
+- **KOBOLD** – Crafty scavenger that often attacks in packs.
+- **GARGOYLE** – Stone guardian with tough defenses.
+- **BANSHEE** – Ethereal spirit whose wail saps life.
+- **MINOTAUR** – Brutish beast that charges headfirst.
+- **LICH** – Undead sorcerer capable of strong magic.
+- **DRAGON_WHELP** – Young dragon with a small but fiery breath.
+- **ELEMENTAL_GOLEM** – Massive construct empowered by elemental forces.
+
 ### Controls
 
 - Use the arrow keys or on-screen arrows to move your character.
