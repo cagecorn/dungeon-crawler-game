@@ -3098,8 +3098,10 @@ function killMonster(monster) {
                             if (merc) {
                                 finalClasses.push('mercenary');
                                 if (merc.isMonster && merc.monsterType) {
-                                    finalClasses.push('monster', merc.monsterType.toLowerCase());
+                                    // 아군이 된 몬스터의 경우 monsterType을 이용해 몬스터 이미지 클래스를 적용
+                                    finalClasses.push('monster', merc.monsterType.replace('_', '-').toLowerCase());
                                 } else if (merc.type) {
+                                    // 일반 용병일 경우 기존 로직대로 type을 사용
                                     finalClasses.push(merc.type.toLowerCase());
                                 }
                                 div.textContent = '';
