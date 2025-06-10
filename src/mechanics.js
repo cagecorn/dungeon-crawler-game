@@ -1984,6 +1984,11 @@ const MERCENARY_NAMES = [
                 gameState.knownRecipes.push(key);
                 const name = RECIPES[key]?.name || key;
                 addMessage(`📖 ${name} 레시피를 배웠습니다!`, 'item');
+
+                // 상세 패널 UI 업데이트 함수를 여기서 직접 호출
+                updateCraftingDetailDisplay();
+
+                // 레시피를 활성 탭에도 추가
                 addRecipeToTab(key);
             }
         }
@@ -1992,7 +1997,7 @@ const MERCENARY_NAMES = [
             if (!gameState.activeRecipes.includes(key)) {
                 gameState.activeRecipes.push(key);
                 updateMaterialsDisplay();
-                updateCraftingDetailDisplay();
+                // 상세 패널 업데이트 호출을 learnRecipe 함수로 옮겼으므로 여기서는 제거
             }
         }
 
@@ -6323,6 +6328,18 @@ function processTurn() {
         }
 
         function showItemTargetPanel(item) {
+            // 아이템 타입이 레시피 스크롤인 경우, 즉시 사용하고 함수 종료
+            if (item.type === ITEM_TYPES.RECIPE_SCROLL) {
+                learnRecipe(item.recipe);
+
+                const index = gameState.player.inventory.findIndex(i => i.id === item.id);
+                if (index !== -1) {
+                    gameState.player.inventory.splice(index, 1);
+                    updateInventoryDisplay();
+                }
+                return;
+            }
+
             const panel = document.getElementById('item-target-panel');
             const content = document.getElementById('item-target-content');
             content.innerHTML = `<h3>${item.name} 대상 선택</h3>`;
