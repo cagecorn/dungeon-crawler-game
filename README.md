@@ -126,6 +126,10 @@ Dungeon floors contain several interactive tiles:
 - **Temples** come in three colors and either fully heal the party, restore fullness or raise affinity by 10. Each temple disappears after use.
 - **Graves** present a risky challenge. Accepting it spawns monsters but rewards high level items, materials and gold.
 
+### Map Items and Altars
+
+Map items occasionally drop from monsters and chests. Each map lists a modifier that alters the next floor, such as boosting treasure or increasing monster spawns. Every five floors a glowing map altar appears in the dungeon. Stand on the altar and activate a map from your inventory to apply its modifier – maps only work when used while positioned on these altars.
+
 ## Development
 
 Install dependencies with:
