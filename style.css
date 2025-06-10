@@ -42,7 +42,35 @@
 }
 
 .cell.empty.mercenary {
+  background-image: url("assets/images/floor-tile.png");
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+}
+
+.cell.empty.mercenary.warrior {
   background-image: url("assets/images/warrior.png"), url("assets/images/floor-tile.png");
+  background-size: contain, cover;
+  background-position: center, center;
+  background-repeat: no-repeat, no-repeat;
+}
+
+.cell.empty.mercenary.archer {
+  background-image: url("assets/images/archer.png"), url("assets/images/floor-tile.png");
+  background-size: contain, cover;
+  background-position: center, center;
+  background-repeat: no-repeat, no-repeat;
+}
+
+.cell.empty.mercenary.healer {
+  background-image: url("assets/images/healer.png"), url("assets/images/floor-tile.png");
+  background-size: contain, cover;
+  background-position: center, center;
+  background-repeat: no-repeat, no-repeat;
+}
+
+.cell.empty.mercenary.wizard {
+  background-image: url("assets/images/wizard.png"), url("assets/images/floor-tile.png");
   background-size: contain, cover;
   background-position: center, center;
   background-repeat: no-repeat, no-repeat;
