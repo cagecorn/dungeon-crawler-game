@@ -13,7 +13,47 @@
 
         const SHOP_PRICE_MULTIPLIER = 3;
 
-const MERCENARY_NAMES = ['Aldo', 'Borin', 'Cara', 'Dain', 'Elin', 'Faris'];
+const MERCENARY_NAMES = [
+    // 기존 이름들
+    'Aldo', 'Borin', 'Cara', 'Dain', 'Elin', 'Faris',
+
+    // 전사 스타일 이름들
+    'Gareth', 'Thorin', 'Ragnar', 'Bjorn', 'Magnus', 'Grimm', 'Axel', 'Kane', 'Rex', 'Stark',
+    'Blade', 'Steel', 'Iron', 'Storm', 'Wolf', 'Bear', 'Hawk', 'Stone', 'Fire', 'Thunder',
+
+    // 궁수 스타일 이름들
+    'Archer', 'Robin', 'Green', 'Swift', 'Sharp', 'Eagle', 'Arrow', 'Bow', 'Hunter', 'Scout',
+    'Keen', 'Quick', 'Silent', 'Shadow', 'Wind', 'Falcon', 'Ranger', 'Track', 'Mark', 'Aim',
+
+    // 마법사 스타일 이름들
+    'Merlin', 'Gandalf', 'Sage', 'Mystic', 'Arcane', 'Spell', 'Mage', 'Wizard', 'Sorcerer', 'Enchanter',
+    'Crystal', 'Star', 'Moon', 'Sun', 'Flame', 'Frost', 'Light', 'Dark', 'Void', 'Cosmic',
+
+    // 힐러 스타일 이름들
+    'Grace', 'Hope', 'Faith', 'Light', 'Pure', 'Holy', 'Divine', 'Blessed', 'Sacred', 'Serene',
+    'Heal', 'Cure', 'Mend', 'Restore', 'Renew', 'Revive', 'Life', 'Spirit', 'Soul', 'Heart',
+
+    // 다양한 판타지 이름들
+    'Aether', 'Blaze', 'Cipher', 'Drake', 'Echo', 'Frost', 'Gale', 'Haven', 'Ivory', 'Jade',
+    'Knight', 'Lance', 'Nova', 'Onyx', 'Phantom', 'Quest', 'Raven', 'Sage', 'Titan', 'Unity',
+    'Valor', 'Wraith', 'Xenon', 'Yuki', 'Zephyr', 'Azure', 'Crimson', 'Ember', 'Golden', 'Silver',
+
+    // 신화적 이름들
+    'Atlas', 'Orion', 'Phoenix', 'Draco', 'Vega', 'Sirius', 'Castor', 'Pollux', 'Rigel', 'Altair',
+    'Artemis', 'Apollo', 'Diana', 'Mars', 'Venus', 'Jupiter', 'Saturn', 'Neptune', 'Pluto', 'Mercury',
+
+    // 보석/금속 이름들
+    'Diamond', 'Ruby', 'Sapphire', 'Emerald', 'Topaz', 'Garnet', 'Opal', 'Pearl', 'Amber', 'Coral',
+    'Platinum', 'Mithril', 'Adamant', 'Bronze', 'Copper', 'Zinc', 'Chrome', 'Cobalt', 'Nickel', 'Lead',
+
+    // 자연 요소 이름들
+    'River', 'Ocean', 'Mountain', 'Forest', 'Desert', 'Valley', 'Canyon', 'Meadow', 'Grove', 'Field',
+    'Aurora', 'Comet', 'Meteor', 'Galaxy', 'Nebula', 'Quasar', 'Pulsar', 'Solar', 'Lunar', 'Stellar',
+
+    // 추상적 개념 이름들
+    'Honor', 'Glory', 'Victory', 'Triumph', 'Courage', 'Bravery', 'Wisdom', 'Justice', 'Truth', 'Peace',
+    'Chaos', 'Order', 'Balance', 'Harmony', 'Discord', 'Fury', 'Rage', 'Calm', 'Serenity', 'Tranquil'
+];
 
         const MAX_FULLNESS = 100;
         const FULLNESS_LOSS_PER_TURN = 0.01;
