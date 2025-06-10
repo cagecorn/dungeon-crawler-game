@@ -127,7 +127,9 @@ Before running the tests you must install the project dependencies manually:
 npm install
 ```
 
-After installation execute `npm test` to run the test suite.
+After installation execute `npm test` to run the test suite. The test runner
+automatically locates all files ending with `*.test.js` in the `tests` folder
+and executes them sequentially.
 
 ## License
 
