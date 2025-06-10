@@ -5172,6 +5172,7 @@ function processTurn() {
             updateIncubatorDisplay();
             updateMaterialsDisplay();
             updateActionButtons();
+            updateStats();
         }
 
         // 초기화 및 입력 처리
