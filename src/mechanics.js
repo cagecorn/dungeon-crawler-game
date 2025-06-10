@@ -1780,6 +1780,7 @@ const MERCENARY_NAMES = [
                 gameState.knownRecipes.push(key);
                 const name = RECIPES[key]?.name || key;
                 addMessage(`📖 ${name} 레시피를 배웠습니다!`, 'item');
+                updateMaterialsDisplay();
             }
         }
 
@@ -2730,6 +2731,10 @@ function killMonster(monster) {
             addToInventory(slot.egg);
             gameState.incubators[index] = null;
             updateIncubatorDisplay();
+        }
+
+        function advanceGameLoop() {
+            processTurn();
         }
 
         function advanceIncubators() {
@@ -6273,7 +6278,7 @@ function processTurn() {
             }
         });
 const exportsObj = {
-gameState, addMessage, addToInventory, advanceIncubators, 
+gameState, addMessage, addToInventory, advanceIncubators, advanceGameLoop,
 applyStatusEffects, assignSkill, autoMoveStep, averageDice, buildAttackDetail, 
 buyShopItem, checkLevelUp, checkMercenaryLevelUp, checkMonsterLevelUp, 
 convertMonsterToMercenary, craftItem, createChampion, createEliteMonster, 
