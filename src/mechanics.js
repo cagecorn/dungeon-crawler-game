@@ -2077,7 +2077,7 @@ const MERCENARY_NAMES = [
             s2.onclick = () => showSkillDamage(gameState.player, gameState.player.assignedSkills[2], SKILL_DEFS);
         }
 
-        function updateMaterialsDisplay() {
+function updateMaterialsDisplay() {
             const matList = document.getElementById('materials-list');
             if (!matList) return;
             matList.innerHTML = '';
@@ -2112,6 +2112,17 @@ const MERCENARY_NAMES = [
                 const r = RECIPES[entry.recipe];
                 div.textContent = `${r.name} (${entry.turnsLeft}T)`;
                 queueDiv.appendChild(div);
+            });
+}
+
+        function updateTileTabDisplay() {
+            const list = document.getElementById('tile-tab-list');
+            if (!list) return;
+            list.innerHTML = '';
+            gameState.player.tileInventory.forEach(tile => {
+                const div = document.createElement('div');
+                div.textContent = tile.name || tile.type || 'Tile';
+                list.appendChild(div);
             });
         }
 
@@ -5045,6 +5056,19 @@ function killMonster(monster) {
                 }
             }
 
+            if (cellType === 'tile') {
+                const tileObj = gameState.mapTiles.find(t => t.x === newX && t.y === newY);
+                if (tileObj) {
+                    SoundEngine.playSound('getItem');
+                    addMessage(`📦 ${tileObj.name || '타일'}을(를) 획득했습니다!`, 'item');
+                    const idx = gameState.mapTiles.indexOf(tileObj);
+                    if (idx !== -1) gameState.mapTiles.splice(idx, 1);
+                    gameState.player.tileInventory.push(tileObj);
+                    gameState.dungeon[newY][newX] = 'empty';
+                    updateTileTabDisplay();
+                }
+            }
+
             if (cellType === 'plant') {
                 const materialsPool = ['herb', 'bread', 'meat', 'lettuce'];
                 const gained = [];
@@ -7030,8 +7054,9 @@ showMonsterDetails, showShop, showSkillDamage, showAuraDetails, skill1Action, sk
 spawnMercenaryNearPlayer, spawnStartingRecipes, startGame, swapActiveAndStandby, tryApplyStatus,
 unequipAccessory, unequipWeapon, unequipArmor, unequipItemFromMercenary, updateActionButtons, updateCamera,
 updateFogOfWar, updateIncubatorDisplay,
-updateInventoryDisplay, updateMaterialsDisplay, updateMercenaryDisplay,
-updateShopDisplay, updateSkillDisplay, updateStats, updateTurnEffects,
+ updateInventoryDisplay, updateMaterialsDisplay, updateMercenaryDisplay,
+ updateShopDisplay, updateSkillDisplay, updateStats, updateTurnEffects,
+ updateTileTabDisplay,
 upgradeMercenarySkill, upgradeMonsterSkill, useItem, useItemOnTarget, useSkill, removeMercenary,
     dismiss, sacrifice, allocateStat, exitMap,
     addRecipeToTab, removeRecipeFromTab,

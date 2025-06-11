@@ -69,7 +69,8 @@
       teleportSavedX: null,
       teleportSavedY: null,
       teleportReturnX: null,
-      teleportReturnY: null
+      teleportReturnY: null,
+      tileInventory: []
     },
     activeMercenaries: [],
     standbyMercenaries: [],
@@ -78,6 +79,7 @@
     corpses: [],
     treasures: [],
     items: [],
+    mapTiles: [],
     projectiles: [],
     exitLocation: { x: 0, y: 0 },
     altarLocation: { x: 0, y: 0 },
