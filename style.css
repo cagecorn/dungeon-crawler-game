@@ -196,10 +196,10 @@
 }
 
 .effect-icon {
-  /* <<< 스타일 수정: 번지는 그림자 대신, 1px의 깔끔한 검은색 외곽선으로 변경합니다. */
-  text-shadow: 
-      -1px -1px 0 #000,  
-       1px -1px 0 #000,
-      -1px  1px 0 #000,
-       1px  1px 0 #000;
+  /* <<< 스타일 수정: 검은색 테두리를 흰색(#FFF)으로 변경하여 가독성을 높입니다. */
+  text-shadow:
+      -1px -1px 0 #FFF,
+       1px -1px 0 #FFF,
+      -1px  1px 0 #FFF,
+       1px  1px 0 #FFF;
 }
