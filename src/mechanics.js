@@ -1468,7 +1468,7 @@ const MERCENARY_NAMES = [
             { name: 'of Haste', modifiers: { monsterSpeedBonus: 2 } }
         ];
 
-        const TILE_TYPES = [
+        const MAP_TILE_TYPES = [
             { name: 'Campfire', icon: '🔥' },
             { name: 'Fountain', icon: '⛲' },
             { name: 'Totem', icon: '🗿' }
@@ -3884,7 +3884,7 @@ function killMonster(monster) {
                     x = Math.floor(Math.random() * size);
                     y = Math.floor(Math.random() * size);
                 } while (gameState.dungeon[y][x] !== 'empty');
-                const tile = { ...TILE_TYPES[Math.floor(Math.random() * TILE_TYPES.length)], x, y };
+                const tile = { ...MAP_TILE_TYPES[Math.floor(Math.random() * MAP_TILE_TYPES.length)], x, y };
                 gameState.mapTiles.push(tile);
                 gameState.dungeon[y][x] = 'tile';
             }
@@ -4680,7 +4680,7 @@ function killMonster(monster) {
         function equipItemToMercenary(item, mercenary) {
             // 용병 장비 초기화 확인
             if (!mercenary.equipped) {
-                mercenary.equipped = { weapon: null, armor: null, accessory1: null, accessory2: null };
+                mercenary.equipped = { weapon: null, armor: null, accessory1: null, accessory2: null, tile: null };
             }
             
             if (item.type === ITEM_TYPES.WEAPON) {
@@ -5726,7 +5726,7 @@ function processTurn() {
             
             // 장비 초기화 확인
             if (!mercenary.equipped) {
-                mercenary.equipped = { weapon: null, armor: null };
+                mercenary.equipped = { weapon: null, armor: null, accessory1: null, accessory2: null, tile: null };
             }
             
             // 플레이어와의 거리 유지 (1~3칸 사이)
@@ -7168,5 +7168,5 @@ upgradeMercenarySkill, upgradeMonsterSkill, useItem, useItemOnTarget, useSkill, 
     updateCraftingDetailDisplay, showCraftingDetailPanel, hideCraftingDetailPanel,
     showCorpsePanel, hideCorpsePanel, ignoreCorpse, getMonsterRank
 };
-Object.assign(window, exportsObj, {SKILL_DEFS, MERCENARY_SKILLS, MONSTER_SKILLS, MONSTER_SKILL_SETS, MONSTER_TRAITS, MONSTER_TRAIT_SETS, PREFIXES, SUFFIXES, MAP_PREFIXES, MAP_SUFFIXES, TILE_TYPES});
+Object.assign(window, exportsObj, {SKILL_DEFS, MERCENARY_SKILLS, MONSTER_SKILLS, MONSTER_SKILL_SETS, MONSTER_TRAITS, MONSTER_TRAIT_SETS, PREFIXES, SUFFIXES, MAP_PREFIXES, MAP_SUFFIXES, MAP_TILE_TYPES});
 
