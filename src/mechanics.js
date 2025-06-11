@@ -3808,18 +3808,24 @@ function killMonster(monster) {
                 });
             }
 
-            let exitX = 1, exitY = 1;
-            if (visitedCells.length > 1) {
-                let exitCell;
-                do {
-                    exitCell = visitedCells[Math.floor(Math.random() * visitedCells.length)];
-                } while (exitCell.x === 1 && exitCell.y === 1);
-                exitX = exitCell.x;
-                exitY = exitCell.y;
+            gameState.exitLocations = [];
+            let exitCount = Math.floor(Math.random() * 4) + 1; // 1~4개 출구 생성
+            for (let i = 0; i < exitCount; i++) {
+                let exitX = 1, exitY = 1;
+                if (visitedCells.length > 1) {
+                    let exitCell;
+                    do {
+                        exitCell = visitedCells[Math.floor(Math.random() * visitedCells.length)];
+                    } while ((exitCell.x === 1 && exitCell.y === 1) || gameState.dungeon[exitCell.y][exitCell.x] === 'exit');
+                    exitX = exitCell.x;
+                    exitY = exitCell.y;
+                }
+                gameState.exitLocations.push({ x: exitX, y: exitY });
+                gameState.dungeon[exitY][exitX] = 'exit';
             }
-
-            gameState.exitLocation = { x: exitX, y: exitY };
-            gameState.dungeon[exitY][exitX] = 'exit';
+            if (gameState.exitLocations.length) {
+                gameState.exitLocation = gameState.exitLocations[0];
+            }
 
             const monsterTypes = getMonsterPoolForFloor(dungeonLevel);
             // 몬스터는 던전 크기와 층수에 비례해 등장 수를 결정

@@ -56,6 +56,7 @@
         mapTiles: [],
         projectiles: [],
         exitLocation: { x: 0, y: 0 },
+        exitLocations: [],
         altarLocation: { x: 0, y: 0 },
         shopLocation: { x: 0, y: 0 },
         shopItems: [],
