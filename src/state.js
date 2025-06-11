@@ -56,6 +56,7 @@
         mapTiles: [], // <<< 수정됨: 맵에 생성된 타일 위치 정보 추가
         projectiles: [],
         exitLocation: { x: 0, y: 0 },
+        exitLocations: [],
         altarLocation: { x: 0, y: 0 },
         shopLocation: { x: 0, y: 0 },
         shopItems: [],
