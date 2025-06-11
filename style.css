@@ -140,3 +140,19 @@
 .cell.monster.goblin {
   background-image: url("assets/images/goblin.png"), url("assets/images/floor-tile.png");
 }
+
+/* ---- Special unit glow effects ---- */
+.cell.elite {
+  box-shadow: 0 0 8px rgba(244, 67, 54, 0.7);
+  animation: monsterPulse 1.5s ease-in-out infinite alternate;
+}
+
+.cell.champion {
+  box-shadow: 0 0 8px rgba(255, 235, 59, 0.7);
+  animation: monsterPulse 1.5s ease-in-out infinite alternate;
+}
+
+.cell.superior {
+  box-shadow: 0 0 8px rgba(33, 150, 243, 0.7);
+  animation: monsterPulse 1.5s ease-in-out infinite alternate;
+}

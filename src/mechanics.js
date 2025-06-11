@@ -2822,6 +2822,9 @@ function killMonster(monster) {
                 type: 'MONSTER',
                 monsterType: monster.type,
                 isMonster: true,
+                isElite: !!monster.isElite,
+                isChampion: !!monster.isChampion,
+                isSuperior: !!monster.isSuperior,
                 name: monster.name,
                 icon: monster.icon,
                 role: monster.special === 'ranged' ? 'ranged' : monster.special === 'magic' ? 'caster' : 'tank',
@@ -3109,6 +3112,9 @@ function killMonster(monster) {
                                     // 일반 용병일 경우 기존 로직대로 type을 사용
                                     finalClasses.push(merc.type.toLowerCase());
                                 }
+                                if (merc.isSuperior) finalClasses.push('superior');
+                                else if (merc.isChampion) finalClasses.push('champion');
+                                else if (merc.isElite) finalClasses.push('elite');
                                 div.textContent = '';
                             } else if (baseCellType === 'monster') {
                                 const m = gameState.monsters.find(mon => mon.x === x && mon.y === y);
@@ -3118,7 +3124,8 @@ function killMonster(monster) {
                                     if (monsterClass !== 'slime' && monsterClass !== 'goblin-archer' && monsterClass !== 'goblin') {
                                          div.textContent = m.icon;
                                     }
-                                    if (m.isChampion) finalClasses.push('champion');
+                                    if (m.isSuperior) finalClasses.push('superior');
+                                    else if (m.isChampion) finalClasses.push('champion');
                                     else if (m.isElite) finalClasses.push('elite');
                                 }
                             } else if (baseCellType === 'item') {
