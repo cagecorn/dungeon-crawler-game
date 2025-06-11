@@ -239,8 +239,8 @@
 }
 
 .low-health {
-  /* [추가] 붉은색 그림자 효과로 위험 상태를 표시합니다. */
-  box-shadow: 0 0 10px rgba(255, 0, 0, 0.9);
+  /* 이미지 자체가 붉은 색으로 보이도록 필터를 적용합니다. */
+  filter: brightness(0.6) sepia(1) hue-rotate(-50deg) saturate(6);
   animation: monsterPulse 1s ease-in-out infinite alternate;
 }
 /* style.css */
