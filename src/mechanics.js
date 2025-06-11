@@ -1598,7 +1598,7 @@ const MERCENARY_NAMES = [
                 auraBonus += checkAura(m, character);
             });
             if (!friendly) {
-                gameState.monsters.filter(m => m.isElite).forEach(elite => {
+                gameState.monsters.filter(m => m.isElite || m.isSuperior).forEach(elite => {
                     auraBonus += checkAura(elite, character);
                 });
             }
@@ -1611,7 +1611,7 @@ const MERCENARY_NAMES = [
             const sources = [
                 gameState.player,
                 ...gameState.activeMercenaries.filter(m => m.alive),
-                ...gameState.monsters.filter(m => m.isElite)
+                ...gameState.monsters.filter(m => m.isElite || m.isSuperior)
             ];
             sources.forEach(src => {
                 if (!isSameSide(src, character)) return;
@@ -2685,6 +2685,7 @@ const MERCENARY_NAMES = [
             const icons = new Set();
             const checkSource = (source) => {
                 if (!source || (source !== gameState.player && !source.alive)) return;
+                if (!isSameSide(source, character)) return;
 
                 const skillKeys = [
                     source.skill,
@@ -2701,10 +2702,10 @@ const MERCENARY_NAMES = [
                 });
             };
 
-            // 플레이어, 모든 아군 용병, 엘리트 몬스터가 거는 오라를 모두 확인
+            // 플레이어, 모든 아군 용병, 엘리트 및 상급 몬스터가 거는 오라를 모두 확인
             checkSource(gameState.player);
             gameState.activeMercenaries.forEach(merc => checkSource(merc));
-            gameState.monsters.filter(m => m.isElite).forEach(elite => checkSource(elite));
+            gameState.monsters.filter(m => m.isElite || m.isSuperior).forEach(elite => checkSource(elite));
 
             return Array.from(icons);
         }
