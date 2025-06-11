@@ -327,24 +327,24 @@ const TILE_TYPES = {
 
 const TILE_DEFS = {
     [TILE_TYPES.VOLCANO]: {
-        name: 'Volcano',
+        name: '용암 타일',
         key: TILE_TYPES.VOLCANO,
-        description: 'A searing volcanic tile.',
-        effects: [],
+        description: '끓어오르는 용암의 힘이 담겨있습니다.',
+        effects: { attack: 5 },
         imageUrl: 'assets/images/volcano.png'
     },
     [TILE_TYPES.FLOWER]: {
-        name: 'Flower',
+        name: '꽃 타일',
         key: TILE_TYPES.FLOWER,
-        description: 'A gentle flower tile.',
-        effects: [],
+        description: '만개한 생명의 기운이 느껴집니다.',
+        effects: { maxHealth: 5 },
         imageUrl: 'assets/images/flower.png'
     },
     [TILE_TYPES.METAL]: {
-        name: 'Metal',
+        name: '금속 타일',
         key: TILE_TYPES.METAL,
-        description: 'A sturdy metallic tile.',
-        effects: [],
+        description: '견고한 금속의 힘으로 주인을 보호합니다.',
+        effects: { defense: 5 },
         imageUrl: 'assets/images/metal.png'
     }
 };
@@ -1882,7 +1882,10 @@ const MERCENARY_NAMES = [
                     value = character[stat] || 0;
             }
             if (character.equipped) {
-                ['weapon', 'armor', 'accessory1', 'accessory2', 'tile'].forEach(slot => {
+                if (character.equipped.tile && character.equipped.tile.effects && character.equipped.tile.effects[stat]) {
+                    value += character.equipped.tile.effects[stat];
+                }
+                ['weapon', 'armor', 'accessory1', 'accessory2'].forEach(slot => {
                     const it = character.equipped[slot];
                     if (it && it[stat] !== undefined) {
                         value += it[stat];
@@ -2164,13 +2167,17 @@ function updateMaterialsDisplay() {
 }
 
         function updateTileTabDisplay() {
-            const list = document.getElementById('tile-tab-list');
-            if (!list) return;
-            list.innerHTML = '';
+            const container = document.getElementById('tile-tab');
+            if (!container) return;
+            container.innerHTML = '';
+
             gameState.player.tileInventory.forEach(tile => {
-                const div = document.createElement('div');
-                div.textContent = tile.name || tile.type || 'Tile';
-                list.appendChild(div);
+                const slot = document.createElement('div');
+                slot.className = 'tile-tab-slot';
+                slot.style.backgroundImage = `url('${tile.imageUrl}')`;
+                slot.title = `${tile.name}\n${tile.description}`;
+                // slot.onclick = () => showTileDetailPanel(tile);
+                container.appendChild(slot);
             });
         }
 
@@ -3418,6 +3425,9 @@ function killMonster(monster) {
             for (let y = 0; y < gameState.dungeonSize; y++) {
                 for (let x = 0; x < gameState.dungeonSize; x++) {
                     const div = gameState.cellElements[y][x];
+                    const tileBg = div.querySelector('.equipped-tile-bg');
+                    if (tileBg) tileBg.style.backgroundImage = '';
+                    div.classList.remove('low-health');
                     // 렌더링마다 이전 아이콘들을 모두 지워 잔상이 남지 않게 합니다.
                     const buffEl = div.querySelector('.buff-container');
                     const statusEl = div.querySelector('.status-container');
@@ -3429,6 +3439,13 @@ function killMonster(monster) {
 
                     if (x === gameState.player.x && y === gameState.player.y) {
                         finalClasses.push('player');
+                        if (gameState.player.equipped.tile) {
+                            tileBg.style.backgroundImage = `url('${gameState.player.equipped.tile.imageUrl}')`;
+                        }
+                        const maxHealth = getStat(gameState.player, 'maxHealth');
+                        if (maxHealth > 0 && gameState.player.health / maxHealth < 0.25) {
+                            finalClasses.push('low-health');
+                        }
                         updateUnitEffectIcons(gameState.player, div);
                     } else {
                         const proj = gameState.projectiles.find(p => p.x === x && p.y === y);
@@ -3436,7 +3453,7 @@ function killMonster(monster) {
                             finalClasses.push('projectile');
                             div.textContent = proj.icon;
                         } else {
-                            const merc = gameState.activeMercenaries.find(m => m.x === x && m.y === y && m.alive);
+                            const merc = gameState.activeMercenaries.find(m => m.x === x && m.y === y);
                             if (merc) {
                                 finalClasses.push('mercenary');
                                 if (merc.isMonster && merc.monsterType) {
@@ -3449,6 +3466,13 @@ function killMonster(monster) {
                                 if (merc.isSuperior) finalClasses.push('superior');
                                 else if (merc.isChampion) finalClasses.push('champion');
                                 else if (merc.isElite) finalClasses.push('elite');
+                                if (merc.equipped.tile) {
+                                    tileBg.style.backgroundImage = `url('${merc.equipped.tile.imageUrl}')`;
+                                }
+                                const maxHealth = getStat(merc, 'maxHealth');
+                                if (maxHealth > 0 && merc.health / maxHealth < 0.25) {
+                                    finalClasses.push('low-health');
+                                }
                                 div.textContent = '';
                                 updateUnitEffectIcons(merc, div);
                             } else if (baseCellType === 'monster') {
@@ -3459,6 +3483,10 @@ function killMonster(monster) {
                                     if (monsterClass !== 'slime' && monsterClass !== 'goblin-archer' && monsterClass !== 'goblin') {
                                          div.textContent = m.icon;
                                     }
+                                    const maxHealth = getStat(m, 'maxHealth');
+                                    if (maxHealth > 0 && m.health / maxHealth < 0.25) {
+                                        finalClasses.push('low-health');
+                                    }
                                     if (m.isSuperior) finalClasses.push('superior');
                                     else if (m.isChampion) finalClasses.push('champion');
                                     else if (m.isElite) finalClasses.push('elite');
@@ -3468,8 +3496,11 @@ function killMonster(monster) {
                                 const it = gameState.items.find(it => it.x === x && it.y === y);
                                 if (it) div.textContent = it.icon;
                             } else if (baseCellType === 'tile') {
-                                const tile = gameState.mapTiles.find(t => t.x === x && t.y === y);
-                                if (tile) div.textContent = tile.icon;
+                                const mapTile = gameState.mapTiles.find(t => t.x === x && t.y === y);
+                                if (mapTile) {
+                                    div.style.backgroundImage = `url('${mapTile.imageUrl}')`;
+                                    div.style.backgroundSize = 'cover';
+                                }
                             } else if (baseCellType === 'plant') {
                                 div.textContent = '🌿';
                             } else if (baseCellType === 'chest') {
@@ -3664,6 +3695,9 @@ function killMonster(monster) {
                         const cellDiv = document.createElement('div');
                         cellDiv.dataset.x = x;
                         cellDiv.dataset.y = y;
+                        const tileBg = document.createElement('div');
+                        tileBg.className = 'equipped-tile-bg';
+                        cellDiv.appendChild(tileBg);
                         cellDiv.className = 'cell';
 
                         // 버프/디버프 아이콘 컨테이너
@@ -3877,16 +3911,20 @@ function killMonster(monster) {
                 gameState.dungeon[y][x] = 'item';
             }
 
-            const tileSpawnCount = 1 + Math.floor(Math.random() * 2);
-            for (let i = 0; i < tileSpawnCount; i++) {
-                let x, y;
+            const tileKeys = Object.values(TILE_TYPES);
+            const tileCount = 1 + Math.floor(Math.random() * 2);
+            for (let i = 0; i < tileCount; i++) {
+                let tx, ty;
                 do {
-                    x = Math.floor(Math.random() * size);
-                    y = Math.floor(Math.random() * size);
-                } while (gameState.dungeon[y][x] !== 'empty');
-                const tile = { ...MAP_TILE_TYPES[Math.floor(Math.random() * MAP_TILE_TYPES.length)], x, y };
-                gameState.mapTiles.push(tile);
-                gameState.dungeon[y][x] = 'tile';
+                    tx = Math.floor(Math.random() * size);
+                    ty = Math.floor(Math.random() * size);
+                } while (gameState.dungeon[ty][tx] !== 'empty');
+
+                const tileKey = tileKeys[Math.floor(Math.random() * tileKeys.length)];
+                const tileData = { ...TILE_DEFS[tileKey], x: tx, y: ty };
+
+                gameState.mapTiles.push(tileData);
+                gameState.dungeon[ty][tx] = 'tile';
             }
 
             const plantCount = Math.floor(size * 0.05);
@@ -5162,15 +5200,13 @@ function killMonster(monster) {
             }
 
             if (cellType === 'tile') {
-                const tileObj = gameState.mapTiles.find(t => t.x === newX && t.y === newY);
-                if (tileObj) {
-                    SoundEngine.playSound('getItem');
-                    addMessage(`📦 ${tileObj.name || '타일'}을(를) 획득했습니다!`, 'item');
-                    const idx = gameState.mapTiles.indexOf(tileObj);
-                    if (idx !== -1) gameState.mapTiles.splice(idx, 1);
-                    gameState.player.tileInventory.push(tileObj);
-                    gameState.dungeon[newY][newX] = 'empty';
+                const tileIndex = gameState.mapTiles.findIndex(t => t.x === newX && t.y === newY);
+                if (tileIndex !== -1) {
+                    const [tileData] = gameState.mapTiles.splice(tileIndex, 1);
+                    gameState.player.tileInventory.push(tileData);
+                    addMessage(`💠 ${tileData.name}을(를) 획득했습니다!`, 'treasure');
                     updateTileTabDisplay();
+                    gameState.dungeon[newY][newX] = 'empty';
                 }
             }
 
@@ -6364,6 +6400,7 @@ function processTurn() {
             renderDungeon();
             updateCamera();
             updateIncubatorDisplay();
+            updateTileTabDisplay();
             updateActionButtons();
             addMessage('📁 게임을 불러왔습니다.', 'info');
         }
@@ -7047,6 +7084,7 @@ function processTurn() {
             updateSkillDisplay();
             updateIncubatorDisplay();
             updateMaterialsDisplay();
+            updateTileTabDisplay();
             updateActionButtons();
             updateStats();
         }

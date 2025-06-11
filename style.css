@@ -237,3 +237,7 @@
 .equipped-tile-bg {
   box-shadow: 0 0 5px 2px #4CAF50;
 }
+
+.low-health {
+  animation: monsterPulse 1s ease-in-out infinite alternate;
+}
