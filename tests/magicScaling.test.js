@@ -18,6 +18,8 @@ async function run() {
     gameState,
     getStat
   } = win;
+
+  gameState.player.gold = 500;
   const MERCENARY_SKILLS = win.eval('MERCENARY_SKILLS');
 
   const size = 5;

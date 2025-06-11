@@ -20,6 +20,8 @@ async function run() {
     gameState
   } = win;
 
+  gameState.player.gold = 500;
+
   const MERCENARY_SKILLS = win.eval('MERCENARY_SKILLS');
 
   // create a simple empty dungeon
