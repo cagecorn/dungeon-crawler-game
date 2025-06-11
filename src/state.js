@@ -35,10 +35,10 @@
                 armor: null,
                 accessory1: null,
                 accessory2: null,
-                tile: null // <<< 수정됨: 플레이어 타일 슬롯 추가
+                tile: null
             },
             inventory: [],
-            tileInventory: [], // <<< 수정됨: 플레이어 타일 보관 인벤토리 추가
+            tileInventory: [],
             teleportSavedX: null,
             teleportSavedY: null,
             teleportReturnX: null,
@@ -53,7 +53,7 @@
         corpses: [],
         treasures: [],
         items: [],
-        mapTiles: [], // <<< 수정됨: 맵에 생성된 타일 위치 정보 추가
+        mapTiles: [],
         projectiles: [],
         exitLocation: { x: 0, y: 0 },
         altarLocation: { x: 0, y: 0 },
