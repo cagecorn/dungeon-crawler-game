@@ -1,7 +1,6 @@
 (function(global){
   const MONSTER_VISION = 6;
   const FOG_RADIUS = 6; // increased player vision range
-  const MERCENARY_TRIGGER_DISTANCE = 5; // player distance to trigger ally attacks
   const gameState = {
     dungeon: [],
     fogOfWar: [],
@@ -105,8 +104,7 @@
   global.gameState = gameState;
   global.MONSTER_VISION = MONSTER_VISION;
   global.FOG_RADIUS = FOG_RADIUS;
-  global.MERCENARY_TRIGGER_DISTANCE = MERCENARY_TRIGGER_DISTANCE;
   if (typeof module !== 'undefined' && module.exports) {
-    module.exports = { gameState, MONSTER_VISION, FOG_RADIUS, MERCENARY_TRIGGER_DISTANCE };
+    module.exports = { gameState, MONSTER_VISION, FOG_RADIUS };
   }
 })(typeof globalThis !== 'undefined' ? globalThis : this);
