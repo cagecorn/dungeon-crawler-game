@@ -7056,6 +7056,8 @@ function processTurn() {
         function startGame() {
             // SoundEngine.initialize(); // 오디오 초기화는 사용자 입력 후 수행
             gameState.player.job = null;
+            // Ensure player starts with initial gold
+            gameState.player.gold = 1000;
             const allSkills = Object.keys(SKILL_DEFS);
             gameState.player.skillPoints = 0;
             gameState.player.statPoints = 0;
