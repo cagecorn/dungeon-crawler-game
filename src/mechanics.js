@@ -23,6 +23,14 @@ function playSoundFile(filePath) {
         }
     }
 }
+
+function playRandomKillQuote(mercenary) {
+    const data = MERCENARY_TYPES[mercenary.type];
+    if (data && Array.isArray(data.killQuotes) && data.killQuotes.length) {
+        const index = Math.floor(Math.random() * data.killQuotes.length);
+        playSoundFile(data.killQuotes[index]);
+    }
+}
 const SoundEngine = {
     audioContext: null,
     isInitialized: false,
