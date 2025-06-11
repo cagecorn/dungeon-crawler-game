@@ -1850,6 +1850,9 @@ const MERCENARY_NAMES = [
                         value += it[stat];
                     }
                 });
+                if (character.equipped.tile && character.equipped.tile[stat] !== undefined) {
+                    value += character.equipped.tile[stat];
+                }
             }
             value += getAuraBonus(character, stat);
             return value;
