@@ -24,7 +24,7 @@
             intelligence: 0,
             skillPoints: 0,
             statPoints: 0,
-            gold: 0,
+            gold: 1000,
             fullness: 0,
             skills: [],
             skillLevels: {},
