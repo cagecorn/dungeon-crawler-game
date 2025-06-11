@@ -5938,8 +5938,8 @@ function processTurn() {
             updateIncubatorDisplay();
 
             // [추가된 유휴 대사 시스템]
-            // 이번 턴에 전투가 없었고, 30% 확률을 통과했을 때 대사를 출력합니다.
-            if (!combatOccurredInTurn && Math.random() < 0.3) {
+            // 이번 턴에 전투가 없었고, 3% 확률을 통과했을 때 대사를 출력합니다.
+            if (!combatOccurredInTurn && Math.random() < 0.03) {
                 const livingMercenaries = gameState.activeMercenaries.filter(m => m.alive);
 
                 if (livingMercenaries.length > 0) {
