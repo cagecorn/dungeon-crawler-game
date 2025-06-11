@@ -6342,6 +6342,17 @@ function processTurn() {
                     if (m.skill) m.skillLevels[m.skill] = 1;
                     if (m.skill2) m.skillLevels[m.skill2] = 1;
                 }
+                if (!m.equipped) {
+                    m.equipped = {
+                        weapon: null,
+                        armor: null,
+                        accessory1: null,
+                        accessory2: null,
+                        tile: null
+                    };
+                } else if (!('tile' in m.equipped)) {
+                    m.equipped.tile = null;
+                }
             };
 
             gameState.activeMercenaries.forEach(convertMercenary);
