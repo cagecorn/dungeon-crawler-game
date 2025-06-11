@@ -1554,6 +1554,10 @@ const MERCENARY_NAMES = [
             return false;
         }
 
+        function isSameSide(a, b) {
+            return isPlayerSide(a) === isPlayerSide(b);
+        }
+
         function getStatusResist(character, status) {
             let value = character.statusResistances && character.statusResistances[status] ? character.statusResistances[status] : 0;
             if (character.equipped) {
@@ -1566,14 +1570,15 @@ const MERCENARY_NAMES = [
             }
             function checkAura(source, target) {
                 let bonus = 0;
-                if (!source) return bonus;
+                if (!source || !isSameSide(source, target)) return bonus;
                 let keys = [];
                 if (source === gameState.player) {
                     keys = [gameState.player.assignedSkills['1'], gameState.player.assignedSkills['2']];
                 } else {
                     keys = [source.skill, source.skill2, source.auraSkill];
                 }
-                keys.filter(Boolean).forEach(key => {
+                keys = Array.from(new Set(keys.filter(Boolean)));
+                keys.forEach(key => {
                     if (key !== 'NaturalAura') return;
                     const skill = SKILL_DEFS[key];
                     if (!skill || !skill.passive || !skill.aura || skill.aura.allResist === undefined) return;
@@ -1603,32 +1608,24 @@ const MERCENARY_NAMES = [
 
         function getAuraBonus(character, stat) {
             let bonus = 0;
-            ['1', '2'].forEach(slot => {
-                const key = gameState.player.assignedSkills[slot];
-                const skill = SKILL_DEFS[key];
-                if (skill && skill.passive && skill.aura && skill.aura[stat] !== undefined) {
-                    const dist = getDistance(gameState.player.x, gameState.player.y, character.x, character.y);
-                    if (dist <= (skill.radius || 0)) {
-                        bonus += skill.aura[stat];
-                    }
+            const sources = [
+                gameState.player,
+                ...gameState.activeMercenaries.filter(m => m.alive),
+                ...gameState.monsters.filter(m => m.isElite)
+            ];
+            sources.forEach(src => {
+                if (!isSameSide(src, character)) return;
+                let keys = [];
+                if (src === gameState.player) {
+                    keys = [gameState.player.assignedSkills['1'], gameState.player.assignedSkills['2']];
+                } else {
+                    keys = [src.skill, src.skill2, src.auraSkill];
                 }
-            });
-
-            gameState.monsters.filter(m => m.isElite).forEach(elite => {
-                const key = elite.auraSkill;
-                const skill = SKILL_DEFS[key];
-                if (skill && skill.passive && skill.aura && skill.aura[stat] !== undefined) {
-                    const dist = getDistance(elite.x, elite.y, character.x, character.y);
-                    if (dist <= (skill.radius || 0)) bonus += skill.aura[stat];
-                }
-            });
-
-            gameState.activeMercenaries.filter(m => m.alive).forEach(merc => {
-                const skills = [merc.skill, merc.skill2, merc.auraSkill];
-                skills.filter(Boolean).forEach(key => {
+                keys = Array.from(new Set(keys.filter(Boolean)));
+                keys.forEach(key => {
                     const skill = SKILL_DEFS[key];
                     if (skill && skill.passive && skill.aura && skill.aura[stat] !== undefined) {
-                        const dist = getDistance(merc.x, merc.y, character.x, character.y);
+                        const dist = getDistance(src.x, src.y, character.x, character.y);
                         if (dist <= (skill.radius || 0)) bonus += skill.aura[stat];
                     }
                 });
