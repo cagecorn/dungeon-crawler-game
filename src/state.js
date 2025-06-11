@@ -70,7 +70,8 @@
       teleportSavedX: null,
       teleportSavedY: null,
       teleportReturnX: null,
-      teleportReturnY: null
+      teleportReturnY: null,
+      tileInventory: []
     },
     activeMercenaries: [],
     standbyMercenaries: [],
