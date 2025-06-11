@@ -64,18 +64,15 @@
         activeRecipes: ['healthPotion', 'sandwich', 'salad'],
         craftingQueue: [],
         floor: 1,
-        dungeonSize: 80,
         viewportSize: 25,
         camera: { x: 0, y: 0 },
         autoMovePath: null,
         autoMoveActive: false,
         inventoryFilter: 'all',
-        turn: 0,
         incubators: [null, null, null],
         hatchedSuperiors: [],
         pendingMap: null,
-        currentMapModifiers: {},
-        gameRunning: true
+        currentMapModifiers: {}
     };
     global.gameState = gameState;
     global.MONSTER_VISION = MONSTER_VISION;
