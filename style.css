@@ -172,3 +172,29 @@
   border-color: #aaa;
   font-weight: bold;
 }
+
+/* --- 유닛 효과 아이콘 스타일 --- */
+.buff-container, .status-container {
+  position: absolute;
+  left: 0;
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  pointer-events: none;
+  font-size: 10px;
+  line-height: 1;
+  gap: 1px;
+}
+
+.buff-container {
+  top: -2px;
+}
+
+.status-container {
+  bottom: -2px;
+}
+
+.effect-icon {
+  text-shadow: 0 0 2px black, 0 0 2px black;
+}
