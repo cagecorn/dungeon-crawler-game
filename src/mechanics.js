@@ -302,6 +302,22 @@ function initializeAudio() {
     isAudioInitialized = true;
     console.log("All audio systems initialized by user action.");
 }
+
+function playSoundFile(src) {
+    if (!src) return;
+    if (typeof navigator !== 'undefined' && navigator.userAgent &&
+        (navigator.userAgent.includes('Node.js') || navigator.userAgent.includes('jsdom'))) {
+        return;
+    }
+    if (typeof Audio !== 'undefined') {
+        try {
+            const audio = new Audio(src);
+            audio.play().catch(() => {});
+        } catch (err) {
+            console.error('Audio playback failed', err);
+        }
+    }
+}
 // ========================== 추가 끝 ==========================
 
 const ITEM_TYPES = {
@@ -455,7 +471,8 @@ const MERCENARY_NAMES = [
                 baseManaRegen: 0.3,
                 role: 'tank',
                 description: '높은 체력과 방어력을 가진 근접 전투 용병',
-                cost: 50
+                cost: 50,
+                voiceFile: 'assets/audio/warrior_hire.mp3'
             },
             ARCHER: {
                 name: '🏹 궁수',
@@ -473,7 +490,8 @@ const MERCENARY_NAMES = [
                 baseManaRegen: 0.3,
                 role: 'ranged',
                 description: '원거리에서 적을 공격하는 용병',
-                cost: 60
+                cost: 60,
+                voiceFile: 'assets/audio/archer_hire.mp3'
             },
             HEALER: {
                 name: '✚ 힐러',
@@ -491,7 +509,8 @@ const MERCENARY_NAMES = [
                 baseManaRegen: 0.5,
                 role: 'support',
                 description: '아군을 치료하는 지원 용병',
-                cost: 70
+                cost: 70,
+                voiceFile: 'assets/audio/healer_hire.mp3'
             },
             WIZARD: {
                 name: '🔮 마법사',
@@ -509,7 +528,8 @@ const MERCENARY_NAMES = [
                 baseManaRegen: 0.5,
                 role: 'caster',
                 description: '마법 공격에 특화된 용병',
-                cost: 80
+                cost: 80,
+                voiceFile: 'assets/audio/wizard_hire.mp3'
             }
         };
 
@@ -4166,10 +4186,12 @@ function killMonster(monster) {
                 }
                 gameState.player.gold -= mercType.cost;
                 gameState.activeMercenaries.push(mercenary);
+                playSoundFile(mercType.voiceFile);
                 addMessage(`🎉 ${mercType.name}을(를) 고용했습니다!`, 'mercenary');
             } else if (gameState.standbyMercenaries.length < 5) {
                 gameState.player.gold -= mercType.cost;
                 gameState.standbyMercenaries.push(mercenary);
+                playSoundFile(mercType.voiceFile);
                 addMessage(`📋 ${mercType.name}을(를) 대기열에 추가했습니다.`, 'mercenary');
             } else {
                 const options = gameState.activeMercenaries.map((m, i) => `${i + 1}: ${m.name}`).join('\n');
@@ -4193,6 +4215,7 @@ function killMonster(monster) {
                 removed.x = -1;
                 removed.y = -1;
                 gameState.player.gold -= mercType.cost;
+                playSoundFile(mercType.voiceFile);
                 addMessage(`🗑️ ${removed.name}을(를) 내보내고 ${mercType.name}을(를) 고용했습니다. 레벨 ${removed.level}을(를) 승계합니다.`, 'mercenary');
             }
 
