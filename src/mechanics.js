@@ -4050,7 +4050,8 @@ function killMonster(monster) {
             }
 
             const tileKeys = Object.values(TILE_TYPES);
-            const tileCount = 1 + Math.floor(Math.random() * 2);
+            // Spawn decorative tiles more liberally across the map
+            const tileCount = Math.floor(size * size * 0.015);
             for (let i = 0; i < tileCount; i++) {
                 let tx, ty;
                 do {
@@ -5407,14 +5408,7 @@ function killMonster(monster) {
             }
 
             if (cellType === 'tile') {
-                const tileIndex = gameState.mapTiles.findIndex(t => t.x === newX && t.y === newY);
-                if (tileIndex !== -1) {
-                    const [tileData] = gameState.mapTiles.splice(tileIndex, 1);
-                    gameState.player.tileInventory.push(tileData);
-                    addMessage(`💠 ${tileData.name}을(를) 획득했습니다!`, 'treasure');
-                    updateTileTabDisplay();
-                    gameState.dungeon[newY][newX] = 'empty';
-                }
+                // Decorative map tiles no longer grant items
             }
 
             if (cellType === 'plant') {
