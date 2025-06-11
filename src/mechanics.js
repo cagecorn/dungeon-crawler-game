@@ -1468,6 +1468,12 @@ const MERCENARY_NAMES = [
             { name: 'of Haste', modifiers: { monsterSpeedBonus: 2 } }
         ];
 
+        const TILE_TYPES = [
+            { name: 'Campfire', icon: '🔥' },
+            { name: 'Fountain', icon: '⛲' },
+            { name: 'Totem', icon: '🗿' }
+        ];
+
         function getDistance(x1, y1, x2, y2) {
             return Math.abs(x1 - x2) + Math.abs(y1 - y2);
         }
@@ -3450,6 +3456,9 @@ function killMonster(monster) {
                             } else if (baseCellType === 'item') {
                                 const it = gameState.items.find(it => it.x === x && it.y === y);
                                 if (it) div.textContent = it.icon;
+                            } else if (baseCellType === 'tile') {
+                                const tile = gameState.mapTiles.find(t => t.x === x && t.y === y);
+                                if (tile) div.textContent = tile.icon;
                             } else if (baseCellType === 'plant') {
                                 div.textContent = '🌿';
                             } else if (baseCellType === 'chest') {
@@ -3855,6 +3864,18 @@ function killMonster(monster) {
                 const item = createItem(key, x, y, null, Math.floor(dungeonLevel / 5));
                 gameState.items.push(item);
                 gameState.dungeon[y][x] = 'item';
+            }
+
+            const tileSpawnCount = 1 + Math.floor(Math.random() * 2);
+            for (let i = 0; i < tileSpawnCount; i++) {
+                let x, y;
+                do {
+                    x = Math.floor(Math.random() * size);
+                    y = Math.floor(Math.random() * size);
+                } while (gameState.dungeon[y][x] !== 'empty');
+                const tile = { ...TILE_TYPES[Math.floor(Math.random() * TILE_TYPES.length)], x, y };
+                gameState.mapTiles.push(tile);
+                gameState.dungeon[y][x] = 'tile';
             }
 
             const plantCount = Math.floor(size * 0.05);
@@ -7122,5 +7143,5 @@ upgradeMercenarySkill, upgradeMonsterSkill, useItem, useItemOnTarget, useSkill, 
     updateCraftingDetailDisplay, showCraftingDetailPanel, hideCraftingDetailPanel,
     showCorpsePanel, hideCorpsePanel, ignoreCorpse, getMonsterRank
 };
-Object.assign(window, exportsObj, {SKILL_DEFS, MERCENARY_SKILLS, MONSTER_SKILLS, MONSTER_SKILL_SETS, MONSTER_TRAITS, MONSTER_TRAIT_SETS, PREFIXES, SUFFIXES, MAP_PREFIXES, MAP_SUFFIXES});
+Object.assign(window, exportsObj, {SKILL_DEFS, MERCENARY_SKILLS, MONSTER_SKILLS, MONSTER_SKILL_SETS, MONSTER_TRAITS, MONSTER_TRAIT_SETS, PREFIXES, SUFFIXES, MAP_PREFIXES, MAP_SUFFIXES, TILE_TYPES});
 
