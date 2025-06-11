@@ -187,6 +187,35 @@ const BgmPlayer = {
     }
 };
 
+// ========================= 추가 시작 =========================
+// 오디오 시스템이 초기화되었는지 추적하는 플래그
+let isAudioInitialized = false;
+
+/**
+ * 효과음과 배경음 등 모든 오디오 시스템을 초기화하고 재생합니다.
+ * isAudioInitialized 플래그를 통해 단 한 번만 실행되도록 보장합니다.
+ */
+function initializeAudio() {
+    if (isAudioInitialized) return;
+    if (typeof navigator !== 'undefined' && navigator.userAgent && (navigator.userAgent.includes('Node.js') || navigator.userAgent.includes('jsdom'))) {
+        // Skip audio initialization in testing environments like jsdom
+        isAudioInitialized = true;
+        return;
+    }
+
+    SoundEngine.initialize();
+    try {
+        BgmPlayer.init();
+        BgmPlayer.play();
+    } catch (err) {
+        console.error("BGM playback failed during initializeAudio", err);
+    }
+    
+    isAudioInitialized = true;
+    console.log("All audio systems initialized by user action.");
+}
+// ========================== 추가 끝 ==========================
+
 const ITEM_TYPES = {
             WEAPON: 'weapon',
             ARMOR: 'armor',
@@ -3327,6 +3356,7 @@ function killMonster(monster) {
         }
 
         function handleDungeonClick(e) {
+            initializeAudio();
             const cell = e.target.closest('.cell');
             if (!cell) return;
             const x = parseInt(cell.dataset.x, 10);
@@ -6755,7 +6785,7 @@ function processTurn() {
         }
 
         function startGame() {
-            SoundEngine.initialize(); // 사운드 엔진 초기화
+            // SoundEngine.initialize(); // 오디오 초기화는 사용자 입력 후 수행
             gameState.player.job = null;
             const allSkills = Object.keys(SKILL_DEFS);
             gameState.player.skillPoints = 0;
@@ -6823,6 +6853,7 @@ function processTurn() {
         document.getElementById('close-crafting-detail').onclick = hideCraftingDetailPanel;
 
         document.addEventListener('keydown', (e) => {
+            initializeAudio();
             if (e.key === 'ArrowUp') {
                 e.preventDefault();
                 movePlayer(0, -1);
