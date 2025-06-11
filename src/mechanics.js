@@ -394,6 +394,7 @@ const MERCENARY_NAMES = [
 
         const MAX_FULLNESS = 100;
         const FULLNESS_LOSS_PER_TURN = 0.01;
+        const CORPSE_TURNS = 30; // how long a corpse remains on the map
         const CORRIDOR_WIDTH = 7; // width of dungeon corridors
 
         function carveWideCorridor(map, x1, y1, x2, y2) {
@@ -3126,6 +3127,7 @@ function killMonster(monster) {
             const idx = gameState.monsters.findIndex(m => m === monster);
             if (idx !== -1) gameState.monsters.splice(idx, 1);
             monster.health = 0;
+            monster.turnsLeft = CORPSE_TURNS;
             gameState.corpses.push(monster);
             gameState.dungeon[monster.y][monster.x] = 'corpse';
         }
@@ -5450,6 +5452,16 @@ function processTurn() {
     if (!gameState.gameRunning) return;
     gameState.turn++;
 
+    for (let i = gameState.corpses.length - 1; i >= 0; i--) {
+        const corpse = gameState.corpses[i];
+        corpse.turnsLeft--;
+        if (corpse.turnsLeft <= 0) {
+            gameState.corpses.splice(i, 1);
+            const hasItem = gameState.items.some(it => it.x === corpse.x && it.y === corpse.y);
+            gameState.dungeon[corpse.y][corpse.x] = hasItem ? 'item' : 'empty';
+        }
+    }
+
             const starvedMercs = [];
             const starvedMonsters = [];
             [...gameState.activeMercenaries, ...gameState.standbyMercenaries].forEach(m => {
@@ -5998,6 +6010,7 @@ function processTurn() {
                             gameState.monsters.splice(monsterIndex, 1);
                         }
                         nearestMonster.health = 0;
+                        nearestMonster.turnsLeft = CORPSE_TURNS;
                         gameState.corpses.push(nearestMonster);
                         gameState.dungeon[nearestMonster.y][nearestMonster.x] = 'corpse';
                     }
@@ -6076,6 +6089,7 @@ function processTurn() {
                             gameState.monsters.splice(monsterIndex, 1);
                         }
                         nearestMonster.health = 0;
+                        nearestMonster.turnsLeft = CORPSE_TURNS;
                         gameState.corpses.push(nearestMonster);
                         gameState.dungeon[nearestMonster.y][nearestMonster.x] = 'corpse';
                     }
@@ -6163,6 +6177,7 @@ function processTurn() {
                             gameState.monsters.splice(monsterIndex, 1);
                         }
                         nearestMonster.health = 0;
+                        nearestMonster.turnsLeft = CORPSE_TURNS;
                         gameState.corpses.push(nearestMonster);
                         gameState.dungeon[nearestMonster.y][nearestMonster.x] = 'corpse';
                     }
@@ -6240,6 +6255,7 @@ function processTurn() {
                             gameState.monsters.splice(monsterIndex, 1);
                         }
                         nearestMonster.health = 0;
+                        nearestMonster.turnsLeft = CORPSE_TURNS;
                         gameState.corpses.push(nearestMonster);
                         gameState.dungeon[nearestMonster.y][nearestMonster.x] = 'corpse';
                     }
@@ -7217,5 +7233,5 @@ upgradeMercenarySkill, upgradeMonsterSkill, useItem, useItemOnTarget, useSkill, 
     updateCraftingDetailDisplay, showCraftingDetailPanel, hideCraftingDetailPanel,
     showCorpsePanel, hideCorpsePanel, ignoreCorpse, getMonsterRank
 };
-Object.assign(window, exportsObj, {SKILL_DEFS, MERCENARY_SKILLS, MONSTER_SKILLS, MONSTER_SKILL_SETS, MONSTER_TRAITS, MONSTER_TRAIT_SETS, PREFIXES, SUFFIXES, MAP_PREFIXES, MAP_SUFFIXES, MAP_TILE_TYPES});
+Object.assign(window, exportsObj, {SKILL_DEFS, MERCENARY_SKILLS, MONSTER_SKILLS, MONSTER_SKILL_SETS, MONSTER_TRAITS, MONSTER_TRAIT_SETS, PREFIXES, SUFFIXES, MAP_PREFIXES, MAP_SUFFIXES, MAP_TILE_TYPES, CORPSE_TURNS});
 
