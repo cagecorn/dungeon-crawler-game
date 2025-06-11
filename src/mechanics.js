@@ -2534,6 +2534,86 @@ const MERCENARY_NAMES = [
             }
         }
 
+        /**
+         * 특정 캐릭터에게 현재 적용되고 있는 모든 오라 효과의 아이콘 목록을 반환합니다.
+         * @param {object} character - 효과를 확인할 대상 유닛 (플레이어, 용병, 몬스터)
+         * @returns {string[]} - 활성화된 오라 아이콘의 배열
+         */
+        function getActiveAuraIcons(character) {
+            const icons = new Set();
+            const checkSource = (source) => {
+                if (!source || !source.alive) return;
+
+                const skillKeys = [
+                    source.skill,
+                    source.skill2,
+                    source.auraSkill,
+                    ...(source.assignedSkills ? Object.values(source.assignedSkills) : [])
+                ].filter(Boolean);
+
+                skillKeys.forEach(key => {
+                    const skill = SKILL_DEFS[key] || MERCENARY_SKILLS[key];
+                    if (skill && skill.passive && skill.aura && getDistance(source.x, source.y, character.x, character.y) <= (skill.radius || 0)) {
+                        icons.add(skill.icon);
+                    }
+                });
+            };
+
+            // 플레이어, 모든 아군 용병, 엘리트 몬스터가 거는 오라를 모두 확인
+            checkSource(gameState.player);
+            gameState.activeMercenaries.forEach(merc => checkSource(merc));
+            gameState.monsters.filter(m => m.isElite).forEach(elite => checkSource(elite));
+
+            return Array.from(icons);
+        }
+
+        /**
+         * 특정 유닛의 셀에 버프 및 상태이상 아이콘을 업데이트합니다.
+         * @param {object} unit - 아이콘을 표시할 유닛 객체
+         * @param {HTMLElement} cellDiv - 해당 유닛이 위치한 셀의 div 요소
+         */
+        function updateUnitEffectIcons(unit, cellDiv) {
+            let buffContainer = cellDiv.querySelector('.buff-container');
+            let statusContainer = cellDiv.querySelector('.status-container');
+
+            if (!buffContainer) {
+                buffContainer = document.createElement('div');
+                buffContainer.className = 'buff-container';
+                cellDiv.appendChild(buffContainer);
+            }
+            if (!statusContainer) {
+                statusContainer = document.createElement('div');
+                statusContainer.className = 'status-container';
+                cellDiv.appendChild(statusContainer);
+            }
+
+            // 이전 아이콘 초기화
+            buffContainer.innerHTML = '';
+            statusContainer.innerHTML = '';
+
+            if (!unit) return;
+
+            // 1. 버프/디버프 아이콘 표시 (오라)
+            const auraIcons = getActiveAuraIcons(unit);
+            auraIcons.forEach(icon => {
+                const iconSpan = document.createElement('span');
+                iconSpan.className = 'effect-icon';
+                iconSpan.textContent = icon;
+                buffContainer.appendChild(iconSpan);
+            });
+
+            // 2. 상태이상 아이콘 표시
+            const STATUS_KEYS = ['poison', 'burn', 'freeze', 'bleed', 'paralysis', 'nightmare', 'silence', 'petrify', 'debuff'];
+            STATUS_KEYS.forEach(status => {
+                if (unit[status] && unit[status + 'Turns'] > 0) {
+                    const iconSpan = document.createElement('span');
+                    iconSpan.className = 'effect-icon';
+                    iconSpan.textContent = STATUS_ICONS[status];
+                    statusContainer.appendChild(iconSpan);
+                }
+            });
+        }
+
         // 몬스터 생성
         function createMonster(type, x, y, level = 1) {
             const data = MONSTER_TYPES[type];
@@ -3125,12 +3205,18 @@ function killMonster(monster) {
             for (let y = 0; y < gameState.dungeonSize; y++) {
                 for (let x = 0; x < gameState.dungeonSize; x++) {
                     const div = gameState.cellElements[y][x];
+                    // 렌더링마다 이전 아이콘들을 모두 지워 잔상이 남지 않게 합니다.
+                    const buffEl = div.querySelector('.buff-container');
+                    const statusEl = div.querySelector('.status-container');
+                    if (buffEl) buffEl.innerHTML = '';
+                    if (statusEl) statusEl.innerHTML = '';
                     const baseCellType = gameState.dungeon[y][x];
                     const finalClasses = ['cell', baseCellType];
                     div.textContent = '';
 
                     if (x === gameState.player.x && y === gameState.player.y) {
                         finalClasses.push('player');
+                        updateUnitEffectIcons(gameState.player, div);
                     } else {
                         const proj = gameState.projectiles.find(p => p.x === x && p.y === y);
                         if (proj) {
@@ -3151,6 +3237,7 @@ function killMonster(monster) {
                                 else if (merc.isChampion) finalClasses.push('champion');
                                 else if (merc.isElite) finalClasses.push('elite');
                                 div.textContent = '';
+                                updateUnitEffectIcons(merc, div);
                             } else if (baseCellType === 'monster') {
                                 const m = gameState.monsters.find(mon => mon.x === x && mon.y === y);
                                 if (m) {
@@ -3162,6 +3249,7 @@ function killMonster(monster) {
                                     if (m.isSuperior) finalClasses.push('superior');
                                     else if (m.isChampion) finalClasses.push('champion');
                                     else if (m.isElite) finalClasses.push('elite');
+                                    updateUnitEffectIcons(m, div);
                                 }
                             } else if (baseCellType === 'item') {
                                 const it = gameState.items.find(it => it.x === x && it.y === y);
@@ -3360,6 +3448,17 @@ function killMonster(monster) {
                         cellDiv.dataset.x = x;
                         cellDiv.dataset.y = y;
                         cellDiv.className = 'cell';
+
+                        // 버프/디버프 아이콘 컨테이너
+                        const buffContainer = document.createElement('div');
+                        buffContainer.className = 'buff-container';
+                        cellDiv.appendChild(buffContainer);
+
+                        // 상태이상 아이콘 컨테이너
+                        const statusContainer = document.createElement('div');
+                        statusContainer.className = 'status-container';
+                        cellDiv.appendChild(statusContainer);
+
                         dungeonEl.appendChild(cellDiv);
                         cellRow.push(cellDiv);
                     }
@@ -6759,7 +6858,8 @@ createRecipeScroll, learnRecipe,
 createSuperiorMonster, createTreasure, createNovaEffect, createScreenShake, dissectCorpse, equipItem,
 equipItemToMercenary, estimateSkillDamage, findAdjacentEmpty, findNearestEmpty, findPath,
 formatItem, formatNumber, generateDungeon, generateStars, getAuraBonus,
-getDistance, getMonsterPoolForFloor, getPlayerEmoji, getStat, getStatusResist, 
+getDistance, getMonsterPoolForFloor, getPlayerEmoji, getStat, getStatusResist,
+getActiveAuraIcons, updateUnitEffectIcons,
 handleDungeonClick, handleItemClick, handlePlayerDeath,
 hasLineOfSight, healAction, healTarget, hideItemTargetPanel, hideItemDetailPanel,
 hideMercenaryDetails, hideMonsterDetails, hideShop, hireMercenary, killMonster,
