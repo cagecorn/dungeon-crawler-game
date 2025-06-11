@@ -4914,6 +4914,33 @@ function killMonster(monster) {
             updateMercenaryDisplay();
         }
 
+        function killMercenary(mercenary) {
+            if (!mercenary.alive) return;
+
+            SoundEngine.playSound('mercDeath');
+            addMessage(`💀 ${mercenary.name}이(가) 전사했습니다...`, 'mercenary');
+
+            mercenary.alive = false;
+            mercenary.health = 0;
+            mercenary.turnsLeft = CORPSE_TURNS;
+            gameState.corpses.push(mercenary);
+
+            if (gameState.dungeon[mercenary.y] && gameState.dungeon[mercenary.y][mercenary.x]) {
+                gameState.dungeon[mercenary.y][mercenary.x] = 'corpse';
+            }
+
+            mercenary.affinity = Math.max(0, (mercenary.affinity || 0) - 5);
+            if (mercenary.affinity <= 0) {
+                const index = gameState.activeMercenaries.findIndex(m => m.id === mercenary.id);
+                if (index > -1) {
+                    gameState.activeMercenaries.splice(index, 1);
+                }
+                addMessage(`👋 ${mercenary.name}이(가) 파티를 영구적으로 떠났습니다.`, 'mercenary');
+            }
+
+            updateMercenaryDisplay();
+        }
+
         function dismiss(entity) {
             if (typeof confirm === 'function' && !confirm('정말 해고하시겠습니까?')) return;
             let idx = gameState.activeMercenaries.indexOf(entity);
@@ -5009,20 +5036,12 @@ function killMonster(monster) {
                         handlePlayerDeath();
                         return true;
                     } else {
-                        SoundEngine.playSound('mercDeath');
-                        nearestTarget.alive = false;
-                        nearestTarget.health = 0;
-                        nearestTarget.affinity = Math.max(0, (nearestTarget.affinity || 0) - 5);
-                        addMessage(`💀 ${nearestTarget.name}이(가) 전사했습니다...`, "mercenary");
-                        if (nearestTarget.affinity <= 0) {
-                            removeMercenary(nearestTarget);
-                        }
+                        killMercenary(nearestTarget);
                         monster.exp += nearestTarget.level * 10;
                         checkMonsterLevelUp(monster);
                         if (window.currentDetailMonster && window.currentDetailMonster.id === monster.id) {
                             showMonsterDetails(monster);
                         }
-                        updateMercenaryDisplay();
                     }
                 }
             }
@@ -5518,18 +5537,14 @@ function processTurn() {
                 handlePlayerDeath();
                 return;
             }
-            gameState.activeMercenaries.forEach(mercenary => {
-                if (!mercenary.alive) return;
+            for (let i = gameState.activeMercenaries.length - 1; i >= 0; i--) {
+                const mercenary = gameState.activeMercenaries[i];
+                if (!mercenary.alive) continue;
+
                 if (applyStatusEffects(mercenary)) {
-                    mercenary.alive = false;
-                    mercenary.health = 0;
-                    mercenary.affinity = Math.max(0, (mercenary.affinity || 0) - 5);
-                    addMessage(`💀 ${mercenary.name}이(가) 전사했습니다...`, 'mercenary');
-                    if (mercenary.affinity <= 0) {
-                        removeMercenary(mercenary);
-                    }
+                    killMercenary(mercenary);
                 }
-            });
+            }
             gameState.monsters.slice().forEach(monster => {
                 if (applyStatusEffects(monster)) {
                     killMonster(monster);
@@ -7241,7 +7256,7 @@ getDistance, getMonsterPoolForFloor, getPlayerEmoji, getStat, getStatusResist,
 getActiveAuraIcons, updateUnitEffectIcons,
 handleDungeonClick, handleItemClick, handlePlayerDeath,
 hasLineOfSight, healAction, healTarget, hideItemTargetPanel, hideItemDetailPanel,
-hideMercenaryDetails, hideMonsterDetails, hideShop, hireMercenary, killMonster,
+hideMercenaryDetails, hideMonsterDetails, hideShop, hireMercenary, killMonster, killMercenary,
 loadGame, meleeAttackAction, monsterAttack, performMonsterSkill, movePlayer, nextFloor,
 processMercenaryTurn, processProjectiles, processTurn, purifyTarget, 
 rangedAction, recallMercenaries, recruitHatchedSuperior, handleHatchedMonsterClick,
@@ -7255,7 +7270,7 @@ updateFogOfWar, updateIncubatorDisplay,
  updateInventoryDisplay, updateMaterialsDisplay, updateMercenaryDisplay,
  updateShopDisplay, updateSkillDisplay, updateStats, updateTurnEffects,
  updateTileTabDisplay,
-upgradeMercenarySkill, upgradeMonsterSkill, useItem, useItemOnTarget, useSkill, removeMercenary,
+upgradeMercenarySkill, upgradeMonsterSkill, useItem, useItemOnTarget, useSkill, removeMercenary, killMercenary,
     dismiss, sacrifice, allocateStat, exitMap,
     addRecipeToTab, removeRecipeFromTab,
     updateCraftingDetailDisplay, showCraftingDetailPanel, hideCraftingDetailPanel,
