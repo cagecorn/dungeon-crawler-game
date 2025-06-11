@@ -266,23 +266,50 @@ if (typeof window !== 'undefined') {
 const BgmPlayer = {
     audioElement: null,
     isInitialized: false,
+    // [추가] BGM 파일 목록. 실제 파일 경로로 수정하세요.
+    playlist: [
+        'assets/audio/bgm1.mp3',
+        'assets/audio/bgm2.mp3'
+    ],
+    // [추가] 현재 재생 중인 트랙의 인덱스
+    currentTrackIndex: 0,
 
-    // HTML에서 <audio> 요소를 찾아 초기화
     init() {
         this.audioElement = document.getElementById('bgm-player');
         if (this.audioElement) {
             this.isInitialized = true;
-            // 초기 볼륨 설정 (0.0 ~ 1.0 사이 값)
-            this.audioElement.volume = 0.3;
+            this.audioElement.volume = 0.3; // BGM 볼륨 설정
+
+            // [추가] 'ended' 이벤트 리스너. 현재 곡 재생이 끝나면 자동으로 호출됩니다.
+            this.audioElement.addEventListener('ended', () => {
+                this.playNextTrack();
+            });
+
         } else {
             console.error("BGM Player element(#bgm-player) not found.");
         }
     },
 
-    // 배경음 재생 (브라우저 정책에 의해 실패할 수 있음)
+    /**
+     * [추가된 함수] 다음 트랙을 재생합니다. 목록의 끝이면 처음으로 돌아갑니다.
+     */
+    playNextTrack() {
+        // 다음 트랙 인덱스로 이동, 마지막 트랙이었으면 0으로 돌아감 (나머지 연산자 %)
+        this.currentTrackIndex = (this.currentTrackIndex + 1) % this.playlist.length;
+
+        // audioElement의 소스를 다음 곡으로 변경
+        this.audioElement.src = this.playlist[this.currentTrackIndex];
+        this.audioElement.play();
+    },
+
+    // 재생 시작 함수 수정
     async play() {
         if (!this.isInitialized || !this.audioElement) return;
         try {
+            // 처음 재생 시, 첫 번째 트랙으로 소스를 설정
+            if (!this.audioElement.src) {
+                this.audioElement.src = this.playlist[this.currentTrackIndex];
+            }
             await this.audioElement.play();
         } catch (err) {
             console.error("BGM playback failed. A user interaction is likely required to start audio.", err);
