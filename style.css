@@ -234,9 +234,6 @@
   object-fit: cover;
 }
 
-.equipped-tile-bg {
-  box-shadow: 0 0 5px 2px #4CAF50;
-}
 
 .low-health {
   /* 이미지 자체가 붉은 색으로 보이도록 필터를 적용합니다. */
@@ -304,6 +301,7 @@
     background-size: cover;
     background-position: center;
     image-rendering: pixelated;
+    box-shadow: 0 0 5px 2px #4CAF50;
 }
 
 /* 플레이어나 용병 스프라이트가 타일 배경(z-index: 0) 위에 보이도록 z-index를 1로 설정 */
