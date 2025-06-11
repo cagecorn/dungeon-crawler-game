@@ -78,6 +78,7 @@
     corpses: [],
     treasures: [],
     items: [],
+    mapTiles: [],
     projectiles: [],
     exitLocation: { x: 0, y: 0 },
     altarLocation: { x: 0, y: 0 },
