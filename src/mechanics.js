@@ -2947,6 +2947,26 @@ function killMonster(monster) {
             renderDungeon();
         }
 
+        function ignoreCorpse(corpse) {
+            const item = gameState.items.find(i => i.x === corpse.x && i.y === corpse.y);
+            if (item) {
+                addToInventory(item);
+                addMessage(`📦 ${item.name}을(를) 획득했습니다!`, 'item');
+                const itemIndex = gameState.items.findIndex(i => i === item);
+                if (itemIndex !== -1) gameState.items.splice(itemIndex, 1);
+            }
+            gameState.dungeon[corpse.y][corpse.x] = 'corpse';
+            renderDungeon();
+        }
+
+        function getMonsterRank(monster) {
+            if (monster.special === 'boss') return '보스';
+            if (monster.isChampion) return '챔피언';
+            if (monster.isSuperior) return '상급';
+            if (monster.isElite) return '엘리트';
+            return '일반';
+        }
+
         function placeEggInIncubator(eggItem, turns) {
             const idx = gameState.incubators.findIndex(s => s === null);
             if (idx === -1) {
@@ -4893,33 +4913,8 @@ function killMonster(monster) {
             if (cellType === 'corpse') {
                 const corpse = gameState.corpses.find(c => c.x === newX && c.y === newY);
                 if (corpse) {
-                    let choice = 'revive';
-                    if (typeof prompt === 'function' && !String(prompt).includes('notImplemented')) {
-                        const input = prompt('시체를 어떻게 처리하시겠습니까?\n1: 부활 (200골드)\n2: 해체\n기타: 아이템만 획득');
-                        if (input === '2') choice = 'dissect';
-                        else if (input === '1') choice = 'revive';
-                        else choice = 'loot';
-                    } else {
-                        const confirmRevive = (typeof confirm === 'function' ? confirm('200골드를 사용해 이 몬스터를 부활시키겠습니까?\n취소를 누르면 아이템을 획득합니다.') : false);
-                        choice = confirmRevive ? 'revive' : 'loot';
-                    }
-                    if (choice === 'revive') {
-                        reviveMonsterCorpse(corpse);
-                    } else if (choice === 'dissect') {
-                        dissectCorpse(corpse);
-                    } else {
-                        const item = gameState.items.find(i => i.x === newX && i.y === newY);
-                        if (item) {
-                            addToInventory(item);
-                            addMessage(`📦 ${item.name}을(를) 획득했습니다!`, 'item');
-
-                            const itemIndex = gameState.items.findIndex(i => i === item);
-                            if (itemIndex !== -1) {
-                                gameState.items.splice(itemIndex, 1);
-                            }
-                        }
-                        gameState.dungeon[newY][newX] = 'corpse';
-                    }
+                    showCorpsePanel(corpse);
+                    return;
                 }
             }
             
@@ -6451,6 +6446,52 @@ function processTurn() {
             gameState.gameRunning = true;
         }
 
+        function showCorpsePanel(corpse) {
+            const panel = document.getElementById('corpse-panel');
+            const content = document.getElementById('corpse-content');
+            content.innerHTML = `<h3>${corpse.name} (${getMonsterRank(corpse)})</h3>`;
+
+            const reviveBtn = document.createElement('button');
+            reviveBtn.textContent = '부활';
+            reviveBtn.className = 'target-button';
+            reviveBtn.onclick = () => {
+                hideCorpsePanel();
+                reviveMonsterCorpse(corpse);
+                processTurn();
+            };
+            content.appendChild(reviveBtn);
+
+            const dissectBtn = document.createElement('button');
+            dissectBtn.textContent = '분해';
+            dissectBtn.className = 'target-button';
+            dissectBtn.onclick = () => {
+                hideCorpsePanel();
+                dissectCorpse(corpse);
+                processTurn();
+            };
+            content.appendChild(dissectBtn);
+
+            const ignoreBtn = document.createElement('button');
+            ignoreBtn.textContent = '무시';
+            ignoreBtn.className = 'target-button';
+            ignoreBtn.onclick = () => {
+                hideCorpsePanel();
+                ignoreCorpse(corpse);
+                processTurn();
+            };
+            content.appendChild(ignoreBtn);
+
+            panel.style.display = 'block';
+            gameState.gameRunning = false;
+        }
+
+        function hideCorpsePanel() {
+            document.getElementById('corpse-panel').style.display = 'none';
+            gameState.gameRunning = true;
+            const content = document.getElementById('corpse-content');
+            if (content) content.innerHTML = '';
+        }
+
         function showItemDetailPanel(item) {
             const panel = document.getElementById('item-detail-panel');
             const content = document.getElementById('item-detail-content');
@@ -6711,7 +6752,8 @@ updateShopDisplay, updateSkillDisplay, updateStats, updateTurnEffects,
 upgradeMercenarySkill, upgradeMonsterSkill, useItem, useItemOnTarget, useSkill, removeMercenary,
     dismiss, sacrifice, allocateStat, exitMap,
     addRecipeToTab, removeRecipeFromTab,
-    updateCraftingDetailDisplay, showCraftingDetailPanel, hideCraftingDetailPanel
+    updateCraftingDetailDisplay, showCraftingDetailPanel, hideCraftingDetailPanel,
+    showCorpsePanel, hideCorpsePanel, ignoreCorpse, getMonsterRank
 };
 Object.assign(window, exportsObj, {SKILL_DEFS, MERCENARY_SKILLS, MONSTER_SKILLS, MONSTER_SKILL_SETS, MONSTER_TRAITS, MONSTER_TRAIT_SETS, PREFIXES, SUFFIXES, MAP_PREFIXES, MAP_SUFFIXES});
 
