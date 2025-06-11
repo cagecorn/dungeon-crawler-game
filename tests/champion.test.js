@@ -30,7 +30,7 @@ async function run() {
 
   win.showChampionDetails(champ);
   const html = win.document.getElementById('monster-detail-content').innerHTML;
-  if (!html.includes('★'.repeat(champ.stars.strength)) || !html.includes(MONSTER_SKILLS[champ.monsterSkill].name)) {
+  if (!html.includes('⭐'.repeat(champ.stars.strength)) || !html.includes(MONSTER_SKILLS[champ.monsterSkill].name)) {
     console.error('champion details missing info');
     process.exit(1);
   }

@@ -2410,11 +2410,11 @@ function updateMaterialsDisplay() {
 
             const html = `
                 <h3>${merc.icon} ${merc.name} Lv.${formatNumber(merc.level)}</h3>
-                <div>💪 힘: ${formatNumber(merc.strength)} ${'★'.repeat(merc.stars.strength)}</div>
-                <div>🏃 민첩: ${formatNumber(merc.agility)} ${'★'.repeat(merc.stars.agility)}</div>
-                <div>🛡 체력: ${formatNumber(merc.endurance)} ${'★'.repeat(merc.stars.endurance)}</div>
-                <div>🔮 집중: ${formatNumber(merc.focus)} ${'★'.repeat(merc.stars.focus)}</div>
-                <div>📖 지능: ${formatNumber(merc.intelligence)} ${'★'.repeat(merc.stars.intelligence)}</div>
+                <div>💪 힘: ${formatNumber(merc.strength)} ${'⭐'.repeat(merc.stars.strength)}</div>
+                <div>🏃 민첩: ${formatNumber(merc.agility)} ${'⭐'.repeat(merc.stars.agility)}</div>
+                <div>🛡 체력: ${formatNumber(merc.endurance)} ${'⭐'.repeat(merc.stars.endurance)}</div>
+                <div>🔮 집중: ${formatNumber(merc.focus)} ${'⭐'.repeat(merc.stars.focus)}</div>
+                <div>📖 지능: ${formatNumber(merc.intelligence)} ${'⭐'.repeat(merc.stars.intelligence)}</div>
                 <div>💕 호감도: ${formatNumber(merc.affinity)}</div>
                 <div>🍗 배부름: ${formatNumber(merc.fullness)}</div>
                 <hr>
@@ -2536,11 +2536,11 @@ function updateMaterialsDisplay() {
                 <div>✨ 마법방어: ${formatNumber(getStat(monster,'magicResist'))}</div>
                 ${monster.affinity !== undefined ? `<div>💕 호감도: ${formatNumber(monster.affinity)}</div>` : ''}
                 ${monster.fullness !== undefined ? `<div>🍗 배부름: ${formatNumber(monster.fullness)}</div>` : ''}
-                <div>💪 힘: ${monster.strength}${monster.isSuperior ? ' ' + '★'.repeat(stars.strength) : ''}</div>
-                <div>🏃 민첩: ${monster.agility}${monster.isSuperior ? ' ' + '★'.repeat(stars.agility) : ''}</div>
-                <div>🛡 체력: ${monster.endurance}${monster.isSuperior ? ' ' + '★'.repeat(stars.endurance) : ''}</div>
-                <div>🔮 집중: ${monster.focus}${monster.isSuperior ? ' ' + '★'.repeat(stars.focus) : ''}</div>
-                <div>📖 지능: ${monster.intelligence}${monster.isSuperior ? ' ' + '★'.repeat(stars.intelligence) : ''}</div>
+                <div>💪 힘: ${monster.strength}${monster.isSuperior ? ' ' + '⭐'.repeat(stars.strength) : ''}</div>
+                <div>🏃 민첩: ${monster.agility}${monster.isSuperior ? ' ' + '⭐'.repeat(stars.agility) : ''}</div>
+                <div>🛡 체력: ${monster.endurance}${monster.isSuperior ? ' ' + '⭐'.repeat(stars.endurance) : ''}</div>
+                <div>🔮 집중: ${monster.focus}${monster.isSuperior ? ' ' + '⭐'.repeat(stars.focus) : ''}</div>
+                <div>📖 지능: ${monster.intelligence}${monster.isSuperior ? ' ' + '⭐'.repeat(stars.intelligence) : ''}</div>
                 <div>📏 사거리: ${monster.range}</div>
                 <div>특수: ${monster.special || '없음'}</div>
                 ${traitLine}
@@ -2565,11 +2565,11 @@ function updateMaterialsDisplay() {
             const skillLine = skillInfo ? `<div>스킬: ${skillInfo.icon} ${skillInfo.name}</div>` : '<div>스킬: 없음</div>';
             const html = `
                 <h3>${champion.icon} ${champion.name} (Lv.${champion.level})</h3>
-                <div>💪 힘: ${formatNumber(champion.strength)} ${'★'.repeat(champion.stars.strength)}</div>
-                <div>🏃 민첩: ${formatNumber(champion.agility)} ${'★'.repeat(champion.stars.agility)}</div>
-                <div>🛡 체력: ${formatNumber(champion.endurance)} ${'★'.repeat(champion.stars.endurance)}</div>
-                <div>🔮 집중: ${formatNumber(champion.focus)} ${'★'.repeat(champion.stars.focus)}</div>
-                <div>📖 지능: ${formatNumber(champion.intelligence)} ${'★'.repeat(champion.stars.intelligence)}</div>
+                <div>💪 힘: ${formatNumber(champion.strength)} ${'⭐'.repeat(champion.stars.strength)}</div>
+                <div>🏃 민첩: ${formatNumber(champion.agility)} ${'⭐'.repeat(champion.stars.agility)}</div>
+                <div>🛡 체력: ${formatNumber(champion.endurance)} ${'⭐'.repeat(champion.stars.endurance)}</div>
+                <div>🔮 집중: ${formatNumber(champion.focus)} ${'⭐'.repeat(champion.stars.focus)}</div>
+                <div>📖 지능: ${formatNumber(champion.intelligence)} ${'⭐'.repeat(champion.stars.intelligence)}</div>
                 ${champion.affinity !== undefined ? `<div>💕 호감도: ${formatNumber(champion.affinity)}</div>` : ''}
                 <hr>
                 <div>❤️ HP: ${formatNumber(champion.health)}/${formatNumber(getStat(champion,'maxHealth'))}</div>
