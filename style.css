@@ -179,6 +179,7 @@
   left: 0;
   width: 100%;
   display: flex;
+  flex-wrap: wrap;
   justify-content: center;
   align-items: center;
   pointer-events: none; /* 아이콘이 마우스 클릭을 방해하지 않도록 설정 */
