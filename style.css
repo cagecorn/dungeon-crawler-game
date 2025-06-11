@@ -239,6 +239,8 @@
 }
 
 .low-health {
+  /* [추가] 붉은색 그림자 효과로 위험 상태를 표시합니다. */
+  box-shadow: 0 0 10px rgba(255, 0, 0, 0.9);
   animation: monsterPulse 1s ease-in-out infinite alternate;
 }
 /* style.css */
