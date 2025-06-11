@@ -2115,6 +2115,19 @@ const MERCENARY_NAMES = [
             });
         }
 
+        // 타일 탭 UI 갱신
+        function updateTileTabDisplay() {
+            const tab = document.getElementById('tile-tab');
+            if (!tab) return;
+            tab.innerHTML = '';
+            gameState.player.tileInventory.forEach((tile, i) => {
+                const div = document.createElement('div');
+                div.className = 'inventory-slot';
+                div.textContent = tile.name || tile.key || tile;
+                tab.appendChild(div);
+            });
+        }
+
         function craftItem(key) {
             const recipe = RECIPES[key];
             if (!recipe) return;
@@ -6224,6 +6237,7 @@ function processTurn() {
             renderDungeon();
             updateCamera();
             updateIncubatorDisplay();
+            updateTileTabDisplay();
             updateActionButtons();
             addMessage('📁 게임을 불러왔습니다.', 'info');
         }
@@ -6907,6 +6921,7 @@ function processTurn() {
             updateSkillDisplay();
             updateIncubatorDisplay();
             updateMaterialsDisplay();
+            updateTileTabDisplay();
             updateActionButtons();
             updateStats();
         }
@@ -7030,7 +7045,7 @@ showMonsterDetails, showShop, showSkillDamage, showAuraDetails, skill1Action, sk
 spawnMercenaryNearPlayer, spawnStartingRecipes, startGame, swapActiveAndStandby, tryApplyStatus,
 unequipAccessory, unequipWeapon, unequipArmor, unequipItemFromMercenary, updateActionButtons, updateCamera,
 updateFogOfWar, updateIncubatorDisplay,
-updateInventoryDisplay, updateMaterialsDisplay, updateMercenaryDisplay,
+updateInventoryDisplay, updateMaterialsDisplay, updateTileTabDisplay, updateMercenaryDisplay,
 updateShopDisplay, updateSkillDisplay, updateStats, updateTurnEffects,
 upgradeMercenarySkill, upgradeMonsterSkill, useItem, useItemOnTarget, useSkill, removeMercenary,
     dismiss, sacrifice, allocateStat, exitMap,

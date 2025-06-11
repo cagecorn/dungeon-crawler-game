@@ -55,6 +55,7 @@
       expNeeded: 20,
       gold: 1000,
       inventory: [],
+      tileInventory: [],
       skillPoints: 0,
       statPoints: 0,
       skillLevels: {},
