@@ -316,7 +316,39 @@ const INVENTORY_CATEGORIES = {
     etc: [ITEM_TYPES.EGG, ITEM_TYPES.FERTILIZER, ITEM_TYPES.ESSENCE]
 };
 
-        const SHOP_PRICE_MULTIPLIER = 3;
+
+const SHOP_PRICE_MULTIPLIER = 3;
+
+const TILE_TYPES = {
+    VOLCANO: 'volcano',
+    FLOWER: 'flower',
+    METAL: 'metal'
+};
+
+const TILE_DEFS = {
+    [TILE_TYPES.VOLCANO]: {
+        name: 'Volcano',
+        key: TILE_TYPES.VOLCANO,
+        description: 'A searing volcanic tile.',
+        effects: [],
+        imageUrl: 'assets/images/volcano.png'
+    },
+    [TILE_TYPES.FLOWER]: {
+        name: 'Flower',
+        key: TILE_TYPES.FLOWER,
+        description: 'A gentle flower tile.',
+        effects: [],
+        imageUrl: 'assets/images/flower.png'
+    },
+    [TILE_TYPES.METAL]: {
+        name: 'Metal',
+        key: TILE_TYPES.METAL,
+        description: 'A sturdy metallic tile.',
+        effects: [],
+        imageUrl: 'assets/images/metal.png'
+    }
+};
+
 
 const MERCENARY_NAMES = [
     // 기존 이름들
