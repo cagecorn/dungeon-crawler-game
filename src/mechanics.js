@@ -2115,6 +2115,24 @@ const MERCENARY_NAMES = [
             });
         }
 
+        // 타일 탭 UI 갱신 (가장 올바른 버전으로 통합)
+        function updateTileTabDisplay() {
+            const container = document.getElementById('tile-tab');
+            if (!container) return;
+            container.innerHTML = '';
+
+            gameState.player.tileInventory.forEach(tile => {
+                const slot = document.createElement('div');
+                slot.className = 'tile-tab-slot';
+                slot.style.backgroundImage = `url('${tile.imageUrl}')`;
+                slot.title = `${tile.name}\n${tile.description}`;
+
+                // slot.onclick = () => showTileDetailPanel(tile);
+
+                container.appendChild(slot);
+            });
+        }
+
         function craftItem(key) {
             const recipe = RECIPES[key];
             if (!recipe) return;
@@ -3124,7 +3142,7 @@ function killMonster(monster) {
                 affinity: 30,
                 fullness: 75,
                 hasActed: false,
-                equipped: { weapon: null, armor: null, accessory1: null, accessory2: null },
+                equipped: { weapon: null, armor: null, accessory1: null, accessory2: null, tile: null },
                 range: monster.range,
                 special: monster.special,
                 trait: monster.trait || null,
@@ -4106,7 +4124,8 @@ function killMonster(monster) {
                     weapon: null,
                     armor: null,
                     accessory1: null,
-                    accessory2: null
+                    accessory2: null,
+                    tile: null
                 }
             };
         }
@@ -4259,7 +4278,7 @@ function killMonster(monster) {
                 lootChance: 1,
                 hasActed: false,
                 isChampion: true,
-                equipped: { weapon: null, armor: null, accessory1: null, accessory2: null },
+                equipped: { weapon: null, armor: null, accessory1: null, accessory2: null, tile: null },
                 elementResistances: {fire:0, ice:0, lightning:0, earth:0, light:0, dark:0},
                 statusResistances: {poison:0, bleed:0, burn:0, freeze:0, paralysis:0, nightmare:0, silence:0, petrify:0, debuff:0},
                 poison:false,burn:false,freeze:false,bleed:false,
@@ -4564,7 +4583,7 @@ function killMonster(monster) {
         function equipItemToMercenary(item, mercenary) {
             // 용병 장비 초기화 확인
             if (!mercenary.equipped) {
-                mercenary.equipped = { weapon: null, armor: null, accessory1: null, accessory2: null };
+                mercenary.equipped = { weapon: null, armor: null, accessory1: null, accessory2: null, tile: null };
             }
             
             if (item.type === ITEM_TYPES.WEAPON) {
@@ -5597,7 +5616,7 @@ function processTurn() {
             
             // 장비 초기화 확인
             if (!mercenary.equipped) {
-                mercenary.equipped = { weapon: null, armor: null };
+                mercenary.equipped = { weapon: null, armor: null, accessory1: null, accessory2: null, tile: null };
             }
             
             // 플레이어와의 거리 유지 (1~3칸 사이)
@@ -6224,6 +6243,7 @@ function processTurn() {
             renderDungeon();
             updateCamera();
             updateIncubatorDisplay();
+            updateTileTabDisplay();
             updateActionButtons();
             addMessage('📁 게임을 불러왔습니다.', 'info');
         }
@@ -6907,6 +6927,7 @@ function processTurn() {
             updateSkillDisplay();
             updateIncubatorDisplay();
             updateMaterialsDisplay();
+            updateTileTabDisplay();
             updateActionButtons();
             updateStats();
         }
@@ -7030,7 +7051,7 @@ showMonsterDetails, showShop, showSkillDamage, showAuraDetails, skill1Action, sk
 spawnMercenaryNearPlayer, spawnStartingRecipes, startGame, swapActiveAndStandby, tryApplyStatus,
 unequipAccessory, unequipWeapon, unequipArmor, unequipItemFromMercenary, updateActionButtons, updateCamera,
 updateFogOfWar, updateIncubatorDisplay,
-updateInventoryDisplay, updateMaterialsDisplay, updateMercenaryDisplay,
+updateInventoryDisplay, updateMaterialsDisplay, updateTileTabDisplay, updateMercenaryDisplay,
 updateShopDisplay, updateSkillDisplay, updateStats, updateTurnEffects,
 upgradeMercenarySkill, upgradeMonsterSkill, useItem, useItemOnTarget, useSkill, removeMercenary,
     dismiss, sacrifice, allocateStat, exitMap,
