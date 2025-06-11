@@ -40,6 +40,29 @@ async function run() {
     console.error('mercenary too far from player');
     process.exit(1);
   }
+
+  // Scenario: pathfinding fails but direct movement is possible
+  gameState.dungeonSize = 5;
+  gameState.dungeon = Array.from({ length: 5 }, () => Array(5).fill('empty'));
+  for (let y = 0; y < 5; y++) {
+    gameState.dungeon[y][2] = 'wall';
+  }
+  gameState.player.x = 0;
+  gameState.player.y = 2;
+
+  const merc = gameState.activeMercenaries[0];
+  gameState.activeMercenaries = [merc];
+  merc.x = 4;
+  merc.y = 2;
+  merc.nextX = 4;
+  merc.nextY = 2;
+
+  win.processTurn();
+
+  if (merc.x !== 3 || merc.y !== 2) {
+    console.error('mercenary did not move directly toward player when path blocked');
+    process.exit(1);
+  }
 }
 
 run().catch(e => {

@@ -5775,6 +5775,23 @@ function processTurn() {
             const baseAttackRange = mercenary.role === 'ranged' ? 3 :
                                    mercenary.role === 'caster' ? 2 : 1;
             let attackRange = baseAttackRange;
+
+            function directMoveToPlayer() {
+                const dx = Math.sign(gameState.player.x - mercenary.x);
+                const dy = Math.sign(gameState.player.y - mercenary.y);
+                const nx = mercenary.x + dx;
+                const ny = mercenary.y + dy;
+                const valid = nx >= 0 && nx < gameState.dungeonSize &&
+                    ny >= 0 && ny < gameState.dungeonSize &&
+                    gameState.dungeon[ny][nx] !== 'wall' &&
+                    gameState.dungeon[ny][nx] !== 'monster' &&
+                    !(nx === gameState.player.x && ny === gameState.player.y);
+                if (valid) {
+                    mercenary.nextX = nx;
+                    mercenary.nextY = ny;
+                    mercenary.hasActed = true;
+                }
+            }
             
             // 힐러는 치료 우선
             if (mercenary.role === 'support') {
@@ -6300,6 +6317,11 @@ function processTurn() {
                                 }
                             }
                         }
+                        if (!mercenary.hasActed) {
+                            directMoveToPlayer();
+                        }
+                    } else {
+                        directMoveToPlayer();
                     }
                 }
             } else {
@@ -6318,6 +6340,9 @@ function processTurn() {
                             mercenary.nextY = step.y;
                             mercenary.hasActed = true;
                         }
+                    }
+                    if (!mercenary.hasActed) {
+                        directMoveToPlayer();
                     }
                 }
             }
