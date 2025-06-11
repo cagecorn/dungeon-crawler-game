@@ -7164,6 +7164,7 @@ function processTurn() {
             }
         });
         document.getElementById('close-crafting-detail').onclick = hideCraftingDetailPanel;
+        document.getElementById('close-corpse-panel').onclick = hideCorpsePanel;
 
         document.addEventListener('keydown', (e) => {
             initializeAudio();
