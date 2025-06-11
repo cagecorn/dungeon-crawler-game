@@ -3,6 +3,9 @@
  * 오디오 파일 없이 효과음을 생성합니다.
  */
 
+// 전투가 발생했는지 추적하는 플래그
+let combatOccurredInTurn = false;
+
 /**
  * 지정된 경로의 오디오 파일을 재생하는 헬퍼 함수
  * @param {string} filePath - 재생할 오디오 파일의 경로
@@ -496,6 +499,42 @@ const MERCENARY_NAMES = [
         }
 
         // 용병 타입 정의
+
+        const MERCENARY_IDLE_QUOTES = {
+            WARRIOR: [
+                "이 통로... 적들이 매복하기 좋은 곳이군.",
+                "무거운 갑옷이지만 익숙해. 언제든 싸울 준비 완료야.",
+                "여기서 예전에 큰 전투가 있었던 것 같은데... 피 냄새가 아직도 나.",
+                "조용하군. 너무 조용해... 이럴 때가 더 위험하다고.",
+                "내 검이 간지러워하고 있어. 곧 쓸 일이 있을 거야.",
+                "던전 깊숙할수록 더 강한 놈들이 나온다던데, 기대되는군."
+            ],
+            ARCHER: [
+                "발걸음 소리를 최대한 줄여야 해. 적들에게 들키면 안 되거든.",
+                "이 어둠 속에서도 내 눈은 적을 놓치지 않을 거야.",
+                "화살통을 확인해볼까... 아직 충분하네. 다행이야.",
+                "저 모퉁이 너머에 뭔가 있는 것 같은데... 내 직감은 틀린 적이 없어.",
+                "바람의 흐름이 이상해. 이 던전 구조가 복잡한가 봐.",
+                "높은 곳에서 저격할 자리를 찾고 있는 중이야."
+            ],
+            HEALER: [
+                "이곳에 스며든 어둠의 기운... 정화가 필요할 것 같아.",
+                "다들 다치지 않게 조심해. 치유 마법에도 한계가 있거든.",
+                "신성한 빛이 우리를 인도해주길... 길을 잃지 않게 해주세요.",
+                "여기서 죽어간 영혼들이 느껴져. 그들을 위해 기도를 올려야겠어.",
+                "악한 존재들의 흔적이 여기저기 보이네... 경계를 늦추면 안 돼.",
+                "치유 물약도 챙겨왔으니까 너무 걱정하지는 마."
+            ],
+            WIZARD: [
+                "이 던전의 마력 흐름이 불안정해... 주문 시전에 주의해야겠어.",
+                "고대 문자들이 벽에 새겨져 있군. 흥미로운 주술의 흔적이야.",
+                "마나의 농도가 짙어지고 있어. 강력한 마법 생물이 근처에 있나 봐.",
+                "저 수정들... 마법 에너지를 저장하고 있는 것 같은데.",
+                "공간이 비틀어진 느낌이야. 이곳엔 차원 마법의 잔재가 남아있어.",
+                "내 지팡이가 진동하고 있어. 뭔가 강력한 마법 아이템이 가까이 있나?"
+            ]
+        };
+
         const MERCENARY_TYPES = {
             WARRIOR: {
                 name: '⚔️ 전사',
@@ -1767,6 +1806,7 @@ const MERCENARY_NAMES = [
 
         // 통합 공격 처리
         function performAttack(attacker, defender, options = {}) {
+            combatOccurredInTurn = true;
             const magic = options.magic || false;
             const element = options.element;
             const status = options.status;
@@ -5910,6 +5950,29 @@ function processTurn() {
             updateMaterialsDisplay();
             advanceIncubators();
             updateIncubatorDisplay();
+
+            // [추가된 유휴 대사 시스템]
+            // 이번 턴에 전투가 없었고, 30% 확률을 통과했을 때 대사를 출력합니다.
+            if (!combatOccurredInTurn && Math.random() < 0.3) {
+                const livingMercenaries = gameState.activeMercenaries.filter(m => m.alive);
+
+                if (livingMercenaries.length > 0) {
+                    // 살아있는 용병 중 한 명을 랜덤으로 선택
+                    const randomMerc = livingMercenaries[Math.floor(Math.random() * livingMercenaries.length)];
+                    const quotes = MERCENARY_IDLE_QUOTES[randomMerc.type];
+
+                    if (quotes && quotes.length > 0) {
+                        // 해당 용병의 대사 목록에서 하나를 랜덤으로 선택
+                        const randomQuote = quotes[Math.floor(Math.random() * quotes.length)];
+
+                        // 전투 로그에 대사 추가 (새로운 'dialogue' 타입 사용)
+                        addMessage(`💬 ${randomMerc.name}: "${randomQuote}"`, 'dialogue');
+                    }
+                }
+            }
+
+            // 다음 턴을 위해 전투 발생 플래그를 리셋합니다.
+            combatOccurredInTurn = false;
         }
 
         // 용병 AI (개선됨 - 장비 보너스 적용, 안전성 체크 추가)
