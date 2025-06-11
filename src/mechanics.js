@@ -2684,7 +2684,7 @@ const MERCENARY_NAMES = [
         function getActiveAuraIcons(character) {
             const icons = new Set();
             const checkSource = (source) => {
-                if (!source || !source.alive) return;
+                if (!source || (source !== gameState.player && !source.alive)) return;
 
                 const skillKeys = [
                     source.skill,
