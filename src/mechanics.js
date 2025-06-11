@@ -4931,11 +4931,10 @@ function killMonster(monster) {
 
             mercenary.alive = false;
             mercenary.health = 0;
-            mercenary.turnsLeft = CORPSE_TURNS;
-            gameState.corpses.push(mercenary);
 
             if (gameState.dungeon[mercenary.y] && gameState.dungeon[mercenary.y][mercenary.x]) {
-                gameState.dungeon[mercenary.y][mercenary.x] = 'corpse';
+                const hasItem = gameState.items.some(i => i.x === mercenary.x && i.y === mercenary.y);
+                gameState.dungeon[mercenary.y][mercenary.x] = hasItem ? 'item' : 'empty';
             }
 
             mercenary.affinity = Math.max(0, (mercenary.affinity || 0) - 5);
