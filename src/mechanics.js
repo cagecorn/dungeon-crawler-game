@@ -1487,7 +1487,7 @@ const MERCENARY_NAMES = [
             let y = y1;
             while (x !== x2 || y !== y2) {
                 if (x !== x1 || y !== y1) {
-                    if (gameState.dungeon[y][x] === 'wall') return false;
+                    if (!gameState.dungeon[y] || gameState.dungeon[y][x] === undefined || gameState.dungeon[y][x] === 'wall') return false;
                 }
                 if (x !== x2) x += dx;
                 if (y !== y2) y += dy;
@@ -1498,6 +1498,8 @@ const MERCENARY_NAMES = [
         // BFS 경로 탐색
         function findPath(startX, startY, targetX, targetY) {
             const size = gameState.dungeonSize;
+            if (startX < 0 || startY < 0 || startX >= size || startY >= size) return null;
+            if (targetX < 0 || targetY < 0 || targetX >= size || targetY >= size) return null;
             const queue = [[startX, startY]];
             let head = 0;
             const visited = Array.from({ length: size }, () => Array(size).fill(false));
@@ -7117,6 +7119,17 @@ function processTurn() {
             }
         }
 
+        function spawnStartingTiles() {
+            const tileKeys = [TILE_TYPES.FLOWER, TILE_TYPES.VOLCANO, TILE_TYPES.METAL];
+            tileKeys.forEach(key => {
+                const pos = findAdjacentEmpty(gameState.player.x, gameState.player.y);
+                if (pos.x === gameState.player.x && pos.y === gameState.player.y) return;
+                const tileData = { ...TILE_DEFS[key], x: pos.x, y: pos.y };
+                gameState.mapTiles.push(tileData);
+                gameState.dungeon[pos.y][pos.x] = 'tile';
+            });
+        }
+
         function startGame() {
             // SoundEngine.initialize(); // 오디오 초기화는 사용자 입력 후 수행
             gameState.player.job = null;
@@ -7146,6 +7159,7 @@ function processTurn() {
                 gameState.player.inventory.push(createItem('smallExpScroll', 0, 0));
             }
             spawnStartingRecipes();
+            spawnStartingTiles();
             updateInventoryDisplay();
             updateSkillDisplay();
             updateIncubatorDisplay();
@@ -7272,7 +7286,7 @@ removeEggFromIncubator, renderDungeon, reviveMercenary, reviveMonsterCorpse,
  rollDice, saveGame, sellItem, confirmAndSell, enhanceItem, disassembleItem, setMercenaryLevel, setMonsterLevel, setChampionLevel,
 showChampionDetails, showItemDetailPanel, showItemTargetPanel, showMercenaryDetails,
 showMonsterDetails, showShop, showSkillDamage, showAuraDetails, skill1Action, skill2Action,
-spawnMercenaryNearPlayer, spawnStartingRecipes, startGame, swapActiveAndStandby, tryApplyStatus,
+spawnMercenaryNearPlayer, spawnStartingRecipes, spawnStartingTiles, startGame, swapActiveAndStandby, tryApplyStatus,
 unequipAccessory, unequipWeapon, unequipArmor, unequipItemFromMercenary, updateActionButtons, updateCamera,
 updateFogOfWar, updateIncubatorDisplay,
  updateInventoryDisplay, updateMaterialsDisplay, updateMercenaryDisplay,
