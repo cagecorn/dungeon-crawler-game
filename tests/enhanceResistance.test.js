@@ -19,7 +19,7 @@ async function run() {
     console.error('enhance level not incremented');
     process.exit(1);
   }
-  const expected = item.baseStats.poisonResist + 0.025;
+  const expected = item.baseStats.poisonResist + 0.01;
   if (Math.abs(item.poisonResist - expected) > 1e-9) {
     console.error('resistance stat not increased correctly');
     process.exit(1);

@@ -4141,7 +4141,7 @@ function killMonster(monster) {
                 if (stat === 'attack' || stat === 'defense') {
                     item[stat] = item.baseStats[stat] + item.enhanceLevel * 1;
                 } else if (stat.endsWith('Resist')) {
-                    item[stat] = item.baseStats[stat] + item.enhanceLevel * 0.025;
+                    item[stat] = item.baseStats[stat] + item.enhanceLevel * 0.01;
                 } else {
                     item[stat] = item.baseStats[stat] + item.enhanceLevel * 0.5;
                 }
