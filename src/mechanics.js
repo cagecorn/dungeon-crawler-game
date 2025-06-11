@@ -3455,7 +3455,7 @@ function killMonster(monster) {
                             finalClasses.push('projectile');
                             div.textContent = proj.icon;
                         } else {
-                            const merc = gameState.activeMercenaries.find(m => m.x === x && m.y === y);
+                            const merc = gameState.activeMercenaries.find(m => m.x === x && m.y === y && m.alive);
                             if (merc) {
                                 finalClasses.push('mercenary');
                                 if (merc.isMonster && merc.monsterType) {
@@ -4879,6 +4879,12 @@ function killMonster(monster) {
         function reviveMercenary(mercenary) {
             if (mercenary.alive) return;
 
+            // 부활시키기 전에 플레이어 근처에 공간이 있는지 먼저 확인합니다.
+            if (!spawnMercenaryNearPlayer(mercenary)) {
+                addMessage('❌ 용병을 부활시킬 공간이 부족합니다.', 'info');
+                return; // 공간이 없으면 부활을 중단합니다.
+            }
+
             const scrollIndex = gameState.player.inventory.findIndex(i => i.key === 'reviveScroll');
             if (scrollIndex !== -1) {
                 gameState.player.inventory.splice(scrollIndex, 1);
@@ -4890,6 +4896,9 @@ function killMonster(monster) {
                 const cost = 100;
                 if (gameState.player.gold < cost) {
                     addMessage(`💸 골드가 부족합니다. 부활에는 ${formatNumber(cost)} 골드가 필요합니다.`, 'info');
+                    // 부활에 실패했으므로, 할당했던 위치를 다시 되돌립니다.
+                    mercenary.x = -1;
+                    mercenary.y = -1;
                     return;
                 }
                 gameState.player.gold -= cost;
