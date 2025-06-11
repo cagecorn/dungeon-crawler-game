@@ -141,13 +141,16 @@ npm install
 
 ## Testing
 
-Before running the tests you must install the project dependencies manually:
+The test suite relies on development dependencies such as **jsdom**. Ensure they
+are installed by running:
 
 ```bash
 npm install
 ```
 
-After installation execute `npm test` to run the test suite. The test runner
+You can simply run `npm test` as well – the `pretest` script in
+`package.json` automatically installs all dependencies before executing the test
+runner. After installation the test runner
 automatically locates all files ending with `*.test.js` in the `tests` folder
 and executes them sequentially.
 
