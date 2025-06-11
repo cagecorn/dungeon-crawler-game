@@ -22,6 +22,7 @@ async function run() {
   gameState.player.y = 2;
   gameState.dungeon[2][2] = 'empty';
 
+  gameState.player.gold = 500;
   hireMercenary('HEALER');
   const healer = gameState.activeMercenaries[0];
   healer.skill = 'Heal';

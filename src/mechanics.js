@@ -2673,7 +2673,7 @@ function updateMaterialsDisplay() {
             document.getElementById('expNeeded').textContent = formatNumber(gameState.player.expNeeded);
             document.getElementById('gold').textContent = formatNumber(gameState.player.gold);
             document.getElementById('floor').textContent = formatNumber(gameState.floor);
-            const tileSlot = document.getElementById('equipped-tile');
+            const tileSlot = document.getElementById('equipped-tile-side');
             if (tileSlot) {
                 if (gameState.player.equipped.tile) {
                     tileSlot.textContent = `타일: ${formatItem(gameState.player.equipped.tile)}`;
