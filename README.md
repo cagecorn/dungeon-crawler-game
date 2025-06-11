@@ -88,7 +88,7 @@ stored as crafting materials rather than in your main inventory.
 
 ### Elite Monsters and Auras
 
-Each dungeon floor now contains at least one **elite** monster. Elites boast higher stats and randomly receive an aura skill that benefits nearby allies. When an elite is revived as a mercenary, it keeps this aura skill. Elites appear with a purple glow and the "엘리트" prefix.
+Each dungeon floor now contains at least one **elite** monster. Elites boast higher stats and randomly receive an aura skill that benefits nearby allies. When an elite is revived as a mercenary, it keeps this aura skill. Elites display a red glow and the "엘리트" prefix. Champions glow yellow, and superior monsters glow blue.
 
 #### Superior Rank
 
