@@ -98,10 +98,10 @@
     autoMoveActive: false,
     inventoryFilter: 'all',
     turn: 0,
-    incubators: [null, null],
+    incubators: [null, null, null],
     hatchedSuperiors: [],
     pendingMap: null,
-    currentMapModifiers: null,
+    currentMapModifiers: {},
     gameRunning: true
   };
   global.gameState = gameState;
