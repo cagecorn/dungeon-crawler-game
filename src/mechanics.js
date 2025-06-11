@@ -13,6 +13,10 @@ const SoundEngine = {
             this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
             this.isInitialized = true;
             console.log("Sound Engine Initialized.");
+
+            // 배경음 플레이어를 초기화하고 재생을 시도
+            BgmPlayer.init();
+            BgmPlayer.play();
         } catch (e) {
             console.error("Web Audio API is not supported in this browser.");
         }
@@ -152,6 +156,36 @@ const SoundEngine = {
 if (typeof window !== 'undefined') {
     window.SoundEngine = SoundEngine;
 }
+
+/**
+ * HTML Audio 요소를 제어하는 간단한 배경음 플레이어
+ */
+const BgmPlayer = {
+    audioElement: null,
+    isInitialized: false,
+
+    // HTML에서 <audio> 요소를 찾아 초기화
+    init() {
+        this.audioElement = document.getElementById('bgm-player');
+        if (this.audioElement) {
+            this.isInitialized = true;
+            // 초기 볼륨 설정 (0.0 ~ 1.0 사이 값)
+            this.audioElement.volume = 0.3;
+        } else {
+            console.error("BGM Player element(#bgm-player) not found.");
+        }
+    },
+
+    // 배경음 재생 (브라우저 정책에 의해 실패할 수 있음)
+    async play() {
+        if (!this.isInitialized || !this.audioElement) return;
+        try {
+            await this.audioElement.play();
+        } catch (err) {
+            console.error("BGM playback failed. A user interaction is likely required to start audio.", err);
+        }
+    }
+};
 
 const ITEM_TYPES = {
             WEAPON: 'weapon',
