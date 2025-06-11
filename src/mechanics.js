@@ -7371,9 +7371,25 @@ function processTurn() {
 
         function spawnStartingTiles() {
             const tileKeys = [TILE_TYPES.FLOWER, TILE_TYPES.VOLCANO, TILE_TYPES.METAL];
+            const dirs = [
+                {dx:1, dy:0}, {dx:-1, dy:0}, {dx:0, dy:1}, {dx:0, dy:-1},
+                {dx:1, dy:1}, {dx:-1, dy:-1}, {dx:1, dy:-1}, {dx:-1, dy:1}
+            ];
             tileKeys.forEach(key => {
-                const pos = findAdjacentEmpty(gameState.player.x, gameState.player.y);
-                if (pos.x === gameState.player.x && pos.y === gameState.player.y) return;
+                let pos = findAdjacentEmpty(gameState.player.x, gameState.player.y);
+                if (pos.x === gameState.player.x && pos.y === gameState.player.y) {
+                    for (const d of dirs) {
+                        const cx = gameState.player.x + d.dx;
+                        const cy = gameState.player.y + d.dy;
+                        if (cx < 0 || cy < 0 || cx >= gameState.dungeonSize || cy >= gameState.dungeonSize) continue;
+                        pos = findAdjacentEmpty(cx, cy);
+                        if (pos.x !== cx || pos.y !== cy) break;
+                    }
+                }
+                if (pos.x === gameState.player.x && pos.y === gameState.player.y) {
+                    pos = findNearestEmpty(gameState.player.x, gameState.player.y);
+                    if (pos.x === gameState.player.x && pos.y === gameState.player.y) return;
+                }
                 const tileData = { ...TILE_DEFS[key], x: pos.x, y: pos.y };
                 gameState.mapTiles.push(tileData);
                 gameState.dungeon[pos.y][pos.x] = 'tile';
