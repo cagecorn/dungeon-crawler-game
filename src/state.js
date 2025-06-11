@@ -55,6 +55,7 @@
       expNeeded: 20,
       gold: 1000,
       inventory: [],
+      tileInventory: [],
       skillPoints: 0,
       statPoints: 0,
       skillLevels: {},
@@ -64,7 +65,8 @@
         weapon: null,
         armor: null,
         accessory1: null,
-        accessory2: null
+        accessory2: null,
+        tile: null
       },
       teleportSavedX: null,
       teleportSavedY: null,
@@ -78,6 +80,7 @@
     corpses: [],
     treasures: [],
     items: [],
+    mapTiles: [],
     projectiles: [],
     exitLocation: { x: 0, y: 0 },
     altarLocation: { x: 0, y: 0 },

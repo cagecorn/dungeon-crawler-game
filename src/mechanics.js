@@ -3124,7 +3124,7 @@ function killMonster(monster) {
                 affinity: 30,
                 fullness: 75,
                 hasActed: false,
-                equipped: { weapon: null, armor: null, accessory1: null, accessory2: null },
+                equipped: { weapon: null, armor: null, accessory1: null, accessory2: null, tile: null },
                 range: monster.range,
                 special: monster.special,
                 trait: monster.trait || null,
@@ -4106,7 +4106,8 @@ function killMonster(monster) {
                     weapon: null,
                     armor: null,
                     accessory1: null,
-                    accessory2: null
+                    accessory2: null,
+                    tile: null
                 }
             };
         }
