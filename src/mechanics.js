@@ -2898,7 +2898,7 @@ function updateMaterialsDisplay() {
                 ].filter(Boolean);
 
                 skillKeys.forEach(key => {
-                    const skill = SKILL_DEFS[key] || MERCENARY_SKILLS[key];
+                    const skill = SKILL_DEFS[key] || MERCENARY_SKILLS[key] || MONSTER_SKILLS[key];
                     if (skill && skill.passive && skill.aura && getDistance(source.x, source.y, character.x, character.y) <= (skill.radius || 0)) {
                         icons.add(skill.icon);
                     }
