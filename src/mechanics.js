@@ -6106,13 +6106,11 @@ function processTurn() {
                                 const backPath = findPath(mercenary.x, mercenary.y, gameState.player.x, gameState.player.y);
                                 if (backPath && backPath.length > 1) {
                                     const backStep = backPath[Math.min(moveTiles, backPath.length - 1)];
-                                    const backDist = getDistance(backStep.x, backStep.y, gameState.player.x, gameState.player.y);
                                     const backValid = backStep.x >= 0 && backStep.x < gameState.dungeonSize &&
                                         backStep.y >= 0 && backStep.y < gameState.dungeonSize &&
                                         gameState.dungeon[backStep.y][backStep.x] !== 'wall' &&
                                         gameState.dungeon[backStep.y][backStep.x] !== 'monster' &&
-                                        !(backStep.x === gameState.player.x && backStep.y === gameState.player.y) &&
-                                        backDist >= minDistanceFromPlayer && backDist < playerDistance;
+                                        !(backStep.x === gameState.player.x && backStep.y === gameState.player.y);
                                     if (backValid) {
                                         mercenary.nextX = backStep.x;
                                         mercenary.nextY = backStep.y;
@@ -6124,13 +6122,11 @@ function processTurn() {
                             const backPath = findPath(mercenary.x, mercenary.y, gameState.player.x, gameState.player.y);
                             if (backPath && backPath.length > 1) {
                                 const backStep = backPath[Math.min(moveTiles, backPath.length - 1)];
-                                const backDist = getDistance(backStep.x, backStep.y, gameState.player.x, gameState.player.y);
                                 const backValid = backStep.x >= 0 && backStep.x < gameState.dungeonSize &&
                                     backStep.y >= 0 && backStep.y < gameState.dungeonSize &&
                                     gameState.dungeon[backStep.y][backStep.x] !== 'wall' &&
                                     gameState.dungeon[backStep.y][backStep.x] !== 'monster' &&
-                                    !(backStep.x === gameState.player.x && backStep.y === gameState.player.y) &&
-                                    backDist >= minDistanceFromPlayer && backDist < playerDistance;
+                                    !(backStep.x === gameState.player.x && backStep.y === gameState.player.y);
                                 if (backValid) {
                                     mercenary.nextX = backStep.x;
                                     mercenary.nextY = backStep.y;
@@ -6145,13 +6141,11 @@ function processTurn() {
                     const path = findPath(mercenary.x, mercenary.y, gameState.player.x, gameState.player.y);
                     if (path && path.length > 1) {
                         const step = path[Math.min(moveTiles, path.length - 1)];
-                        const distAfter = getDistance(step.x, step.y, gameState.player.x, gameState.player.y);
                         const stepValid = step.x >= 0 && step.x < gameState.dungeonSize &&
                             step.y >= 0 && step.y < gameState.dungeonSize &&
                             gameState.dungeon[step.y][step.x] !== 'wall' &&
                             gameState.dungeon[step.y][step.x] !== 'monster' &&
-                            !(step.x === gameState.player.x && step.y === gameState.player.y) &&
-                            distAfter >= minDistanceFromPlayer && distAfter < playerDistance;
+                            !(step.x === gameState.player.x && step.y === gameState.player.y);
 
                         if (stepValid) {
                             mercenary.nextX = step.x;
