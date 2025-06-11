@@ -4055,6 +4055,45 @@ function killMonster(monster) {
             updateCamera();
         }
 
+        // 던전 DOM을 다시 구축하여 셀 요소 배열을 재생성
+        function rebuildDungeonDOM() {
+            const size = gameState.dungeonSize;
+            const dungeonEl = document.getElementById('dungeon');
+            if (!dungeonEl) return;
+
+            dungeonEl.innerHTML = '';
+            gameState.cellElements = [];
+
+            dungeonEl.style.setProperty('--dungeon-size', size);
+            dungeonEl.style.gridTemplateColumns = `repeat(${size}, 32px)`;
+            dungeonEl.style.gridTemplateRows = `repeat(${size}, 32px)`;
+
+            for (let y = 0; y < size; y++) {
+                const cellRow = [];
+                for (let x = 0; x < size; x++) {
+                    const cellDiv = document.createElement('div');
+                    cellDiv.dataset.x = x;
+                    cellDiv.dataset.y = y;
+                    const tileBg = document.createElement('div');
+                    tileBg.className = 'equipped-tile-bg';
+                    cellDiv.appendChild(tileBg);
+                    cellDiv.className = 'cell';
+
+                    const buffContainer = document.createElement('div');
+                    buffContainer.className = 'buff-container';
+                    cellDiv.appendChild(buffContainer);
+
+                    const statusContainer = document.createElement('div');
+                    statusContainer.className = 'status-container';
+                    cellDiv.appendChild(statusContainer);
+
+                    dungeonEl.appendChild(cellDiv);
+                    cellRow.push(cellDiv);
+                }
+                gameState.cellElements.push(cellRow);
+            }
+        }
+
         // 카메라 업데이트 (최적화됨)
         function updateCamera() {
             const dungeonElement = document.getElementById('dungeon');
@@ -6465,6 +6504,8 @@ function processTurn() {
 
             gameState.activeMercenaries.forEach(convertMercenary);
             gameState.standbyMercenaries.forEach(convertMercenary);
+
+            rebuildDungeonDOM();
             updateFogOfWar();
             updateStats();
             updateInventoryDisplay();
@@ -7279,7 +7320,7 @@ createHomingProjectile, createItem, createMercenary, createMonster,
 createRecipeScroll, learnRecipe,
 createSuperiorMonster, createTreasure, createNovaEffect, createScreenShake, dissectCorpse, equipItem,
 equipItemToMercenary, estimateSkillDamage, findAdjacentEmpty, findNearestEmpty, findPath,
-formatItem, formatNumber, generateDungeon, generateStars, getAuraBonus,
+ formatItem, formatNumber, generateDungeon, rebuildDungeonDOM, generateStars, getAuraBonus,
 getDistance, getMonsterPoolForFloor, getPlayerEmoji, getStat, getStatusResist,
 getActiveAuraIcons, updateUnitEffectIcons,
 handleDungeonClick, handleItemClick, handlePlayerDeath,
