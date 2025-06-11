@@ -8,12 +8,19 @@
  * @param {string} filePath - 재생할 오디오 파일의 경로
  */
 function playSoundFile(filePath) {
-    try {
-        const audio = new Audio(filePath);
-        audio.volume = 0.5; // 사운드 볼륨 설정 (0.0 ~ 1.0)
-        audio.play();
-    } catch (e) {
-        console.error(`Could not play audio file: ${filePath}`, e);
+    if (!filePath) return;
+    if (typeof navigator !== 'undefined' && navigator.userAgent &&
+        (navigator.userAgent.includes('Node.js') || navigator.userAgent.includes('jsdom'))) {
+        return;
+    }
+    if (typeof Audio !== 'undefined') {
+        try {
+            const audio = new Audio(filePath);
+            audio.volume = 0.5; // 사운드 볼륨 설정 (0.0 ~ 1.0)
+            audio.play().catch(() => {});
+        } catch (e) {
+            console.error(`Could not play audio file: ${filePath}`, e);
+        }
     }
 }
 const SoundEngine = {
@@ -303,21 +310,6 @@ function initializeAudio() {
     console.log("All audio systems initialized by user action.");
 }
 
-function playSoundFile(src) {
-    if (!src) return;
-    if (typeof navigator !== 'undefined' && navigator.userAgent &&
-        (navigator.userAgent.includes('Node.js') || navigator.userAgent.includes('jsdom'))) {
-        return;
-    }
-    if (typeof Audio !== 'undefined') {
-        try {
-            const audio = new Audio(src);
-            audio.play().catch(() => {});
-        } catch (err) {
-            console.error('Audio playback failed', err);
-        }
-    }
-}
 // ========================== 추가 끝 ==========================
 
 const ITEM_TYPES = {
