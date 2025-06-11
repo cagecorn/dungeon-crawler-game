@@ -348,20 +348,6 @@ function initializeAudio() {
     console.log("All audio systems initialized by user action.");
 }
 
-/**
- * Play a random kill quote for the given mercenary.
- * Chooses one of the two voice lines based on mercenary type.
- */
-function playRandomKillQuote(mercenary) {
-    if (!mercenary || !mercenary.type) return;
-    const type = mercenary.type.toLowerCase();
-    const files = [
-        `assets/audio/${type}_kill_1.mp3`,
-        `assets/audio/${type}_kill_2.mp3`
-    ];
-    const file = files[Math.floor(Math.random() * files.length)];
-    playSoundFile(file);
-}
 
 // ========================== 추가 끝 ==========================
 
