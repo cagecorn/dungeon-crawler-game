@@ -296,13 +296,19 @@ const BgmPlayer = {
     /**
      * [추가된 함수] 다음 트랙을 재생합니다. 목록의 끝이면 처음으로 돌아갑니다.
      */
-    playNextTrack() {
+    async playNextTrack() {
         // 다음 트랙 인덱스로 이동, 마지막 트랙이었으면 0으로 돌아감 (나머지 연산자 %)
         this.currentTrackIndex = (this.currentTrackIndex + 1) % this.playlist.length;
 
-        // audioElement의 소스를 다음 곡으로 변경
+        // 현재 곡을 정지하고 다음 곡으로 교체
+        this.audioElement.pause();
         this.audioElement.src = this.playlist[this.currentTrackIndex];
-        this.audioElement.play();
+
+        try {
+            await this.audioElement.play();
+        } catch (err) {
+            console.error('BGM playback failed', err);
+        }
     },
 
     // 재생 시작 함수 수정
