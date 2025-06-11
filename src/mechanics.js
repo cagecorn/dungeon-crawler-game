@@ -1593,7 +1593,7 @@ const MERCENARY_NAMES = [
         function getStatusResist(character, status) {
             let value = character.statusResistances && character.statusResistances[status] ? character.statusResistances[status] : 0;
             if (character.equipped) {
-                ['weapon', 'armor', 'accessory1', 'accessory2'].forEach(slot => {
+                ['weapon', 'armor', 'accessory1', 'accessory2', 'tile'].forEach(slot => {
                     const it = character.equipped[slot];
                     if (it && it[status + 'Resist'] !== undefined) {
                         value += it[status + 'Resist'];
@@ -1876,7 +1876,7 @@ const MERCENARY_NAMES = [
                     value = character[stat] || 0;
             }
             if (character.equipped) {
-                ['weapon', 'armor', 'accessory1', 'accessory2'].forEach(slot => {
+                ['weapon', 'armor', 'accessory1', 'accessory2', 'tile'].forEach(slot => {
                     const it = character.equipped[slot];
                     if (it && it[stat] !== undefined) {
                         value += it[stat];
@@ -2075,6 +2075,16 @@ const MERCENARY_NAMES = [
             } else {
                 acc2Slot.textContent = '악세서리2: 없음';
                 acc2Slot.onclick = null;
+            }
+            const tileSlot = document.getElementById('equipped-tile');
+            if (tileSlot) {
+                if (gameState.player.equipped.tile) {
+                    tileSlot.textContent = `타일: ${formatItem(gameState.player.equipped.tile)}`;
+                    tileSlot.onclick = () => unequipTile(gameState.player);
+                } else {
+                    tileSlot.textContent = '타일: 없음';
+                    tileSlot.onclick = null;
+                }
             }
         }
 
@@ -2639,6 +2649,16 @@ const MERCENARY_NAMES = [
             document.getElementById('expNeeded').textContent = formatNumber(gameState.player.expNeeded);
             document.getElementById('gold').textContent = formatNumber(gameState.player.gold);
             document.getElementById('floor').textContent = formatNumber(gameState.floor);
+            const tileSlot = document.getElementById('equipped-tile');
+            if (tileSlot) {
+                if (gameState.player.equipped.tile) {
+                    tileSlot.textContent = `타일: ${formatItem(gameState.player.equipped.tile)}`;
+                    tileSlot.onclick = () => unequipTile(gameState.player);
+                } else {
+                    tileSlot.textContent = '타일: 없음';
+                    tileSlot.onclick = null;
+                }
+            }
             document.getElementById('weaponBonus').textContent = gameState.player.equipped.weapon ? `(+${formatNumber(gameState.player.equipped.weapon.attack)})` : '';
             document.getElementById('armorBonus').textContent = gameState.player.equipped.armor ? `(+${formatNumber(gameState.player.equipped.armor.defense)})` : '';
             const hpRatio = gameState.player.health / getStat(gameState.player,'maxHealth');
@@ -3156,7 +3176,7 @@ function killMonster(monster) {
                 affinity: 30,
                 fullness: 75,
                 hasActed: false,
-                equipped: { weapon: null, armor: null, accessory1: null, accessory2: null },
+                equipped: { weapon: null, armor: null, accessory1: null, accessory2: null, tile: null },
                 range: monster.range,
                 special: monster.special,
                 trait: monster.trait || null,
@@ -4138,7 +4158,8 @@ function killMonster(monster) {
                     weapon: null,
                     armor: null,
                     accessory1: null,
-                    accessory2: null
+                    accessory2: null,
+                    tile: null
                 }
             };
         }
@@ -4291,7 +4312,7 @@ function killMonster(monster) {
                 lootChance: 1,
                 hasActed: false,
                 isChampion: true,
-                equipped: { weapon: null, armor: null, accessory1: null, accessory2: null },
+                equipped: { weapon: null, armor: null, accessory1: null, accessory2: null, tile: null },
                 elementResistances: {fire:0, ice:0, lightning:0, earth:0, light:0, dark:0},
                 statusResistances: {poison:0, bleed:0, burn:0, freeze:0, paralysis:0, nightmare:0, silence:0, petrify:0, debuff:0},
                 poison:false,burn:false,freeze:false,bleed:false,
@@ -4590,6 +4611,37 @@ function killMonster(monster) {
                 updateInventoryDisplay();
                 updateStats();
             }
+        }
+
+        function equipTile(tile, unit) {
+            SoundEngine.playSound('equipItem');
+            if (!unit.equipped) {
+                unit.equipped = { weapon: null, armor: null, accessory1: null, accessory2: null, tile: null };
+            }
+            if (unit.equipped.tile) {
+                addToInventory(unit.equipped.tile);
+            }
+            unit.equipped.tile = tile;
+            if (unit === gameState.player) {
+                const idx = gameState.player.inventory.findIndex(i => i.id === tile.id);
+                if (idx !== -1) {
+                    gameState.player.inventory.splice(idx, 1);
+                }
+            }
+            const owner = unit === gameState.player ? '플레이어' : unit.name;
+            addMessage(`🧩 ${owner}이(가) ${tile.name}을(를) 장착했습니다.`, 'item');
+            updateInventoryDisplay();
+            updateStats();
+        }
+
+        function unequipTile(unit) {
+            if (!unit.equipped || !unit.equipped.tile) return;
+            const tile = unit.equipped.tile;
+            addToInventory(tile);
+            unit.equipped.tile = null;
+            addMessage(`📦 ${tile.name}을(를) 해제했습니다.`, 'item');
+            updateInventoryDisplay();
+            updateStats();
         }
 
         // 용병에게 아이템 장착

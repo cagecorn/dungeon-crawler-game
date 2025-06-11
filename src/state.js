@@ -64,7 +64,8 @@
         weapon: null,
         armor: null,
         accessory1: null,
-        accessory2: null
+        accessory2: null,
+        tile: null
       },
       teleportSavedX: null,
       teleportSavedY: null,
