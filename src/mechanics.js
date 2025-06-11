@@ -318,6 +318,21 @@ function initializeAudio() {
     console.log("All audio systems initialized by user action.");
 }
 
+/**
+ * Play a random kill quote for the given mercenary.
+ * Chooses one of the two voice lines based on mercenary type.
+ */
+function playRandomKillQuote(mercenary) {
+    if (!mercenary || !mercenary.type) return;
+    const type = mercenary.type.toLowerCase();
+    const files = [
+        `assets/audio/${type}_kill_1.mp3`,
+        `assets/audio/${type}_kill_2.mp3`
+    ];
+    const file = files[Math.floor(Math.random() * files.length)];
+    playSoundFile(file);
+}
+
 // ========================== 추가 끝 ==========================
 
 const ITEM_TYPES = {
@@ -6096,6 +6111,7 @@ function processTurn() {
                     }
 
                     if (nearestMonster.health <= 0) {
+                        playRandomKillQuote(mercenary);
                         addMessage(`💀 ${mercenary.name}이(가) ${nearestMonster.name}을(를) 처치했습니다!`, "mercenary");
 
                         const mercExp = Math.floor(nearestMonster.exp * 0.6);
@@ -6175,6 +6191,7 @@ function processTurn() {
                     }
 
                     if (nearestMonster.health <= 0) {
+                        playRandomKillQuote(mercenary);
                         addMessage(`💀 ${mercenary.name}이(가) ${nearestMonster.name}을(를) 처치했습니다!`, "mercenary");
 
                         const mercExp = Math.floor(nearestMonster.exp * 0.6);
@@ -6263,6 +6280,7 @@ function processTurn() {
                     }
 
                     if (nearestMonster.health <= 0) {
+                        playRandomKillQuote(mercenary);
                         addMessage(`💀 ${mercenary.name}이(가) ${nearestMonster.name}을(를) 처치했습니다!`, "mercenary");
 
                         const mercExp = Math.floor(nearestMonster.exp * 0.6);
@@ -6347,6 +6365,7 @@ function processTurn() {
                     }
                     
                     if (nearestMonster.health <= 0) {
+                        playRandomKillQuote(mercenary);
                         addMessage(`💀 ${mercenary.name}이(가) ${nearestMonster.name}을(를) 처치했습니다!`, "mercenary");
                         
                         const mercExp = Math.floor(nearestMonster.exp * 0.6);
