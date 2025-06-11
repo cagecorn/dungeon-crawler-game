@@ -197,9 +197,5 @@
 
 .effect-icon {
   /* <<< 스타일 수정: 번지는 그림자 대신, 1px의 깔끔한 검은색 외곽선으로 변경합니다. */
-  text-shadow: 
-      -1px -1px 0 #000,  
-       1px -1px 0 #000,
-      -1px  1px 0 #000,
-       1px  1px 0 #000;
+  text-shadow: none;
 }
