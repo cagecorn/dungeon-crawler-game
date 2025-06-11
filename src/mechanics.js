@@ -318,6 +318,7 @@ const INVENTORY_CATEGORIES = {
 
 
 const SHOP_PRICE_MULTIPLIER = 3;
+const PARTY_LEASH_RADIUS = 10; // 플레이어 중심의 파티 활동 반경
 
 const TILE_TYPES = {
     VOLCANO: 'volcano',
@@ -5922,6 +5923,11 @@ function processTurn() {
             let nearestDistance = Infinity;
             
             visibleMonsters.forEach(monster => {
+                const distanceFromPlayer = getDistance(monster.x, monster.y, gameState.player.x, gameState.player.y);
+                if (distanceFromPlayer > PARTY_LEASH_RADIUS) {
+                    return; // 몬스터가 너무 멀리 있으면 목표에서 제외
+                }
+
                 const dist = getDistance(mercenary.x, mercenary.y, monster.x, monster.y);
                 if (dist < nearestDistance && hasLineOfSight(mercenary.x, mercenary.y, monster.x, monster.y)) {
                     nearestDistance = dist;
