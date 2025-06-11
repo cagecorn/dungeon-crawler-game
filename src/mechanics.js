@@ -168,6 +168,15 @@ const ITEM_TYPES = {
             MAP: 'map'
         };
 
+const INVENTORY_CATEGORIES = {
+    equipment: [ITEM_TYPES.WEAPON, ITEM_TYPES.ARMOR, ITEM_TYPES.ACCESSORY],
+    recipe: [ITEM_TYPES.RECIPE_SCROLL],
+    food: [ITEM_TYPES.FOOD],
+    potion: [ITEM_TYPES.POTION, ITEM_TYPES.REVIVE],
+    map: [ITEM_TYPES.MAP],
+    etc: [ITEM_TYPES.EGG, ITEM_TYPES.FERTILIZER, ITEM_TYPES.ESSENCE]
+};
+
         const SHOP_PRICE_MULTIPLIER = 3;
 
 const MERCENARY_NAMES = [
@@ -1828,11 +1837,17 @@ const MERCENARY_NAMES = [
             const container = document.getElementById('inventory-items');
             container.innerHTML = '';
 
+            const currentFilter = gameState.inventoryFilter;
+            let filteredInventory = gameState.player.inventory;
 
+            if (currentFilter !== 'all') {
+                const targetTypes = INVENTORY_CATEGORIES[currentFilter] || [];
+                filteredInventory = gameState.player.inventory.filter(item => targetTypes.includes(item.type));
+            }
 
             // group identical items together so they can be displayed as stacks
             const groups = new Map();
-            for (const item of gameState.player.inventory) {
+            for (const item of filteredInventory) {
                 const key = `${item.key}-${item.prefix || ''}-${item.suffix || ''}-${item.enhanceLevel || 0}`;
                 if (!groups.has(key)) {
                     groups.set(key, { item, count: 0 });
@@ -6722,6 +6737,17 @@ function processTurn() {
                     showMercenaryDetails(gameState.activeMercenaries[idx]);
                 }
             }
+        });
+
+        const filterButtons = document.querySelectorAll('.inv-filter-btn');
+        filterButtons.forEach(button => {
+            button.addEventListener('click', () => {
+                filterButtons.forEach(btn => btn.classList.remove('active'));
+                button.classList.add('active');
+
+                gameState.inventoryFilter = button.dataset.filter;
+                updateInventoryDisplay();
+            });
         });
 const exportsObj = {
 gameState, addMessage, addToInventory, advanceIncubators, advanceGameLoop,
