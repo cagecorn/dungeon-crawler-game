@@ -3597,7 +3597,7 @@ function killMonster(monster) {
                         if (gameState.player.equipped.tile) {
                             bgImages.push(`url('${gameState.player.equipped.tile.imageUrl}')`);
                         }
-                        if (bgImages.length) tileBg.style.backgroundImage = bgImages.join(', ');
+                        if (tileBg && bgImages.length) tileBg.style.backgroundImage = bgImages.join(', ');
                         const maxHealth = getStat(gameState.player, 'maxHealth');
                         if (maxHealth > 0 && gameState.player.health / maxHealth < 0.25) {
                             finalClasses.push('low-health');
@@ -3627,7 +3627,7 @@ function killMonster(monster) {
                                 if (merc.equipped.tile) {
                                     mercBgImages.push(`url('${merc.equipped.tile.imageUrl}')`);
                                 }
-                                if (mercBgImages.length) tileBg.style.backgroundImage = mercBgImages.join(', ');
+                                if (tileBg && mercBgImages.length) tileBg.style.backgroundImage = mercBgImages.join(', ');
                                 const maxHealth = getStat(merc, 'maxHealth');
                                 if (maxHealth > 0 && merc.health / maxHealth < 0.25) {
                                     finalClasses.push('low-health');
@@ -3653,7 +3653,7 @@ function killMonster(monster) {
                                     if (m.isSuperior) finalClasses.push('superior');
                                     else if (m.isChampion) finalClasses.push('champion');
                                     else if (m.isElite) finalClasses.push('elite');
-                                    if (mapTile) {
+                                    if (tileBg && mapTile) {
                                         tileBg.style.backgroundImage = `url('${mapTile.imageUrl}')`;
                                     }
                                     updateUnitEffectIcons(m, div);
@@ -3662,7 +3662,7 @@ function killMonster(monster) {
                                 const it = gameState.items.find(it => it.x === x && it.y === y);
                                 if (it) div.textContent = it.icon;
                             } else if (baseCellType === 'tile') {
-                                if (mapTile) {
+                                if (tileBg && mapTile) {
                                     tileBg.style.backgroundImage = `url('${mapTile.imageUrl}')`;
                                 }
                             } else if (baseCellType === 'plant') {
