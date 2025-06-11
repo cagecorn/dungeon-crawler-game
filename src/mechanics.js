@@ -1967,19 +1967,20 @@ const MERCENARY_NAMES = [
 
                 const monster = gameState.monsters.find(m => m.x === nx && m.y === ny);
                 if (monster) {
+                    const attacker = proj.attacker || gameState.player;
                     let attackValue;
                     let magic = !!proj.magic;
                     if (proj.damageDice !== undefined) {
                         attackValue = rollDice(proj.damageDice) * (proj.level || 1);
                         if (magic) {
-                            attackValue += getStat(gameState.player, 'magicPower');
+                            attackValue += getStat(attacker, 'magicPower');
                         }
                     } else if (magic) {
-                        attackValue = getStat(gameState.player, 'magicPower');
+                        attackValue = getStat(attacker, 'magicPower');
                     } else {
-                        attackValue = getStat(gameState.player, 'attack');
+                        attackValue = getStat(attacker, 'attack');
                     }
-                    const result = performAttack(gameState.player, monster, { attackValue, magic, element: proj.element, status: gameState.player.equipped.weapon && gameState.player.equipped.weapon.status, damageDice: proj.damageDice });
+                    const result = performAttack(attacker, monster, { attackValue, magic, element: proj.element, status: attacker.equipped && attacker.equipped.weapon && attacker.equipped.weapon.status, damageDice: proj.damageDice });
                     const icon = proj.icon || '➡️';
                     const name = proj.skill ? SKILL_DEFS[proj.skill].name : '원거리 공격';
                     const detail = buildAttackDetail('원거리 공격', name, result);
@@ -4463,11 +4464,11 @@ function killMonster(monster) {
             return champion;
         }
 
-        function createHomingProjectile(x, y, target) {
+        function createHomingProjectile(x, y, target, attacker = gameState.player) {
             const dx = Math.sign(target.x - x);
             const dy = Math.sign(target.y - y);
             const dist = getDistance(x, y, target.x, target.y);
-            const proj = { x, y, dx, dy, rangeLeft: dist, icon: '🔺', homing: true, target };
+            const proj = { x, y, dx, dy, rangeLeft: dist, icon: '🔺', homing: true, target, attacker };
             gameState.projectiles.push(proj);
             return proj;
         }
@@ -6283,6 +6284,12 @@ function processTurn() {
             
             if (nearestMonster) {
                 if (nearestDistance <= attackRange) {
+                    if (mercenary.role === 'ranged') {
+                        createHomingProjectile(mercenary.x, mercenary.y, nearestMonster, mercenary);
+                        addMessage('🏹 원거리 공격', 'mercenary');
+                        mercenary.hasActed = true;
+                        return;
+                    }
                     // 공격 (장비 보너스 적용)
                     const totalAttack = getStat(mercenary, 'attack');
 
@@ -6558,7 +6565,8 @@ function processTurn() {
                 icon: '➡️',
                 element: null,
                 homing: true,
-                target
+                target,
+                attacker: gameState.player
             });
             processTurn();
         }
@@ -6827,7 +6835,8 @@ function processTurn() {
                 magic: skill.magic,
                 skill: skillKey,
                 element: skill.element,
-                level
+                level,
+                attacker: gameState.player
             };
             if (skillKey === 'Fireball' || skillKey === 'Iceball') {
                 proj.homing = true;

@@ -19,7 +19,7 @@ async function run() {
   gameState.monsters.push(monster);
   gameState.dungeon[monster.y][monster.x] = 'monster';
 
-  const proj = { x: gameState.player.x, y: gameState.player.y, dx: 1, dy: 0, rangeLeft: 1, damageDice: '1d10', magic: true };
+  const proj = { x: gameState.player.x, y: gameState.player.y, dx: 1, dy: 0, rangeLeft: 1, damageDice: '1d10', magic: true, attacker: gameState.player };
   gameState.projectiles.push(proj);
 
   win.rollDice = () => 10;
