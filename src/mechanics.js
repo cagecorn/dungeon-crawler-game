@@ -2552,6 +2552,7 @@ function updateMaterialsDisplay() {
                 <div>✨ 마법방어: ${formatNumber(getStat(merc, 'magicResist'))}</div>
                 <div>❤️‍🩹 회복력: ${formatNumber(getStat(merc, 'healthRegen'))}</div>
                 <div>🔁 마나회복: ${formatNumber(getStat(merc, 'manaRegen'))}</div>
+                ${buildEffectDetails(merc)}
                 <div>📚 스킬포인트: ${formatNumber(merc.skillPoints)}</div>
                 <hr>
                 <div>무기: ${weapon} ${weaponBtn}</div>
@@ -2657,6 +2658,7 @@ function updateMaterialsDisplay() {
                 <div>💥 치명타: ${formatNumber(getStat(monster,'critChance'))}</div>
                 <div>🔮 마법공격: ${formatNumber(getStat(monster,'magicPower'))}</div>
                 <div>✨ 마법방어: ${formatNumber(getStat(monster,'magicResist'))}</div>
+                ${buildEffectDetails(monster)}
                 ${monster.affinity !== undefined ? `<div>💕 호감도: ${formatNumber(monster.affinity)}</div>` : ''}
                 ${monster.fullness !== undefined ? `<div>🍗 배부름: ${formatNumber(monster.fullness)}</div>` : ''}
                 <div>💪 힘: ${monster.strength}${monster.isSuperior ? ' ' + '⭐'.repeat(stars.strength) : ''}</div>
@@ -2704,6 +2706,7 @@ function updateMaterialsDisplay() {
                 <div>💥 치명타: ${formatNumber(getStat(champion,'critChance'))}</div>
                 <div>🔮 마법공격: ${formatNumber(getStat(champion,'magicPower'))}</div>
                 <div>✨ 마법방어: ${formatNumber(getStat(champion,'magicResist'))}</div>
+                ${buildEffectDetails(champion)}
                 <div>📏 사거리: ${champion.range}</div>
                 <div>무기: ${weapon}</div>
                 <div>방어구: ${armor}</div>
@@ -2863,6 +2866,23 @@ function updateMaterialsDisplay() {
             const auraText = auras.length ? auras.join('') : '없음';
             const statusText = statusParts.length ? statusParts.join(', ') : '없음';
             panel.innerHTML = `<div>오라: ${auraText}</div><div>상태: ${statusText}</div>`;
+        }
+
+        function buildEffectDetails(unit) {
+            const auraIcons = getActiveAuraIcons(unit);
+            const auraText = auraIcons.length ? auraIcons.join('') : '없음';
+            const statusParts = [];
+            const STATUS_KEYS = ['poison','burn','freeze','bleed','paralysis','nightmare','silence','petrify','debuff'];
+            STATUS_KEYS.forEach(s => {
+                if (unit[s]) {
+                    const icon = STATUS_ICONS[s] || '';
+                    const turns = unit[s + 'Turns'] || 0;
+                    const name = STATUS_NAMES[s] || s;
+                    statusParts.push(`${icon} ${name}(${turns})`);
+                }
+            });
+            const statusText = statusParts.length ? statusParts.join(', ') : '없음';
+            return `<div>오라: ${auraText}</div><div>상태: ${statusText}</div>`;
         }
 
         // 안개 업데이트
@@ -7499,7 +7519,7 @@ createSuperiorMonster, createTreasure, createNovaEffect, createScreenShake, diss
 equipItemToMercenary, estimateSkillDamage, findAdjacentEmpty, findNearestEmpty, findPath,
  formatItem, formatNumber, generateDungeon, rebuildDungeonDOM, generateStars, getAuraBonus,
 getDistance, getMonsterPoolForFloor, getPlayerEmoji, getStat, getStatusResist,
-getActiveAuraIcons, updateUnitEffectIcons,
+getActiveAuraIcons, buildEffectDetails, updateUnitEffectIcons,
 handleDungeonClick, handleItemClick, handlePlayerDeath,
 hasLineOfSight, healAction, healTarget, hideItemTargetPanel, hideItemDetailPanel,
 hideMercenaryDetails, hideMonsterDetails, hideShop, hireMercenary, killMonster, killMercenary,
