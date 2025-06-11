@@ -308,3 +308,30 @@
 .cell.player, .cell.mercenary {
     z-index: 1;
 }
+
+/* 상단 컨트롤 영역 */
+.top-controls {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  margin-bottom: 15px;
+}
+
+#save-game {
+  background: linear-gradient(45deg, #2196F3, #1976D2);
+}
+
+#load-game {
+  background: linear-gradient(45deg, #FF9800, #F57C00);
+}
+
+#new-game {
+  background: linear-gradient(45deg, #9E9E9E, #757575);
+}
+
+#inventory-filters {
+  margin-bottom: 10px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}

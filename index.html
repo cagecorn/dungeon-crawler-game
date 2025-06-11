@@ -747,6 +747,11 @@
 </head>
 <body>
     <h1>🏰 던전 크롤러 🗡️</h1>
+    <header class="top-controls">
+        <button id="save-game">💾 게임 저장</button>
+        <button id="load-game">📁 게임 불러오기</button>
+        <button id="new-game">🔄 새 게임</button>
+    </header>
     <div id="turn-effects" class="turn-effects"></div>
     <div class="main-container">
         <div class="game-area">
@@ -754,13 +759,6 @@
                 <div class="dungeon" id="dungeon"></div>
             </div>
             <div class="message-log" id="message-log"></div>
-            <div class="controls">
-                <div class="controls-row" style="margin-top: 10px;">
-                    <button id="save-game" style="background: linear-gradient(45deg, #2196F3, #1976D2);">💾 게임 저장</button>
-                    <button id="load-game" style="background: linear-gradient(45deg, #FF9800, #F57C00);">📁 게임 불러오기</button>
-                    <button id="new-game" style="background: linear-gradient(45deg, #9E9E9E, #757575);">🔄 새 게임</button>
-                </div>
-            </div>
         </div>
         <div class="middle-panel">
             <div id="actions">
@@ -787,7 +785,7 @@
                     <div class="equipped-slot" id="equipped-tile">타일: 없음</div> </div>
                 </div>
                 <h3>📦 보유 아이템</h3>
-                <div id="inventory-filters" style="margin-bottom: 10px; display: flex; flex-wrap: wrap; gap: 5px;">
+                <div id="inventory-filters">
                     <button class="inv-filter-btn active" data-filter="all">모두</button>
                     <button class="inv-filter-btn" data-filter="equipment">장비</button>
                     <button class="inv-filter-btn" data-filter="recipe">레시피</button>
