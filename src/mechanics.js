@@ -2,6 +2,20 @@
  * Web Audio API를 사용한 간단한 사운드 엔진
  * 오디오 파일 없이 효과음을 생성합니다.
  */
+
+/**
+ * 지정된 경로의 오디오 파일을 재생하는 헬퍼 함수
+ * @param {string} filePath - 재생할 오디오 파일의 경로
+ */
+function playSoundFile(filePath) {
+    try {
+        const audio = new Audio(filePath);
+        audio.volume = 0.5; // 사운드 볼륨 설정 (0.0 ~ 1.0)
+        audio.play();
+    } catch (e) {
+        console.error(`Could not play audio file: ${filePath}`, e);
+    }
+}
 const SoundEngine = {
     audioContext: null,
     isInitialized: false,
@@ -34,10 +48,8 @@ const SoundEngine = {
         switch (soundName) {
             // --- 기존 사운드 ---
             case 'playerAttack':
-                gainNode.gain.setValueAtTime(0.3, now);
-                gainNode.gain.exponentialRampToValueAtTime(0.001, now + 0.15);
-                this.createOscillator('sawtooth', 440, gainNode, now, 0.15);
-                this.createOscillator('sawtooth', 880, gainNode, now, 0.15, 0.02);
+                // 새로 만든 함수를 호출하여 오디오 파일을 재생합니다.
+                playSoundFile('assets/audio/hit.mp3'); // 
                 break;
             case 'takeDamage':
                 gainNode.gain.setValueAtTime(0.4, now);
