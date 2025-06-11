@@ -3638,6 +3638,12 @@ function killMonster(monster) {
                                 const m = gameState.monsters.find(mon => mon.x === x && mon.y === y);
                                 if (m) {
                                     if (m.isChampion) {
+                                        // 1. 'monster' 클래스를 'empty'로 교체
+                                        const monsterClassIndex = finalClasses.indexOf('monster');
+                                        if (monsterClassIndex > -1) {
+                                            finalClasses[monsterClassIndex] = 'empty';
+                                        }
+                                        // 2. 용병과 직업 클래스 추가
                                         finalClasses.push('mercenary', m.type.toLowerCase());
                                     } else {
                                         const monsterClass = m.type.replace('_', '-').toLowerCase();
