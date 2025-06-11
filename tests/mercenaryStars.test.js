@@ -23,7 +23,7 @@ async function run() {
 
   showMercenaryDetails(merc);
   const html = win.document.getElementById('mercenary-detail-content').innerHTML;
-  if (!html.includes('★'.repeat(merc.stars.strength))) {
+  if (!html.includes('⭐'.repeat(merc.stars.strength))) {
     console.error('stars not shown in details');
     process.exit(1);
   }
