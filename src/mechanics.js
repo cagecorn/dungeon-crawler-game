@@ -130,6 +130,82 @@ const SoundEngine = {
                 gainNode.gain.exponentialRampToValueAtTime(0.001, now + 0.15);
                 this.createOscillator('square', 80, gainNode, now, 0.15);
                 break;
+
+            // ========================= 추가 시작 =========================
+            // UI 및 상호작용
+            case 'openPanel': // 패널 열기 (상세정보, 상점 등)
+                this.playNote('triangle', 1200, 0.1, now);
+                this.playNote('triangle', 1500, 0.1, now + 0.05);
+                break;
+            case 'closePanel': // 패널 닫기
+                this.playNote('triangle', 1500, 0.1, now);
+                this.playNote('triangle', 1200, 0.1, now + 0.05);
+                break;
+            case 'statAllocate': // 스탯 분배
+                gainNode.gain.setValueAtTime(0.2, now);
+                gainNode.gain.exponentialRampToValueAtTime(0.001, now + 0.1);
+                this.createOscillator('sine', 1300, gainNode, now, 0.1);
+                break;
+
+            // 아이템 및 제작
+            case 'equipItem': // 아이템 장착
+                gainNode.gain.setValueAtTime(0.3, now);
+                gainNode.gain.exponentialRampToValueAtTime(0.001, now + 0.2);
+                this.createOscillator('noise', 1, gainNode, now, 0.05);
+                this.playNote('square', 880, 0.2, now + 0.05);
+                break;
+            case 'treasure': // 골드/보물 획득
+                this.playNote('sine', 1046, 0.2, now); // C6
+                this.playNote('sine', 1396, 0.2, now + 0.1); // F6
+                break;
+            case 'craftStart': // 제작 시작
+                this.playNote('square', 300, 0.2, now);
+                this.playNote('square', 300, 0.2, now + 0.15);
+                break;
+            case 'craftFinish': // 제작 성공 (멜로디)
+                this.playNote('sine', 784, 0.2, now);      // G5
+                this.playNote('sine', 1046, 0.2, now + 0.1); // C6
+                this.playNote('sine', 1318, 0.2, now + 0.2); // E6
+                break;
+            case 'enhanceSuccess': // 강화 성공 (멜로디)
+                this.playNote('triangle', 1046, 0.15, now);      // C6
+                this.playNote('triangle', 1318, 0.15, now + 0.1); // E6
+                this.playNote('triangle', 1568, 0.15, now + 0.2); // G6
+                this.playNote('triangle', 2093, 0.2, now + 0.3);  // C7
+                break;
+            case 'enhanceFail': // 강화 실패
+                this.playNote('sawtooth', 200, 0.3, now, 0, 10);
+                this.playNote('sawtooth', 190, 0.3, now + 0.05, 0, -10);
+                break;
+
+            // 전투 관련
+            case 'dodge': // 회피
+                const whoosh = this.audioContext.createOscillator();
+                whoosh.type = 'noise';
+                const whooshGain = this.audioContext.createGain();
+                whooshGain.gain.setValueAtTime(0.3, now);
+                whooshGain.gain.exponentialRampToValueAtTime(0.001, now + 0.15);
+                whoosh.connect(whooshGain).connect(this.audioContext.destination);
+                whoosh.start(now);
+                whoosh.stop(now + 0.15);
+                break;
+            case 'mercDeath': // 용병 사망
+                this.playNote('sine', 440, 0.3, now);
+                this.playNote('sine', 220, 0.3, now + 0.2);
+                break;
+
+            // 던전 및 기타
+            case 'openChest': // 상자 열기
+                this.playNote('square', 200, 0.2, now); // creak
+                this.playNote('triangle', 1568, 0.2, now + 0.1); // sparkle
+                this.playNote('triangle', 1864, 0.2, now + 0.2); // sparkle
+                break;
+            case 'eggHatch': // 알 부화
+                this.playNote('sine', 880, 0.1, now); // crack 1
+                this.playNote('sine', 987, 0.1, now + 0.1); // crack 2
+                this.playNote('triangle', 1318, 0.3, now + 0.2); // reveal
+                break;
+            // ========================== 추가 끝 ==========================
         }
     },
 
@@ -1575,7 +1651,7 @@ const MERCENARY_NAMES = [
             const defenseTarget = 10 + Math.floor(defenderEva * 5);
             const hitRoll = rollDice('1d20') + attackBonus;
             if (hitRoll < defenseTarget) {
-                SoundEngine.playSound(attacker === gameState.player ? 'playerMiss' : 'error');
+                SoundEngine.playSound(attacker === gameState.player ? 'dodge' : 'error');
                 return { hit: false, hitRoll, defenseTarget, attackBonus };
             }
 
@@ -2051,6 +2127,7 @@ const MERCENARY_NAMES = [
                     return;
                 }
             }
+            SoundEngine.playSound('craftStart');
             for (const [mat, qty] of Object.entries(recipe.materials)) {
                 gameState.materials[mat] -= qty;
             }
@@ -2228,6 +2305,7 @@ const MERCENARY_NAMES = [
 
         // 용병 상세 정보 표시
         function showMercenaryDetails(merc) {
+            SoundEngine.playSound('openPanel');
             const weapon = merc.equipped && merc.equipped.weapon ? merc.equipped.weapon.name : '없음';
             const armor = merc.equipped && merc.equipped.armor ? merc.equipped.armor.name : '없음';
             const accessory1 = merc.equipped && merc.equipped.accessory1 ? merc.equipped.accessory1.name : '없음';
@@ -2301,6 +2379,7 @@ const MERCENARY_NAMES = [
         }
 
         function hideMercenaryDetails() {
+            SoundEngine.playSound('closePanel');
             document.getElementById('mercenary-detail-panel').style.display = 'none';
             gameState.gameRunning = true;
             window.currentDetailMercenary = null;
@@ -2345,6 +2424,7 @@ const MERCENARY_NAMES = [
         }
 
         function showMonsterDetails(monster) {
+            SoundEngine.playSound('openPanel');
             const auraInfo = monster.isElite && monster.auraSkill
                 ? (SKILL_DEFS[monster.auraSkill] ||
                    MERCENARY_SKILLS[monster.auraSkill] ||
@@ -2408,6 +2488,7 @@ const MERCENARY_NAMES = [
         }
 
         function showChampionDetails(champion) {
+            SoundEngine.playSound('openPanel');
             const eq = champion.equipped || {};
             const weapon = eq.weapon ? eq.weapon.name : '없음';
             const armor = eq.armor ? eq.armor.name : '없음';
@@ -2446,6 +2527,7 @@ const MERCENARY_NAMES = [
         }
 
         function hideMonsterDetails() {
+            SoundEngine.playSound('closePanel');
             document.getElementById('monster-detail-panel').style.display = 'none';
             gameState.gameRunning = true;
             window.currentDetailMonster = null;
@@ -3157,6 +3239,7 @@ function killMonster(monster) {
                 if (!slot) return;
                 slot.remainingTurns--;
                 if (slot.remainingTurns <= 0) {
+                    SoundEngine.playSound('eggHatch');
                     const t = monsterTypes[Math.floor(Math.random() * monsterTypes.length)];
                     const monster = createSuperiorMonster(t, 0, 0, gameState.floor);
                     gameState.hatchedSuperiors.push(monster);
@@ -4366,6 +4449,7 @@ function killMonster(monster) {
                     return;
                 }
             }
+            SoundEngine.playSound('enhanceSuccess');
             for (const [mat, qty] of Object.entries(cost)) {
                 gameState.materials[mat] -= qty;
             }
@@ -4409,6 +4493,7 @@ function killMonster(monster) {
 
         // 아이템 장착 (플레이어)
         function equipItem(item) {
+            SoundEngine.playSound('equipItem');
             if (item.type === ITEM_TYPES.WEAPON) {
                 if (gameState.player.equipped.weapon) {
                     addToInventory(gameState.player.equipped.weapon);
@@ -4770,6 +4855,7 @@ function killMonster(monster) {
                         handlePlayerDeath();
                         return true;
                     } else {
+                        SoundEngine.playSound('mercDeath');
                         nearestTarget.alive = false;
                         nearestTarget.health = 0;
                         nearestTarget.affinity = Math.max(0, (nearestTarget.affinity || 0) - 5);
@@ -4828,6 +4914,7 @@ function killMonster(monster) {
                     handlePlayerDeath();
                     return true;
                 } else {
+                    SoundEngine.playSound('mercDeath');
                     addMessage(`💀 ${monster.name}이(가) ${target.name}을(를) 처치했습니다!`, "combat");
                     target.alive = false;
                     target.health = 0;
@@ -4932,6 +5019,7 @@ function killMonster(monster) {
             if (cellType === 'treasure') {
                 const treasure = gameState.treasures.find(t => t.x === newX && t.y === newY);
                 if (treasure) {
+                    SoundEngine.playSound('treasure');
                     let gold = treasure.gold;
                     gameState.player.gold += gold;
                     addMessage(`💎 보물을 발견했습니다! ${formatNumber(gold)} 골드를 획득했습니다!`, "treasure");
@@ -4975,6 +5063,7 @@ function killMonster(monster) {
             }
 
             if (cellType === 'chest') {
+                SoundEngine.playSound('openChest');
                 const itemKeys = Object.keys(ITEMS).filter(k => k !== 'reviveScroll' && ITEMS[k].type !== ITEM_TYPES.ESSENCE);
                 const dropCount = 1 + Math.floor(Math.random() * 5);
                 for (let i = 0; i < dropCount; i++) {
@@ -5466,6 +5555,7 @@ function processTurn() {
             for (let i = 0; i < gameState.craftingQueue.length; i++) {
                 const c = gameState.craftingQueue[i];
                 if (c.turnsLeft <= 0) {
+                    SoundEngine.playSound('craftFinish');
                     const item = createItem(RECIPES[c.recipe].output, 0, 0);
                     addToInventory(item);
                     addMessage(`🛠️ ${RECIPES[c.recipe].name} 제작 완료`, 'item');
@@ -6540,17 +6630,20 @@ function processTurn() {
         }
 
         function showShop() {
+            SoundEngine.playSound('openPanel');
             updateShopDisplay();
             document.getElementById('shop-panel').style.display = 'block';
             gameState.gameRunning = false;
         }
 
         function hideShop() {
+            SoundEngine.playSound('closePanel');
             document.getElementById('shop-panel').style.display = 'none';
             gameState.gameRunning = true;
         }
 
         function showItemTargetPanel(item) {
+            SoundEngine.playSound('openPanel');
             // 아이템 타입이 레시피 스크롤인 경우, 즉시 사용하고 함수 종료
             if (item.type === ITEM_TYPES.RECIPE_SCROLL) {
                 learnRecipe(item.recipe);
@@ -6620,11 +6713,13 @@ function processTurn() {
         }
 
         function hideItemTargetPanel() {
+            SoundEngine.playSound('closePanel');
             document.getElementById('item-target-panel').style.display = 'none';
             gameState.gameRunning = true;
         }
 
         function showCorpsePanel(corpse) {
+            SoundEngine.playSound('openPanel');
             const panel = document.getElementById('corpse-panel');
             const content = document.getElementById('corpse-content');
             content.innerHTML = `<h3>${corpse.name} (${getMonsterRank(corpse)})</h3>`;
@@ -6664,6 +6759,7 @@ function processTurn() {
         }
 
         function hideCorpsePanel() {
+            SoundEngine.playSound('closePanel');
             document.getElementById('corpse-panel').style.display = 'none';
             gameState.gameRunning = true;
             const content = document.getElementById('corpse-content');
@@ -6671,6 +6767,7 @@ function processTurn() {
         }
 
         function showItemDetailPanel(item) {
+            SoundEngine.playSound('openPanel');
             const panel = document.getElementById('item-detail-panel');
             const content = document.getElementById('item-detail-content');
             content.innerHTML = `<h3>${formatItem(item)}</h3>`;
@@ -6716,6 +6813,7 @@ function processTurn() {
         }
 
         function hideItemDetailPanel() {
+            SoundEngine.playSound('closePanel');
             document.getElementById('item-detail-panel').style.display = 'none';
             gameState.gameRunning = true;
         }
@@ -6743,12 +6841,14 @@ function processTurn() {
         }
 
         function showCraftingDetailPanel() {
+            SoundEngine.playSound('openPanel');
             updateCraftingDetailDisplay();
             document.getElementById('crafting-detail-panel').style.display = 'block';
             gameState.gameRunning = false;
         }
 
         function hideCraftingDetailPanel() {
+            SoundEngine.playSound('closePanel');
             document.getElementById('crafting-detail-panel').style.display = 'none';
             gameState.gameRunning = true;
         }
