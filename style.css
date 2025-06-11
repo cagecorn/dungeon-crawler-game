@@ -156,3 +156,19 @@
   box-shadow: 0 0 8px rgba(33, 150, 243, 0.7);
   animation: monsterPulse 1.5s ease-in-out infinite alternate;
 }
+
+.inv-filter-btn {
+  padding: 4px 8px;
+  border: 1px solid #777;
+  background-color: #444;
+  color: #ddd;
+  cursor: pointer;
+  border-radius: 4px;
+  font-size: 12px;
+}
+
+.inv-filter-btn.active {
+  background-color: #6a6a6a;
+  border-color: #aaa;
+  font-weight: bold;
+}

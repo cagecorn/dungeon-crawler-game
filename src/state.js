@@ -94,6 +94,7 @@
     camera: { x: 0, y: 0 },
     autoMovePath: null,
     autoMoveActive: false,
+    inventoryFilter: 'all',
     turn: 0,
     incubators: [null, null],
     hatchedSuperiors: [],
