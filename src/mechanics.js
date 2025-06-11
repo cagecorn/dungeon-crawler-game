@@ -3555,6 +3555,7 @@ function killMonster(monster) {
                     const div = gameState.cellElements[y][x];
                     const tileBg = div.querySelector('.equipped-tile-bg');
                     if (tileBg) tileBg.style.backgroundImage = '';
+                    div.style.backgroundImage = '';
                     div.classList.remove('low-health');
                     // 렌더링마다 이전 아이콘들을 모두 지워 잔상이 남지 않게 합니다.
                     const buffEl = div.querySelector('.buff-container');
@@ -3563,13 +3564,20 @@ function killMonster(monster) {
                     if (statusEl) statusEl.innerHTML = '';
                     const baseCellType = gameState.dungeon[y][x];
                     const finalClasses = ['cell', baseCellType];
+                    let mapTile = null;
+                    if (baseCellType === 'tile') {
+                        mapTile = gameState.mapTiles.find(t => t.x === x && t.y === y);
+                    }
                     div.textContent = '';
 
                     if (x === gameState.player.x && y === gameState.player.y) {
                         finalClasses.push('player');
+                        const bgImages = [];
+                        if (mapTile) bgImages.push(`url('${mapTile.imageUrl}')`);
                         if (gameState.player.equipped.tile) {
-                            tileBg.style.backgroundImage = `url('${gameState.player.equipped.tile.imageUrl}')`;
+                            bgImages.push(`url('${gameState.player.equipped.tile.imageUrl}')`);
                         }
+                        if (bgImages.length) tileBg.style.backgroundImage = bgImages.join(', ');
                         const maxHealth = getStat(gameState.player, 'maxHealth');
                         if (maxHealth > 0 && gameState.player.health / maxHealth < 0.25) {
                             finalClasses.push('low-health');
@@ -3594,9 +3602,12 @@ function killMonster(monster) {
                                 if (merc.isSuperior) finalClasses.push('superior');
                                 else if (merc.isChampion) finalClasses.push('champion');
                                 else if (merc.isElite) finalClasses.push('elite');
+                                const mercBgImages = [];
+                                if (mapTile) mercBgImages.push(`url('${mapTile.imageUrl}')`);
                                 if (merc.equipped.tile) {
-                                    tileBg.style.backgroundImage = `url('${merc.equipped.tile.imageUrl}')`;
+                                    mercBgImages.push(`url('${merc.equipped.tile.imageUrl}')`);
                                 }
+                                if (mercBgImages.length) tileBg.style.backgroundImage = mercBgImages.join(', ');
                                 const maxHealth = getStat(merc, 'maxHealth');
                                 if (maxHealth > 0 && merc.health / maxHealth < 0.25) {
                                     finalClasses.push('low-health');
@@ -3622,16 +3633,17 @@ function killMonster(monster) {
                                     if (m.isSuperior) finalClasses.push('superior');
                                     else if (m.isChampion) finalClasses.push('champion');
                                     else if (m.isElite) finalClasses.push('elite');
+                                    if (mapTile) {
+                                        tileBg.style.backgroundImage = `url('${mapTile.imageUrl}')`;
+                                    }
                                     updateUnitEffectIcons(m, div);
                                 }
                             } else if (baseCellType === 'item') {
                                 const it = gameState.items.find(it => it.x === x && it.y === y);
                                 if (it) div.textContent = it.icon;
                             } else if (baseCellType === 'tile') {
-                                const mapTile = gameState.mapTiles.find(t => t.x === x && t.y === y);
                                 if (mapTile) {
-                                    div.style.backgroundImage = `url('${mapTile.imageUrl}')`;
-                                    div.style.backgroundSize = 'cover';
+                                    tileBg.style.backgroundImage = `url('${mapTile.imageUrl}')`;
                                 }
                             } else if (baseCellType === 'plant') {
                                 div.textContent = '🌿';
