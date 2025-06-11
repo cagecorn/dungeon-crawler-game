@@ -3352,14 +3352,19 @@ function killMonster(monster) {
                     // 렌더링마다 이전 아이콘들을 모두 지워 잔상이 남지 않게 합니다.
                     const buffEl = div.querySelector('.buff-container');
                     const statusEl = div.querySelector('.status-container');
+                    const tileBgEl = div.querySelector('.equipped-tile-bg');
                     if (buffEl) buffEl.innerHTML = '';
                     if (statusEl) statusEl.innerHTML = '';
+                    if (tileBgEl) tileBgEl.style.backgroundImage = '';
                     const baseCellType = gameState.dungeon[y][x];
                     const finalClasses = ['cell', baseCellType];
                     div.textContent = '';
 
                     if (x === gameState.player.x && y === gameState.player.y) {
                         finalClasses.push('player');
+                        if (tileBgEl && gameState.player.equipped && gameState.player.equipped.tile && gameState.player.equipped.tile.image) {
+                            tileBgEl.style.backgroundImage = `url('${gameState.player.equipped.tile.image}')`;
+                        }
                         updateUnitEffectIcons(gameState.player, div);
                     } else {
                         const proj = gameState.projectiles.find(p => p.x === x && p.y === y);
@@ -3381,6 +3386,9 @@ function killMonster(monster) {
                                 else if (merc.isChampion) finalClasses.push('champion');
                                 else if (merc.isElite) finalClasses.push('elite');
                                 div.textContent = '';
+                                if (tileBgEl && merc.equipped && merc.equipped.tile && merc.equipped.tile.image) {
+                                    tileBgEl.style.backgroundImage = `url('${merc.equipped.tile.image}')`;
+                                }
                                 updateUnitEffectIcons(merc, div);
                             } else if (baseCellType === 'monster') {
                                 const m = gameState.monsters.find(mon => mon.x === x && mon.y === y);
@@ -3406,6 +3414,8 @@ function killMonster(monster) {
                                 div.textContent = '⛏️';
                             } else if (baseCellType === 'tree') {
                                 div.textContent = '🌳';
+                            } else if (baseCellType === 'tile') {
+                                // tile cells use background image only
                             } else if (baseCellType === 'bones') {
                                 div.textContent = '💀';
                             } else if (baseCellType === 'grave') {
@@ -3603,6 +3613,11 @@ function killMonster(monster) {
                         const statusContainer = document.createElement('div');
                         statusContainer.className = 'status-container';
                         cellDiv.appendChild(statusContainer);
+
+                        // 배경 타일 이미지 컨테이너
+                        const tileBg = document.createElement('div');
+                        tileBg.className = 'equipped-tile-bg';
+                        cellDiv.appendChild(tileBg);
 
                         dungeonEl.appendChild(cellDiv);
                         cellRow.push(cellDiv);
