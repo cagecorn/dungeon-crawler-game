@@ -3484,10 +3484,14 @@ function killMonster(monster) {
                             } else if (baseCellType === 'monster') {
                                 const m = gameState.monsters.find(mon => mon.x === x && mon.y === y);
                                 if (m) {
-                                    const monsterClass = m.type.replace('_', '-').toLowerCase();
-                                    finalClasses.push('monster', monsterClass);
-                                    if (monsterClass !== 'slime' && monsterClass !== 'goblin-archer' && monsterClass !== 'goblin') {
-                                         div.textContent = m.icon;
+                                    if (m.isChampion) {
+                                        finalClasses.push('mercenary', m.type.toLowerCase());
+                                    } else {
+                                        const monsterClass = m.type.replace('_', '-').toLowerCase();
+                                        finalClasses.push('monster', monsterClass);
+                                        if (monsterClass !== 'slime' && monsterClass !== 'goblin-archer' && monsterClass !== 'goblin') {
+                                             div.textContent = m.icon;
+                                        }
                                     }
                                     const maxHealth = getStat(m, 'maxHealth');
                                     if (maxHealth > 0 && m.health / maxHealth < 0.25) {
