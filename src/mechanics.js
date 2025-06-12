@@ -5488,6 +5488,7 @@ function killMonster(monster) {
             if (!monster.monsterSkill) return false;
             const skillInfo = MONSTER_SKILLS[monster.monsterSkill];
             if (!skillInfo) return false;
+            if (monster.skillCooldowns[monster.monsterSkill] > 0) return false;
 
             const manaCost = skillInfo.manaCost || 0;
             if (monster.mana < manaCost) return false;
@@ -5534,6 +5535,7 @@ function killMonster(monster) {
                     updateMercenaryDisplay();
                 }
             }
+            monster.skillCooldowns[monster.monsterSkill] = skillInfo.cooldown;
             return true;
         }
 
@@ -5922,6 +5924,16 @@ function processTurn() {
     if (!gameState.gameRunning) return;
     gameState.turn++;
 
+    const decrementCooldowns = entity => {
+        if (!entity.skillCooldowns) return;
+        for (const key in entity.skillCooldowns) {
+            if (entity.skillCooldowns[key] > 0) entity.skillCooldowns[key]--;
+        }
+    };
+    decrementCooldowns(gameState.player);
+    gameState.activeMercenaries.forEach(decrementCooldowns);
+    gameState.monsters.forEach(decrementCooldowns);
+
     for (let i = gameState.corpses.length - 1; i >= 0; i--) {
         const corpse = gameState.corpses[i];
         corpse.turnsLeft--;
@@ -6297,17 +6309,19 @@ function processTurn() {
             // 힐러는 치료 우선
             if (mercenary.role === 'support') {
                 const knowsHeal = skillInfo && mercenary.skill === 'Heal';
+                const healOnCooldown = knowsHeal && mercenary.skillCooldowns[mercenary.skill] > 0;
                 const manaCost = knowsHeal ? skillManaCost : HEAL_MANA_COST;
                 const healLevel = knowsHeal ? skillLevel : 1;
                 const healRange = knowsHeal ? skillInfo.range : 2;
 
-                if (mercenary.mana >= manaCost && gameState.player.health < getStat(gameState.player, 'maxHealth') * 0.7) {
+                if (!healOnCooldown && mercenary.mana >= manaCost && gameState.player.health < getStat(gameState.player, 'maxHealth') * 0.7) {
                     if (getDistance(mercenary.x, mercenary.y, gameState.player.x, gameState.player.y) <= healRange) {
                         const healed = knowsHeal
                             ? healTarget(mercenary, gameState.player, skillInfo, healLevel)
                             : healTarget(mercenary, gameState.player);
                         if (healed) {
                             mercenary.mana -= manaCost;
+                            if (knowsHeal) mercenary.skillCooldowns[mercenary.skill] = skillInfo.cooldown;
                             updateMercenaryDisplay();
                             mercenary.hasActed = true;
                             return;
@@ -6317,12 +6331,13 @@ function processTurn() {
 
                 for (const otherMerc of gameState.activeMercenaries) {
                     if (otherMerc !== mercenary && otherMerc.alive && otherMerc.health < getStat(otherMerc, 'maxHealth') * 0.5) {
-                        if (mercenary.mana >= manaCost && getDistance(mercenary.x, mercenary.y, otherMerc.x, otherMerc.y) <= healRange) {
+                        if (!healOnCooldown && mercenary.mana >= manaCost && getDistance(mercenary.x, mercenary.y, otherMerc.x, otherMerc.y) <= healRange) {
                             const healed = knowsHeal
                                 ? healTarget(mercenary, otherMerc, skillInfo, healLevel)
                                 : healTarget(mercenary, otherMerc);
                             if (healed) {
                                 mercenary.mana -= manaCost;
+                                if (knowsHeal) mercenary.skillCooldowns[mercenary.skill] = skillInfo.cooldown;
                                 updateMercenaryDisplay();
                                 mercenary.hasActed = true;
                                 return;
@@ -6331,12 +6346,13 @@ function processTurn() {
                     }
                 }
 
-                if (mercenary.health < getStat(mercenary, 'maxHealth') * 0.5 && mercenary.mana >= manaCost) {
+                if (!healOnCooldown && mercenary.health < getStat(mercenary, 'maxHealth') * 0.5 && mercenary.mana >= manaCost) {
                     const healed = knowsHeal
                         ? healTarget(mercenary, mercenary, skillInfo, healLevel)
                         : healTarget(mercenary, mercenary);
                     if (healed) {
                         mercenary.mana -= manaCost;
+                        if (knowsHeal) mercenary.skillCooldowns[mercenary.skill] = skillInfo.cooldown;
                         updateMercenaryDisplay();
                         mercenary.hasActed = true;
                         return;
@@ -6346,13 +6362,15 @@ function processTurn() {
                 const purifyInfo = MERCENARY_SKILLS[mercenary.skill2];
                 const purifyLevel = mercenary.skillLevels && mercenary.skillLevels[mercenary.skill2] || 1;
                 const purifyMana = purifyInfo ? purifyInfo.manaCost + purifyLevel - 1 : 0;
-                if (purifyInfo && mercenary.skill2 === 'Purify' && mercenary.mana >= purifyMana) {
+                const purifyOnCooldown = purifyInfo && mercenary.skillCooldowns[mercenary.skill2] > 0;
+                if (purifyInfo && mercenary.skill2 === 'Purify' && !purifyOnCooldown && mercenary.mana >= purifyMana) {
                     const inRange = target => getDistance(mercenary.x, mercenary.y, target.x, target.y) <= purifyInfo.range;
                     const hasStatus = t => t.poison || t.burn || t.freeze || t.bleed || t.paralysis || t.nightmare || t.silence || t.petrify || t.debuff;
 
                     if (hasStatus(gameState.player) && inRange(gameState.player)) {
                         if (purifyTarget(mercenary, gameState.player, purifyInfo)) {
                             mercenary.mana -= purifyMana;
+                            mercenary.skillCooldowns[mercenary.skill2] = purifyInfo.cooldown;
                             updateMercenaryDisplay();
                             mercenary.hasActed = true;
                             return;
@@ -6363,6 +6381,7 @@ function processTurn() {
                         if (m !== mercenary && m.alive && hasStatus(m) && inRange(m)) {
                             if (purifyTarget(mercenary, m, purifyInfo)) {
                                 mercenary.mana -= purifyMana;
+                                mercenary.skillCooldowns[mercenary.skill2] = purifyInfo.cooldown;
                                 updateMercenaryDisplay();
                                 mercenary.hasActed = true;
                                 return;
@@ -6373,6 +6392,7 @@ function processTurn() {
                     if (hasStatus(mercenary)) {
                         if (purifyTarget(mercenary, mercenary, purifyInfo)) {
                             mercenary.mana -= purifyMana;
+                            mercenary.skillCooldowns[mercenary.skill2] = purifyInfo.cooldown;
                             updateMercenaryDisplay();
                             mercenary.hasActed = true;
                             return;
@@ -6405,7 +6425,7 @@ function processTurn() {
             }
             if (mercenary.silence && mercenary.silenceTurns > 0) {
                 // silence just decrements in applyStatusEffects
-            } else if (skillInfo && mercenary.mana >= skillManaCost && (forceSkill || Math.random() < 0.5)) {
+            } else if (skillInfo && mercenary.mana >= skillManaCost && !(mercenary.skillCooldowns[skillKey] > 0) && (forceSkill || Math.random() < 0.5)) {
                 if (skillKey === 'Heal') {
                     let target = null;
                     if (gameState.player.health < getStat(gameState.player, 'maxHealth') && getDistance(mercenary.x, mercenary.y, gameState.player.x, gameState.player.y) <= skillInfo.range) {
@@ -6424,6 +6444,7 @@ function processTurn() {
                     }
                     if (target && healTarget(mercenary, target, skillInfo, skillLevel)) {
                         mercenary.mana -= skillManaCost;
+                        mercenary.skillCooldowns[skillKey] = skillInfo.cooldown;
                         updateMercenaryDisplay();
                         mercenary.hasActed = true;
                         return;
@@ -6527,6 +6548,7 @@ function processTurn() {
                         gameState.dungeon[nearestMonster.y][nearestMonster.x] = 'corpse';
                     }
                     mercenary.mana -= skillManaCost;
+                    mercenary.skillCooldowns[skillKey] = skillInfo.cooldown;
                     updateMercenaryDisplay();
                     mercenary.hasActed = true;
                     return;
@@ -6607,6 +6629,7 @@ function processTurn() {
                         gameState.dungeon[nearestMonster.y][nearestMonster.x] = 'corpse';
                     }
                     mercenary.mana -= skillManaCost;
+                    mercenary.skillCooldowns[skillKey] = skillInfo.cooldown;
                     updateMercenaryDisplay();
                     mercenary.hasActed = true;
                     return;
@@ -6696,6 +6719,7 @@ function processTurn() {
                         gameState.dungeon[nearestMonster.y][nearestMonster.x] = 'corpse';
                     }
                     mercenary.mana -= skillManaCost;
+                    mercenary.skillCooldowns[skillKey] = skillInfo.cooldown;
                     updateMercenaryDisplay();
                     mercenary.hasActed = true;
                     return;
@@ -7047,6 +7071,11 @@ function processTurn() {
                 return;
             }
             const skill = SKILL_DEFS[skillKey];
+            if (gameState.player.skillCooldowns[skillKey] > 0) {
+                addMessage('⏳ 스킬을 아직 사용할 수 없습니다.', 'info');
+                processTurn();
+                return;
+            }
             const level = gameState.player.skillLevels[skillKey] || 1;
             const manaCost = skill.manaCost + level - 1;
             if (skill.passive) {
@@ -7078,6 +7107,7 @@ function processTurn() {
                 healTarget(gameState.player, target, skill, level);
                 updateStats();
                 updateMercenaryDisplay();
+                gameState.player.skillCooldowns[skillKey] = skill.cooldown;
                 processTurn();
                 return;
             }
@@ -7095,6 +7125,7 @@ function processTurn() {
                 purifyTarget(gameState.player, target, skill);
                 updateStats();
                 updateMercenaryDisplay();
+                gameState.player.skillCooldowns[skillKey] = skill.cooldown;
                 processTurn();
                 return;
             }
@@ -7123,6 +7154,7 @@ function processTurn() {
                 renderDungeon();
                 updateCamera();
                 updateStats();
+                gameState.player.skillCooldowns[skillKey] = skill.cooldown;
                 processTurn();
                 return;
             }
@@ -7176,6 +7208,7 @@ function processTurn() {
                 } else {
                     setTimeout(novaAction, 200);
                 }
+                gameState.player.skillCooldowns[skillKey] = skill.cooldown;
                 processTurn();
                 return;
             }
@@ -7241,6 +7274,7 @@ function processTurn() {
                         break;
                     }
                 }
+                gameState.player.skillCooldowns[skillKey] = skill.cooldown;
                 processTurn();
                 return;
             }
@@ -7266,6 +7300,7 @@ function processTurn() {
                 proj.target = target;
             }
             gameState.projectiles.push(proj);
+            gameState.player.skillCooldowns[skillKey] = skill.cooldown;
             processTurn();
         }
 
