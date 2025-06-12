@@ -552,10 +552,10 @@ const MERCENARY_NAMES = [
                 role: 'tank',
                 description: '높은 체력과 방어력을 가진 근접 전투 용병',
                 cost: 50,
-                voiceFile: 'assets/audio/voices/warrior_hire.mp3',
+                voiceFile: 'assets/audio/warrior_hire.mp3',
                 killQuotes: [
-                    'assets/audio/voices/warrior_kill_1.mp3',
-                    'assets/audio/voices/warrior_kill_2.mp3'
+                    'assets/audio/warrior_kill_1.mp3',
+                    'assets/audio/warrior_kill_2.mp3'
                 ]
             },
             ARCHER: {
@@ -575,10 +575,10 @@ const MERCENARY_NAMES = [
                 role: 'ranged',
                 description: '원거리에서 적을 공격하는 용병',
                 cost: 60,
-                voiceFile: 'assets/audio/voices/archer_hire.mp3',
+                voiceFile: 'assets/audio/archer_hire.mp3',
                 killQuotes: [
-                    'assets/audio/voices/archer_kill_1.mp3',
-                    'assets/audio/voices/archer_kill_2.mp3'
+                    'assets/audio/archer_kill_1.mp3',
+                    'assets/audio/archer_kill_2.mp3'
                 ]
             },
             HEALER: {
@@ -598,10 +598,10 @@ const MERCENARY_NAMES = [
                 role: 'support',
                 description: '아군을 치료하는 지원 용병',
                 cost: 70,
-                voiceFile: 'assets/audio/voices/healer_hire.mp3',
+                voiceFile: 'assets/audio/healer_hire.mp3',
                 killQuotes: [
-                    'assets/audio/voices/healer_kill_1.mp3',
-                    'assets/audio/voices/healer_kill_2.mp3'
+                    'assets/audio/healer_kill_1.mp3',
+                    'assets/audio/healer_kill_2.mp3'
                 ]
             },
             WIZARD: {
@@ -621,10 +621,10 @@ const MERCENARY_NAMES = [
                 role: 'caster',
                 description: '마법 공격에 특화된 용병',
                 cost: 80,
-                voiceFile: 'assets/audio/voices/wizard_hire.mp3',
+                voiceFile: 'assets/audio/wizard_hire.mp3',
                 killQuotes: [
-                    'assets/audio/voices/wizard_kill_1.mp3',
-                    'assets/audio/voices/wizard_kill_2.mp3'
+                    'assets/audio/wizard_kill_1.mp3',
+                    'assets/audio/wizard_kill_2.mp3'
                 ]
             }
         };
