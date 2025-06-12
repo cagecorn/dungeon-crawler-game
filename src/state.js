@@ -44,7 +44,7 @@
             teleportReturnX: null,
             teleportReturnY: null,
             elementResistances: { fire: 0, ice: 0, wind: 0, earth: 0, light: 0, dark: 0 },
-            statusResistances: {poison:0.1, bleed:0.1, burn:0.1, freeze:0.1, paralysis:0.1, nightmare:0.1, silence:0.1, petrify:0.1, debuff:0.1},
+            statusResistances: {poison:0, bleed:0, burn:0, freeze:0, paralysis:0, nightmare:0, silence:0, petrify:0, debuff:0},
         },
         activeMercenaries: [],
         standbyMercenaries: [],
