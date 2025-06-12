@@ -3195,6 +3195,7 @@ function findNearestEmpty(x, y) {
         }
 
 function killMonster(monster) {
+            let itemOnCorpse = false;
             SoundEngine.playSound('monsterDie'); // 몬스터 사망음 재생
             addMessage(`💀 ${monster.name}을(를) 처치했습니다!`, 'combat');
             gameState.player.exp += monster.exp;
@@ -3210,6 +3211,9 @@ function killMonster(monster) {
                 if (eq.length) {
                     const drop = eq[Math.floor(Math.random() * eq.length)];
                     const pos = findAdjacentEmpty(monster.x, monster.y);
+                    if (pos.x === monster.x && pos.y === monster.y) {
+                        itemOnCorpse = true;
+                    }
                     drop.x = pos.x;
                     drop.y = pos.y;
                     gameState.items.push(drop);
@@ -3220,6 +3224,9 @@ function killMonster(monster) {
                 if (Math.random() < 0.2) bossItems.push('reviveScroll');
                 const bossItemKey = bossItems[Math.floor(Math.random() * bossItems.length)];
                 const pos = findAdjacentEmpty(monster.x, monster.y);
+                if (pos.x === monster.x && pos.y === monster.y) {
+                    itemOnCorpse = true;
+                }
                 const bossItem = createItem(bossItemKey, pos.x, pos.y, null, Math.floor(gameState.floor / 5));
                 gameState.items.push(bossItem);
                 gameState.dungeon[pos.y][pos.x] = 'item';
@@ -3239,6 +3246,9 @@ function killMonster(monster) {
                         randomItemKey = 'reviveScroll';
                     }
                     const pos = findAdjacentEmpty(monster.x, monster.y);
+                    if (pos.x === monster.x && pos.y === monster.y) {
+                        itemOnCorpse = true;
+                    }
                     const droppedItem = createItem(randomItemKey, pos.x, pos.y, null, Math.floor(gameState.floor / 5));
                     gameState.items.push(droppedItem);
                     gameState.dungeon[pos.y][pos.x] = 'item';
@@ -3248,6 +3258,9 @@ function killMonster(monster) {
             const unknown = Object.keys(RECIPES).filter(r => !gameState.knownRecipes.includes(r));
             if (!monster.isChampion && unknown.length && Math.random() < 0.25) {
                 const pos = findAdjacentEmpty(monster.x, monster.y);
+                if (pos.x === monster.x && pos.y === monster.y) {
+                    itemOnCorpse = true;
+                }
                 const scroll = createRecipeScroll(unknown[Math.floor(Math.random() * unknown.length)], pos.x, pos.y);
                 gameState.items.push(scroll);
                 gameState.dungeon[pos.y][pos.x] = 'item';
@@ -3257,7 +3270,7 @@ function killMonster(monster) {
             monster.health = 0;
             monster.turnsLeft = CORPSE_TURNS;
             gameState.corpses.push(monster);
-            gameState.dungeon[monster.y][monster.x] = 'corpse';
+            gameState.dungeon[monster.y][monster.x] = itemOnCorpse ? 'item' : 'corpse';
         }
 
         function convertMonsterToMercenary(monster) {
