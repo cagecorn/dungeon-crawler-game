@@ -448,3 +448,20 @@
       0% { transform: scale(1) translateY(0); opacity: 1; }
       100% { transform: scale(0.5) translateY(-20px); opacity: 0; }
   }
+
+/* --- Panel Styling --- */
+/* 모든 정보창에 적용될 공통 스타일 */
+.panel {
+    background-image: url('assets/images/ui-panel-bg.png');
+    background-color: #3a2d1d; /* 이미지 로딩 실패 시 대비용 색상 */
+    background-size: cover;
+    color: #1a1a1a;
+
+    border: 20px solid transparent;
+    border-image-source: url('assets/images/ui-border.png');
+    border-image-slice: 25; /* 이 값을 조절하여 테두리 두께 맞춤 */
+    border-image-repeat: repeat;
+
+    padding: 15px;
+    box-shadow: 0 0 15px rgba(0, 0, 0, 0.7);
+}
