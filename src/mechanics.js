@@ -2611,8 +2611,7 @@ function updateMaterialsDisplay() {
             gameState.hatchedSuperiors.forEach(mon => {
                 const div = document.createElement('div');
                 div.className = 'incubator-slot clickable';
-
-                // 이 부분을 수정
+                // Display the hatched monster's name
                 div.textContent = mon.name;
                 div.addEventListener('click', () => showMonsterDetails(mon));
 
