@@ -7296,10 +7296,34 @@ function processTurn() {
             const content = document.getElementById('item-target-content');
             content.innerHTML = `<h3>${item.name} 대상 선택</h3>`;
             const choices = [];
-            const addBtn = (label, action) => {
-                choices.push({ label, action });
+
+            function getEquipInfo(target) {
+                if (!target || !target.equipped) return '없음';
+                switch (item.type) {
+                    case ITEM_TYPES.WEAPON:
+                        return target.equipped.weapon ? formatItem(target.equipped.weapon) : '없음';
+                    case ITEM_TYPES.ARMOR:
+                        return target.equipped.armor ? formatItem(target.equipped.armor) : '없음';
+                    case ITEM_TYPES.ACCESSORY:
+                        const a1 = target.equipped.accessory1 ? formatItem(target.equipped.accessory1) : '없음';
+                        const a2 = target.equipped.accessory2 ? formatItem(target.equipped.accessory2) : '없음';
+                        return `${a1} / ${a2}`;
+                    default:
+                        return '';
+                }
+            }
+
+            const addBtn = (label, target, action) => {
+                let fullLabel = label;
+                if (item.type === ITEM_TYPES.WEAPON ||
+                    item.type === ITEM_TYPES.ARMOR ||
+                    item.type === ITEM_TYPES.ACCESSORY) {
+                    const info = getEquipInfo(target);
+                    fullLabel = `${label} (${info})`;
+                }
+                choices.push({ label: fullLabel, action });
                 const btn = document.createElement('button');
-                btn.textContent = label;
+                btn.textContent = fullLabel;
                 btn.className = 'target-button';
                 btn.onclick = () => { action(); hideItemTargetPanel(); };
                 content.appendChild(btn);
@@ -7312,22 +7336,22 @@ function processTurn() {
                     return;
                 }
                 dead.forEach(m => {
-                    addBtn(m.name, () => reviveMercenary(m));
+                    addBtn(m.name, m, () => reviveMercenary(m));
                 });
             } else if (item.type === ITEM_TYPES.POTION ||
                        item.type === ITEM_TYPES.EXP_SCROLL ||
                        item.type === ITEM_TYPES.FOOD ||
                        item.type === ITEM_TYPES.ESSENCE) {
-                addBtn('플레이어', () => useItemOnTarget(item, gameState.player));
+                addBtn('플레이어', gameState.player, () => useItemOnTarget(item, gameState.player));
                 gameState.activeMercenaries.forEach(m => {
-                    addBtn(m.name, () => useItemOnTarget(item, m));
+                    addBtn(m.name, m, () => useItemOnTarget(item, m));
                 });
             } else if (item.type === ITEM_TYPES.EGG) {
-                addBtn('인큐베이터', () => placeEggInIncubator(item, item.incubation || 3));
+                addBtn('인큐베이터', null, () => placeEggInIncubator(item, item.incubation || 3));
             } else {
-                addBtn('플레이어', () => equipItem(item));
+                addBtn('플레이어', gameState.player, () => equipItem(item));
                 gameState.activeMercenaries.forEach(m => {
-                    addBtn(m.name, () => equipItemToMercenary(item, m));
+                    addBtn(m.name, m, () => equipItemToMercenary(item, m));
                 });
             }
             const buttons = content.querySelectorAll('.target-button');
