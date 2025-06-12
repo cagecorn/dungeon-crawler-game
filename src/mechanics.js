@@ -2066,12 +2066,22 @@ const MERCENARY_NAMES = [
             // 투사체 스킬 처리 (예: 파이어볼)
             else if (skill.damageDice && skill.range) {
                 if (!target) return;
-                const proj = createHomingProjectile(source.x, source.y, target, source);
-                proj.damageDice = skill.damageDice;
-                proj.magic = skill.magic;
-                proj.element = skill.element;
-                proj.level = level;
-                proj.icon = skill.icon;
+
+                const attackValue = rollDice(skill.damageDice) * level + getStat(source, 'magicPower');
+                const result = performAttack(source, target, {
+                    attackValue: attackValue,
+                    magic: skill.magic,
+                    element: skill.element
+                });
+
+                if (result.hit) {
+                    addMessage(`${skill.icon} ${target.name}에게 ${formatNumber(result.damage)}의 원거리 피해!`, 'combat', null, source);
+                    if(target.health <= 0) {
+                        if(gameState.monsters.includes(target)) killMonster(target);
+                        else if (target !== gameState.player) killMercenary(target);
+                        else handlePlayerDeath();
+                    }
+                }
             }
             // 자가 치유 스킬 처리
             else if (skill.heal) {
