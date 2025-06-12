@@ -2079,6 +2079,9 @@ const MERCENARY_NAMES = [
         function processProjectiles() {
             const remaining = [];
             for (const proj of gameState.projectiles) {
+                if (proj.homing && proj.target && proj.target.health <= 0) {
+                    continue;
+                }
                 if (proj.homing && proj.target) {
                     proj.dx = Math.sign(proj.target.x - proj.x);
                     proj.dy = Math.sign(proj.target.y - proj.y);
