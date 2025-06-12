@@ -1385,6 +1385,7 @@ const MERCENARY_NAMES = [
             Heal: { name: 'Heal', icon: '💖', heal: 10, range: 2, manaCost: 3, cooldown: 0 },
             Purify: { name: 'Purify', icon: '🌀', purify: true, range: 2, manaCost: 2, cooldown: 0 },
             Teleport: { name: 'Teleport', icon: '🌀', teleport: true, manaCost: 2, cooldown: 5 },
+            GuardianHymn: { name: '수호의 찬가', icon: '🎶', range: 3, manaCost: 3, shield: true, duration: 5, cooldown: 3 },
             DoubleStrike: { name: 'Double Strike', icon: '🔪', range: 1, manaCost: 3, melee: true, hits: 2, cooldown: 2 },
             ChargeAttack: { name: 'Charge Attack', icon: '⚡', range: 2, manaCost: 2, melee: true, multiplier: 1.5, dashRange: 4, cooldown: 3 },
             HawkEye: { name: 'Hawk Eye', icon: '🦅', range: 5, manaCost: 2, damageDice: '1d6', cooldown: 2 },
@@ -1406,6 +1407,7 @@ const MERCENARY_NAMES = [
             Purify: { name: 'Purify', icon: '🌀', range: 2, manaCost: 2, cooldown: 0 },
             Fireball: { name: 'Fireball', icon: '🔥', range: 4, manaCost: 3, damageDice: '1d8', magic: true, element: 'fire', cooldown: 2 },
             Iceball: { name: 'Iceball', icon: '❄️', range: 5, manaCost: 2, damageDice: '1d8', magic: true, element: 'ice', cooldown: 2 },
+            GuardianHymn: { name: '수호의 찬가', icon: '🎶', range: 3, manaCost: 3, shield: true, duration: 5, cooldown: 3 },
             HawkEye: { name: 'Hawk Eye', icon: '🦅', range: 5, manaCost: 2, damageDice: '1d6', cooldown: 2 },
             MightAura: { name: 'Might Aura', icon: '💪', passive: true, radius: 6, aura: { attack: 1, magicPower: 1 }, cooldown: 0 },
             ProtectAura: { name: 'Protect Aura', icon: '🛡️', passive: true, radius: 6, aura: { defense: 1, magicResist: 1 }, cooldown: 0 },
@@ -1430,7 +1432,7 @@ const MERCENARY_NAMES = [
         const MERCENARY_SKILL_SETS = {
             WARRIOR: ['ChargeAttack', 'DoubleStrike'],
             ARCHER: ['DoubleStrike', 'HawkEye'],
-            HEALER: ['Heal'],
+            HEALER: ['Heal', 'GuardianHymn'],
             WIZARD: ['Fireball', 'Iceball']
         };
 
@@ -1726,6 +1728,18 @@ const MERCENARY_NAMES = [
                 return true;
             }
             return false;
+        }
+
+        function applyShield(caster, target, skillInfo, level = 1) {
+            const power = getStat(caster, 'magicPower');
+            const amount = Math.floor(power * level);
+            if (amount <= 0) return false;
+            target.shield = (target.shield || 0) + amount;
+            target.shieldTurns = skillInfo.duration || 5;
+            const name = target === gameState.player ? '플레이어' : target.name;
+            const img = caster === gameState.player ? getPlayerImage() : getMercImage(caster.type);
+            addMessage(`${skillInfo.icon} ${caster.name}의 ${skillInfo.name}이(가) ${name}에게 ${formatNumber(amount)} 보호막을 부여했습니다.`, 'mercenary', null, img);
+            return true;
         }
 
         // 피해를 적용할 때 보호막을 우선 소모합니다.
@@ -3138,6 +3152,8 @@ function updateMaterialsDisplay() {
                 health: data.baseHealth,
                 maxMana: 0,
                 mana: 0,
+                shield: 0,
+                shieldTurns: 0,
                 attack: data.baseAttack,
                 defense: data.baseDefense,
                 accuracy: data.baseAccuracy,
@@ -3455,6 +3471,8 @@ function killMonster(monster) {
                 health: monster.maxHealth,
                 maxMana: monster.maxMana,
                 mana: monster.maxMana,
+                shield: 0,
+                shieldTurns: 0,
                 healthRegen: monster.healthRegen || 0,
                 manaRegen: monster.manaRegen || 1,
                 auraSkill: monster.auraSkill || null,
@@ -4604,6 +4622,8 @@ function killMonster(monster) {
                 health: mercType.baseHealth,
                 maxMana: mercType.baseMaxMana || 0,
                 mana: mercType.baseMaxMana || 0,
+                shield: 0,
+                shieldTurns: 0,
                 healthRegen: mercType.baseHealthRegen || 0,
                 manaRegen: mercType.baseManaRegen || 1,
                 skill: assignedSkill,
@@ -5976,9 +5996,18 @@ function processTurn() {
             if (entity.skillCooldowns[key] > 0) entity.skillCooldowns[key]--;
         }
     };
+    const decrementShield = entity => {
+        if (entity.shieldTurns && entity.shieldTurns > 0) {
+            entity.shieldTurns--;
+            if (entity.shieldTurns <= 0) entity.shield = 0;
+        }
+    };
     decrementCooldowns(gameState.player);
+    decrementShield(gameState.player);
     gameState.activeMercenaries.forEach(decrementCooldowns);
+    gameState.activeMercenaries.forEach(decrementShield);
     gameState.monsters.forEach(decrementCooldowns);
+    gameState.monsters.forEach(decrementShield);
 
     for (let i = gameState.corpses.length - 1; i >= 0; i--) {
         const corpse = gameState.corpses[i];
@@ -6495,6 +6524,18 @@ function processTurn() {
                         mercenary.hasActed = true;
                         return;
                     }
+                } else if (skillKey === 'GuardianHymn') {
+                    let nearestAlly = null;
+                    let distAlly = Infinity;
+                    const allies = [gameState.player, ...gameState.activeMercenaries.filter(m=>m.alive && m!==mercenary)];
+                    allies.forEach(a=>{ const d=getDistance(mercenary.x, mercenary.y, a.x, a.y); if(d<=skillInfo.range && d<distAlly){distAlly=d; nearestAlly=a;} });
+                    mercenary.mana -= skillManaCost;
+                    applyShield(mercenary, mercenary, skillInfo, skillLevel);
+                    if(nearestAlly) applyShield(mercenary, nearestAlly, skillInfo, skillLevel);
+                    updateMercenaryDisplay();
+                    mercenary.skillCooldowns[skillKey] = skillInfo.cooldown;
+                    mercenary.hasActed = true;
+                    return;
                 } else if (skillKey === 'ChargeAttack' && nearestMonster && nearestDistance <= skillInfo.dashRange && hasLineOfSight(mercenary.x, mercenary.y, nearestMonster.x, nearestMonster.y)) {
                     let attackValue = getStat(mercenary, 'attack');
                     attackValue = Math.floor(attackValue * skillInfo.multiplier * skillLevel);
@@ -6961,6 +7002,9 @@ function processTurn() {
             if (saved.player.shield === undefined) {
                 gameState.player.shield = 0;
             }
+            if (saved.player.shieldTurns === undefined) {
+                gameState.player.shieldTurns = 0;
+            }
             if (saved.activeMercenaries) gameState.activeMercenaries = saved.activeMercenaries;
             else if (saved.mercenaries) gameState.activeMercenaries = saved.mercenaries;
             if (saved.standbyMercenaries) gameState.standbyMercenaries = saved.standbyMercenaries;
@@ -7007,6 +7051,8 @@ function processTurn() {
                 } else if (!('tile' in m.equipped)) {
                     m.equipped.tile = null;
                 }
+                if (m.shield === undefined) m.shield = 0;
+                if (m.shieldTurns === undefined) m.shieldTurns = 0;
             };
 
             gameState.activeMercenaries.forEach(convertMercenary);
@@ -7172,6 +7218,23 @@ function processTurn() {
                 const target = targets[0];
                 gameState.player.mana -= manaCost;
                 purifyTarget(gameState.player, target, skill);
+                updateStats();
+                updateMercenaryDisplay();
+                gameState.player.skillCooldowns[skillKey] = skill.cooldown;
+                processTurn();
+                return;
+            }
+            if (skill.shield) {
+                const allies = gameState.activeMercenaries.filter(m => m.alive);
+                let nearest = null;
+                let nearestDist = Infinity;
+                allies.forEach(a => {
+                    const d = getDistance(gameState.player.x, gameState.player.y, a.x, a.y);
+                    if (d <= skill.range && d < nearestDist) { nearestDist = d; nearest = a; }
+                });
+                gameState.player.mana -= manaCost;
+                applyShield(gameState.player, gameState.player, skill, level);
+                if (nearest) applyShield(gameState.player, nearest, skill, level);
                 updateStats();
                 updateMercenaryDisplay();
                 gameState.player.skillCooldowns[skillKey] = skill.cooldown;
