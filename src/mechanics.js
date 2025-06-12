@@ -3706,11 +3706,6 @@ function killMonster(monster) {
                         }
                         updateUnitEffectIcons(gameState.player, div);
                     } else {
-                        const proj = gameState.projectiles.find(p => p.x === x && p.y === y);
-                        if (proj) {
-                            finalClasses.push('projectile');
-                            div.textContent = proj.icon;
-                        } else {
                             const merc = gameState.activeMercenaries.find(m => m.x === x && m.y === y && m.alive);
                             if (merc) {
                                 finalClasses.push('mercenary');
@@ -3736,7 +3731,12 @@ function killMonster(monster) {
                                 }
                                 div.textContent = '';
                                 updateUnitEffectIcons(merc, div);
-                            } else if (baseCellType === 'monster') {
+                            } else {
+                                const proj = gameState.projectiles.find(p => p.x === x && p.y === y);
+                                if (proj) {
+                                    finalClasses.push('projectile');
+                                    div.textContent = proj.icon;
+                                } else if (baseCellType === 'monster') {
                                 const m = gameState.monsters.find(mon => mon.x === x && mon.y === y);
                                 if (m) {
                                     if (m.isChampion) {
