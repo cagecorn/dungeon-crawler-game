@@ -765,9 +765,21 @@
             background-color: #333;
             border-radius: 5px;
             margin: 2px 0;
+            position: relative;
+            overflow: hidden;
         }
-        .health-bar { background-color: #f44336; }
+        .shield-bar {
+            position: absolute;
+            top: 0;
+            left: 0;
+            height: 100%;
+            background-color: #42a5f5;
+            opacity: 0.6;
+            width: 0;
+        }
+        .health-bar { background-color: #f44336; position: relative; }
         .mana-bar { background-color: #2196F3; }
+        .shield-text { color: #42a5f5; margin-left: 4px; }
         .turn-effects {
             background: #333;
             padding: 6px;
@@ -920,9 +932,10 @@
                 <div>🛡 체력: <span id="enduranceStat" onclick="allocateStat('endurance')">10</span></div>
                 <div>🔮 집중: <span id="focusStat" onclick="allocateStat('focus')">5</span></div>
                 <div>📖 지능: <span id="intelligenceStat" onclick="allocateStat('intelligence')">0</span></div>
-                <div>❤️ 체력: <span id="health">20</span>/<span id="maxHealth">20</span></div>
+                <div>❤️ 체력: <span id="health">20</span>/<span id="maxHealth">20</span><span id="shield" class="shield-text"></span></div>
                 <div>🔋 마나: <span id="mana">10</span>/<span id="maxMana">10</span></div>
                 <div class="health-bar-container">
+                    <div class="shield-bar" id="shield-bar"></div>
                     <div class="health-bar" id="hp-bar"></div>
                 </div>
                 <div class="mana-bar-container">
