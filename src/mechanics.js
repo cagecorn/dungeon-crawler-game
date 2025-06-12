@@ -2088,13 +2088,14 @@ const MERCENARY_NAMES = [
                         }
                         addMessage(`${icon} ${monster.name}에게 ${dmgStr}의 피해를 입혔습니다${critMsg}!`, 'combat', detail);
                     }
+
+                    // --- BUG FIX START ---
+                    // 몬스터가 사망한 경우만 처리하고, 살아있을 때는 별도 작업을 하지 않는다.
                     if (monster.health <= 0) {
                         killMonster(monster);
-                    } else {
-                        // Ensure the tile retains the monster type so rendering
-                        // shows the monster after projectile disappears
-                        gameState.dungeon[monster.y][monster.x] = 'monster';
                     }
+                    // --- BUG FIX END ---
+
                     continue;
                 }
 
