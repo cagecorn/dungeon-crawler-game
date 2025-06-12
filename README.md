@@ -114,7 +114,7 @@ Incubators let you hatch monster eggs into powerful allies. Place an egg from yo
 ### Loot
 
 Recipe scrolls may drop from monsters or appear in dungeons. Picking one up automatically adds the recipe to your known list. Duplicate scrolls are ignored once learned.
-When starting a new game, a handful of random recipe scrolls also appear near the player so you can begin cooking right away.
+At the start of a new game, three low-tier map items appear near the player.
 
 ### Monster Farming
 
