@@ -10,7 +10,7 @@ async function run() {
   win.updateSkillDisplay = () => {};
   win.requestAnimationFrame = fn => fn();
 
-  const { gameState, createMercenary, assignSkill, skill1Action, getStat } = win;
+  const { gameState, createMercenary, createMonster, assignSkill, skill1Action, applyShield, getStat } = win;
   const SKILL_DEFS = win.eval('SKILL_DEFS');
 
   gameState.player.skills.push('GuardianHymn');
@@ -18,6 +18,10 @@ async function run() {
 
   const merc = createMercenary('WARRIOR', gameState.player.x + 1, gameState.player.y);
   gameState.activeMercenaries.push(merc);
+
+  // create enemy adjacent
+  const monster = createMonster('GOBLIN', gameState.player.x - 1, gameState.player.y, 1);
+  gameState.monsters.push(monster);
 
   gameState.player.intelligence = 5;
   gameState.player.mana = 10;
@@ -30,6 +34,12 @@ async function run() {
   }
   if (gameState.player.shieldTurns !== SKILL_DEFS['GuardianHymn'].duration - 1) {
     console.error('duration incorrect');
+    process.exit(1);
+  }
+
+  // enemy should not receive shield if targeted directly
+  if (applyShield(gameState.player, monster, SKILL_DEFS['GuardianHymn'])) {
+    console.error('enemy received shield');
     process.exit(1);
   }
 }

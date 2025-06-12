@@ -1731,6 +1731,7 @@ const MERCENARY_NAMES = [
         }
 
         function applyShield(caster, target, skillInfo, level = 1) {
+            if (!isSameSide(caster, target)) return false;
             const power = getStat(caster, 'magicPower');
             const amount = Math.floor(power * level);
             if (amount <= 0) return false;
