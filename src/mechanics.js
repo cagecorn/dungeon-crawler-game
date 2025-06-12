@@ -2250,7 +2250,23 @@ const MERCENARY_NAMES = [
                 div.className = 'skill-item';
                 const info = SKILL_DEFS[skill];
                 const level = gameState.player.skillLevels[skill] || 1;
-                div.textContent = `${info.icon} ${info.name} (Lv ${level})`;
+
+                const nameSpan = document.createElement('span');
+                nameSpan.textContent = `${info.icon} ${info.name} (Lv ${level})`;
+                div.appendChild(nameSpan);
+
+                const btn1 = document.createElement('button');
+                btn1.className = 'assign-btn';
+                btn1.textContent = '1';
+                btn1.onclick = (e) => { e.stopPropagation(); assignSkill(1, skill); };
+                div.appendChild(btn1);
+
+                const btn2 = document.createElement('button');
+                btn2.className = 'assign-btn';
+                btn2.textContent = '2';
+                btn2.onclick = (e) => { e.stopPropagation(); assignSkill(2, skill); };
+                div.appendChild(btn2);
+
                 div.onclick = () => {
                     if (gameState.player.skillPoints > 0 && skill !== 'Purify' && (typeof confirm === 'function' ? confirm(`${info.name} 레벨업?`) : false)) {
                         gameState.player.skillPoints -= 1;
@@ -2259,8 +2275,6 @@ const MERCENARY_NAMES = [
                         updateSkillDisplay();
                         return;
                     }
-                    const slot = prompt('Assign to slot (1 or 2)?');
-                    if (slot === '1' || slot === '2') assignSkill(parseInt(slot,10), skill);
                 };
                 list.appendChild(div);
             });
