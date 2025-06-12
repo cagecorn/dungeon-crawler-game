@@ -153,6 +153,12 @@ const SoundEngine = {
                 gainNode.gain.exponentialRampToValueAtTime(0.001, now + 0.15);
                 this.createOscillator('square', 80, gainNode, now, 0.15);
                 break;
+            case 'dismiss':
+                gainNode.gain.setValueAtTime(0.25, now);
+                gainNode.gain.exponentialRampToValueAtTime(0.001, now + 0.2);
+                this.createOscillator('square', 220, gainNode, now, 0.2);
+                this.createOscillator('square', 110, gainNode, now + 0.1, 0.2);
+                break;
 
             // ========================= 추가 시작 =========================
             // UI 및 상호작용
@@ -5260,6 +5266,7 @@ function killMonster(monster) {
 
         function dismiss(entity) {
             if (typeof confirm === 'function' && !confirm('정말 해고하시겠습니까?')) return;
+            SoundEngine.playSound('dismiss');
             let idx = gameState.activeMercenaries.indexOf(entity);
             if (idx !== -1) {
                 gameState.activeMercenaries.splice(idx, 1);
@@ -5278,6 +5285,7 @@ function killMonster(monster) {
 
         function sacrifice(entity) {
             if (typeof confirm === 'function' && !confirm('정말 희생하시겠습니까?')) return;
+            SoundEngine.playSound('dismiss');
             dismiss(entity);
             const essenceKeys = ['strengthEssence','agilityEssence','enduranceEssence','focusEssence','intelligenceEssence','skillLevelEssence'];
             const key = essenceKeys[Math.floor(Math.random() * essenceKeys.length)];
