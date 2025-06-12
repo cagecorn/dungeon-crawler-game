@@ -1950,6 +1950,53 @@ const MERCENARY_NAMES = [
             }
         }
 
+        /**
+         * Proc으로 발동된 스킬을 실행합니다.
+         * @param {object} source - 스킬을 시전하는 유닛
+         * @param {object} target - 주 타겟이 되는 유닛
+         * @param {object} proc - 발동된 Proc 정보
+         */
+        function triggerProcSkill(source, target, proc) {
+            const skill = SKILL_DEFS[proc.skill];
+            if (!skill) return;
+
+            const level = proc.level || 1;
+
+            // 노바(광역) 스킬 처리
+            if (skill.radius !== undefined) {
+                createNovaEffect(source.x, source.y, skill.element, skill.radius);
+                const aoeTargets = (source === gameState.player || gameState.activeMercenaries.includes(source))
+                    ? gameState.monsters.filter(m => getDistance(source.x, source.y, m.x, m.y) <= skill.radius)
+                    : [gameState.player, ...gameState.activeMercenaries].filter(m => m.alive && getDistance(source.x, source.y, m.x, m.y) <= skill.radius);
+
+                aoeTargets.forEach(enemy => {
+                    const attackValue = rollDice(skill.damageDice) * level + getStat(source, 'magicPower');
+                    const result = performAttack(source, enemy, { attackValue, magic: true, element: skill.element });
+                    if (result.hit) {
+                         addMessage(`${skill.icon} ${enemy.name}에게 ${formatNumber(result.damage)}의 광역 피해!`, 'combat', null, source);
+                         if(enemy.health <= 0) {
+                             if(gameState.monsters.includes(enemy)) killMonster(enemy);
+                             else killMercenary(enemy);
+                         }
+                    }
+                });
+            }
+            // 투사체 스킬 처리 (예: 파이어볼)
+            else if (skill.damageDice && skill.range) {
+                if (!target) return;
+                const proj = createHomingProjectile(source.x, source.y, target, source);
+                proj.damageDice = skill.damageDice;
+                proj.magic = skill.magic;
+                proj.element = skill.element;
+                proj.level = level;
+                proj.icon = skill.icon;
+            }
+            // 자가 치유 스킬 처리
+            else if (skill.heal) {
+                healTarget(source, source, skill, level);
+            }
+        }
+
         // 통합 공격 처리
         function performAttack(attacker, defender, options = {}) {
             combatOccurredInTurn = true;
