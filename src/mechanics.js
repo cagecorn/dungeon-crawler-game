@@ -2119,6 +2119,10 @@ const MERCENARY_NAMES = [
                     }
                     if (monster.health <= 0) {
                         killMonster(monster);
+                    } else {
+                        // Ensure the tile retains the monster type so rendering
+                        // shows the monster after projectile disappears
+                        gameState.dungeon[monster.y][monster.x] = 'monster';
                     }
                     continue;
                 }
