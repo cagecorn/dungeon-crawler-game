@@ -2074,8 +2074,10 @@ const MERCENARY_NAMES = [
                     const icon = proj.icon || '➡️';
                     const name = proj.skill ? SKILL_DEFS[proj.skill].name : '원거리 공격';
                     const detail = buildAttackDetail('원거리 공격', name, result);
+                    const msgType = attacker === gameState.player ? 'combat' : 'mercenary';
+                    const attackerPart = attacker === gameState.player ? '' : `${attacker.name}이(가) `;
                     if (!result.hit) {
-                        addMessage(`❌ ${monster.name}에게 ${name}이 빗나갔습니다!`, 'combat', detail);
+                        addMessage(`❌ ${attackerPart}${monster.name}에게 ${name}이 빗나갔습니다!`, msgType, detail);
                     } else {
                         const critMsg = result.crit ? ' (치명타!)' : '';
                         let dmgStr = formatNumber(result.baseDamage);
@@ -2083,7 +2085,7 @@ const MERCENARY_NAMES = [
                             const emoji = ELEMENT_EMOJI[result.element] || '';
                             dmgStr = `${formatNumber(result.baseDamage)}+${emoji}${formatNumber(result.elementDamage)}`;
                         }
-                        addMessage(`${icon} ${monster.name}에게 ${dmgStr}의 피해를 입혔습니다${critMsg}!`, 'combat', detail);
+                        addMessage(`${icon} ${attackerPart}${monster.name}에게 ${dmgStr}의 피해를 입혔습니다${critMsg}!`, msgType, detail);
                     }
 
                     // --- BUG FIX START ---
