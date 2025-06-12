@@ -3549,8 +3549,8 @@ function killMonster(monster) {
                 for (let x = 0; x < gameState.dungeonSize; x++) {
                     const div = gameState.cellElements[y][x];
                     const tileBg = div.querySelector('.equipped-tile-bg');
-                    if (tileBg) tileBg.style.backgroundImage = '';
-                    div.style.backgroundImage = '';
+                    if (tileBg) tileBg.style.removeProperty('background-image');
+                    div.style.removeProperty('background-image');
                     div.classList.remove('low-health');
                     // 렌더링마다 이전 아이콘들을 모두 지워 잔상이 남지 않게 합니다.
                     const buffEl = div.querySelector('.buff-container');
