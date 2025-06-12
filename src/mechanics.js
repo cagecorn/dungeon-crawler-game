@@ -3421,7 +3421,8 @@ function killMonster(monster) {
                 return;
             }
             const mercenary = convertMonsterToMercenary(corpse);
-            const activeCount = gameState.activeMercenaries.filter(m => m.alive).length;
+            // Count all active mercenary slots, dead or alive
+            const activeCount = gameState.activeMercenaries.length;
             if (activeCount < 5) {
                 if (!spawnMercenaryNearPlayer(mercenary)) {
                     addMessage('❌ 용병을 배치할 공간이 없습니다.', 'info');
@@ -3576,7 +3577,8 @@ function killMonster(monster) {
 
         function recruitHatchedSuperior(monster) {
             const mercenary = convertMonsterToMercenary(monster);
-            const activeCount = gameState.activeMercenaries.filter(m => m.alive).length;
+            // Count all active mercenary slots, dead or alive
+            const activeCount = gameState.activeMercenaries.length;
             if (activeCount < 5) {
                 if (!spawnMercenaryNearPlayer(mercenary)) {
                     addMessage('❌ 용병을 배치할 공간이 없습니다.', 'info');
