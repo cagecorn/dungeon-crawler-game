@@ -1746,6 +1746,7 @@ const MERCENARY_NAMES = [
                 const name = target === gameState.player ? '플레이어' : target.name;
                 const img = caster === gameState.player ? getPlayerImage() : getMercImage(caster.type);
                 addMessage(`${skillInfo.icon} ${caster.name}의 ${skillInfo.name}이(가) ${name}에게 ${formatNumber(amount)} 보호막을 부여했습니다.`, 'mercenary', null, img);
+                refreshDetailPanel(target);
             }
             return applied;
         }
@@ -1759,6 +1760,7 @@ const MERCENARY_NAMES = [
                 amount -= blocked;
             }
             target.health -= amount;
+            refreshDetailPanel(target);
         }
 
         function purifyTarget(healer, target, skillInfo) {
@@ -2625,6 +2627,15 @@ function updateMaterialsDisplay() {
             }
         }
 
+        function refreshDetailPanel(entity) {
+            if (window.currentDetailMercenary && window.currentDetailMercenary.id === entity.id) {
+                showMercenaryDetails(entity);
+            } else if (window.currentDetailMonster && window.currentDetailMonster.id === entity.id) {
+                if (entity.isChampion) showChampionDetails(entity);
+                else showMonsterDetails(entity);
+            }
+        }
+
 
         // 용병 상세 정보 표시
         function showMercenaryDetails(merc) {
@@ -2666,6 +2677,7 @@ function updateMaterialsDisplay() {
                 ? `<button class="sell-button" onclick="sacrifice(window.currentDetailMercenary)">희생</button>`
                 : `<button class="sell-button" onclick="dismiss(window.currentDetailMercenary)">해고</button>`;
 
+            const shieldText = merc.shield > 0 ? ` <span style="color: blue">+${formatNumber(merc.shield)}</span>` : '';
             const html = `
                 <h3>${merc.icon} ${merc.name} Lv.${formatNumber(merc.level)}</h3>
                 <div>💪 힘: ${formatNumber(merc.strength)} ${'⭐'.repeat(merc.stars.strength)}</div>
@@ -2676,7 +2688,7 @@ function updateMaterialsDisplay() {
                 <div>💕 호감도: ${formatNumber(merc.affinity)}</div>
                 <div>🍗 배부름: ${formatNumber(merc.fullness)}</div>
                 <hr>
-                <div>❤️ HP: ${formatNumber(merc.health)}/${formatNumber(getStat(merc, 'maxHealth'))}</div>
+                <div>❤️ HP: ${formatNumber(merc.health)}/${formatNumber(getStat(merc, 'maxHealth'))}${shieldText}</div>
                 <div>🔋 MP: ${formatNumber(merc.mana)}/${formatNumber(getStat(merc, 'maxMana'))}</div>
                 <div>⚔️ 공격력: ${formatNumber(getStat(merc, 'attack'))}</div>
                 <div>🛡️ 방어력: ${formatNumber(getStat(merc, 'defense'))}</div>
@@ -2789,9 +2801,10 @@ function updateMaterialsDisplay() {
                     ? `<button class="sell-button" onclick="sacrifice(window.currentDetailMonster)">희생</button>`
                     : `<button class="sell-button" onclick="dismiss(window.currentDetailMonster)">해고</button>`)
                 : '';
+            const shieldText = monster.shield > 0 ? ` <span style="color: blue">+${formatNumber(monster.shield)}</span>` : '';
             const html = `
                 <h3>${monster.icon} ${monster.name} (Lv.${monster.level})</h3>
-                <div>❤️ HP: ${monster.health}/${formatNumber(getStat(monster,'maxHealth'))}</div>
+                <div>❤️ HP: ${monster.health}/${formatNumber(getStat(monster,'maxHealth'))}${shieldText}</div>
                 <div>🔋 MP: ${formatNumber(monster.mana)}/${formatNumber(getStat(monster,'maxMana'))}</div>
                 <div>⚔️ 공격력: ${formatNumber(getStat(monster,'attack'))}</div>
                 <div>🛡️ 방어력: ${formatNumber(getStat(monster,'defense'))}</div>
@@ -2838,6 +2851,7 @@ function updateMaterialsDisplay() {
                 const cdText = cd > 0 ? ` (CD ${cd})` : '';
                 skillLine = `<div>스킬: ${skillInfo.icon} ${skillInfo.name} Lv.${lvl}${mpText}${cdText}</div>`;
             }
+            const shieldText = champion.shield > 0 ? ` <span style="color: blue">+${formatNumber(champion.shield)}</span>` : '';
             const html = `
                 <h3>${champion.icon} ${champion.name} (Lv.${champion.level})</h3>
                 <div>💪 힘: ${formatNumber(champion.strength)} ${'⭐'.repeat(champion.stars.strength)}</div>
@@ -2847,7 +2861,7 @@ function updateMaterialsDisplay() {
                 <div>📖 지능: ${formatNumber(champion.intelligence)} ${'⭐'.repeat(champion.stars.intelligence)}</div>
                 ${champion.affinity !== undefined ? `<div>💕 호감도: ${formatNumber(champion.affinity)}</div>` : ''}
                 <hr>
-                <div>❤️ HP: ${formatNumber(champion.health)}/${formatNumber(getStat(champion,'maxHealth'))}</div>
+                <div>❤️ HP: ${formatNumber(champion.health)}/${formatNumber(getStat(champion,'maxHealth'))}${shieldText}</div>
                 <div>🔋 MP: ${formatNumber(champion.mana)}/${formatNumber(getStat(champion,'maxMana'))}</div>
                 <div>⚔️ 공격력: ${formatNumber(getStat(champion,'attack'))}</div>
                 <div>🛡️ 방어력: ${formatNumber(getStat(champion,'defense'))}</div>
@@ -2867,6 +2881,7 @@ function updateMaterialsDisplay() {
             document.getElementById('monster-detail-content').innerHTML = html;
             document.getElementById('monster-detail-panel').style.display = 'block';
             gameState.gameRunning = false;
+            window.currentDetailMonster = champion;
         }
 
         function hideMonsterDetails() {
@@ -6008,6 +6023,7 @@ function processTurn() {
         if (entity.shieldTurns && entity.shieldTurns > 0) {
             entity.shieldTurns--;
             if (entity.shieldTurns <= 0) entity.shield = 0;
+            refreshDetailPanel(entity);
         }
     };
     decrementCooldowns(gameState.player);
