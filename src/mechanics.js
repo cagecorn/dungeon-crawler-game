@@ -2015,9 +2015,12 @@ const MERCENARY_NAMES = [
             // 노바(광역) 스킬 처리
             if (skill.radius !== undefined) {
                 createNovaEffect(source.x, source.y, skill.element, skill.radius);
-                const aoeTargets = (source === gameState.player || gameState.activeMercenaries.includes(source))
-                    ? gameState.monsters.filter(m => getDistance(source.x, source.y, m.x, m.y) <= skill.radius)
-                    : [gameState.player, ...gameState.activeMercenaries].filter(m => m.alive && getDistance(source.x, source.y, m.x, m.y) <= skill.radius);
+                const allUnits = [gameState.player, ...gameState.activeMercenaries, ...gameState.monsters];
+                const aoeTargets = allUnits.filter(unit => {
+                    if (!unit || (!unit.health && unit.health !== 0)) return false;
+                    const alive = unit === gameState.player ? true : unit.alive !== false;
+                    return alive && !isSameSide(source, unit) && getDistance(source.x, source.y, unit.x, unit.y) <= skill.radius;
+                });
 
                 aoeTargets.forEach(enemy => {
                     const attackValue = rollDice(skill.damageDice) * level + getStat(source, 'magicPower');
