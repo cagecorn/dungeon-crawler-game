@@ -1601,6 +1601,20 @@ const MERCENARY_NAMES = [
             { name: 'of Frost Resistance', modifiers: { freezeResist: 0.3 } }
         ];
 
+        const RARE_PREFIXES = [
+            { name: 'Arcane', modifiers: { magicPower: 3, manaRegen: 1 } },
+            { name: 'Savage', modifiers: { attack: 2, critChance: 0.05 } },
+            { name: 'Guardian', modifiers: { defense: 2, maxHealth: 10 } },
+            { name: 'Swift', modifiers: { accuracy: 0.05, evasion: 0.05 } }
+        ];
+
+        const RARE_SUFFIXES = [
+            { name: 'of Mastery', modifiers: { attack: 2, defense: 2 } },
+            { name: 'of the Magus', modifiers: { magicPower: 3, manaRegen: 1 } },
+            { name: 'of Vitality', modifiers: { maxHealth: 10, healthRegen: 1 } },
+            { name: 'of Quickness', modifiers: { accuracy: 0.05, evasion: 0.05, critChance: 0.05 } }
+        ];
+
         const MAP_PREFIXES = [
             { name: 'Populous', modifiers: { monsterMultiplier: 1.5 } },
             { name: 'Elite', modifiers: { eliteChanceBonus: 0.2 } },
@@ -1966,6 +1980,13 @@ const MERCENARY_NAMES = [
             return parseFloat(num.toFixed(2)).toString();
         }
 
+        function formatItemName(item) {
+            if (item.rarity === 'rare') {
+                return `<span class="rare">${item.name}</span>`;
+            }
+            return item.name;
+        }
+
         function formatItem(item) {
             const stats = [];
             if (item.attack !== undefined) stats.push(`공격+${formatNumber(item.attack)}`);
@@ -1992,7 +2013,8 @@ const MERCENARY_NAMES = [
             if (item.freezeResist !== undefined) stats.push(`동결저항+${formatNumber(item.freezeResist * 100)}%`);
             if (item.status) stats.push(`${item.status} 부여`);
             const levelText = item.enhanceLevel ? ` +Lv.${item.enhanceLevel}` : '';
-            return `${item.name}${levelText}${stats.length ? ' (' + stats.join(', ') + ')' : ''}`;
+            const name = formatItemName(item);
+            return `${name}${levelText}${stats.length ? ' (' + stats.join(', ') + ')' : ''}`;
         }
 
         function getStat(character, stat) {
@@ -2201,7 +2223,7 @@ const MERCENARY_NAMES = [
                 div.className = 'inventory-item';
                 const span = document.createElement('span');
                 const label = count > 1 ? `${formatItem(item)} x ${count}` : formatItem(item);
-                span.textContent = label;
+                span.innerHTML = label;
                 div.appendChild(span);
                 div.onclick = () => handleItemClick(item);
                 if (item.type !== ITEM_TYPES.WEAPON && item.type !== ITEM_TYPES.ARMOR && item.type !== ITEM_TYPES.ACCESSORY) {
@@ -2219,7 +2241,7 @@ const MERCENARY_NAMES = [
 
             const weaponSlot = document.getElementById('equipped-weapon');
             if (gameState.player.equipped.weapon) {
-                weaponSlot.textContent = `무기: ${formatItem(gameState.player.equipped.weapon)}`;
+                weaponSlot.innerHTML = `무기: ${formatItem(gameState.player.equipped.weapon)}`;
                 weaponSlot.onclick = unequipWeapon;
             } else {
                 weaponSlot.textContent = '무기: 없음';
@@ -2227,7 +2249,7 @@ const MERCENARY_NAMES = [
             }
             const armorSlot = document.getElementById('equipped-armor');
             if (gameState.player.equipped.armor) {
-                armorSlot.textContent = `방어구: ${formatItem(gameState.player.equipped.armor)}`;
+                armorSlot.innerHTML = `방어구: ${formatItem(gameState.player.equipped.armor)}`;
                 armorSlot.onclick = unequipArmor;
             } else {
                 armorSlot.textContent = '방어구: 없음';
@@ -2235,7 +2257,7 @@ const MERCENARY_NAMES = [
             }
             const acc1Slot = document.getElementById('equipped-accessory1');
             if (gameState.player.equipped.accessory1) {
-                acc1Slot.textContent = `악세서리1: ${formatItem(gameState.player.equipped.accessory1)}`;
+                acc1Slot.innerHTML = `악세서리1: ${formatItem(gameState.player.equipped.accessory1)}`;
                 acc1Slot.onclick = () => unequipAccessory('accessory1');
             } else {
                 acc1Slot.textContent = '악세서리1: 없음';
@@ -2243,7 +2265,7 @@ const MERCENARY_NAMES = [
             }
             const acc2Slot = document.getElementById('equipped-accessory2');
             if (gameState.player.equipped.accessory2) {
-                acc2Slot.textContent = `악세서리2: ${formatItem(gameState.player.equipped.accessory2)}`;
+                acc2Slot.innerHTML = `악세서리2: ${formatItem(gameState.player.equipped.accessory2)}`;
                 acc2Slot.onclick = () => unequipAccessory('accessory2');
             } else {
                 acc2Slot.textContent = '악세서리2: 없음';
@@ -2252,7 +2274,7 @@ const MERCENARY_NAMES = [
             const tileSlot = document.getElementById('equipped-tile');
             if (tileSlot) {
                 if (gameState.player.equipped.tile) {
-                    tileSlot.textContent = `타일: ${formatItem(gameState.player.equipped.tile)}`;
+                    tileSlot.innerHTML = `타일: ${formatItem(gameState.player.equipped.tile)}`;
                     tileSlot.onclick = () => unequipTile(gameState.player);
                 } else {
                     tileSlot.textContent = '타일: 없음';
@@ -2864,7 +2886,7 @@ function updateMaterialsDisplay() {
             const tileSlot = document.getElementById('equipped-tile-side');
             if (tileSlot) {
                 if (gameState.player.equipped.tile) {
-                    tileSlot.textContent = `타일: ${formatItem(gameState.player.equipped.tile)}`;
+                    tileSlot.innerHTML = `타일: ${formatItem(gameState.player.equipped.tile)}`;
                     tileSlot.onclick = () => unequipTile(gameState.player);
                 } else {
                     tileSlot.textContent = '타일: 없음';
@@ -3303,10 +3325,10 @@ function killMonster(monster) {
                 if (pos.x === monster.x && pos.y === monster.y) {
                     itemOnCorpse = true;
                 }
-                const bossItem = createItem(bossItemKey, pos.x, pos.y, null, Math.floor(gameState.floor / 5));
+                const bossItem = createItem(bossItemKey, pos.x, pos.y, null, Math.floor(gameState.floor / 5), Math.random() < 0.1);
                 gameState.items.push(bossItem);
                 gameState.dungeon[pos.y][pos.x] = 'item';
-                addMessage(`🎁 ${monster.name}이(가) ${bossItem.name}을(를) 떨어뜨렸습니다!`, 'treasure');
+                addMessage(`🎁 ${monster.name}이(가) ${formatItemName(bossItem)}을(를) 떨어뜨렸습니다!`, 'treasure');
             } else {
                 let lootChance = monster.lootChance + (gameState.currentMapModifiers?.lootChanceBonus || 0);
                 if (Math.random() < lootChance) {
@@ -3325,10 +3347,10 @@ function killMonster(monster) {
                     if (pos.x === monster.x && pos.y === monster.y) {
                         itemOnCorpse = true;
                     }
-                    const droppedItem = createItem(randomItemKey, pos.x, pos.y, null, Math.floor(gameState.floor / 5));
+                    const droppedItem = createItem(randomItemKey, pos.x, pos.y, null, Math.floor(gameState.floor / 5), Math.random() < 0.1);
                     gameState.items.push(droppedItem);
                     gameState.dungeon[pos.y][pos.x] = 'item';
-                    addMessage(`📦 ${monster.name}이(가) ${droppedItem.name}을(를) 떨어뜨렸습니다!`, 'item');
+                    addMessage(`📦 ${monster.name}이(가) ${formatItemName(droppedItem)}을(를) 떨어뜨렸습니다!`, 'item');
                 }
             }
             const unknown = Object.keys(RECIPES).filter(r => !gameState.knownRecipes.includes(r));
@@ -3490,7 +3512,7 @@ function killMonster(monster) {
             const item = gameState.items.find(i => i.x === corpse.x && i.y === corpse.y);
             if (item) {
                 addToInventory(item);
-                addMessage(`📦 ${item.name}을(를) 획득했습니다!`, 'item');
+                addMessage(`📦 ${formatItemName(item)}을(를) 획득했습니다!`, 'item');
                 const idx = gameState.items.findIndex(i => i === item);
                 if (idx !== -1) gameState.items.splice(idx, 1);
             }
@@ -4082,9 +4104,9 @@ function killMonster(monster) {
                 const starterPotion = createItem('healthPotion', 0, 0);
                 gameState.player.inventory.push(starterPotion);
 
-                const fireSword = createItem('shortSword', 0, 0, 'Flaming');
+                const fireSword = createItem('shortSword', 0, 0, null, 0, true);
                 gameState.player.equipped.weapon = fireSword;
-                const leatherArmor = createItem('leatherArmor', 0, 0);
+                const leatherArmor = createItem('leatherArmor', 0, 0, null, 0, true);
                 gameState.player.equipped.armor = leatherArmor;
                 // 시작 슈페리어 알을 플레이어 앞에 드랍하도록 수정
                 const starterEgg = createItem('superiorEgg', gameState.player.x + 1, gameState.player.y);
@@ -4215,7 +4237,7 @@ function killMonster(monster) {
                     y = Math.floor(Math.random() * size);
                 } while (gameState.dungeon[y][x] !== 'empty');
                 const key = spawnKeys[Math.floor(Math.random() * spawnKeys.length)];
-                const item = createItem(key, x, y, null, Math.floor(dungeonLevel / 5));
+                const item = createItem(key, x, y, null, Math.floor(dungeonLevel / 5), Math.random() < 0.1);
                 gameState.items.push(item);
                 gameState.dungeon[y][x] = 'item';
             }
@@ -4578,7 +4600,7 @@ function killMonster(monster) {
         }
 
         // 아이템 생성 함수
-        function createItem(itemKey, x, y, prefixName, enhanceLevel = 0) {
+        function createItem(itemKey, x, y, prefixName, enhanceLevel = 0, rare = false) {
             const itemData = ITEMS[itemKey];
             const item = {
                 id: Math.random().toString(36).substr(2, 9),
@@ -4609,7 +4631,25 @@ function killMonster(monster) {
                     item.suffix = suffix.name;
                 }
             } else if (item.type === ITEM_TYPES.WEAPON || item.type === ITEM_TYPES.ARMOR || item.type === ITEM_TYPES.ACCESSORY) {
-                if (prefixName) {
+                if (rare) {
+                    const prefix = RARE_PREFIXES[Math.floor(Math.random() * RARE_PREFIXES.length)];
+                    item.prefix = prefix.name;
+                    item.name = `${prefix.name} ${item.name}`;
+                    for (const stat in prefix.modifiers) {
+                        const val = prefix.modifiers[stat];
+                        if (typeof val === 'number') item[stat] = (item[stat] || 0) + val;
+                        else item[stat] = val;
+                    }
+                    const suffix = RARE_SUFFIXES[Math.floor(Math.random() * RARE_SUFFIXES.length)];
+                    item.suffix = suffix.name;
+                    item.name = `${item.name} ${suffix.name}`;
+                    for (const stat in suffix.modifiers) {
+                        const val = suffix.modifiers[stat];
+                        if (typeof val === 'number') item[stat] = (item[stat] || 0) + val;
+                        else item[stat] = val;
+                    }
+                    item.rarity = 'rare';
+                } else if (prefixName) {
                     const prefix = PREFIXES.find(p => p.name === prefixName);
                     if (prefix) {
                         item.prefix = prefix.name;
@@ -4636,7 +4676,7 @@ function killMonster(monster) {
                         }
                     }
                 }
-                if (Math.random() < 0.5) {
+                if (!rare && Math.random() < 0.5) {
                     const suffix = SUFFIXES[Math.floor(Math.random() * SUFFIXES.length)];
                     item.suffix = suffix.name;
                     item.name = `${item.name} ${suffix.name}`;
@@ -4858,7 +4898,7 @@ function killMonster(monster) {
                 img.style.imageRendering = 'pixelated';
                 message.appendChild(img);
             }
-            message.appendChild(document.createTextNode(text));
+            message.innerHTML += text;
             if (detail) {
                 message.dataset.detail = detail;
                 message.classList.add('clickable');
@@ -4880,7 +4920,7 @@ function killMonster(monster) {
             if (idx !== -1) {
                 gameState.player.inventory.splice(idx, 1);
                 gameState.player.gold += value;
-                addMessage(`💰 ${item.name}을(를) ${formatNumber(value)}골드에 판매했습니다.`, 'item');
+                addMessage(`💰 ${formatItemName(item)}을(를) ${formatNumber(value)}골드에 판매했습니다.`, 'item');
                 updateInventoryDisplay();
                 updateStats();
             }
@@ -4986,13 +5026,13 @@ function killMonster(monster) {
                     addToInventory(gameState.player.equipped.weapon);
                 }
                 gameState.player.equipped.weapon = item;
-                addMessage(`⚔️ ${item.name}을(를) 장착했습니다. 공격력 +${item.attack}`, 'item');
+                addMessage(`⚔️ ${formatItemName(item)}을(를) 장착했습니다. 공격력 +${item.attack}`, 'item');
             } else if (item.type === ITEM_TYPES.ARMOR) {
                 if (gameState.player.equipped.armor) {
                     addToInventory(gameState.player.equipped.armor);
                 }
                 gameState.player.equipped.armor = item;
-                addMessage(`🛡️ ${item.name}을(를) 장착했습니다. 방어력 +${item.defense}`, 'item');
+                addMessage(`🛡️ ${formatItemName(item)}을(를) 장착했습니다. 방어력 +${item.defense}`, 'item');
             } else if (item.type === ITEM_TYPES.ACCESSORY) {
                 let slot = null;
                 if (!gameState.player.equipped.accessory1) slot = 'accessory1';
@@ -5004,7 +5044,7 @@ function killMonster(monster) {
                     addToInventory(gameState.player.equipped[slot]);
                 }
                 gameState.player.equipped[slot] = item;
-                addMessage(`💍 ${item.name}을(를) 장착했습니다.`, 'item');
+                addMessage(`💍 ${formatItemName(item)}을(를) 장착했습니다.`, 'item');
             }
             
             const index = gameState.player.inventory.findIndex(i => i.id === item.id);
@@ -5022,7 +5062,7 @@ function killMonster(monster) {
                 SoundEngine.playSound('unequipItem');
                 addToInventory(item);
                 gameState.player.equipped[slot] = null;
-                addMessage(`📦 ${item.name}을(를) 해제했습니다.`, 'item');
+                addMessage(`📦 ${formatItemName(item)}을(를) 해제했습니다.`, 'item');
                 updateInventoryDisplay();
                 updateStats();
             }
@@ -5034,7 +5074,7 @@ function killMonster(monster) {
                 SoundEngine.playSound('unequipItem');
                 addToInventory(item);
                 gameState.player.equipped.weapon = null;
-                addMessage(`📦 ${item.name}을(를) 해제했습니다.`, 'item');
+                addMessage(`📦 ${formatItemName(item)}을(를) 해제했습니다.`, 'item');
                 updateInventoryDisplay();
                 updateStats();
             }
@@ -5046,7 +5086,7 @@ function killMonster(monster) {
                 SoundEngine.playSound('unequipItem');
                 addToInventory(item);
                 gameState.player.equipped.armor = null;
-                addMessage(`📦 ${item.name}을(를) 해제했습니다.`, 'item');
+                addMessage(`📦 ${formatItemName(item)}을(를) 해제했습니다.`, 'item');
                 updateInventoryDisplay();
                 updateStats();
             }
@@ -5068,7 +5108,7 @@ function killMonster(monster) {
                 }
             }
             const owner = unit === gameState.player ? '플레이어' : unit.name;
-            addMessage(`🧩 ${owner}이(가) ${tile.name}을(를) 장착했습니다.`, 'item');
+            addMessage(`🧩 ${owner}이(가) ${formatItemName(tile)}을(를) 장착했습니다.`, 'item');
             updateInventoryDisplay();
             updateStats();
         }
@@ -5079,7 +5119,7 @@ function killMonster(monster) {
             SoundEngine.playSound('unequipItem');
             addToInventory(tile);
             unit.equipped.tile = null;
-            addMessage(`📦 ${tile.name}을(를) 해제했습니다.`, 'item');
+            addMessage(`📦 ${formatItemName(tile)}을(를) 해제했습니다.`, 'item');
             updateInventoryDisplay();
             updateStats();
         }
@@ -5096,13 +5136,13 @@ function killMonster(monster) {
                     addToInventory(mercenary.equipped.weapon);
                 }
                 mercenary.equipped.weapon = item;
-                addMessage(`⚔️ ${mercenary.name}이(가) ${item.name}을(를) 장착했습니다.`, 'mercenary');
+                addMessage(`⚔️ ${mercenary.name}이(가) ${formatItemName(item)}을(를) 장착했습니다.`, 'mercenary');
             } else if (item.type === ITEM_TYPES.ARMOR) {
                 if (mercenary.equipped.armor) {
                     addToInventory(mercenary.equipped.armor);
                 }
                 mercenary.equipped.armor = item;
-                addMessage(`🛡️ ${mercenary.name}이(가) ${item.name}을(를) 장착했습니다.`, 'mercenary');
+                addMessage(`🛡️ ${mercenary.name}이(가) ${formatItemName(item)}을(를) 장착했습니다.`, 'mercenary');
             } else if (item.type === ITEM_TYPES.ACCESSORY) {
                 let slot = null;
                 if (!mercenary.equipped.accessory1) slot = 'accessory1';
@@ -5114,7 +5154,7 @@ function killMonster(monster) {
                     addToInventory(mercenary.equipped[slot]);
                 }
                 mercenary.equipped[slot] = item;
-                addMessage(`💍 ${mercenary.name}이(가) ${item.name}을(를) 장착했습니다.`, 'mercenary');
+                addMessage(`💍 ${mercenary.name}이(가) ${formatItemName(item)}을(를) 장착했습니다.`, 'mercenary');
             }
             
             const index = gameState.player.inventory.findIndex(i => i.id === item.id);
@@ -5136,7 +5176,7 @@ function killMonster(monster) {
                 SoundEngine.playSound('unequipItem');
                 addToInventory(item);
                 mercenary.equipped[slotType] = null;
-                addMessage(`📦 ${mercenary.name}의 ${item.name}을(를) 해제했습니다.`, 'mercenary');
+                addMessage(`📦 ${mercenary.name}의 ${formatItemName(item)}을(를) 해제했습니다.`, 'mercenary');
                 updateInventoryDisplay();
                 updateMercenaryDisplay();
                 showMercenaryDetails(mercenary);
@@ -5644,7 +5684,7 @@ function killMonster(monster) {
                 for (let i = 0; i < dropCount; i++) {
                     const key = itemKeys[Math.floor(Math.random() * itemKeys.length)];
                     const pos = findAdjacentEmpty(newX, newY);
-                    const drop = createItem(key, pos.x, pos.y, null, Math.floor(gameState.floor / 5));
+                    const drop = createItem(key, pos.x, pos.y, null, Math.floor(gameState.floor / 5), Math.random() < 0.1);
                     gameState.items.push(drop);
                     gameState.dungeon[pos.y][pos.x] = 'item';
                 }
@@ -5695,7 +5735,7 @@ function killMonster(monster) {
                         let key = itemKeys[Math.floor(Math.random() * itemKeys.length)];
                         if (Math.random() < 0.2) key = 'superiorEgg';
                         const pos = findAdjacentEmpty(newX, newY);
-                        const drop = createItem(key, pos.x, pos.y, null, Math.floor(gameState.floor / 5) + 1);
+                        const drop = createItem(key, pos.x, pos.y, null, Math.floor(gameState.floor / 5) + 1, Math.random() < 0.1);
                         gameState.items.push(drop);
                         gameState.dungeon[pos.y][pos.x] = 'item';
                     }
@@ -7731,7 +7771,7 @@ createHomingProjectile, createItem, createMercenary, createMonster,
 createRecipeScroll, learnRecipe,
 createSuperiorMonster, createTreasure, createNovaEffect, createScreenShake, dissectCorpse, equipItem,
 equipItemToMercenary, estimateSkillDamage, findAdjacentEmpty, findNearestEmpty, findPath,
- formatItem, formatNumber, generateDungeon, rebuildDungeonDOM, generateStars, getAuraBonus,
+ formatItem, formatItemName, formatNumber, generateDungeon, rebuildDungeonDOM, generateStars, getAuraBonus,
 getDistance, getMonsterPoolForFloor, getPlayerEmoji, getStat, getStatusResist,
 getActiveAuraIcons, buildEffectDetails, updateUnitEffectIcons,
 handleDungeonClick, handleItemClick, handlePlayerDeath,
@@ -7757,5 +7797,5 @@ upgradeMercenarySkill, upgradeMonsterSkill, useItem, useItemOnTarget, useSkill, 
     showCorpsePanel, hideCorpsePanel, ignoreCorpse, getMonsterRank,
     getMonsterImage, getMercImage, getPlayerImage
 };
-Object.assign(window, exportsObj, {SKILL_DEFS, MERCENARY_SKILLS, MONSTER_SKILLS, MONSTER_SKILL_SETS, MONSTER_TRAITS, MONSTER_TRAIT_SETS, PREFIXES, SUFFIXES, MAP_PREFIXES, MAP_SUFFIXES, MAP_TILE_TYPES, CORPSE_TURNS});
+Object.assign(window, exportsObj, {SKILL_DEFS, MERCENARY_SKILLS, MONSTER_SKILLS, MONSTER_SKILL_SETS, MONSTER_TRAITS, MONSTER_TRAIT_SETS, PREFIXES, SUFFIXES, RARE_PREFIXES, RARE_SUFFIXES, MAP_PREFIXES, MAP_SUFFIXES, MAP_TILE_TYPES, CORPSE_TURNS});
 
