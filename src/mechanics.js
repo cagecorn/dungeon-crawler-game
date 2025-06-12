@@ -289,6 +289,10 @@ const BgmPlayer = {
         'assets/audio/bgm7.mp3',
         'assets/audio/bgm8.mp3',
         'assets/audio/bgm9.mp3'
+        'assets/audio/bgm10.mp3'
+        'assets/audio/bgm11.mp3'
+        'assets/audio/bgm12.mp3'
+        'assets/audio/bgm13.mp3'
     ],
     // [추가] 현재 재생 중인 트랙의 인덱스
     currentTrackIndex: 0,
