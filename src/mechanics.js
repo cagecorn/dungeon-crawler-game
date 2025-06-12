@@ -1734,12 +1734,20 @@ const MERCENARY_NAMES = [
             const power = getStat(caster, 'magicPower');
             const amount = Math.floor(power * level);
             if (amount <= 0) return false;
-            target.shield = (target.shield || 0) + amount;
-            target.shieldTurns = skillInfo.duration || 5;
-            const name = target === gameState.player ? '플레이어' : target.name;
-            const img = caster === gameState.player ? getPlayerImage() : getMercImage(caster.type);
-            addMessage(`${skillInfo.icon} ${caster.name}의 ${skillInfo.name}이(가) ${name}에게 ${formatNumber(amount)} 보호막을 부여했습니다.`, 'mercenary', null, img);
-            return true;
+
+            let applied = false;
+            if (!target.shield || amount > target.shield) {
+                target.shield = amount;
+                target.shieldTurns = skillInfo.duration || 5;
+                applied = true;
+            }
+
+            if (applied) {
+                const name = target === gameState.player ? '플레이어' : target.name;
+                const img = caster === gameState.player ? getPlayerImage() : getMercImage(caster.type);
+                addMessage(`${skillInfo.icon} ${caster.name}의 ${skillInfo.name}이(가) ${name}에게 ${formatNumber(amount)} 보호막을 부여했습니다.`, 'mercenary', null, img);
+            }
+            return applied;
         }
 
         // 피해를 적용할 때 보호막을 우선 소모합니다.
