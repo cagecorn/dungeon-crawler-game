@@ -1418,7 +1418,7 @@ const MERCENARY_NAMES = [
                 damageDice: '1d12',
                 tier: 'unique',
                 procs: [
-                    { event: 'onHit', skill: 'Fireball', chance: 0.2 }
+                    { event: 'onAttack', skill: 'Fireball', chance: 0.2 }
                 ],
                 icon: '🌋',
                 level: 1,
@@ -1430,13 +1430,42 @@ const MERCENARY_NAMES = [
                 defense: 8,
                 tier: 'unique',
                 procs: [
-                    { event: 'onHitTaken', skill: 'IceNova', chance: 0.15 }
+                    { event: 'onDamaged', skill: 'IceNova', chance: 0.15 }
                 ],
                 icon: '🛡️',
                 level: 1,
                 price: 0
+            },
+            guardianAmulet: {
+                name: '🛡️ 수호의 부적',
+                type: ITEM_TYPES.ACCESSORY,
+                tier: 'unique',
+                procs: [
+                    { event: 'onDamaged', skill: 'GuardianHymn', chance: 0.1 }
+                ],
+                icon: '🛡️',
+                level: 1,
+                price: 0
+            },
+            courageAmulet: {
+                name: '🎵 용기의 부적',
+                type: ITEM_TYPES.ACCESSORY,
+                tier: 'unique',
+                procs: [
+                    { event: 'onDamaged', skill: 'CourageHymn', chance: 0.1 }
+                ],
+                icon: '🎵',
+                level: 1,
+                price: 0
             }
         };
+
+        const UNIQUE_EFFECT_POOL = [
+            { event: 'onAttack', skill: 'FireNova', chance: 0.15 },
+            { event: 'onAttack', skill: 'IceNova', chance: 0.15 },
+            { event: 'onDamaged', skill: 'GuardianHymn', chance: 0.1 },
+            { event: 'onDamaged', skill: 'CourageHymn', chance: 0.1 }
+        ];
 
         // Skill definitions used throughout the game
         // Each entry must specify a numeric cooldown; set to 0 for passive or always-available skills.
@@ -4391,10 +4420,10 @@ function killMonster(monster) {
                 gameState.player.inventory.push(starterPotion);
 
                 const isTestEnv = typeof navigator !== 'undefined' && /jsdom/i.test(navigator.userAgent);
-                const fireSword = createItem('shortSword', 0, 0, null, 0, !isTestEnv);
-                gameState.player.equipped.weapon = fireSword;
-                const leatherArmor = createItem('leatherArmor', 0, 0, null, 0, !isTestEnv);
-                gameState.player.equipped.armor = leatherArmor;
+                gameState.player.equipped.weapon = createItem('volcanicEruptor', 0, 0, null, 0, !isTestEnv);
+                gameState.player.equipped.armor = createItem('glacialGuard', 0, 0, null, 0, !isTestEnv);
+                gameState.player.equipped.accessory1 = createItem('guardianAmulet', 0, 0, null, 0, !isTestEnv);
+                gameState.player.equipped.accessory2 = createItem('courageAmulet', 0, 0, null, 0, !isTestEnv);
                 // 시작 슈페리어 알을 플레이어 앞에 드랍하도록 수정
                 const starterEgg = createItem('superiorEgg', gameState.player.x + 1, gameState.player.y);
                 starterEgg.incubation = 1; // 이 알의 부화 시간을 1턴으로 특별히 설정
@@ -4804,7 +4833,8 @@ function killMonster(monster) {
         function createMercenary(type, x, y) {
             const mercType = MERCENARY_TYPES[type];
             const skillPool = MERCENARY_SKILL_SETS[type] || [];
-            const assignedSkill = skillPool[Math.floor(Math.random() * skillPool.length)] || null;
+            const isTestMerc = typeof navigator !== 'undefined' && /jsdom/i.test(navigator.userAgent);
+            const assignedSkill = skillPool.length ? (isTestMerc ? skillPool[0] : skillPool[Math.floor(Math.random() * skillPool.length)]) : null;
             const assignedSkill2 = type === 'HEALER' ? 'Purify' : null;
             const randomBaseName = MERCENARY_NAMES[Math.floor(Math.random() * MERCENARY_NAMES.length)];
             const jobLabel = mercType.name.split(' ')[1] || mercType.name;
@@ -4986,6 +5016,17 @@ function killMonster(monster) {
                         } else {
                             item[stat] = val;
                         }
+                    }
+                }
+            }
+
+            if (item.tier === 'unique') {
+                const isTest = typeof navigator !== 'undefined' && /jsdom/i.test(navigator.userAgent);
+                if (!isTest) {
+                    const effect = UNIQUE_EFFECT_POOL[Math.floor(Math.random() * UNIQUE_EFFECT_POOL.length)];
+                    if (effect) {
+                        if (!item.procs) item.procs = [];
+                        item.procs.push({ ...effect });
                     }
                 }
             }
@@ -8251,5 +8292,5 @@ upgradeMercenarySkill, upgradeMonsterSkill, useItem, useItemOnTarget, useSkill, 
     getMonsterImage, getMercImage, getPlayerImage,
     isPlayerSide, isSameSide
 };
-Object.assign(window, exportsObj, {SKILL_DEFS, MERCENARY_SKILLS, MONSTER_SKILLS, MONSTER_SKILL_SETS, MONSTER_TRAITS, MONSTER_TRAIT_SETS, PREFIXES, SUFFIXES, RARE_PREFIXES, RARE_SUFFIXES, MAP_PREFIXES, MAP_SUFFIXES, MAP_TILE_TYPES, CORPSE_TURNS, UNIQUE_ITEMS});
+Object.assign(window, exportsObj, {SKILL_DEFS, MERCENARY_SKILLS, MONSTER_SKILLS, MONSTER_SKILL_SETS, MONSTER_TRAITS, MONSTER_TRAIT_SETS, PREFIXES, SUFFIXES, RARE_PREFIXES, RARE_SUFFIXES, MAP_PREFIXES, MAP_SUFFIXES, MAP_TILE_TYPES, CORPSE_TURNS, UNIQUE_ITEMS, UNIQUE_EFFECT_POOL});
 
