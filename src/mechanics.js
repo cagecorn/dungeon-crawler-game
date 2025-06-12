@@ -2087,6 +2087,16 @@ const MERCENARY_NAMES = [
             else if (skill.heal) {
                 healTarget(source, source, skill, level);
             }
+            // 보호막 부여 스킬 처리
+            else if (skill.shield) {
+                if (!target) target = source;
+                applyShield(source, target, skill, level);
+            }
+            // 공격력 증가 버프 스킬 처리
+            else if (skill.attackBuff) {
+                if (!target) target = source;
+                applyAttackBuff(source, target, skill, level);
+            }
             // 버프 스킬 처리
             else if (skill.buff) {
                 if (!target) target = source;
@@ -6811,9 +6821,7 @@ function processTurn() {
                     }
                 }
 
-                // --- FIX: 모든 조건이 충족되지 않았을 때의 최종 처리 ---
-                mercenary.hasActed = true;
-                return; // << 중요: 힐러의 턴을 여기서 명시적으로 종료하여 다른 로직으로 넘어가지 않도록 방지
+                // 이동만 했다면 이후 일반 행동 로직을 계속 진행합니다.
             }
             
             // 가장 가까운 시야 내 몬스터 찾기 (fog of war 고려)
