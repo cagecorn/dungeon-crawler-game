@@ -3667,7 +3667,7 @@ function killMonster(monster) {
                             } else if (baseCellType === 'altar') {
                                 div.textContent = '🗺️';
                             } else if (baseCellType === 'corpse') {
-                                div.textContent = '☠️';
+                                // div.textContent = '☠️';
                             } else if (baseCellType === 'treasure') {
                                 div.textContent = '💰';
                             } else if (baseCellType === 'exit') {
