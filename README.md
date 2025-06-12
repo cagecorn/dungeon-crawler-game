@@ -38,6 +38,7 @@ The full roster of monsters appears on progressively higher floors as defined in
 - Use the arrow keys or on-screen arrows to move your character.
 - Press `Z` (or `F`) or click **Attack** to strike the nearest monster.
 - Number keys `1`-`9` open the details of each hired mercenary.
+- Use the BGM buttons at the top of the page to switch tracks or mute the background music.
 - Additional actions such as **Heal**, **Recall**, **Skill1** and **Skill2** are available via the action buttons. You can also use `X` for **Skill1**, `C` for **Skill2**, `V` for **Ranged** attack and `A` to recall your mercenaries.
 
 ### Hiring Mercenaries
