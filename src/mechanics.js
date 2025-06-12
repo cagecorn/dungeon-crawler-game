@@ -4159,7 +4159,7 @@ function killMonster(monster) {
 
             const monsterTypes = getMonsterPoolForFloor(dungeonLevel);
             // 몬스터는 던전 크기와 층수에 비례해 등장 수를 결정
-            let monsterCount = Math.floor(size * 0.2) + dungeonLevel;
+            let monsterCount = Math.floor(size * 0.2 + dungeonLevel * 1.5);
             monsterCount = Math.floor(monsterCount * (modifiers.monsterMultiplier || 1));
             for (let i = 0; i < monsterCount; i++) {
                 let x, y;
