@@ -41,8 +41,8 @@ async function run() {
     console.error('player not moved to adjacent empty tile');
     process.exit(1);
   }
-  if (gameState.dungeon[1][1] !== 'empty') {
-    console.error('corpse not removed after ignore');
+  if (!gameState.corpses.includes(monster) || gameState.dungeon[1][1] !== 'corpse') {
+    console.error('corpse removed after ignore');
     process.exit(1);
   }
   if (gameState.turn !== 1) {

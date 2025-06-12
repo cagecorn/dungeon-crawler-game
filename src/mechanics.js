@@ -3436,11 +3436,7 @@ function killMonster(monster) {
         }
 
         function ignoreCorpse(corpse) {
-            // Move the player onto the corpse tile
-            gameState.player.x = corpse.x;
-            gameState.player.y = corpse.y;
-
-            // Collect any item on the corpse position
+            // Collect any item on the corpse position without removing the corpse
             const item = gameState.items.find(i => i.x === corpse.x && i.y === corpse.y);
             if (item) {
                 addToInventory(item);
@@ -3448,11 +3444,6 @@ function killMonster(monster) {
                 const idx = gameState.items.findIndex(i => i === item);
                 if (idx !== -1) gameState.items.splice(idx, 1);
             }
-
-            // Remove the corpse and clear the dungeon cell
-            const cIdx = gameState.corpses.findIndex(c => c === corpse);
-            if (cIdx !== -1) gameState.corpses.splice(cIdx, 1);
-            gameState.dungeon[corpse.y][corpse.x] = 'empty';
 
             // Move the player to a neighbouring empty tile
             const pos = findAdjacentEmpty(corpse.x, corpse.y);
