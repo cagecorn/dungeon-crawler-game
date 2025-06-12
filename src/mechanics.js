@@ -3128,7 +3128,8 @@ function updateMaterialsDisplay() {
                 statusEffect: data.statusEffect,
                 lootChance: 0.3,
                 fullness: 75,
-                hasActed: false
+                hasActed: false,
+                skillCooldowns: {}
             };
             setMonsterLevel(monster, level);
             monster.skillLevels = {};
@@ -3447,6 +3448,7 @@ function killMonster(monster) {
                     }
                     return obj;
                 })(),
+                skillCooldowns: {},
                 alive: true,
                 affinity: 30,
                 fullness: 75,
@@ -4595,6 +4597,7 @@ function killMonster(monster) {
                     if (assignedSkill2) obj[assignedSkill2] = 1;
                     return obj;
                 })(),
+                skillCooldowns: {},
                 alive: true,
                 hasActed: false,
                 affinity: 50,
@@ -4782,7 +4785,8 @@ function killMonster(monster) {
                 paralysis:false,nightmare:false,silence:false,petrify:false,debuff:false,
                 poisonTurns:0,burnTurns:0,freezeTurns:0,bleedTurns:0,
                 paralysisTurns:0,nightmareTurns:0,silenceTurns:0,petrifyTurns:0,debuffTurns:0,
-                expNeeded: 15
+                expNeeded: 15,
+                skillCooldowns: {}
             };
             const keys = Object.keys(ITEMS).filter(k =>
                 [ITEM_TYPES.WEAPON, ITEM_TYPES.ARMOR, ITEM_TYPES.ACCESSORY].includes(ITEMS[k].type) &&
@@ -5916,6 +5920,18 @@ function killMonster(monster) {
 function processTurn() {
     if (!gameState.gameRunning) return;
     gameState.turn++;
+
+    function dec(obj) {
+        if (!obj || !obj.skillCooldowns) return;
+        for (const key in obj.skillCooldowns) {
+            if (obj.skillCooldowns[key] > 0) {
+                obj.skillCooldowns[key]--;
+            }
+        }
+    }
+    dec(gameState.player);
+    [...gameState.activeMercenaries, ...gameState.standbyMercenaries].forEach(dec);
+    gameState.monsters.forEach(dec);
 
     for (let i = gameState.corpses.length - 1; i >= 0; i--) {
         const corpse = gameState.corpses[i];
