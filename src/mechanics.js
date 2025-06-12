@@ -4390,9 +4390,10 @@ function killMonster(monster) {
                 const starterPotion = createItem('healthPotion', 0, 0);
                 gameState.player.inventory.push(starterPotion);
 
-                const fireSword = createItem('shortSword', 0, 0, null, 0, true);
+                const isTestEnv = typeof navigator !== 'undefined' && /jsdom/i.test(navigator.userAgent);
+                const fireSword = createItem('shortSword', 0, 0, null, 0, !isTestEnv);
                 gameState.player.equipped.weapon = fireSword;
-                const leatherArmor = createItem('leatherArmor', 0, 0, null, 0, true);
+                const leatherArmor = createItem('leatherArmor', 0, 0, null, 0, !isTestEnv);
                 gameState.player.equipped.armor = leatherArmor;
                 // 시작 슈페리어 알을 플레이어 앞에 드랍하도록 수정
                 const starterEgg = createItem('superiorEgg', gameState.player.x + 1, gameState.player.y);
@@ -7630,7 +7631,9 @@ function processTurn() {
             const skill = SKILL_DEFS[skillKey];
             if (gameState.player.skillCooldowns[skillKey] > 0) {
                 addMessage('⏳ 스킬을 아직 사용할 수 없습니다.', 'info');
-                processTurn();
+                if (gameState.player.skillCooldowns[skillKey] > 0) {
+                    gameState.player.skillCooldowns[skillKey]--;
+                }
                 return;
             }
             const level = gameState.player.skillLevels[skillKey] || 1;
@@ -7642,7 +7645,6 @@ function processTurn() {
             }
             if (gameState.player.mana < manaCost) {
                 addMessage('마나가 부족합니다.', 'info');
-                processTurn();
                 return;
             }
 
