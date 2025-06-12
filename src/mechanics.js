@@ -407,6 +407,8 @@ const ITEM_TYPES = {
             WEAPON: 'weapon',
             ARMOR: 'armor',
             ACCESSORY: 'accessory',
+            TROPHY: 'trophy',
+            ARTIFACT: 'artifact',
             POTION: 'potion',
             REVIVE: 'revive',
             EXP_SCROLL: 'expScroll',
@@ -419,7 +421,7 @@ const ITEM_TYPES = {
         };
 
 const INVENTORY_CATEGORIES = {
-    equipment: [ITEM_TYPES.WEAPON, ITEM_TYPES.ARMOR, ITEM_TYPES.ACCESSORY],
+    equipment: [ITEM_TYPES.WEAPON, ITEM_TYPES.ARMOR, ITEM_TYPES.ACCESSORY, ITEM_TYPES.TROPHY, ITEM_TYPES.ARTIFACT],
     recipe: [ITEM_TYPES.RECIPE_SCROLL],
     food: [ITEM_TYPES.FOOD],
     potion: [ITEM_TYPES.POTION, ITEM_TYPES.REVIVE],
@@ -2204,7 +2206,7 @@ const MERCENARY_NAMES = [
                 span.textContent = label;
                 div.appendChild(span);
                 div.onclick = () => handleItemClick(item);
-                if (item.type !== ITEM_TYPES.WEAPON && item.type !== ITEM_TYPES.ARMOR && item.type !== ITEM_TYPES.ACCESSORY) {
+                if (item.type !== ITEM_TYPES.WEAPON && item.type !== ITEM_TYPES.ARMOR && item.type !== ITEM_TYPES.ACCESSORY && item.type !== ITEM_TYPES.TROPHY && item.type !== ITEM_TYPES.ARTIFACT) {
                     const sellBtn = document.createElement('button');
                     sellBtn.textContent = '판매';
                     sellBtn.className = 'sell-button';
@@ -4608,7 +4610,7 @@ function killMonster(monster) {
                     Object.assign(item.modifiers, suffix.modifiers);
                     item.suffix = suffix.name;
                 }
-            } else if (item.type === ITEM_TYPES.WEAPON || item.type === ITEM_TYPES.ARMOR || item.type === ITEM_TYPES.ACCESSORY) {
+            } else if (item.type === ITEM_TYPES.WEAPON || item.type === ITEM_TYPES.ARMOR || item.type === ITEM_TYPES.ACCESSORY || item.type === ITEM_TYPES.TROPHY || item.type === ITEM_TYPES.ARTIFACT) {
                 if (prefixName) {
                     const prefix = PREFIXES.find(p => p.name === prefixName);
                     if (prefix) {
@@ -4735,7 +4737,7 @@ function killMonster(monster) {
                 expNeeded: 15
             };
             const keys = Object.keys(ITEMS).filter(k =>
-                [ITEM_TYPES.WEAPON, ITEM_TYPES.ARMOR, ITEM_TYPES.ACCESSORY].includes(ITEMS[k].type) &&
+                [ITEM_TYPES.WEAPON, ITEM_TYPES.ARMOR, ITEM_TYPES.ACCESSORY, ITEM_TYPES.TROPHY, ITEM_TYPES.ARTIFACT].includes(ITEMS[k].type) &&
                 ITEMS[k].level <= Math.ceil(level / 2 + 1)
             );
             const weaponChoices = keys.filter(k => ITEMS[k].type === ITEM_TYPES.WEAPON);
@@ -4910,7 +4912,7 @@ function killMonster(monster) {
         }
 
         function enhanceItem(item) {
-            if (item.type !== ITEM_TYPES.WEAPON && item.type !== ITEM_TYPES.ARMOR && item.type !== ITEM_TYPES.ACCESSORY) {
+            if (item.type !== ITEM_TYPES.WEAPON && item.type !== ITEM_TYPES.ARMOR && item.type !== ITEM_TYPES.ACCESSORY && item.type !== ITEM_TYPES.TROPHY && item.type !== ITEM_TYPES.ARTIFACT) {
                 addMessage('강화할 수 없는 아이템입니다.', 'info');
                 return;
             }
@@ -4948,7 +4950,7 @@ function killMonster(monster) {
         }
 
         function disassembleItem(item) {
-            if (item.type !== ITEM_TYPES.WEAPON && item.type !== ITEM_TYPES.ARMOR && item.type !== ITEM_TYPES.ACCESSORY) {
+            if (item.type !== ITEM_TYPES.WEAPON && item.type !== ITEM_TYPES.ARMOR && item.type !== ITEM_TYPES.ACCESSORY && item.type !== ITEM_TYPES.TROPHY && item.type !== ITEM_TYPES.ARTIFACT) {
                 addMessage('분해할 수 없는 아이템입니다.', 'info');
                 return;
             }
@@ -4971,7 +4973,7 @@ function killMonster(monster) {
 
         // 아이템 클릭 시 대상 패널 표시
         function handleItemClick(item) {
-            if (item.type === ITEM_TYPES.WEAPON || item.type === ITEM_TYPES.ARMOR || item.type === ITEM_TYPES.ACCESSORY) {
+            if (item.type === ITEM_TYPES.WEAPON || item.type === ITEM_TYPES.ARMOR || item.type === ITEM_TYPES.ACCESSORY || item.type === ITEM_TYPES.TROPHY || item.type === ITEM_TYPES.ARTIFACT) {
                 showItemDetailPanel(item);
             } else {
                 showItemTargetPanel(item);
@@ -7341,7 +7343,9 @@ function processTurn() {
                 let fullLabel = label;
                 if (item.type === ITEM_TYPES.WEAPON ||
                     item.type === ITEM_TYPES.ARMOR ||
-                    item.type === ITEM_TYPES.ACCESSORY) {
+                    item.type === ITEM_TYPES.ACCESSORY ||
+                    item.type === ITEM_TYPES.TROPHY ||
+                    item.type === ITEM_TYPES.ARTIFACT) {
                     const info = getEquipInfo(target);
                     fullLabel = `${label} (${info})`;
                 }
