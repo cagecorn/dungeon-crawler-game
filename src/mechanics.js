@@ -1728,6 +1728,17 @@ const MERCENARY_NAMES = [
             return false;
         }
 
+        // 피해를 적용할 때 보호막을 우선 소모합니다.
+        function applyDamage(target, amount) {
+            if (amount <= 0) return;
+            if (target.shield && target.shield > 0) {
+                const blocked = Math.min(amount, target.shield);
+                target.shield -= blocked;
+                amount -= blocked;
+            }
+            target.health -= amount;
+        }
+
         function purifyTarget(healer, target, skillInfo) {
             const statuses = ['poison','burn','freeze','bleed','paralysis','nightmare','silence','petrify','debuff'];
             let removed = false;
@@ -1926,7 +1937,7 @@ const MERCENARY_NAMES = [
 
 
             let damage = baseDamage + elementDamage;
-            defender.health -= damage;
+            applyDamage(defender, damage);
             if (!crit) SoundEngine.playSound('takeDamage');
 
             let statusApplied = false;
@@ -2904,6 +2915,10 @@ function updateMaterialsDisplay() {
             document.getElementById('intelligenceStat').textContent = formatNumber(gameState.player.intelligence);
             document.getElementById('health').textContent = formatNumber(gameState.player.health);
             document.getElementById('maxHealth').textContent = formatNumber(getStat(gameState.player, 'maxHealth'));
+            const shieldEl = document.getElementById('shield');
+            if (shieldEl) {
+                shieldEl.textContent = gameState.player.shield > 0 ? `+${formatNumber(gameState.player.shield)}` : '';
+            }
             document.getElementById('mana').textContent = formatNumber(gameState.player.mana);
             document.getElementById('maxMana').textContent = formatNumber(getStat(gameState.player, 'maxMana'));
             document.getElementById('fullness').textContent = formatNumber(gameState.player.fullness);
@@ -2935,6 +2950,9 @@ function updateMaterialsDisplay() {
             const hpRatio = gameState.player.health / getStat(gameState.player,'maxHealth');
             const hpEl = document.getElementById('hp-bar');
             if (hpEl) hpEl.style.width = (hpRatio*100) + '%';
+            const shieldRatio = Math.min(gameState.player.shield / getStat(gameState.player,'maxHealth'), 1);
+            const shieldBar = document.getElementById('shield-bar');
+            if (shieldBar) shieldBar.style.width = (shieldRatio*100) + '%';
             const mpRatio = gameState.player.mana / getStat(gameState.player,'maxMana');
             const mpEl = document.getElementById('mp-bar');
             if (mpEl) mpEl.style.width = (mpRatio*100) + '%';
@@ -3694,31 +3712,31 @@ function killMonster(monster) {
             const name = entity === gameState.player ? '플레이어' : entity.name;
             let died = false;
             if (entity.poison && entity.poisonTurns > 0) {
-                entity.health -= 2;
+                applyDamage(entity, 2);
                 entity.poisonTurns--;
                 addMessage(`☠️ ${name}이(가) 독으로 2의 피해를 입었습니다.`, 'combat');
                 if (entity.poisonTurns <= 0) entity.poison = false;
             }
             if (entity.burn && entity.burnTurns > 0) {
-                entity.health -= 3;
+                applyDamage(entity, 3);
                 entity.burnTurns--;
                 addMessage(`🔥 ${name}이(가) 화상으로 3의 피해를 입었습니다.`, 'combat');
                 if (entity.burnTurns <= 0) entity.burn = false;
             }
             if (entity.freeze && entity.freezeTurns > 0) {
-                entity.health -= 1;
+                applyDamage(entity, 1);
                 entity.freezeTurns--;
                 addMessage(`❄️ ${name}이(가) 빙결로 1의 피해를 입었습니다.`, 'combat');
                 if (entity.freezeTurns <= 0) entity.freeze = false;
             }
             if (entity.bleed && entity.bleedTurns > 0) {
-                entity.health -= 2;
+                applyDamage(entity, 2);
                 entity.bleedTurns--;
                 addMessage(`🩸 ${name}이(가) 출혈로 2의 피해를 입었습니다.`, 'combat');
                 if (entity.bleedTurns <= 0) entity.bleed = false;
             }
             if (entity.nightmare && entity.nightmareTurns > 0) {
-                entity.health -= 2;
+                applyDamage(entity, 2);
                 entity.nightmareTurns--;
                 addMessage(`😱 ${name}이(가) 악몽으로 2의 피해를 입었습니다.`, 'combat');
                 if (entity.nightmareTurns <= 0) entity.nightmare = false;
@@ -6939,6 +6957,9 @@ function processTurn() {
             gameState.activeRecipes = saved.activeRecipes || saved.knownRecipes;
             if (saved.player.statPoints === undefined) {
                 gameState.player.statPoints = 0;
+            }
+            if (saved.player.shield === undefined) {
+                gameState.player.shield = 0;
             }
             if (saved.activeMercenaries) gameState.activeMercenaries = saved.activeMercenaries;
             else if (saved.mercenaries) gameState.activeMercenaries = saved.mercenaries;

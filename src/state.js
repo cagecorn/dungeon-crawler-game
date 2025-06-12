@@ -13,6 +13,7 @@
             x: 1,
             y: 1,
             health: 20,
+            shield: 0,
             mana: 10,
             exp: 0,
             expNeeded: 20,
