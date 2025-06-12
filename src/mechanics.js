@@ -1940,7 +1940,11 @@ const MERCENARY_NAMES = [
                     for (const proc of item.procs) {
                         const trig = proc.trigger || proc.event;
                         if (trig === triggerType && Math.random() < proc.chance) {
-                            addMessage(`✨ ${unit.name}의 ${item.name} 효과 발동!`, 'treasure');
+                            const skill = SKILL_DEFS[proc.skill];
+                            const unitName = unit.name || '유닛';
+                            const itemName = item.name || '장비';
+                            const skillName = skill ? skill.name : proc.skill;
+                            addMessage(`✨ ${unitName}의 ${itemName} 효과로 ${skillName} 스킬이 발동했습니다!`, 'treasure', null, unit);
                             if (typeof triggerProcSkill === 'function') {
                                 triggerProcSkill(unit, opponent, proc);
                             }
