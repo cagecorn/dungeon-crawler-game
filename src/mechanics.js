@@ -3784,6 +3784,7 @@ function killMonster(monster) {
         function allocateStat(stat) {
             if (gameState.player.statPoints <= 0) return;
             if (!['strength','agility','endurance','focus','intelligence'].includes(stat)) return;
+            SoundEngine.playSound('statAllocate');
             gameState.player[stat] += 1;
             gameState.player.statPoints -= 1;
             updateStats();
