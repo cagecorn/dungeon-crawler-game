@@ -1394,6 +1394,26 @@ const MERCENARY_NAMES = [
             ConcentrationAura: { name: 'Concentration Aura', icon: '🎯', passive: true, radius: 6, aura: { accuracy: 0.05 }, cooldown: 0 },
             CondemnAura: { name: 'Condemn Aura', icon: '⚔️', passive: true, radius: 6, aura: { critChance: 0.05 }, cooldown: 0 },
             NaturalAura: { name: 'Natural Aura', icon: '🌿', passive: true, radius: 6, aura: { allResist: 0.05 }, cooldown: 0 } // 레벨당 5% 저항
+=======
+            Fireball: { name: 'Fireball', icon: '🔥', damageDice: '1d10', range: 5, magic: true, element: 'fire', manaCost: 3, cooldown: 2 },
+            Iceball: { name: 'Iceball', icon: '❄️', damageDice: '1d8', range: 5, magic: true, element: 'ice', manaCost: 2, cooldown: 2 },
+            FireNova: { name: 'Fire Nova', icon: '🔥', damageDice: '1d6', radius: 3, magic: true, element: 'fire', manaCost: 5, cooldown: 3 },
+            IceNova: { name: 'Ice Nova', icon: '❄️', damageDice: '1d6', radius: 3, magic: true, element: 'ice', manaCost: 4, cooldown: 3 },
+            Heal: { name: 'Heal', icon: '💖', heal: 10, range: 2, manaCost: 3, cooldown: 0 },
+            Purify: { name: 'Purify', icon: '🌀', purify: true, range: 2, manaCost: 2, cooldown: 0 },
+            Teleport: { name: 'Teleport', icon: '🌀', teleport: true, manaCost: 2, cooldown: 5 },
+            DoubleStrike: { name: 'Double Strike', icon: '🔪', range: 1, manaCost: 3, melee: true, hits: 2, cooldown: 2 },
+            ChargeAttack: { name: 'Charge Attack', icon: '⚡', range: 2, manaCost: 2, melee: true, multiplier: 1.5, dashRange: 4, cooldown: 3 },
+            HawkEye: { name: 'Hawk Eye', icon: '🦅', range: 5, manaCost: 2, damageDice: '1d6', cooldown: 2 },
+            MightAura: { name: 'Might Aura', icon: '💪', passive: true, radius: 6, aura: { attack: 1, magicPower: 1 }, cooldown: 0 },
+            ProtectAura: { name: 'Protect Aura', icon: '🛡️', passive: true, radius: 6, aura: { defense: 1, magicResist: 1 }, cooldown: 0 },
+            RegenerationAura: { name: 'Regeneration Aura', icon: '💚', passive: true, radius: 6, aura: { healthRegen: 1 }, cooldown: 0 },
+            MeditationAura: { name: 'Meditation Aura', icon: '🌀', passive: true, radius: 6, aura: { manaRegen: 1 }, cooldown: 0 },
+            HasteAura: { name: 'Haste Aura', icon: '💨', passive: true, radius: 6, aura: { evasion: 0.05 }, cooldown: 0 },
+            ConcentrationAura: { name: 'Concentration Aura', icon: '🎯', passive: true, radius: 6, aura: { accuracy: 0.05 }, cooldown: 0 },
+            CondemnAura: { name: 'Condemn Aura', icon: '⚔️', passive: true, radius: 6, aura: { critChance: 0.05 }, cooldown: 0 },
+            NaturalAura: { name: 'Natural Aura', icon: '🌿', passive: true, radius: 6, aura: { allResist: 0.05 }, cooldown: 0 } // 레벨당 5% 저항
+>>>>>>> main
         };
 
         // 용병 전용 스킬 정의
