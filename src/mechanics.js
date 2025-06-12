@@ -5287,6 +5287,39 @@ function killMonster(monster) {
             shake();
         }
 
+        /**
+         * 지정된 이미지를 사용해 술자 위치에 오버레이 효과를 재생합니다.
+         * @param {object} caster - 스킬을 시전한 유닛 (플레이어, 용병, 몬스터)
+         * @param {string} imageUrl - 표시할 이미지의 URL
+         * @param {number} size - 효과의 최대 크기 (px)
+         * @param {number} duration - 효과 지속 시간 (ms)
+         */
+        function playSkillOverlayEffect(caster, imageUrl, size, duration) {
+            const dungeonEl = document.getElementById('dungeon');
+            if (!dungeonEl) return;
+
+            const effectDiv = document.createElement('div');
+            effectDiv.className = 'skill-effect-overlay';
+            effectDiv.style.backgroundImage = `url('${imageUrl}')`;
+            effectDiv.style.width = `${size}px`;
+            effectDiv.style.height = `${size}px`;
+
+            const cellSizeWithGap = 33;
+            const screenX = (caster.x - gameState.camera.x) * cellSizeWithGap + (cellSizeWithGap / 2);
+            const screenY = (caster.y - gameState.camera.y) * cellSizeWithGap + (cellSizeWithGap / 2);
+
+            effectDiv.style.left = `${screenX}px`;
+            effectDiv.style.top = `${screenY}px`;
+
+            dungeonEl.appendChild(effectDiv);
+
+            setTimeout(() => {
+                if (effectDiv.parentNode) {
+                    effectDiv.parentNode.removeChild(effectDiv);
+                }
+            }, duration);
+        }
+
         // 메시지 로그 추가
         function addMessage(text, type = 'info', detail = null, imageUrl = null) {
             const messageLog = document.getElementById('message-log');
@@ -8358,7 +8391,7 @@ buyShopItem, checkLevelUp, checkMercenaryLevelUp, checkMonsterLevelUp,
 convertMonsterToMercenary, craftItem, createChampion, createEliteMonster, 
 createHomingProjectile, createItem, createMercenary, createMonster,
 createRecipeScroll, learnRecipe,
-createSuperiorMonster, createTreasure, createNovaEffect, createScreenShake, dissectCorpse, equipItem,
+createSuperiorMonster, createTreasure, createNovaEffect, createScreenShake, playSkillOverlayEffect, dissectCorpse, equipItem,
 equipItemToMercenary, estimateSkillDamage, findAdjacentEmpty, findNearestEmpty, findPath,
  formatItem, formatItemName, formatNumber, generateDungeon, rebuildDungeonDOM, generateStars, getAuraBonus,
 getDistance, getMonsterPoolForFloor, getPlayerEmoji, getStat, getStatusResist,
