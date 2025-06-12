@@ -123,6 +123,7 @@ You can now cultivate monsters for equipment. Bury a defeated foe on a farm tile
 ### Equipment Enhancement
 
 Gear can be leveled up using materials like **iron** and **bone**. Each enhancement level adds **+1** to attack and defense, **+0.5** to other non-resistance stats, and **+0.01** to resistance stats. Press the **강화** button beside an item in your inventory to spend the materials and apply the upgrade. Players now begin the game with **100** iron and **100** bone so you can enhance equipment right away.
+Each attempt has a 20% chance to fail, which still consumes the materials but does not increase the item's level.
 
 ### Disassembling Gear
 
