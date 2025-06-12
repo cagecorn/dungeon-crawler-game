@@ -3128,7 +3128,8 @@ function updateMaterialsDisplay() {
                 statusEffect: data.statusEffect,
                 lootChance: 0.3,
                 fullness: 75,
-                hasActed: false
+                hasActed: false,
+                skillCooldowns: {}
             };
             setMonsterLevel(monster, level);
             monster.skillLevels = {};
@@ -3447,6 +3448,7 @@ function killMonster(monster) {
                     }
                     return obj;
                 })(),
+                skillCooldowns: {},
                 alive: true,
                 affinity: 30,
                 fullness: 75,
@@ -4595,6 +4597,7 @@ function killMonster(monster) {
                     if (assignedSkill2) obj[assignedSkill2] = 1;
                     return obj;
                 })(),
+                skillCooldowns: {},
                 alive: true,
                 hasActed: false,
                 affinity: 50,
@@ -4782,7 +4785,8 @@ function killMonster(monster) {
                 paralysis:false,nightmare:false,silence:false,petrify:false,debuff:false,
                 poisonTurns:0,burnTurns:0,freezeTurns:0,bleedTurns:0,
                 paralysisTurns:0,nightmareTurns:0,silenceTurns:0,petrifyTurns:0,debuffTurns:0,
-                expNeeded: 15
+                expNeeded: 15,
+                skillCooldowns: {}
             };
             const keys = Object.keys(ITEMS).filter(k =>
                 [ITEM_TYPES.WEAPON, ITEM_TYPES.ARMOR, ITEM_TYPES.ACCESSORY].includes(ITEMS[k].type) &&
@@ -5486,8 +5490,11 @@ function killMonster(monster) {
 
             const manaCost = skillInfo.manaCost || 0;
             if (monster.mana < manaCost) return false;
+            if (monster.skillCooldowns && monster.skillCooldowns[monster.monsterSkill] > 0) return false;
 
             monster.mana -= manaCost;
+            if (!monster.skillCooldowns) monster.skillCooldowns = {};
+            monster.skillCooldowns[monster.monsterSkill] = skillInfo.cooldown || 0;
 
             const level = monster.skillLevels[monster.monsterSkill] || 1;
             const base = skillInfo.magic ? getStat(monster, 'magicPower') : getStat(monster, 'attack');
@@ -5912,10 +5919,21 @@ function killMonster(monster) {
             renderDungeon();
         }
 
+        function reduceCooldowns(unit) {
+            if (!unit || !unit.skillCooldowns) return;
+            for (const key in unit.skillCooldowns) {
+                if (unit.skillCooldowns[key] > 0) unit.skillCooldowns[key]--;
+            }
+        }
+
         // 턴 처리 (최적화됨)
 function processTurn() {
     if (!gameState.gameRunning) return;
     gameState.turn++;
+
+    reduceCooldowns(gameState.player);
+    gameState.activeMercenaries.forEach(merc => reduceCooldowns(merc));
+    gameState.monsters.forEach(mon => reduceCooldowns(mon));
 
     for (let i = gameState.corpses.length - 1; i >= 0; i--) {
         const corpse = gameState.corpses[i];
@@ -6072,7 +6090,7 @@ function processTurn() {
                         hasLineOfSight(monster.x, monster.y, nearestTarget.x, nearestTarget.y)) {
 
                         const skillInfo = monster.monsterSkill ? MONSTER_SKILLS[monster.monsterSkill] : null;
-                        const canUseSkill = skillInfo && monster.mana >= (skillInfo.manaCost || 0);
+                        const canUseSkill = skillInfo && monster.mana >= (skillInfo.manaCost || 0) && !(monster.skillCooldowns && monster.skillCooldowns[monster.monsterSkill] > 0);
                         let playerDied = false;
 
                         if (canUseSkill && Math.random() < 0.5) {
@@ -6120,7 +6138,7 @@ function processTurn() {
                             if (newDistance <= monster.range &&
                                 hasLineOfSight(monster.x, monster.y, nearestTarget.x, nearestTarget.y)) {
                                 const skillInfo = monster.monsterSkill ? MONSTER_SKILLS[monster.monsterSkill] : null;
-                                const canUseSkill = skillInfo && monster.mana >= (skillInfo.manaCost || 0);
+                                const canUseSkill = skillInfo && monster.mana >= (skillInfo.manaCost || 0) && !(monster.skillCooldowns && monster.skillCooldowns[monster.monsterSkill] > 0);
                                 let playerDied = false;
 
                                 if (canUseSkill && Math.random() < 0.5) {
@@ -6153,7 +6171,7 @@ function processTurn() {
                                     if (newDistance <= monster.range &&
                                         hasLineOfSight(monster.x, monster.y, nearestTarget.x, nearestTarget.y)) {
                                         const skillInfo = monster.monsterSkill ? MONSTER_SKILLS[monster.monsterSkill] : null;
-                                        const canUseSkill = skillInfo && monster.mana >= (skillInfo.manaCost || 0);
+                                        const canUseSkill = skillInfo && monster.mana >= (skillInfo.manaCost || 0) && !(monster.skillCooldowns && monster.skillCooldowns[monster.monsterSkill] > 0);
                                         let playerDied = false;
 
                                         if (canUseSkill && Math.random() < 0.5) {
@@ -6296,13 +6314,14 @@ function processTurn() {
                 const healLevel = knowsHeal ? skillLevel : 1;
                 const healRange = knowsHeal ? skillInfo.range : 2;
 
-                if (mercenary.mana >= manaCost && gameState.player.health < getStat(gameState.player, 'maxHealth') * 0.7) {
+                if (mercenary.mana >= manaCost && (!knowsHeal || !(mercenary.skillCooldowns && mercenary.skillCooldowns[mercenary.skill] > 0)) && gameState.player.health < getStat(gameState.player, 'maxHealth') * 0.7) {
                     if (getDistance(mercenary.x, mercenary.y, gameState.player.x, gameState.player.y) <= healRange) {
                         const healed = knowsHeal
                             ? healTarget(mercenary, gameState.player, skillInfo, healLevel)
                             : healTarget(mercenary, gameState.player);
                         if (healed) {
                             mercenary.mana -= manaCost;
+                            if (knowsHeal) mercenary.skillCooldowns[mercenary.skill] = skillInfo.cooldown || 0;
                             updateMercenaryDisplay();
                             mercenary.hasActed = true;
                             return;
@@ -6312,12 +6331,13 @@ function processTurn() {
 
                 for (const otherMerc of gameState.activeMercenaries) {
                     if (otherMerc !== mercenary && otherMerc.alive && otherMerc.health < getStat(otherMerc, 'maxHealth') * 0.5) {
-                        if (mercenary.mana >= manaCost && getDistance(mercenary.x, mercenary.y, otherMerc.x, otherMerc.y) <= healRange) {
+                        if (mercenary.mana >= manaCost && (!knowsHeal || !(mercenary.skillCooldowns && mercenary.skillCooldowns[mercenary.skill] > 0)) && getDistance(mercenary.x, mercenary.y, otherMerc.x, otherMerc.y) <= healRange) {
                             const healed = knowsHeal
                                 ? healTarget(mercenary, otherMerc, skillInfo, healLevel)
                                 : healTarget(mercenary, otherMerc);
                             if (healed) {
                                 mercenary.mana -= manaCost;
+                                if (knowsHeal) mercenary.skillCooldowns[mercenary.skill] = skillInfo.cooldown || 0;
                                 updateMercenaryDisplay();
                                 mercenary.hasActed = true;
                                 return;
@@ -6326,12 +6346,13 @@ function processTurn() {
                     }
                 }
 
-                if (mercenary.health < getStat(mercenary, 'maxHealth') * 0.5 && mercenary.mana >= manaCost) {
+                if (mercenary.health < getStat(mercenary, 'maxHealth') * 0.5 && mercenary.mana >= manaCost && (!knowsHeal || !(mercenary.skillCooldowns && mercenary.skillCooldowns[mercenary.skill] > 0))) {
                     const healed = knowsHeal
                         ? healTarget(mercenary, mercenary, skillInfo, healLevel)
                         : healTarget(mercenary, mercenary);
                     if (healed) {
                         mercenary.mana -= manaCost;
+                        if (knowsHeal) mercenary.skillCooldowns[mercenary.skill] = skillInfo.cooldown || 0;
                         updateMercenaryDisplay();
                         mercenary.hasActed = true;
                         return;
@@ -6341,13 +6362,14 @@ function processTurn() {
                 const purifyInfo = MERCENARY_SKILLS[mercenary.skill2];
                 const purifyLevel = mercenary.skillLevels && mercenary.skillLevels[mercenary.skill2] || 1;
                 const purifyMana = purifyInfo ? purifyInfo.manaCost + purifyLevel - 1 : 0;
-                if (purifyInfo && mercenary.skill2 === 'Purify' && mercenary.mana >= purifyMana) {
+                if (purifyInfo && mercenary.skill2 === 'Purify' && mercenary.mana >= purifyMana && !(mercenary.skillCooldowns && mercenary.skillCooldowns[mercenary.skill2] > 0)) {
                     const inRange = target => getDistance(mercenary.x, mercenary.y, target.x, target.y) <= purifyInfo.range;
                     const hasStatus = t => t.poison || t.burn || t.freeze || t.bleed || t.paralysis || t.nightmare || t.silence || t.petrify || t.debuff;
 
                     if (hasStatus(gameState.player) && inRange(gameState.player)) {
                         if (purifyTarget(mercenary, gameState.player, purifyInfo)) {
                             mercenary.mana -= purifyMana;
+                            mercenary.skillCooldowns[mercenary.skill2] = purifyInfo.cooldown || 0;
                             updateMercenaryDisplay();
                             mercenary.hasActed = true;
                             return;
@@ -6358,6 +6380,7 @@ function processTurn() {
                         if (m !== mercenary && m.alive && hasStatus(m) && inRange(m)) {
                             if (purifyTarget(mercenary, m, purifyInfo)) {
                                 mercenary.mana -= purifyMana;
+                                mercenary.skillCooldowns[mercenary.skill2] = purifyInfo.cooldown || 0;
                                 updateMercenaryDisplay();
                                 mercenary.hasActed = true;
                                 return;
@@ -6368,6 +6391,7 @@ function processTurn() {
                     if (hasStatus(mercenary)) {
                         if (purifyTarget(mercenary, mercenary, purifyInfo)) {
                             mercenary.mana -= purifyMana;
+                            mercenary.skillCooldowns[mercenary.skill2] = purifyInfo.cooldown || 0;
                             updateMercenaryDisplay();
                             mercenary.hasActed = true;
                             return;
@@ -6400,7 +6424,7 @@ function processTurn() {
             }
             if (mercenary.silence && mercenary.silenceTurns > 0) {
                 // silence just decrements in applyStatusEffects
-            } else if (skillInfo && mercenary.mana >= skillManaCost && (forceSkill || Math.random() < 0.5)) {
+            } else if (skillInfo && mercenary.mana >= skillManaCost && (forceSkill || Math.random() < 0.5) && !(mercenary.skillCooldowns && mercenary.skillCooldowns[skillKey] > 0)) {
                 if (skillKey === 'Heal') {
                     let target = null;
                     if (gameState.player.health < getStat(gameState.player, 'maxHealth') && getDistance(mercenary.x, mercenary.y, gameState.player.x, gameState.player.y) <= skillInfo.range) {
@@ -6419,6 +6443,7 @@ function processTurn() {
                     }
                     if (target && healTarget(mercenary, target, skillInfo, skillLevel)) {
                         mercenary.mana -= skillManaCost;
+                        mercenary.skillCooldowns[skillKey] = skillInfo.cooldown || 0;
                         updateMercenaryDisplay();
                         mercenary.hasActed = true;
                         return;
@@ -6522,6 +6547,7 @@ function processTurn() {
                         gameState.dungeon[nearestMonster.y][nearestMonster.x] = 'corpse';
                     }
                     mercenary.mana -= skillManaCost;
+                    mercenary.skillCooldowns[skillKey] = skillInfo.cooldown || 0;
                     updateMercenaryDisplay();
                     mercenary.hasActed = true;
                     return;
@@ -6602,6 +6628,7 @@ function processTurn() {
                         gameState.dungeon[nearestMonster.y][nearestMonster.x] = 'corpse';
                     }
                     mercenary.mana -= skillManaCost;
+                    mercenary.skillCooldowns[skillKey] = skillInfo.cooldown || 0;
                     updateMercenaryDisplay();
                     mercenary.hasActed = true;
                     return;
@@ -7044,6 +7071,11 @@ function processTurn() {
             const skill = SKILL_DEFS[skillKey];
             const level = gameState.player.skillLevels[skillKey] || 1;
             const manaCost = skill.manaCost + level - 1;
+            if (gameState.player.skillCooldowns && gameState.player.skillCooldowns[skillKey] > 0) {
+                addMessage('스킬이 아직 준비되지 않았습니다.', 'info');
+                processTurn();
+                return;
+            }
             if (skill.passive) {
                 addMessage('이 스킬은 항상 효과가 발동중입니다.', 'info');
                 processTurn();
@@ -7070,7 +7102,9 @@ function processTurn() {
                 }
                 const target = targets.sort((a,b) => (getStat(b,'maxHealth')-b.health)-(getStat(a,'maxHealth')-a.health))[0];
                 gameState.player.mana -= manaCost;
+                gameState.player.skillCooldowns[skillKey] = skill.cooldown || 0;
                 healTarget(gameState.player, target, skill, level);
+                gameState.player.skillCooldowns[skillKey] = skill.cooldown || 0;
                 updateStats();
                 updateMercenaryDisplay();
                 processTurn();
@@ -7088,6 +7122,7 @@ function processTurn() {
                 const target = targets[0];
                 gameState.player.mana -= manaCost;
                 purifyTarget(gameState.player, target, skill);
+                gameState.player.skillCooldowns[skillKey] = skill.cooldown || 0;
                 updateStats();
                 updateMercenaryDisplay();
                 processTurn();
@@ -7115,6 +7150,7 @@ function processTurn() {
                     addMessage('🌀 이전 위치로 돌아왔습니다.', 'info');
                 }
                 p.mana -= manaCost;
+                gameState.player.skillCooldowns[skillKey] = skill.cooldown || 0;
                 renderDungeon();
                 updateCamera();
                 updateStats();
@@ -7215,6 +7251,7 @@ function processTurn() {
                 const attackMult = skill.multiplier || 1;
                 const hits = skill.hits || 1;
                 gameState.player.mana -= manaCost;
+                gameState.player.skillCooldowns[skillKey] = skill.cooldown || 0;
                 for (let i = 0; i < hits; i++) {
                     const attackValue = Math.floor(getStat(gameState.player, 'attack') * attackMult * level);
                     const result = performAttack(gameState.player, target, { attackValue, status: gameState.player.equipped.weapon && gameState.player.equipped.weapon.status });
@@ -7242,6 +7279,7 @@ function processTurn() {
             const dx = Math.sign(target.x - gameState.player.x);
             const dy = Math.sign(target.y - gameState.player.y);
             gameState.player.mana -= manaCost;
+            gameState.player.skillCooldowns[skillKey] = skill.cooldown || 0;
             const proj = {
                 x: gameState.player.x,
                 y: gameState.player.y,
