@@ -800,6 +800,8 @@
             pointer-events: none;
             z-index: 1000;
             animation: nova-expand 0.8s ease-out forwards;
+            width: var(--start-size);
+            height: var(--start-size);
         }
         .fire-nova {
             background: radial-gradient(circle, rgba(255,69,0,0.8) 0%, rgba(255,140,0,0.4) 50%, transparent 100%);
@@ -811,13 +813,13 @@
         }
         @keyframes nova-expand {
             0% {
-                width: 33px;
-                height: 33px;
+                width: var(--start-size);
+                height: var(--start-size);
                 opacity: 1;
             }
             100% {
-                width: 231px;
-                height: 231px;
+                width: var(--end-size);
+                height: var(--end-size);
                 opacity: 0;
             }
         }

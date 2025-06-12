@@ -4512,7 +4512,7 @@ function killMonster(monster) {
             const container = document.querySelector('.dungeon-container');
             if (!dungeonElement || !container) return;
 
-            const cellSize = 33; // 32px + 1px gap
+            const cellSize = CELL_SIZE; // 32px + 1px gap
 
             // 현재 컨테이너 크기에 맞춰 보이는 셀 수 계산
             const visibleX = Math.floor(container.clientWidth / cellSize);
@@ -4915,14 +4915,16 @@ function killMonster(monster) {
             const dungeonEl = document.getElementById('dungeon');
             if (!dungeonEl) return;
 
-            const cellSize = 33;
+            const cellSize = CELL_SIZE;
             const centerX = (x - gameState.camera.x) * cellSize + cellSize / 2;
             const centerY = (y - gameState.camera.y) * cellSize + cellSize / 2;
 
             const novaDiv = document.createElement('div');
             novaDiv.className = `nova-effect ${type}-nova`;
-            novaDiv.style.left = `${centerX - 16.5}px`;
-            novaDiv.style.top = `${centerY - 16.5}px`;
+            novaDiv.style.setProperty('--start-size', `${cellSize}px`);
+            novaDiv.style.setProperty('--end-size', `${cellSize * (radius * 2 + 1)}px`);
+            novaDiv.style.left = `${centerX - cellSize / 2}px`;
+            novaDiv.style.top = `${centerY - cellSize / 2}px`;
             dungeonEl.appendChild(novaDiv);
 
             createNovaParticles(centerX, centerY, type, radius);
@@ -4940,7 +4942,7 @@ function killMonster(monster) {
 
             for (let i = 0; i < particleCount; i++) {
                 const angle = (i / particleCount) * Math.PI * 2;
-                const distance = (radius * 16.5) + (Math.random() * 33);
+                const distance = (radius * (CELL_SIZE / 2)) + (Math.random() * CELL_SIZE);
                 const particleX = centerX + Math.cos(angle) * distance;
                 const particleY = centerY + Math.sin(angle) * distance;
 
