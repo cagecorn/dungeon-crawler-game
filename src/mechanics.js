@@ -2043,7 +2043,12 @@ const MERCENARY_NAMES = [
 
             // 노바(광역) 스킬 처리
             if (skill.radius !== undefined) {
-                createNovaEffect(source.x, source.y, skill.element, skill.radius);
+                if (proc.skill === 'IceNova') {
+                    const effectSize = skill.radius * 2 * 33;
+                    playSkillOverlayEffect(source, 'assets/images/ice-nova-effect.png', effectSize, 600);
+                } else if (proc.skill === 'FireNova') {
+                    createNovaEffect(source.x, source.y, skill.element, skill.radius);
+                }
                 const allUnits = [gameState.player, ...gameState.activeMercenaries, ...gameState.monsters];
                 const aoeTargets = allUnits.filter(unit => {
                     if (!unit || (!unit.health && unit.health !== 0)) return false;
@@ -5423,6 +5428,31 @@ function killMonster(monster) {
             updateInventoryDisplay();
         }
 
+        function playSkillOverlayEffect(unit, imagePath, size, duration = 600) {
+            const dungeonEl = document.getElementById('dungeon');
+            if (!dungeonEl) return;
+
+            const cellSize = 33;
+            const centerX = (unit.x - gameState.camera.x) * cellSize + cellSize / 2;
+            const centerY = (unit.y - gameState.camera.y) * cellSize + cellSize / 2;
+
+            const overlay = document.createElement('div');
+            overlay.className = 'skill-effect-overlay';
+            overlay.style.width = `${size}px`;
+            overlay.style.height = `${size}px`;
+            overlay.style.left = `${centerX}px`;
+            overlay.style.top = `${centerY}px`;
+            overlay.style.backgroundImage = `url('${imagePath}')`;
+
+            dungeonEl.appendChild(overlay);
+
+            setTimeout(() => {
+                if (overlay.parentNode) {
+                    overlay.parentNode.removeChild(overlay);
+                }
+            }, duration);
+        }
+
         function disassembleItem(item) {
             if (item.type !== ITEM_TYPES.WEAPON && item.type !== ITEM_TYPES.ARMOR && item.type !== ITEM_TYPES.ACCESSORY) {
                 addMessage('분해할 수 없는 아이템입니다.', 'info');
@@ -7661,7 +7691,8 @@ function processTurn() {
                 createNovaEffect(gameState.player.x, gameState.player.y, 'fire', skill.radius);
                 createScreenShake(3, 200);
             } else if (skillKey === 'IceNova') {
-                createNovaEffect(gameState.player.x, gameState.player.y, 'ice', skill.radius);
+                const effectSize = skill.radius * 2 * 33;
+                playSkillOverlayEffect(gameState.player, 'assets/images/ice-nova-effect.png', effectSize, 600);
             }
 
             const isTestEnv = typeof navigator !== 'undefined' && /jsdom/i.test(navigator.userAgent);
