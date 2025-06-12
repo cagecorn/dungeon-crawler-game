@@ -280,13 +280,8 @@
 
 /* BUG FIX: 시체 아이콘을 가상 요소로 렌더링하여 z-index 제어 */
 .cell.corpse::before {
-    content: '☠️'; /* 표시할 아이콘 */
-    font-size: 24px; /* 아이콘 크기 조절 */
-    position: absolute;
-    /* z-index를 플레이어(10)보다 낮은 값으로 설정 */
-    z-index: 1;
-    /* 텍스트가 마우스 이벤트를 방해하지 않도록 설정 */
-    pointer-events: none;
+    content: '';
+    display: none;
 }
 /* style.css */
 
