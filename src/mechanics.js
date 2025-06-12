@@ -230,6 +230,16 @@ const SoundEngine = {
                 this.playNote('triangle', 1568, 0.2, now + 0.1); // sparkle
                 this.playNote('triangle', 1864, 0.2, now + 0.2); // sparkle
                 break;
+            case 'templeChime': // 사원 멜로디
+                this.playNote('triangle', 659, 0.25, now);
+                this.playNote('triangle', 880, 0.25, now + 0.2);
+                this.playNote('triangle', 1318, 0.3, now + 0.4);
+                this.playNote('triangle', 1760, 0.35, now + 0.6);
+                break;
+            case 'gatherMaterial':
+                this.playNote('square', 600, 0.15, now);
+                this.playNote('square', 800, 0.15, now + 0.1);
+                break;
             case 'eggHatch': // 알 부화
                 this.playNote('sine', 880, 0.1, now); // crack 1
                 this.playNote('sine', 987, 0.1, now + 0.1); // crack 2
@@ -5623,6 +5633,7 @@ function killMonster(monster) {
             }
 
             if (cellType === 'plant') {
+                SoundEngine.playSound('gatherMaterial');
                 const materialsPool = ['herb', 'bread', 'meat', 'lettuce'];
                 const gained = [];
                 const count = Math.floor(Math.random() * 2) + 1;
@@ -5660,6 +5671,7 @@ function killMonster(monster) {
             }
 
             if (cellType === 'mine') {
+                SoundEngine.playSound('gatherMaterial');
                 const qty = 5 + gameState.floor * 3;
                 if (!gameState.materials.iron) gameState.materials.iron = 0;
                 gameState.materials.iron += qty;
@@ -5669,6 +5681,7 @@ function killMonster(monster) {
             }
 
             if (cellType === 'tree') {
+                SoundEngine.playSound('gatherMaterial');
                 const qty = 5 + gameState.floor * 3;
                 if (!gameState.materials.wood) gameState.materials.wood = 0;
                 gameState.materials.wood += qty;
@@ -5678,6 +5691,7 @@ function killMonster(monster) {
             }
 
             if (cellType === 'bones') {
+                SoundEngine.playSound('gatherMaterial');
                 const qty = 5 + gameState.floor * 3;
                 if (!gameState.materials.bone) gameState.materials.bone = 0;
                 gameState.materials.bone += qty;
@@ -5726,6 +5740,7 @@ function killMonster(monster) {
             }
 
             if (cellType.startsWith('temple')) {
+                SoundEngine.playSound('templeChime');
                 if (cellType === 'templeHeal') {
                     gameState.player.health = getStat(gameState.player, 'maxHealth');
                     gameState.player.mana = getStat(gameState.player, 'maxMana');
