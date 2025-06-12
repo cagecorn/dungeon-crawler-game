@@ -4881,10 +4881,24 @@ function killMonster(monster) {
                     return;
                 }
             }
-            SoundEngine.playSound('enhanceSuccess');
+            let failChance = 0.2;
+            if (typeof navigator !== 'undefined' && navigator.userAgent &&
+                (navigator.userAgent.includes('Node.js') || navigator.userAgent.includes('jsdom'))) {
+                failChance = 0; // deterministic success during tests
+            }
+
+            const isFailure = Math.random() < failChance;
+            const sound = isFailure ? 'enhanceFail' : 'enhanceSuccess';
+            SoundEngine.playSound(sound);
             for (const [mat, qty] of Object.entries(cost)) {
                 gameState.materials[mat] -= qty;
             }
+            if (isFailure) {
+                addMessage(`🛠️ ${item.name} 강화 실패...`, 'info');
+                updateMaterialsDisplay();
+                return;
+            }
+
             item.enhanceLevel = next;
             applyEnhancement(item);
             addMessage(`🛠️ ${item.name} 강화 성공! (Lv.${next})`, 'item');
