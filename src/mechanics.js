@@ -4084,6 +4084,14 @@ function killMonster(monster) {
                 });
             }
 
+            if (gameState.floor === 1) {
+                const altPos = findAdjacentEmpty(gameState.player.x, gameState.player.y);
+                if (altPos.x !== gameState.player.x || altPos.y !== gameState.player.y) {
+                    gameState.altarLocation = { x: altPos.x, y: altPos.y };
+                    gameState.dungeon[altPos.y][altPos.x] = 'altar';
+                }
+            }
+
             gameState.exitLocations = [];
             let exitCount = Math.floor(Math.random() * 4) + 1; // 1~4개 출구 생성
             for (let i = 0; i < exitCount; i++) {
@@ -7546,6 +7554,16 @@ function processTurn() {
             }
         }
 
+        function spawnStartingMaps(count = 3) {
+            for (let i = 0; i < count; i++) {
+                const pos = findAdjacentEmpty(gameState.player.x, gameState.player.y);
+                if (pos.x === gameState.player.x && pos.y === gameState.player.y) break;
+                const mapItem = createItem('graveyardMap', pos.x, pos.y);
+                gameState.items.push(mapItem);
+                gameState.dungeon[pos.y][pos.x] = 'item';
+            }
+        }
+
 
         function startGame() {
             // SoundEngine.initialize(); // 오디오 초기화는 사용자 입력 후 수행
@@ -7576,6 +7594,7 @@ function processTurn() {
                 gameState.player.inventory.push(createItem('smallExpScroll', 0, 0));
             }
             spawnStartingRecipes();
+            spawnStartingMaps();
             updateInventoryDisplay();
             updateSkillDisplay();
             updateIncubatorDisplay();
@@ -7710,7 +7729,7 @@ removeEggFromIncubator, renderDungeon, reviveMercenary, reviveMonsterCorpse,
  rollDice, saveGame, sellItem, confirmAndSell, enhanceItem, disassembleItem, setMercenaryLevel, setMonsterLevel, setChampionLevel,
 showChampionDetails, showItemDetailPanel, showItemTargetPanel, showMercenaryDetails,
 showMonsterDetails, showShop, showSkillDamage, showAuraDetails, skill1Action, skill2Action,
-spawnMercenaryNearPlayer, spawnStartingRecipes, startGame, swapActiveAndStandby, tryApplyStatus,
+spawnMercenaryNearPlayer, spawnStartingRecipes, spawnStartingMaps, startGame, swapActiveAndStandby, tryApplyStatus,
 unequipAccessory, unequipWeapon, unequipArmor, unequipItemFromMercenary, updateActionButtons, updateCamera,
 updateFogOfWar, updateIncubatorDisplay,
  updateInventoryDisplay, updateMaterialsDisplay, updateMercenaryDisplay,
