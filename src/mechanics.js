@@ -89,11 +89,7 @@ const SoundEngine = {
             case 'monsterDie':
                 gainNode.gain.setValueAtTime(0.3, now);
                 gainNode.gain.linearRampToValueAtTime(0, now + 0.4);
-                const oscDie = this.audioContext.createOscillator();
-                oscDie.type = 'noise';
-                oscDie.connect(gainNode);
-                oscDie.start(now);
-                oscDie.stop(now + 0.4);
+                this.createOscillator('noise', 0, gainNode, now, 0.4);
                 break;
 
             // --- 신규 사운드 ---
@@ -120,15 +116,12 @@ const SoundEngine = {
             case 'spellFire':
                 gainNode.gain.setValueAtTime(0.3, now);
                 gainNode.gain.linearRampToValueAtTime(0, now + 0.5);
-                const noiseOsc = this.audioContext.createOscillator();
-                noiseOsc.type = 'noise';
                 const filter = this.audioContext.createBiquadFilter();
                 filter.type = 'bandpass';
                 filter.frequency.setValueAtTime(600, now);
                 filter.Q.setValueAtTime(20, now);
-                noiseOsc.connect(filter).connect(gainNode);
-                noiseOsc.start(now);
-                noiseOsc.stop(now + 0.5);
+                filter.connect(gainNode);
+                this.createOscillator('noise', 0, filter, now, 0.5);
                 break;
 
             case 'spellHeal':
@@ -210,14 +203,11 @@ const SoundEngine = {
 
             // 전투 관련
             case 'dodge': // 회피
-                const whoosh = this.audioContext.createOscillator();
-                whoosh.type = 'noise';
                 const whooshGain = this.audioContext.createGain();
                 whooshGain.gain.setValueAtTime(0.3, now);
                 whooshGain.gain.exponentialRampToValueAtTime(0.001, now + 0.15);
-                whoosh.connect(whooshGain).connect(this.audioContext.destination);
-                whoosh.start(now);
-                whoosh.stop(now + 0.15);
+                whooshGain.connect(this.audioContext.destination);
+                this.createOscillator('noise', 0, whooshGain, now, 0.15);
                 break;
             case 'mercDeath': // 용병 사망
                 this.playNote('sine', 440, 0.3, now);
@@ -241,6 +231,22 @@ const SoundEngine = {
 
     // Oscillator(소리 톤) 생성을 돕는 헬퍼 함수
     createOscillator(type, frequency, destination, startTime, duration, detune = 0) {
+        if (type === 'noise') {
+            const sampleRate = this.audioContext.sampleRate;
+            const length = Math.floor(sampleRate * duration);
+            const buffer = this.audioContext.createBuffer(1, length, sampleRate);
+            const data = buffer.getChannelData(0);
+            for (let i = 0; i < length; i++) {
+                data[i] = Math.random() * 2 - 1;
+            }
+            const src = this.audioContext.createBufferSource();
+            src.buffer = buffer;
+            src.connect(destination);
+            src.start(startTime);
+            src.stop(startTime + duration);
+            return src;
+        }
+
         const osc = this.audioContext.createOscillator();
         osc.type = type; // 'sine', 'square', 'sawtooth', 'triangle' 또는 'noise'
         osc.frequency.setValueAtTime(frequency, startTime);
@@ -248,6 +254,7 @@ const SoundEngine = {
         osc.connect(destination);
         osc.start(startTime);
         osc.stop(startTime + duration);
+        return osc;
     },
 
     // 단일 노트를 재생하는 헬퍼 함수 (레벨업 효과용)
