@@ -9,6 +9,10 @@ async function run() {
   win.updateCamera = () => {};
   win.requestAnimationFrame = fn => fn();
 
+  // Stub rollDice so status effects always apply
+  const originalRoll = win.rollDice;
+  win.rollDice = () => 20;
+
   const { tryApplyStatus, movePlayer, skill1Action, purifyTarget, applyStatusEffects, gameState } = win;
 
   const size = 3;
@@ -51,6 +55,9 @@ async function run() {
     console.error('purify did not remove status');
     process.exit(1);
   }
+
+  // Restore original rollDice implementation
+  win.rollDice = originalRoll;
 
   console.log('status ok');
 }
