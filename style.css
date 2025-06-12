@@ -465,3 +465,26 @@
     padding: 15px;
     box-shadow: 0 0 15px rgba(0, 0, 0, 0.7);
 }
+/* --- Skill Effect Overlay and Animation --- */
+
+.skill-effect-overlay {
+    position: absolute;
+    background-size: contain;
+    background-position: center;
+    background-repeat: no-repeat;
+    z-index: 1000;
+    pointer-events: none;
+    animation: simple-nova-expand 0.6s ease-out forwards;
+}
+
+@keyframes simple-nova-expand {
+    0% {
+        transform: translate(-50%, -50%) scale(0.2);
+        opacity: 1;
+    }
+    100% {
+        transform: translate(-50%, -50%) scale(1.8);
+        opacity: 0;
+    }
+}
+
