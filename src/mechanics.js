@@ -3386,19 +3386,28 @@ function killMonster(monster) {
         }
 
         function ignoreCorpse(corpse) {
+            // Move the player onto the corpse tile
+            gameState.player.x = corpse.x;
+            gameState.player.y = corpse.y;
+
+            // Collect any item on the corpse position
             const item = gameState.items.find(i => i.x === corpse.x && i.y === corpse.y);
             if (item) {
                 addToInventory(item);
                 addMessage(`📦 ${item.name}을(를) 획득했습니다!`, 'item');
-                const itemIndex = gameState.items.findIndex(i => i === item);
-                if (itemIndex !== -1) gameState.items.splice(itemIndex, 1);
+                const idx = gameState.items.findIndex(i => i === item);
+                if (idx !== -1) gameState.items.splice(idx, 1);
             }
-            const dx = corpse.x - gameState.player.x;
-            const dy = corpse.y - gameState.player.y;
-            gameState.dungeon[corpse.y][corpse.x] = 'corpse';
-            gameState.skipCorpsePanel = true;
-            movePlayer(dx, dy);
-            movePlayer(dx, dy);
+
+            // Remove the corpse and clear the dungeon cell
+            const cIdx = gameState.corpses.findIndex(c => c === corpse);
+            if (cIdx !== -1) gameState.corpses.splice(cIdx, 1);
+            gameState.dungeon[corpse.y][corpse.x] = 'empty';
+
+            // Move the player to a neighbouring empty tile
+            const pos = findAdjacentEmpty(corpse.x, corpse.y);
+            gameState.player.x = pos.x;
+            gameState.player.y = pos.y;
         }
 
         function getMonsterRank(monster) {
@@ -5550,14 +5559,8 @@ function killMonster(monster) {
             if (cellType === 'corpse') {
                 const corpse = gameState.corpses.find(c => c.x === newX && c.y === newY);
                 if (corpse) {
-                    if (gameState.skipCorpsePanel) {
-                        gameState.skipCorpsePanel = false;
-                        gameState.player.x = newX;
-                        gameState.player.y = newY;
-                    } else {
-                        showCorpsePanel(corpse);
-                        return;
-                    }
+                    showCorpsePanel(corpse);
+                    return;
                 }
             }
             
@@ -7209,6 +7212,7 @@ function processTurn() {
             ignoreBtn.onclick = () => {
                 hideCorpsePanel();
                 ignoreCorpse(corpse);
+                processTurn();
             };
             content.appendChild(ignoreBtn);
 
