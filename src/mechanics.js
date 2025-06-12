@@ -6715,7 +6715,7 @@ function processTurn() {
                     }
                 }
 
-                if (!healOnCooldown && mercenary.health < getStat(mercenary, 'maxHealth') * 0.5 && mercenary.mana >= manaCost) {
+                if (!healOnCooldown && mercenary.health < getStat(mercenary, 'maxHealth') && mercenary.mana >= manaCost) {
                     const healed = knowsHeal
                         ? healTarget(mercenary, mercenary, skillInfo, healLevel)
                         : healTarget(mercenary, mercenary);
