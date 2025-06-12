@@ -41,6 +41,17 @@ The full roster of monsters appears on progressively higher floors as defined in
 - Use the BGM buttons at the top of the page to switch tracks or mute the background music.
 - Additional actions such as **Heal**, **Recall**, **Skill1** and **Skill2** are available via the action buttons. You can also use `X` for **Skill1**, `C` for **Skill2**, `V` for **Ranged** attack and `A` to recall your mercenaries.
 
+### Audio
+
+The game uses the Web Audio API for sound effects and plays background music through the `bgm-player` element.
+At the top of the page are three BGM controls:
+- **prev-bgm** – play the previous track
+- **toggle-bgm** – mute or unmute music
+- **next-bgm** – play the next track
+
+Audio is not initialized until you interact with the page. The first click or key press runs `initializeAudio()` which starts the sound engine and begins playback.
+When tests run under jsdom, audio initialization is skipped so no sound plays.
+
 ### Hiring Mercenaries
 
 Click the buttons in the *Hire Mercenary* panel to recruit warriors, archers, healers or wizards. Each mercenary costs gold and appears near the player. You may have up to five mercenaries at a time; when full you will be prompted to replace an existing ally.
