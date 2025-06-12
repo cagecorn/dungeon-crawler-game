@@ -2067,6 +2067,19 @@ const MERCENARY_NAMES = [
             else if (skill.heal) {
                 healTarget(source, source, skill, level);
             }
+            // 버프 스킬 처리
+            else if (skill.buff) {
+                if (!target) target = source;
+                if (!Array.isArray(target.buffs)) target.buffs = [];
+                const duration = skill.duration || 1;
+                const existing = target.buffs.find(b => b.name === skill.name);
+                if (existing) {
+                    existing.turnsLeft = duration;
+                } else {
+                    target.buffs.push({ name: skill.name, effects: skill.buff, turnsLeft: duration });
+                }
+                refreshDetailPanel(target);
+            }
         }
 
         // 통합 공격 처리
@@ -2305,6 +2318,11 @@ const MERCENARY_NAMES = [
                     if (it && it[stat] !== undefined) {
                         value += it[stat];
                     }
+                });
+            }
+            if (Array.isArray(character.buffs)) {
+                character.buffs.forEach(b => {
+                    if (b.effects && b.effects[stat]) value += b.effects[stat];
                 });
             }
             if (stat === 'attack' && character.attackBuff) {
@@ -3413,7 +3431,8 @@ function updateMaterialsDisplay() {
                 lootChance: 0.3,
                 fullness: 75,
                 hasActed: false,
-                skillCooldowns: {}
+                skillCooldowns: {},
+                buffs: []
             };
             setMonsterLevel(monster, level);
             monster.skillLevels = {};
@@ -4911,6 +4930,7 @@ function killMonster(monster) {
                 hasActed: false,
                 affinity: 50,
                 fullness: 75,
+                buffs: [],
                 equipped: {
                     weapon: null,
                     armor: null,
@@ -6270,15 +6290,29 @@ function processTurn() {
             refreshDetailPanel(entity);
         }
     };
+    const decrementBuffs = entity => {
+        if (!Array.isArray(entity.buffs)) return;
+        for (let i = entity.buffs.length - 1; i >= 0; i--) {
+            const b = entity.buffs[i];
+            b.turnsLeft--;
+            if (b.turnsLeft <= 0) {
+                entity.buffs.splice(i, 1);
+                refreshDetailPanel(entity);
+            }
+        }
+    };
     decrementCooldowns(gameState.player);
     decrementShield(gameState.player);
     decrementAttackBuff(gameState.player);
+    decrementBuffs(gameState.player);
     gameState.activeMercenaries.forEach(decrementCooldowns);
     gameState.activeMercenaries.forEach(decrementShield);
     gameState.activeMercenaries.forEach(decrementAttackBuff);
+    gameState.activeMercenaries.forEach(decrementBuffs);
     gameState.monsters.forEach(decrementCooldowns);
     gameState.monsters.forEach(decrementShield);
     gameState.monsters.forEach(decrementAttackBuff);
+    gameState.monsters.forEach(decrementBuffs);
 
     for (let i = gameState.corpses.length - 1; i >= 0; i--) {
         const corpse = gameState.corpses[i];
