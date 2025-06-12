@@ -1674,10 +1674,11 @@ const MERCENARY_NAMES = [
                 target.health += healAmount;
                 const name = target === gameState.player ? '플레이어' : target.name;
                 const amountStr = formatNumber(healAmount);
+                const img = healer === gameState.player ? getPlayerImage() : getMercImage(healer.type);
                 if (skillInfo) {
-                    addMessage(`${skillInfo.icon} ${healer.name}의 ${skillInfo.name}이(가) ${name}을(를) ${amountStr} 회복했습니다.`, 'mercenary');
+                    addMessage(`${skillInfo.icon} ${healer.name}의 ${skillInfo.name}이(가) ${name}을(를) ${amountStr} 회복했습니다.`, 'mercenary', null, img);
                 } else {
-                    addMessage(`💚 ${healer.name}이(가) ${name}을(를) ${amountStr} 회복했습니다.`, 'mercenary');
+                    addMessage(`💚 ${healer.name}이(가) ${name}을(를) ${amountStr} 회복했습니다.`, 'mercenary', null, img);
                 }
                 return true;
             }
@@ -1697,7 +1698,8 @@ const MERCENARY_NAMES = [
             });
             if (removed) {
                 const name = target === gameState.player ? '플레이어' : target.name;
-                addMessage(`${skillInfo.icon} ${healer.name}의 ${skillInfo.name}이(가) ${name}의 상태이상을 해제했습니다.`, 'mercenary');
+                const img = healer === gameState.player ? getPlayerImage() : getMercImage(healer.type);
+                addMessage(`${skillInfo.icon} ${healer.name}의 ${skillInfo.name}이(가) ${name}의 상태이상을 해제했습니다.`, 'mercenary', null, img);
                 return true;
             }
             return false;
@@ -2118,8 +2120,9 @@ const MERCENARY_NAMES = [
                     const detail = buildAttackDetail('원거리 공격', name, result);
                     const msgType = attacker === gameState.player ? 'combat' : 'mercenary';
                     const attackerPart = attacker === gameState.player ? '' : `${attacker.name}이(가) `;
+                    const img = attacker === gameState.player ? getPlayerImage() : getMercImage(attacker.type);
                     if (!result.hit) {
-                        addMessage(`❌ ${attackerPart}${monster.name}에게 ${name}이 빗나갔습니다!`, msgType, detail);
+                        addMessage(`❌ ${attackerPart}${monster.name}에게 ${name}이 빗나갔습니다!`, msgType, detail, img);
                     } else {
                         const critMsg = result.crit ? ' (치명타!)' : '';
                         let dmgStr = formatNumber(result.baseDamage);
@@ -2127,7 +2130,7 @@ const MERCENARY_NAMES = [
                             const emoji = ELEMENT_EMOJI[result.element] || '';
                             dmgStr = `${formatNumber(result.baseDamage)}+${emoji}${formatNumber(result.elementDamage)}`;
                         }
-                        addMessage(`${icon} ${attackerPart}${monster.name}에게 ${dmgStr}의 피해를 입혔습니다${critMsg}!`, msgType, detail);
+                        addMessage(`${icon} ${attackerPart}${monster.name}에게 ${dmgStr}의 피해를 입혔습니다${critMsg}!`, msgType, detail, img);
                     }
 
                     // --- BUG FIX START ---
@@ -3498,6 +3501,10 @@ function killMonster(monster) {
                 WIZARD: 'wizard.png'
             };
             return map[type] ? `assets/images/${map[type]}` : null;
+        }
+
+        function getPlayerImage() {
+            return 'assets/images/player.png';
         }
 
         function placeEggInIncubator(eggItem, turns) {
@@ -5310,8 +5317,9 @@ function killMonster(monster) {
 
                 const targetName = nearestTarget === gameState.player ? "플레이어" : nearestTarget.name;
                 const detail = buildAttackDetail(attackType, traitInfo && traitInfo.name ? traitInfo.name : '', result);
+                const img = getMonsterImage(monster);
                 if (!result.hit) {
-                    addMessage(`${monster.name}의 공격이 빗나갔습니다!`, "combat", detail);
+                    addMessage(`${monster.name}의 공격이 빗나갔습니다!`, "combat", detail, img);
                 } else {
                     const critMsg = result.crit ? ' (치명타!)' : '';
                     let dmgStr = result.baseDamage;
@@ -5319,7 +5327,7 @@ function killMonster(monster) {
                         const emoji = ELEMENT_EMOJI[result.element] || '';
                         dmgStr = `${result.baseDamage}+${emoji}${result.elementDamage}`;
                     }
-                    addMessage(`${monster.name}이(가) ${targetName}에게 ${attackType}으로 ${dmgStr}의 피해를 입혔습니다${critMsg}!`, "combat", detail);
+                    addMessage(`${monster.name}이(가) ${targetName}에게 ${attackType}으로 ${dmgStr}의 피해를 입혔습니다${critMsg}!`, "combat", detail, img);
                 }
                 
                 if (nearestTarget.health <= 0) {
@@ -5370,12 +5378,13 @@ function killMonster(monster) {
             const targetName = target === gameState.player ? "플레이어" : target.name;
             const detail = buildAttackDetail(skillInfo.icon, skillInfo.name, result);
 
+            const img = getMonsterImage(monster);
             if (!result.hit) {
-                addMessage(`${skillInfo.icon} ${monster.name}의 ${skillInfo.name} 스킬이 ${targetName}에게 빗나갔습니다!`, "combat", detail);
+                addMessage(`${skillInfo.icon} ${monster.name}의 ${skillInfo.name} 스킬이 ${targetName}에게 빗나갔습니다!`, "combat", detail, img);
             } else {
                 const critMsg = result.crit ? ' (치명타!)' : '';
                 const dmgStr = formatNumber(result.damage);
-                addMessage(`${skillInfo.icon} ${monster.name}이(가) ${skillInfo.name} 스킬로 ${targetName}에게 ${dmgStr}의 피해를 입혔습니다${critMsg}!`, "combat", detail);
+                addMessage(`${skillInfo.icon} ${monster.name}이(가) ${skillInfo.name} 스킬로 ${targetName}에게 ${dmgStr}의 피해를 입혔습니다${critMsg}!`, "combat", detail, img);
             }
 
             if (target.health <= 0) {
@@ -5384,7 +5393,7 @@ function killMonster(monster) {
                     return true;
                 } else {
                     SoundEngine.playSound('mercDeath');
-                    addMessage(`💀 ${monster.name}이(가) ${target.name}을(를) 처치했습니다!`, "combat");
+                    addMessage(`💀 ${monster.name}이(가) ${target.name}을(를) 처치했습니다!`, "combat", null, getMonsterImage(monster));
                     target.alive = false;
                     target.health = 0;
                     target.affinity = Math.max(0, (target.affinity || 0) - 5);
@@ -5400,7 +5409,7 @@ function killMonster(monster) {
         // 플레이어 사망 처리
         function handlePlayerDeath() {
             gameState.gameRunning = false;
-            addMessage("💀 플레이어가 사망했습니다...", "combat");
+            addMessage("💀 플레이어가 사망했습니다...", "combat", null, getPlayerImage());
             
             const gameOverDiv = document.createElement('div');
             gameOverDiv.className = 'game-over';
@@ -5477,8 +5486,9 @@ function killMonster(monster) {
 
                     const result = performAttack(gameState.player, monster, { attackValue: totalAttack, status: gameState.player.equipped.weapon && gameState.player.equipped.weapon.status });
                     const detail = buildAttackDetail('근접 공격', '', result);
+                    const img = getPlayerImage();
                     if (!result.hit) {
-                        addMessage(`❌ ${monster.name}에게 공격이 빗나갔습니다!`, "combat", detail);
+                        addMessage(`❌ ${monster.name}에게 공격이 빗나갔습니다!`, "combat", detail, img);
                     } else {
                         const critMsg = result.crit ? ' (치명타!)' : '';
                         let dmgStr = formatNumber(result.baseDamage);
@@ -5486,7 +5496,7 @@ function killMonster(monster) {
                             const emoji = ELEMENT_EMOJI[result.element] || '';
                             dmgStr = `${formatNumber(result.baseDamage)}+${emoji}${formatNumber(result.elementDamage)}`;
                         }
-                        addMessage(`⚔️ ${monster.name}에게 ${dmgStr}의 피해를 입혔습니다${critMsg}!`, "combat", detail);
+                        addMessage(`⚔️ ${monster.name}에게 ${dmgStr}의 피해를 입혔습니다${critMsg}!`, "combat", detail, img);
                     }
                     
                     if (monster.health <= 0) {
@@ -7008,8 +7018,9 @@ function processTurn() {
                             status: gameState.player.equipped.weapon && gameState.player.equipped.weapon.status
                         });
                         const detail = buildAttackDetail(skill.icon, skill.name, result);
+                        const img = getPlayerImage();
                         if (!result.hit) {
-                            addMessage(`❌ ${monster.name}에게 ${skill.name}이 빗나갔습니다!`, 'combat', detail);
+                            addMessage(`❌ ${monster.name}에게 ${skill.name}이 빗나갔습니다!`, 'combat', detail, img);
                         } else {
                             const critMsg = result.crit ? ' (치명타!)' : '';
                             let dmgStr = formatNumber(result.baseDamage);
@@ -7017,7 +7028,7 @@ function processTurn() {
                                 const emoji = ELEMENT_EMOJI[result.element] || '';
                                 dmgStr = `${formatNumber(result.baseDamage)}+${emoji}${formatNumber(result.elementDamage)}`;
                             }
-                            addMessage(`${skill.icon} ${monster.name}에게 ${dmgStr}의 피해를 입혔습니다${critMsg}!`, 'combat', detail);
+                            addMessage(`${skill.icon} ${monster.name}에게 ${dmgStr}의 피해를 입혔습니다${critMsg}!`, 'combat', detail, img);
                         }
                         if (monster.health <= 0) {
                             killMonster(monster);
@@ -7077,8 +7088,9 @@ function processTurn() {
                     const attackValue = Math.floor(getStat(gameState.player, 'attack') * attackMult * level);
                     const result = performAttack(gameState.player, target, { attackValue, status: gameState.player.equipped.weapon && gameState.player.equipped.weapon.status });
                     const detail = buildAttackDetail(skill.icon, skill.name, result);
+                    const img = getPlayerImage();
                     if (!result.hit) {
-                        addMessage(`❌ ${target.name}에게 ${skill.name}이 빗나갔습니다!`, 'combat', detail);
+                        addMessage(`❌ ${target.name}에게 ${skill.name}이 빗나갔습니다!`, 'combat', detail, img);
                     } else {
                         const critMsg = result.crit ? ' (치명타!)' : '';
                         let dmgStr = formatNumber(result.baseDamage);
@@ -7086,7 +7098,7 @@ function processTurn() {
                             const emoji = ELEMENT_EMOJI[result.element] || '';
                             dmgStr = `${formatNumber(result.baseDamage)}+${emoji}${formatNumber(result.elementDamage)}`;
                         }
-                        addMessage(`${skill.icon} ${target.name}에게 ${dmgStr}의 피해를 입혔습니다${critMsg}!`, 'combat', detail);
+                        addMessage(`${skill.icon} ${target.name}에게 ${dmgStr}의 피해를 입혔습니다${critMsg}!`, 'combat', detail, img);
                     }
                     if (target.health <= 0) {
                         killMonster(target);
@@ -7125,7 +7137,7 @@ function processTurn() {
             const healAmount = Math.min(Math.floor(getStat(gameState.player, 'maxHealth') * 0.3), getStat(gameState.player, 'maxHealth') - gameState.player.health);
             if (healAmount > 0) {
                 gameState.player.health += healAmount;
-                addMessage(`💚 플레이어가 휴식을 취해 ${formatNumber(healAmount)} 체력을 회복했습니다.`, 'info');
+                addMessage(`💚 플레이어가 휴식을 취해 ${formatNumber(healAmount)} 체력을 회복했습니다.`, 'info', null, getPlayerImage());
                 updateStats();
             } else {
                 addMessage('❤️ 체력이 이미 가득 찼습니다.', 'info');
@@ -7631,7 +7643,7 @@ upgradeMercenarySkill, upgradeMonsterSkill, useItem, useItemOnTarget, useSkill, 
     addRecipeToTab, removeRecipeFromTab,
     updateCraftingDetailDisplay, showCraftingDetailPanel, hideCraftingDetailPanel,
     showCorpsePanel, hideCorpsePanel, ignoreCorpse, getMonsterRank,
-    getMonsterImage, getMercImage
+    getMonsterImage, getMercImage, getPlayerImage
 };
 Object.assign(window, exportsObj, {SKILL_DEFS, MERCENARY_SKILLS, MONSTER_SKILLS, MONSTER_SKILL_SETS, MONSTER_TRAITS, MONSTER_TRAIT_SETS, PREFIXES, SUFFIXES, MAP_PREFIXES, MAP_SUFFIXES, MAP_TILE_TYPES, CORPSE_TURNS});
 
