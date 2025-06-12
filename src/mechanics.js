@@ -2620,11 +2620,13 @@ function updateMaterialsDisplay() {
                 const lvl = merc.skillLevels && merc.skillLevels[key] || 1;
                 const cost = (info.manaCost || 0) + lvl - 1;
                 const mpText = info.manaCost ? ` (MP ${cost})` : '';
+                const cd = merc.skillCooldowns ? merc.skillCooldowns[key] || 0 : 0;
+                const cdText = cd > 0 ? ` (CD ${cd})` : '';
                 const defs = MERCENARY_SKILLS[key] ? 'MERCENARY_SKILLS' : MONSTER_SKILLS[key] ? 'MONSTER_SKILLS' : 'SKILL_DEFS';
                 const levelUp = (MERCENARY_SKILLS[key] || MONSTER_SKILLS[key])
                     ? ` <button onclick="upgradeMercenarySkill(window.currentDetailMercenary,'${key}')">레벨업</button>`
                     : '';
-                return `<div><span class="merc-skill" onclick="showSkillDamage(window.currentDetailMercenary,'${key}',${defs})">${info.icon || ''} ${info.name || key} Lv.${lvl}${mpText}</span>${levelUp}</div>`;
+                return `<div><span class="merc-skill" onclick="showSkillDamage(window.currentDetailMercenary,'${key}',${defs})">${info.icon || ''} ${info.name || key} Lv.${lvl}${mpText}${cdText}</span>${levelUp}</div>`;
             }).join('');
 
             const actionBtn = merc.affinity >= 200
@@ -2735,13 +2737,20 @@ function updateMaterialsDisplay() {
             const stars = monster.stars || {strength:0, agility:0, endurance:0, focus:0, intelligence:0};
             const skills = [];
             if (monster.monsterSkill && MONSTER_SKILLS[monster.monsterSkill]) {
-                skills.push(MONSTER_SKILLS[monster.monsterSkill]);
+                skills.push({ key: monster.monsterSkill, info: MONSTER_SKILLS[monster.monsterSkill] });
             }
             if (monster.skill) {
                 const def = MERCENARY_SKILLS[monster.skill] || SKILL_DEFS[monster.skill] || MONSTER_SKILLS[monster.skill];
-                if (def) skills.push(def);
+                if (def) skills.push({ key: monster.skill, info: def });
             }
-            const skillLine = skills.map(s => `<div>스킬: ${s.icon} ${s.name}</div>`).join('');
+            const skillLine = skills.map(({key, info}) => {
+                const lvl = monster.skillLevels && monster.skillLevels[key] || 1;
+                const cost = (info.manaCost || 0) + lvl - 1;
+                const mpText = info.manaCost ? ` (MP ${cost})` : '';
+                const cd = monster.skillCooldowns ? monster.skillCooldowns[key] || 0 : 0;
+                const cdText = cd > 0 ? ` (CD ${cd})` : '';
+                return `<div>스킬: ${info.icon} ${info.name} Lv.${lvl}${mpText}${cdText}</div>`;
+            }).join('');
             const actionBtn = monster.affinity !== undefined
                 ? (monster.affinity >= 200
                     ? `<button class="sell-button" onclick="sacrifice(window.currentDetailMonster)">희생</button>`
@@ -2787,7 +2796,15 @@ function updateMaterialsDisplay() {
             const acc1 = eq.accessory1 ? eq.accessory1.name : '없음';
             const acc2 = eq.accessory2 ? eq.accessory2.name : '없음';
             const skillInfo = champion.monsterSkill ? MONSTER_SKILLS[champion.monsterSkill] : null;
-            const skillLine = skillInfo ? `<div>스킬: ${skillInfo.icon} ${skillInfo.name}</div>` : '<div>스킬: 없음</div>';
+            let skillLine = '<div>스킬: 없음</div>';
+            if (skillInfo) {
+                const lvl = champion.skillLevels && champion.skillLevels[champion.monsterSkill] || 1;
+                const cost = (skillInfo.manaCost || 0) + lvl - 1;
+                const mpText = skillInfo.manaCost ? ` (MP ${cost})` : '';
+                const cd = champion.skillCooldowns ? champion.skillCooldowns[champion.monsterSkill] || 0 : 0;
+                const cdText = cd > 0 ? ` (CD ${cd})` : '';
+                skillLine = `<div>스킬: ${skillInfo.icon} ${skillInfo.name} Lv.${lvl}${mpText}${cdText}</div>`;
+            }
             const html = `
                 <h3>${champion.icon} ${champion.name} (Lv.${champion.level})</h3>
                 <div>💪 힘: ${formatNumber(champion.strength)} ${'⭐'.repeat(champion.stars.strength)}</div>
@@ -4789,6 +4806,7 @@ function killMonster(monster) {
                 gold: level * 10,
                 lootChance: 1,
                 hasActed: false,
+                skillCooldowns: {},
                 isChampion: true,
                 equipped: { weapon: null, armor: null, accessory1: null, accessory2: null, tile: null },
                 elementResistances: {fire:0, ice:0, lightning:0, earth:0, light:0, dark:0},
