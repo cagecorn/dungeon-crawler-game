@@ -425,6 +425,28 @@ function initializeAudio() {
 
 // ========================== 추가 끝 ==========================
 
+/**
+ * 해당 유닛이 플레이어 편인지 확인합니다. (플레이어 또는 아군 용병)
+ * @param {object} entity - 확인할 유닛 객체
+ * @returns {boolean}
+ */
+function isPlayerSide(entity) {
+    if (!entity) return false;
+    if (entity === gameState.player) return true;
+    if (gameState.activeMercenaries.includes(entity)) return true;
+    return false;
+}
+
+/**
+ * 두 유닛이 같은 편인지 확인합니다.
+ * @param {object} a - 유닛 A
+ * @param {object} b - 유닛 B
+ * @returns {boolean}
+ */
+function isSameSide(a, b) {
+    return isPlayerSide(a) === isPlayerSide(b);
+}
+
 const ITEM_TYPES = {
             WEAPON: 'weapon',
             ARMOR: 'armor',
@@ -8132,7 +8154,8 @@ upgradeMercenarySkill, upgradeMonsterSkill, useItem, useItemOnTarget, useSkill, 
     addRecipeToTab, removeRecipeFromTab,
     updateCraftingDetailDisplay, showCraftingDetailPanel, hideCraftingDetailPanel,
     showCorpsePanel, hideCorpsePanel, ignoreCorpse, getMonsterRank,
-    getMonsterImage, getMercImage, getPlayerImage
+    getMonsterImage, getMercImage, getPlayerImage,
+    isPlayerSide, isSameSide
 };
 Object.assign(window, exportsObj, {SKILL_DEFS, MERCENARY_SKILLS, MONSTER_SKILLS, MONSTER_SKILL_SETS, MONSTER_TRAITS, MONSTER_TRAIT_SETS, PREFIXES, SUFFIXES, RARE_PREFIXES, RARE_SUFFIXES, MAP_PREFIXES, MAP_SUFFIXES, MAP_TILE_TYPES, CORPSE_TURNS, UNIQUE_ITEMS});
 
