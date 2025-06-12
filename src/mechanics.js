@@ -2249,6 +2249,26 @@ const MERCENARY_NAMES = [
                 acc2Slot.textContent = '악세서리2: 없음';
                 acc2Slot.onclick = null;
             }
+            const trophySlot = document.getElementById('equipped-trophy');
+            if (trophySlot) {
+                if (gameState.player.equipped.trophy) {
+                    trophySlot.textContent = `트로피: ${formatItem(gameState.player.equipped.trophy)}`;
+                    trophySlot.onclick = () => unequipAccessory('trophy');
+                } else {
+                    trophySlot.textContent = '트로피: 없음';
+                    trophySlot.onclick = null;
+                }
+            }
+            const artifactSlot = document.getElementById('equipped-artifact');
+            if (artifactSlot) {
+                if (gameState.player.equipped.artifact) {
+                    artifactSlot.textContent = `아티팩트: ${formatItem(gameState.player.equipped.artifact)}`;
+                    artifactSlot.onclick = () => unequipAccessory('artifact');
+                } else {
+                    artifactSlot.textContent = '아티팩트: 없음';
+                    artifactSlot.onclick = null;
+                }
+            }
             const tileSlot = document.getElementById('equipped-tile');
             if (tileSlot) {
                 if (gameState.player.equipped.tile) {
@@ -2441,6 +2461,8 @@ function updateMaterialsDisplay() {
                 const armor = merc.equipped && merc.equipped.armor ? merc.equipped.armor.name : '없음';
                 const accessory1 = merc.equipped && merc.equipped.accessory1 ? merc.equipped.accessory1.name : '없음';
                 const accessory2 = merc.equipped && merc.equipped.accessory2 ? merc.equipped.accessory2.name : '없음';
+                const trophy = merc.equipped && merc.equipped.trophy ? merc.equipped.trophy.name : '없음';
+                const artifact = merc.equipped && merc.equipped.artifact ? merc.equipped.artifact.name : '없음';
             const totalAttack = formatNumber(getStat(merc, 'attack'));
             const totalDefense = formatNumber(getStat(merc, 'defense'));
                 const skillInfo = MERCENARY_SKILLS[merc.skill] || MONSTER_SKILLS[merc.skill];
@@ -2450,7 +2472,7 @@ function updateMaterialsDisplay() {
 
                 div.textContent = `${formatNumber(i + 1)}. ${merc.icon} ${merc.name} Lv.${formatNumber(merc.level)} (HP:${hp}, MP:${mp}) ` +
                     `[공격:${totalAttack}, 방어:${totalDefense}] ` +
-                    `[무기:${weapon}, 방어구:${armor}, 악세1:${accessory1}, 악세2:${accessory2}] ` +
+                    `[무기:${weapon}, 방어구:${armor}, 악세1:${accessory1}, 악세2:${accessory2}, 트로피:${trophy}, 아티:${artifact}] ` +
                     `[${skillText}]`;
 
                 if (merc.alive) {
@@ -2558,6 +2580,8 @@ function updateMaterialsDisplay() {
             const armor = merc.equipped && merc.equipped.armor ? merc.equipped.armor.name : '없음';
             const accessory1 = merc.equipped && merc.equipped.accessory1 ? merc.equipped.accessory1.name : '없음';
             const accessory2 = merc.equipped && merc.equipped.accessory2 ? merc.equipped.accessory2.name : '없음';
+            const trophy = merc.equipped && merc.equipped.trophy ? merc.equipped.trophy.name : '없음';
+            const artifact = merc.equipped && merc.equipped.artifact ? merc.equipped.artifact.name : '없음';
 
             const weaponBtn = merc.equipped && merc.equipped.weapon
                 ? `<button class="sell-button" onclick="unequipItemFromMercenary('${merc.id}','weapon')">해제</button>`
@@ -2570,6 +2594,12 @@ function updateMaterialsDisplay() {
                 : '';
             const acc2Btn = merc.equipped && merc.equipped.accessory2
                 ? `<button class="sell-button" onclick="unequipItemFromMercenary('${merc.id}','accessory2')">해제</button>`
+                : '';
+            const trophyBtn = merc.equipped && merc.equipped.trophy
+                ? `<button class="sell-button" onclick="unequipItemFromMercenary('${merc.id}','trophy')">해제</button>`
+                : '';
+            const artifactBtn = merc.equipped && merc.equipped.artifact
+                ? `<button class="sell-button" onclick="unequipItemFromMercenary('${merc.id}','artifact')">해제</button>`
                 : '';
             const skills = [merc.skill, merc.skill2].filter(Boolean);
             const skillHtml = skills.map(key => {
@@ -2617,6 +2647,8 @@ function updateMaterialsDisplay() {
                 <div>방어구: ${armor} ${armorBtn}</div>
                 <div>악세1: ${accessory1} ${acc1Btn}</div>
                 <div>악세2: ${accessory2} ${acc2Btn}</div>
+                <div>트로피: ${trophy} ${trophyBtn}</div>
+                <div>아티팩트: ${artifact} ${artifactBtn}</div>
                 ${skillHtml || '<div>스킬: 없음</div>'}
                 <div>${actionBtn}</div>
             `;
@@ -2744,6 +2776,8 @@ function updateMaterialsDisplay() {
             const armor = eq.armor ? eq.armor.name : '없음';
             const acc1 = eq.accessory1 ? eq.accessory1.name : '없음';
             const acc2 = eq.accessory2 ? eq.accessory2.name : '없음';
+            const trophy = eq.trophy ? eq.trophy.name : '없음';
+            const artifact = eq.artifact ? eq.artifact.name : '없음';
             const skillInfo = champion.monsterSkill ? MONSTER_SKILLS[champion.monsterSkill] : null;
             const skillLine = skillInfo ? `<div>스킬: ${skillInfo.icon} ${skillInfo.name}</div>` : '<div>스킬: 없음</div>';
             const html = `
@@ -2770,6 +2804,8 @@ function updateMaterialsDisplay() {
                 <div>방어구: ${armor}</div>
                 <div>악세1: ${acc1}</div>
                 <div>악세2: ${acc2}</div>
+                <div>트로피: ${trophy}</div>
+                <div>아티팩트: ${artifact}</div>
                 ${skillLine}
             `;
             document.getElementById('monster-detail-content').innerHTML = html;
@@ -2869,6 +2905,26 @@ function updateMaterialsDisplay() {
                 } else {
                     tileSlot.textContent = '타일: 없음';
                     tileSlot.onclick = null;
+                }
+            }
+            const trophySide = document.getElementById('equipped-trophy-side');
+            if (trophySide) {
+                if (gameState.player.equipped.trophy) {
+                    trophySide.textContent = `트로피: ${formatItem(gameState.player.equipped.trophy)}`;
+                    trophySide.onclick = () => unequipAccessory('trophy');
+                } else {
+                    trophySide.textContent = '트로피: 없음';
+                    trophySide.onclick = null;
+                }
+            }
+            const artifactSide = document.getElementById('equipped-artifact-side');
+            if (artifactSide) {
+                if (gameState.player.equipped.artifact) {
+                    artifactSide.textContent = `아티팩트: ${formatItem(gameState.player.equipped.artifact)}`;
+                    artifactSide.onclick = () => unequipAccessory('artifact');
+                } else {
+                    artifactSide.textContent = '아티팩트: 없음';
+                    artifactSide.onclick = null;
                 }
             }
             document.getElementById('weaponBonus').textContent = gameState.player.equipped.weapon ? `(+${formatNumber(gameState.player.equipped.weapon.attack)})` : '';
@@ -3419,7 +3475,7 @@ function killMonster(monster) {
                 affinity: 30,
                 fullness: 75,
                 hasActed: false,
-                equipped: { weapon: null, armor: null, accessory1: null, accessory2: null, tile: null },
+                equipped: { weapon: null, armor: null, accessory1: null, accessory2: null, tile: null, trophy: null, artifact: null },
                 range: monster.range,
                 special: monster.special,
                 trait: monster.trait || null,
@@ -4572,7 +4628,9 @@ function killMonster(monster) {
                     armor: null,
                     accessory1: null,
                     accessory2: null,
-                    tile: null
+                    tile: null,
+                    trophy: null,
+                    artifact: null
                 }
             };
         }
@@ -4725,7 +4783,7 @@ function killMonster(monster) {
                 lootChance: 1,
                 hasActed: false,
                 isChampion: true,
-                equipped: { weapon: null, armor: null, accessory1: null, accessory2: null, tile: null },
+                equipped: { weapon: null, armor: null, accessory1: null, accessory2: null, tile: null, trophy: null, artifact: null },
                 elementResistances: {fire:0, ice:0, lightning:0, earth:0, light:0, dark:0},
                 statusResistances: {poison:0, bleed:0, burn:0, freeze:0, paralysis:0, nightmare:0, silence:0, petrify:0, debuff:0},
                 poison:false,burn:false,freeze:false,bleed:false,
