@@ -2304,21 +2304,25 @@ const MERCENARY_NAMES = [
                 div.className = 'skill-item';
                 const info = SKILL_DEFS[skill];
                 const level = gameState.player.skillLevels[skill] || 1;
+                const cooldown = gameState.player.skillCooldowns[skill] || 0;
 
                 const nameSpan = document.createElement('span');
-                nameSpan.textContent = `${info.icon} ${info.name} (Lv ${level})`;
+                const cdText = cooldown > 0 ? `, CD ${cooldown}` : '';
+                nameSpan.textContent = `${info.icon} ${info.name} (Lv ${level}${cdText})`;
                 div.appendChild(nameSpan);
 
                 const btn1 = document.createElement('button');
                 btn1.className = 'assign-btn';
                 btn1.textContent = '1';
                 btn1.onclick = (e) => { e.stopPropagation(); assignSkill(1, skill); };
+                btn1.disabled = cooldown > 0;
                 div.appendChild(btn1);
 
                 const btn2 = document.createElement('button');
                 btn2.className = 'assign-btn';
                 btn2.textContent = '2';
                 btn2.onclick = (e) => { e.stopPropagation(); assignSkill(2, skill); };
+                btn2.disabled = cooldown > 0;
                 div.appendChild(btn2);
 
                 div.onclick = () => {
@@ -2334,10 +2338,14 @@ const MERCENARY_NAMES = [
             });
             const s1 = document.getElementById('skill1-name');
             const s2 = document.getElementById('skill2-name');
-            s1.textContent = gameState.player.assignedSkills[1] ? SKILL_DEFS[gameState.player.assignedSkills[1]].name : '없음';
-            s2.textContent = gameState.player.assignedSkills[2] ? SKILL_DEFS[gameState.player.assignedSkills[2]].name : '없음';
-            s1.onclick = () => showSkillDamage(gameState.player, gameState.player.assignedSkills[1], SKILL_DEFS);
-            s2.onclick = () => showSkillDamage(gameState.player, gameState.player.assignedSkills[2], SKILL_DEFS);
+            const skill1 = gameState.player.assignedSkills[1];
+            const skill2 = gameState.player.assignedSkills[2];
+            const cd1 = skill1 ? (gameState.player.skillCooldowns[skill1] || 0) : 0;
+            const cd2 = skill2 ? (gameState.player.skillCooldowns[skill2] || 0) : 0;
+            s1.textContent = skill1 ? `${SKILL_DEFS[skill1].name}${cd1 > 0 ? ` (CD ${cd1})` : ''}` : '없음';
+            s2.textContent = skill2 ? `${SKILL_DEFS[skill2].name}${cd2 > 0 ? ` (CD ${cd2})` : ''}` : '없음';
+            s1.onclick = () => showSkillDamage(gameState.player, skill1, SKILL_DEFS);
+            s2.onclick = () => showSkillDamage(gameState.player, skill2, SKILL_DEFS);
         }
 
 function updateMaterialsDisplay() {
