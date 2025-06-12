@@ -243,8 +243,8 @@
 }
 
 .tile-tab-slot {
-  width: 32px;
-  height: 32px;
+  width: var(--cell-width);
+  height: var(--cell-width);
   background-color: #222;
   border: 1px solid #666;
   border-radius: 4px;
@@ -415,8 +415,8 @@
   }
   @keyframes nova-expand {
       0% {
-          width: 33px;
-          height: 33px;
+          width: calc(var(--cell-width) + 1px);
+          height: calc(var(--cell-width) + 1px);
           opacity: 1;
       }
       100% {

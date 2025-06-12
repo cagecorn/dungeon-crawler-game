@@ -4100,8 +4100,8 @@ function killMonster(monster) {
             const dungeonEl = document.getElementById('dungeon');
             if (dungeonEl) {
                 dungeonEl.style.setProperty('--dungeon-size', size);
-                dungeonEl.style.gridTemplateColumns = `repeat(${size}, 32px)`;
-                dungeonEl.style.gridTemplateRows = `repeat(${size}, 32px)`;
+                dungeonEl.style.gridTemplateColumns = `repeat(${size}, ${CELL_WIDTH}px)`;
+                dungeonEl.style.gridTemplateRows = `repeat(${size}, ${CELL_WIDTH}px)`;
             }
             gameState.dungeon = [];
             gameState.fogOfWar = [];
@@ -4488,8 +4488,8 @@ function killMonster(monster) {
             gameState.cellElements = [];
 
             dungeonEl.style.setProperty('--dungeon-size', size);
-            dungeonEl.style.gridTemplateColumns = `repeat(${size}, 32px)`;
-            dungeonEl.style.gridTemplateRows = `repeat(${size}, 32px)`;
+            dungeonEl.style.gridTemplateColumns = `repeat(${size}, ${CELL_WIDTH}px)`;
+            dungeonEl.style.gridTemplateRows = `repeat(${size}, ${CELL_WIDTH}px)`;
 
             for (let y = 0; y < size; y++) {
                 const cellRow = [];

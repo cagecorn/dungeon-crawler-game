@@ -47,19 +47,22 @@
             box-shadow: 0 0 20px rgba(0, 0, 0, 0.8);
             border: 2px solid #444;
         }
+        :root {
+            --cell-width: 32px;
+        }
         .dungeon {
             position: absolute;
             display: grid;
             --dungeon-size: 80;
-            grid-template-columns: repeat(var(--dungeon-size), 32px);
-            grid-template-rows: repeat(var(--dungeon-size), 32px);
+            grid-template-columns: repeat(var(--dungeon-size), var(--cell-width));
+            grid-template-rows: repeat(var(--dungeon-size), var(--cell-width));
             gap: 1px;
             transition: transform 0.15s ease;
             will-change: transform;
         }
         .cell {
-            width: 32px;
-            height: 32px;
+            width: var(--cell-width);
+            height: var(--cell-width);
             display: flex;
             justify-content: center;
             align-items: center;
