@@ -17,6 +17,8 @@
             health: 20,
             shield: 0,
             shieldTurns: 0,
+            attackBuff: 0,
+            attackBuffTurns: 0,
             mana: 10,
             exp: 0,
             expNeeded: 20,

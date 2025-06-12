@@ -1449,6 +1449,7 @@ const MERCENARY_NAMES = [
             Purify: { name: 'Purify', icon: '🌀', purify: true, range: 2, manaCost: 2, cooldown: 0 },
             Teleport: { name: 'Teleport', icon: '🌀', teleport: true, manaCost: 2, cooldown: 5 },
             GuardianHymn: { name: '수호의 찬가', icon: '🎶', range: 3, manaCost: 3, shield: true, duration: 5, cooldown: 3 },
+            CourageHymn: { name: '용기의 찬가', icon: '🎵', range: 3, manaCost: 3, attackBuff: true, duration: 5, cooldown: 3 },
             DoubleStrike: { name: 'Double Strike', icon: '🔪', range: 1, manaCost: 3, melee: true, hits: 2, cooldown: 2 },
             ChargeAttack: { name: 'Charge Attack', icon: '⚡', range: 2, manaCost: 2, melee: true, multiplier: 1.5, dashRange: 4, cooldown: 3 },
             HawkEye: { name: 'Hawk Eye', icon: '🦅', range: 5, manaCost: 2, damageDice: '1d6', cooldown: 2 },
@@ -1471,6 +1472,7 @@ const MERCENARY_NAMES = [
             Fireball: { name: 'Fireball', icon: '🔥', range: 4, manaCost: 3, damageDice: '1d8', magic: true, element: 'fire', cooldown: 2 },
             Iceball: { name: 'Iceball', icon: '❄️', range: 5, manaCost: 2, damageDice: '1d8', magic: true, element: 'ice', cooldown: 2 },
             GuardianHymn: { name: '수호의 찬가', icon: '🎶', range: 3, manaCost: 3, shield: true, duration: 5, cooldown: 3 },
+            CourageHymn: { name: '용기의 찬가', icon: '🎵', range: 3, manaCost: 3, attackBuff: true, duration: 5, cooldown: 3 },
             HawkEye: { name: 'Hawk Eye', icon: '🦅', range: 5, manaCost: 2, damageDice: '1d6', cooldown: 2 },
             MightAura: { name: 'Might Aura', icon: '💪', passive: true, radius: 6, aura: { attack: 1, magicPower: 1 }, cooldown: 0 },
             ProtectAura: { name: 'Protect Aura', icon: '🛡️', passive: true, radius: 6, aura: { defense: 1, magicResist: 1 }, cooldown: 0 },
@@ -1810,6 +1812,28 @@ const MERCENARY_NAMES = [
                 const name = target === gameState.player ? '플레이어' : target.name;
                 const img = caster === gameState.player ? getPlayerImage() : getMercImage(caster.type);
                 addMessage(`${skillInfo.icon} ${caster.name}의 ${skillInfo.name}이(가) ${name}에게 ${formatNumber(amount)} 보호막을 부여했습니다.`, 'mercenary', null, img);
+                refreshDetailPanel(target);
+            }
+            return applied;
+        }
+
+        function applyAttackBuff(caster, target, skillInfo, level = 1) {
+            if (!isSameSide(caster, target)) return false;
+            const power = getStat(caster, 'magicPower');
+            const amount = Math.floor(power * level);
+            if (amount <= 0) return false;
+
+            let applied = false;
+            if (!target.attackBuff || amount > target.attackBuff) {
+                target.attackBuff = amount;
+                target.attackBuffTurns = skillInfo.duration || 5;
+                applied = true;
+            }
+
+            if (applied) {
+                const name = target === gameState.player ? '플레이어' : target.name;
+                const img = caster === gameState.player ? getPlayerImage() : getMercImage(caster.type);
+                addMessage(`${skillInfo.icon} ${caster.name}의 ${skillInfo.name}이(가) ${name}의 공격력을 ${formatNumber(amount)} 만큼 증가시켰습니다.`, 'mercenary', null, img);
                 refreshDetailPanel(target);
             }
             return applied;
@@ -2260,6 +2284,9 @@ const MERCENARY_NAMES = [
                         value += it[stat];
                     }
                 });
+            }
+            if (stat === 'attack' && character.attackBuff) {
+                value += character.attackBuff;
             }
             value += getAuraBonus(character, stat);
             return value;
@@ -3109,6 +3136,8 @@ function updateMaterialsDisplay() {
             document.getElementById('healthRegen').textContent = formatNumber(getStat(gameState.player, 'healthRegen'));
             document.getElementById('manaRegen').textContent = formatNumber(getStat(gameState.player, 'manaRegen'));
             document.getElementById('attackStat').textContent = formatNumber(getStat(gameState.player, 'attack'));
+            const atkBuffEl = document.getElementById('attackBuff');
+            if (atkBuffEl) atkBuffEl.textContent = gameState.player.attackBuff > 0 ? `(+${formatNumber(gameState.player.attackBuff)})` : '';
             document.getElementById('defense').textContent = formatNumber(getStat(gameState.player, 'defense'));
             document.getElementById('accuracy').textContent = formatNumber(getStat(gameState.player, 'accuracy'));
             document.getElementById('evasion').textContent = formatNumber(getStat(gameState.player, 'evasion'));
@@ -3324,6 +3353,8 @@ function updateMaterialsDisplay() {
                 mana: 0,
                 shield: 0,
                 shieldTurns: 0,
+                attackBuff: 0,
+                attackBuffTurns: 0,
                 attack: data.baseAttack,
                 defense: data.baseDefense,
                 accuracy: data.baseAccuracy,
@@ -3656,6 +3687,8 @@ function killMonster(monster) {
                 mana: monster.maxMana,
                 shield: 0,
                 shieldTurns: 0,
+                attackBuff: 0,
+                attackBuffTurns: 0,
                 healthRegen: monster.healthRegen || 0,
                 manaRegen: monster.manaRegen || 1,
                 auraSkill: monster.auraSkill || null,
@@ -4807,6 +4840,8 @@ function killMonster(monster) {
                 mana: mercType.baseMaxMana || 0,
                 shield: 0,
                 shieldTurns: 0,
+                attackBuff: 0,
+                attackBuffTurns: 0,
                 healthRegen: mercType.baseHealthRegen || 0,
                 manaRegen: mercType.baseManaRegen || 1,
                 skill: assignedSkill,
@@ -6193,12 +6228,22 @@ function processTurn() {
             refreshDetailPanel(entity);
         }
     };
+    const decrementAttackBuff = entity => {
+        if (entity.attackBuffTurns && entity.attackBuffTurns > 0) {
+            entity.attackBuffTurns--;
+            if (entity.attackBuffTurns <= 0) entity.attackBuff = 0;
+            refreshDetailPanel(entity);
+        }
+    };
     decrementCooldowns(gameState.player);
     decrementShield(gameState.player);
+    decrementAttackBuff(gameState.player);
     gameState.activeMercenaries.forEach(decrementCooldowns);
     gameState.activeMercenaries.forEach(decrementShield);
+    gameState.activeMercenaries.forEach(decrementAttackBuff);
     gameState.monsters.forEach(decrementCooldowns);
     gameState.monsters.forEach(decrementShield);
+    gameState.monsters.forEach(decrementAttackBuff);
 
     for (let i = gameState.corpses.length - 1; i >= 0; i--) {
         const corpse = gameState.corpses[i];
@@ -6727,6 +6772,18 @@ function processTurn() {
                     mercenary.skillCooldowns[skillKey] = skillInfo.cooldown;
                     mercenary.hasActed = true;
                     return;
+                } else if (skillKey === 'CourageHymn') {
+                    let nearestAlly = null;
+                    let distAlly = Infinity;
+                    const allies = [gameState.player, ...gameState.activeMercenaries.filter(m=>m.alive && m!==mercenary)];
+                    allies.forEach(a=>{ const d=getDistance(mercenary.x, mercenary.y, a.x, a.y); if(d<=skillInfo.range && d<distAlly){distAlly=d; nearestAlly=a;} });
+                    mercenary.mana -= skillManaCost;
+                    applyAttackBuff(mercenary, mercenary, skillInfo, skillLevel);
+                    if(nearestAlly) applyAttackBuff(mercenary, nearestAlly, skillInfo, skillLevel);
+                    updateMercenaryDisplay();
+                    mercenary.skillCooldowns[skillKey] = skillInfo.cooldown;
+                    mercenary.hasActed = true;
+                    return;
                 } else if (skillKey === 'ChargeAttack' && nearestMonster && nearestDistance <= skillInfo.dashRange && hasLineOfSight(mercenary.x, mercenary.y, nearestMonster.x, nearestMonster.y)) {
                     let attackValue = getStat(mercenary, 'attack');
                     attackValue = Math.floor(attackValue * skillInfo.multiplier * skillLevel);
@@ -7196,6 +7253,12 @@ function processTurn() {
             if (saved.player.shieldTurns === undefined) {
                 gameState.player.shieldTurns = 0;
             }
+            if (saved.player.attackBuff === undefined) {
+                gameState.player.attackBuff = 0;
+            }
+            if (saved.player.attackBuffTurns === undefined) {
+                gameState.player.attackBuffTurns = 0;
+            }
             if (saved.activeMercenaries) gameState.activeMercenaries = saved.activeMercenaries;
             else if (saved.mercenaries) gameState.activeMercenaries = saved.mercenaries;
             if (saved.standbyMercenaries) gameState.standbyMercenaries = saved.standbyMercenaries;
@@ -7244,6 +7307,8 @@ function processTurn() {
                 }
                 if (m.shield === undefined) m.shield = 0;
                 if (m.shieldTurns === undefined) m.shieldTurns = 0;
+                if (m.attackBuff === undefined) m.attackBuff = 0;
+                if (m.attackBuffTurns === undefined) m.attackBuffTurns = 0;
             };
 
             gameState.activeMercenaries.forEach(convertMercenary);
@@ -7428,6 +7493,23 @@ function processTurn() {
                 gameState.player.mana -= manaCost;
                 applyShield(gameState.player, gameState.player, skill, level);
                 if (nearest) applyShield(gameState.player, nearest, skill, level);
+                updateStats();
+                updateMercenaryDisplay();
+                gameState.player.skillCooldowns[skillKey] = skill.cooldown;
+                processTurn();
+                return;
+            }
+            if (skill.attackBuff) {
+                const allies = gameState.activeMercenaries.filter(m => m.alive);
+                let nearest = null;
+                let nearestDist = Infinity;
+                allies.forEach(a => {
+                    const d = getDistance(gameState.player.x, gameState.player.y, a.x, a.y);
+                    if (d <= skill.range && d < nearestDist) { nearestDist = d; nearest = a; }
+                });
+                gameState.player.mana -= manaCost;
+                applyAttackBuff(gameState.player, gameState.player, skill, level);
+                if (nearest) applyAttackBuff(gameState.player, nearest, skill, level);
                 updateStats();
                 updateMercenaryDisplay();
                 gameState.player.skillCooldowns[skillKey] = skill.cooldown;
@@ -8123,7 +8205,7 @@ function processTurn() {
         });
 const exportsObj = {
 gameState, addMessage, addToInventory, advanceIncubators, advanceGameLoop,
-applyStatusEffects, assignSkill, autoMoveStep, averageDice, buildAttackDetail, 
+applyStatusEffects, applyAttackBuff, assignSkill, autoMoveStep, averageDice, buildAttackDetail,
 buyShopItem, checkLevelUp, checkMercenaryLevelUp, checkMonsterLevelUp, 
 convertMonsterToMercenary, craftItem, createChampion, createEliteMonster, 
 createHomingProjectile, createItem, createMercenary, createMonster,
