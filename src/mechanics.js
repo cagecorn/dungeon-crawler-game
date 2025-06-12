@@ -6617,8 +6617,31 @@ function processTurn() {
                 }
             }
             
-            // 힐러는 치료 우선
+            // 힐러는 상태 이상 해제를 우선 고려
             if (mercenary.role === 'support') {
+                const purifyInfo = MERCENARY_SKILLS[mercenary.skill2];
+                const purifyLevel = mercenary.skillLevels && mercenary.skillLevels[mercenary.skill2] || 1;
+                const purifyMana = purifyInfo ? purifyInfo.manaCost + purifyLevel - 1 : 0;
+                const purifyOnCooldown = purifyInfo && mercenary.skillCooldowns[mercenary.skill2] > 0;
+                if (purifyInfo && mercenary.skill2 === 'Purify' && !purifyOnCooldown && mercenary.mana >= purifyMana) {
+                    const inRange = target => getDistance(mercenary.x, mercenary.y, target.x, target.y) <= purifyInfo.range;
+                    const hasStatus = t => t.poison || t.burn || t.freeze || t.bleed || t.paralysis || t.nightmare || t.silence || t.petrify || t.debuff;
+
+                    const targetToPurify = [gameState.player, ...gameState.activeMercenaries.filter(m => m.alive)].find(
+                        t => hasStatus(t) && inRange(t)
+                    );
+
+                    if (targetToPurify) {
+                        if (purifyTarget(mercenary, targetToPurify, purifyInfo)) {
+                            mercenary.mana -= purifyMana;
+                            mercenary.skillCooldowns[mercenary.skill2] = purifyInfo.cooldown;
+                            updateMercenaryDisplay();
+                            mercenary.hasActed = true;
+                            return; // 정화 후 턴 종료
+                        }
+                    }
+                }
+
                 const knowsHeal = skillInfo && mercenary.skill === 'Heal';
                 const healOnCooldown = knowsHeal && mercenary.skillCooldowns[mercenary.skill] > 0;
                 const manaCost = knowsHeal ? skillManaCost : HEAL_MANA_COST;
@@ -6667,47 +6690,6 @@ function processTurn() {
                         updateMercenaryDisplay();
                         mercenary.hasActed = true;
                         return;
-                    }
-                }
-
-                const purifyInfo = MERCENARY_SKILLS[mercenary.skill2];
-                const purifyLevel = mercenary.skillLevels && mercenary.skillLevels[mercenary.skill2] || 1;
-                const purifyMana = purifyInfo ? purifyInfo.manaCost + purifyLevel - 1 : 0;
-                const purifyOnCooldown = purifyInfo && mercenary.skillCooldowns[mercenary.skill2] > 0;
-                if (purifyInfo && mercenary.skill2 === 'Purify' && !purifyOnCooldown && mercenary.mana >= purifyMana) {
-                    const inRange = target => getDistance(mercenary.x, mercenary.y, target.x, target.y) <= purifyInfo.range;
-                    const hasStatus = t => t.poison || t.burn || t.freeze || t.bleed || t.paralysis || t.nightmare || t.silence || t.petrify || t.debuff;
-
-                    if (hasStatus(gameState.player) && inRange(gameState.player)) {
-                        if (purifyTarget(mercenary, gameState.player, purifyInfo)) {
-                            mercenary.mana -= purifyMana;
-                            mercenary.skillCooldowns[mercenary.skill2] = purifyInfo.cooldown;
-                            updateMercenaryDisplay();
-                            mercenary.hasActed = true;
-                            return;
-                        }
-                    }
-
-                    for (const m of gameState.activeMercenaries) {
-                        if (m !== mercenary && m.alive && hasStatus(m) && inRange(m)) {
-                            if (purifyTarget(mercenary, m, purifyInfo)) {
-                                mercenary.mana -= purifyMana;
-                                mercenary.skillCooldowns[mercenary.skill2] = purifyInfo.cooldown;
-                                updateMercenaryDisplay();
-                                mercenary.hasActed = true;
-                                return;
-                            }
-                        }
-                    }
-
-                    if (hasStatus(mercenary)) {
-                        if (purifyTarget(mercenary, mercenary, purifyInfo)) {
-                            mercenary.mana -= purifyMana;
-                            mercenary.skillCooldowns[mercenary.skill2] = purifyInfo.cooldown;
-                            updateMercenaryDisplay();
-                            mercenary.hasActed = true;
-                            return;
-                        }
                     }
                 }
             }
