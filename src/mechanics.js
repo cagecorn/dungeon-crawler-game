@@ -5343,6 +5343,22 @@ function killMonster(monster) {
                 const oldY = gameState.player.y;
                 gameState.player.x = newX;
                 gameState.player.y = newY;
+
+                if (cellType === 'item') {
+                    const item = gameState.items.find(i => i.x === newX && i.y === newY);
+                    if (item) {
+                        addToInventory(item);
+                        SoundEngine.playSound('getItem');
+                        addMessage(`📦 ${item.name}을(를) 획득했습니다!`, 'item');
+
+                        const itemIndex = gameState.items.findIndex(i => i === item);
+                        if (itemIndex !== -1) {
+                            gameState.items.splice(itemIndex, 1);
+                        }
+                        gameState.dungeon[newY][newX] = 'empty';
+                    }
+                }
+
                 blockingMercenary.x = oldX;
                 blockingMercenary.y = oldY;
                 processTurn();
