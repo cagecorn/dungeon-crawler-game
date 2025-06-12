@@ -272,7 +272,14 @@ const BgmPlayer = {
     // [추가] BGM 파일 목록. 실제 파일 경로로 수정하세요.
     playlist: [
         'assets/audio/bgm1.mp3',
-        'assets/audio/bgm2.mp3'
+        'assets/audio/bgm2.mp3',
+        'assets/audio/bgm3.mp3',
+        'assets/audio/bgm4.mp3',
+        'assets/audio/bgm5.mp3',
+        'assets/audio/bgm6.mp3',
+        'assets/audio/bgm7.mp3',
+        'assets/audio/bgm8.mp3',
+        'assets/audio/bgm9.mp3'
     ],
     // [추가] 현재 재생 중인 트랙의 인덱스
     currentTrackIndex: 0,
