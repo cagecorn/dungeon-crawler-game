@@ -3755,7 +3755,7 @@ function killMonster(monster) {
                             } else if (baseCellType === 'tree') {
                                 div.textContent = '🌳';
                             } else if (baseCellType === 'bones') {
-                                div.textContent = '💀';
+                                div.textContent = '🦴';
                             } else if (baseCellType === 'grave') {
                                 div.textContent = '🪦';
                             } else if (baseCellType.startsWith('temple')) {
@@ -5595,7 +5595,7 @@ function killMonster(monster) {
                 const qty = 5 + gameState.floor * 3;
                 if (!gameState.materials.bone) gameState.materials.bone = 0;
                 gameState.materials.bone += qty;
-                addMessage(`💀 뼈 ${qty}개를 수집했습니다.`, 'info');
+                addMessage(`🦴 뼈 ${qty}개를 수집했습니다.`, 'info');
                 gameState.dungeon[newY][newX] = 'empty';
                 updateMaterialsDisplay();
             }
