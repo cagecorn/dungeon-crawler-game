@@ -69,6 +69,7 @@
         camera: { x: 0, y: 0 },
         autoMovePath: null,
         autoMoveActive: false,
+        skipCorpsePanel: false,
         inventoryFilter: 'all',
         incubators: [null, null, null],
         hatchedSuperiors: [],

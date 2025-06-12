@@ -3392,8 +3392,12 @@ function killMonster(monster) {
                 const itemIndex = gameState.items.findIndex(i => i === item);
                 if (itemIndex !== -1) gameState.items.splice(itemIndex, 1);
             }
+            const dx = corpse.x - gameState.player.x;
+            const dy = corpse.y - gameState.player.y;
             gameState.dungeon[corpse.y][corpse.x] = 'corpse';
-            renderDungeon();
+            gameState.skipCorpsePanel = true;
+            movePlayer(dx, dy);
+            movePlayer(dx, dy);
         }
 
         function getMonsterRank(monster) {
@@ -5545,8 +5549,14 @@ function killMonster(monster) {
             if (cellType === 'corpse') {
                 const corpse = gameState.corpses.find(c => c.x === newX && c.y === newY);
                 if (corpse) {
-                    showCorpsePanel(corpse);
-                    return;
+                    if (gameState.skipCorpsePanel) {
+                        gameState.skipCorpsePanel = false;
+                        gameState.player.x = newX;
+                        gameState.player.y = newY;
+                    } else {
+                        showCorpsePanel(corpse);
+                        return;
+                    }
                 }
             }
             
@@ -7198,7 +7208,6 @@ function processTurn() {
             ignoreBtn.onclick = () => {
                 hideCorpsePanel();
                 ignoreCorpse(corpse);
-                processTurn();
             };
             content.appendChild(ignoreBtn);
 
