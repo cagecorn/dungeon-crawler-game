@@ -18,6 +18,7 @@ async function run() {
     tryApplyStatus,
     getStat
   } = win;
+  const SKILL_DEFS = win.eval('SKILL_DEFS');
 
   const size = 5;
   gameState.dungeonSize = size;
@@ -43,6 +44,10 @@ async function run() {
     console.error('heal did not heal ally or mana wrong');
     process.exit(1);
   }
+  if (gameState.player.skillCooldowns['Heal'] !== SKILL_DEFS['Heal'].cooldown) {
+    console.error('heal cooldown incorrect');
+    process.exit(1);
+  }
 
   // Purify
   gameState.player.skills.push('Purify');
@@ -56,6 +61,10 @@ async function run() {
   const expectedPurifyMana = 10 - 2 + 0.5;
   if (merc.poison || gameState.player.mana !== expectedPurifyMana) {
     console.error('purify did not remove status or mana wrong');
+    process.exit(1);
+  }
+  if (gameState.player.skillCooldowns['Purify'] !== SKILL_DEFS['Purify'].cooldown) {
+    console.error('purify cooldown incorrect');
     process.exit(1);
   }
 }

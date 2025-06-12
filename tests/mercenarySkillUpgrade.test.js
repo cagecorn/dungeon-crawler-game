@@ -54,7 +54,7 @@ async function run() {
 
   // skill scaling
   merc.mana = merc.maxMana = 10;
-  merc.health = getStat(merc, 'maxHealth') - 4;
+  merc.health = Math.floor(getStat(merc, 'maxHealth') * 0.4);
   const healLevel = merc.skillLevels[skillKey];
   const manaBefore = merc.mana;
   const healthBefore = merc.health;
