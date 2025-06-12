@@ -1885,16 +1885,8 @@ const MERCENARY_NAMES = [
             }
             return { applied: false, roll, dc };
         }
-        function isPlayerSide(entity) {
-            if (!entity) return false;
-            if (entity === gameState.player) return true;
-            if (gameState.activeMercenaries.includes(entity)) return true;
-            return false;
-        }
-
-        function isSameSide(a, b) {
-            return isPlayerSide(a) === isPlayerSide(b);
-        }
+        // Duplicate declarations of isPlayerSide and isSameSide existed here.
+        // The global versions defined earlier are used instead.
 
         function getStatusResist(character, status) {
             let value = character.statusResistances && character.statusResistances[status] ? character.statusResistances[status] : 0;
