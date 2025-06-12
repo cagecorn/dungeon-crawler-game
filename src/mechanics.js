@@ -2144,8 +2144,8 @@ const MERCENARY_NAMES = [
         function showSkillDamage(owner, key, defs) {
             if (!key) return;
             const dmg = estimateSkillDamage(owner, key, defs);
-            const name = defs[key].name;
-            alert(`${name} 예상 피해: ${formatNumber(dmg)}`);
+            const { name, cooldown: cd } = defs[key];
+            alert(`${name} 예상 피해: ${formatNumber(dmg)} (쿨타임 ${cd})`);
         }
 
         function showAuraDetails(key, lvl) {
