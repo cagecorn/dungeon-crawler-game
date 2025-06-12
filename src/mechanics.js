@@ -326,6 +326,25 @@ const BgmPlayer = {
         }
     },
 
+    /**
+     * 이전 트랙을 재생합니다. 첫 번째 트랙에서 호출되면 마지막 곡으로 이동합니다.
+     */
+    async playPreviousTrack() {
+        this.currentTrackIndex = (this.currentTrackIndex - 1 + this.playlist.length) % this.playlist.length;
+        this.audioElement.src = this.playlist[this.currentTrackIndex];
+        try {
+            await this.audioElement.play();
+        } catch (err) {
+            console.error('BGM playback failed', err);
+        }
+    },
+
+    /** 배경음 음소거 상태를 토글합니다 */
+    toggleMute() {
+        if (!this.audioElement) return;
+        this.audioElement.muted = !this.audioElement.muted;
+    },
+
     // 재생 시작 함수 수정
     async play() {
         if (!this.isInitialized || !this.audioElement) return;
@@ -7463,6 +7482,14 @@ function processTurn() {
         });
         document.getElementById('close-crafting-detail').onclick = hideCraftingDetailPanel;
         document.getElementById('close-corpse-panel').onclick = hideCorpsePanel;
+
+        // BGM control buttons
+        const nextBtn = document.getElementById('next-bgm');
+        if (nextBtn) nextBtn.onclick = () => { initializeAudio(); BgmPlayer.playNextTrack(); };
+        const prevBtn = document.getElementById('prev-bgm');
+        if (prevBtn) prevBtn.onclick = () => { initializeAudio(); BgmPlayer.playPreviousTrack(); };
+        const toggleBtn = document.getElementById('toggle-bgm');
+        if (toggleBtn) toggleBtn.onclick = () => { initializeAudio(); BgmPlayer.toggleMute(); };
 
         document.addEventListener('keydown', (e) => {
             initializeAudio();
