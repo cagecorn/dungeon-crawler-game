@@ -3623,7 +3623,11 @@ function killMonster(monster) {
                                     } else {
                                         const monsterClass = m.type.replace('_', '-').toLowerCase();
                                         finalClasses.push('monster', monsterClass);
-                                        if (monsterClass !== 'slime' && monsterClass !== 'goblin-archer' && monsterClass !== 'goblin') {
+
+                                        // BUG FIX: 이미지 스프라이트가 있는 몬스터 목록에 4종을 추가하여
+                                        // 불필요한 텍스트 아이콘이 표시되지 않도록 수정합니다.
+                                        const monstersWithSprites = ['slime', 'goblin-archer', 'goblin', 'zombie', 'kobold', 'skeleton', 'goblin-wizard'];
+                                        if (!monstersWithSprites.includes(monsterClass)) {
                                              div.textContent = m.icon;
                                         }
                                     }

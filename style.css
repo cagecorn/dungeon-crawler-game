@@ -141,6 +141,26 @@
   background-image: url("assets/images/goblin.png"), url("assets/images/floor-tile.png");
 }
 
+/* 좀비 이미지 적용 */
+.cell.monster.zombie {
+  background-image: url("assets/images/zombie.png"), url("assets/images/floor-tile.png");
+}
+
+/* 코볼트 이미지 적용 */
+.cell.monster.kobold {
+  background-image: url("assets/images/kobold.png"), url("assets/images/floor-tile.png");
+}
+
+/* 스켈레톤 이미지 적용 */
+.cell.monster.skeleton {
+  background-image: url("assets/images/skeleton.png"), url("assets/images/floor-tile.png");
+}
+
+/* 고블린 마법사 이미지 적용 */
+.cell.monster.goblin-wizard {
+  background-image: url("assets/images/goblin-wizard.png"), url("assets/images/floor-tile.png");
+}
+
 /* ---- Special unit glow effects ---- */
 .cell.elite {
   box-shadow: 0 0 8px rgba(244, 67, 54, 0.7);
