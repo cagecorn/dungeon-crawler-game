@@ -4356,26 +4356,33 @@ function killMonster(monster) {
         // 카메라 업데이트 (최적화됨)
         function updateCamera() {
             const dungeonElement = document.getElementById('dungeon');
-            if (!dungeonElement) return;
-            
+            const container = document.querySelector('.dungeon-container');
+            if (!dungeonElement || !container) return;
+
             const cellSize = 33; // 32px + 1px gap
-            
+
+            // 현재 컨테이너 크기에 맞춰 보이는 셀 수 계산
+            const visibleX = Math.floor(container.clientWidth / cellSize);
+            const visibleY = Math.floor(container.clientHeight / cellSize);
+            const viewportSize = Math.min(visibleX, visibleY);
+            gameState.viewportSize = viewportSize;
+
             // 플레이어를 중심으로 카메라 위치 계산
-            const centerX = Math.floor(gameState.viewportSize / 2);
-            const centerY = Math.floor(gameState.viewportSize / 2);
-            
+            const centerX = Math.floor(viewportSize / 2);
+            const centerY = Math.floor(viewportSize / 2);
+
             const newCameraX = gameState.player.x - centerX;
             const newCameraY = gameState.player.y - centerY;
-            
+
             // 던전 경계 체크
-            const clampedX = Math.max(0, Math.min(newCameraX, gameState.dungeonSize - gameState.viewportSize));
-            const clampedY = Math.max(0, Math.min(newCameraY, gameState.dungeonSize - gameState.viewportSize));
-            
+            const clampedX = Math.max(0, Math.min(newCameraX, gameState.dungeonSize - viewportSize));
+            const clampedY = Math.max(0, Math.min(newCameraY, gameState.dungeonSize - viewportSize));
+
             // 카메라 위치가 변경된 경우에만 업데이트
             if (gameState.camera.x !== clampedX || gameState.camera.y !== clampedY) {
                 gameState.camera.x = clampedX;
                 gameState.camera.y = clampedY;
-                
+
                 // 카메라 변환 적용
                 const translateX = -gameState.camera.x * cellSize;
                 const translateY = -gameState.camera.y * cellSize;
