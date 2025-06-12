@@ -3147,10 +3147,17 @@ function updateMaterialsDisplay() {
                 special: data.special,
                 statusEffect: data.statusEffect,
                 lootChance: 0.3,
+<<<<<<< codex/implement-skill-cooldown-check
                 fullness: 75,
                 hasActed: false,
                 skillCooldowns: {}
             };
+=======
+                fullness: 75,
+                hasActed: false,
+                skillCooldowns: {}
+            };
+>>>>>>> main
             setMonsterLevel(monster, level);
             monster.skillLevels = {};
             const pool = MONSTER_SKILL_SETS[type];
@@ -3459,6 +3466,7 @@ function killMonster(monster) {
                 exp: 0,
                 expNeeded: 15,
                 skillPoints: 0,
+               <<<<<<< codex/implement-skill-cooldown-check
                 skillLevels: (() => {
                     const obj = {};
                     if (monster.monsterSkill) obj[monster.monsterSkill] = monster.skillLevels[monster.monsterSkill] || 1;
@@ -3473,6 +3481,22 @@ function killMonster(monster) {
                 skillCooldowns: {},
                 alive: true,
                 affinity: 30,
+=======
+                skillLevels: (() => {
+                    const obj = {};
+                    if (monster.monsterSkill) obj[monster.monsterSkill] = monster.skillLevels[monster.monsterSkill] || 1;
+                    if (monster.isSuperior) {
+                        obj[monster.skill] = monster.skillLevels[monster.skill] || 1;
+                        obj[monster.auraSkill] = monster.skillLevels[monster.auraSkill] || 1;
+                    } else if (monster.isElite && monster.auraSkill) {
+                        obj[monster.auraSkill] = monster.skillLevels[monster.auraSkill] || 1;
+                    }
+                    return obj;
+                })(),
+                skillCooldowns: {},
+                alive: true,
+                affinity: 30,
+>>>>>>> main
                 fullness: 75,
                 hasActed: false,
                 equipped: { weapon: null, armor: null, accessory1: null, accessory2: null, tile: null },
@@ -4613,6 +4637,7 @@ function killMonster(monster) {
                 exp: 0,
                 expNeeded: 15,
                 skillPoints: 0,
+<<<<<<< codex/implement-skill-cooldown-check
                 skillLevels: (() => {
                     const obj = {};
                     if (assignedSkill) obj[assignedSkill] = 1;
@@ -4621,6 +4646,16 @@ function killMonster(monster) {
                 })(),
                 skillCooldowns: {},
                 alive: true,
+=======
+                skillLevels: (() => {
+                    const obj = {};
+                    if (assignedSkill) obj[assignedSkill] = 1;
+                    if (assignedSkill2) obj[assignedSkill2] = 1;
+                    return obj;
+                })(),
+                skillCooldowns: {},
+                alive: true,
+>>>>>>> main
                 hasActed: false,
                 affinity: 50,
                 fullness: 75,
