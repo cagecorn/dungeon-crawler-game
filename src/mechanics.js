@@ -385,35 +385,6 @@ const INVENTORY_CATEGORIES = {
 const SHOP_PRICE_MULTIPLIER = 3;
 const PARTY_LEASH_RADIUS = 10; // 플레이어 중심의 파티 활동 반경
 
-const TILE_TYPES = {
-    VOLCANO: 'volcano',
-    FLOWER: 'flower',
-    METAL: 'metal'
-};
-
-const TILE_DEFS = {
-    [TILE_TYPES.VOLCANO]: {
-        name: '용암 타일',
-        key: TILE_TYPES.VOLCANO,
-        description: '끓어오르는 용암의 힘이 담겨있습니다.',
-        effects: { attack: 5 },
-        imageUrl: 'assets/images/volcano.png'
-    },
-    [TILE_TYPES.FLOWER]: {
-        name: '꽃 타일',
-        key: TILE_TYPES.FLOWER,
-        description: '만개한 생명의 기운이 느껴집니다.',
-        effects: { maxHealth: 5 },
-        imageUrl: 'assets/images/flower.png'
-    },
-    [TILE_TYPES.METAL]: {
-        name: '금속 타일',
-        key: TILE_TYPES.METAL,
-        description: '견고한 금속의 힘으로 주인을 보호합니다.',
-        effects: { defense: 5 },
-        imageUrl: 'assets/images/metal.png'
-    }
-};
 
 
 const MERCENARY_NAMES = [
@@ -4091,22 +4062,6 @@ function killMonster(monster) {
                 gameState.dungeon[y][x] = 'item';
             }
 
-            const tileKeys = Object.values(TILE_TYPES);
-            // Spawn decorative tiles more liberally across the map
-            const tileCount = Math.floor(size * size * 0.015);
-            for (let i = 0; i < tileCount; i++) {
-                let tx, ty;
-                do {
-                    tx = Math.floor(Math.random() * size);
-                    ty = Math.floor(Math.random() * size);
-                } while (gameState.dungeon[ty][tx] !== 'empty');
-
-                const tileKey = tileKeys[Math.floor(Math.random() * tileKeys.length)];
-                const tileData = { ...TILE_DEFS[tileKey], x: tx, y: ty };
-
-                gameState.mapTiles.push(tileData);
-                gameState.dungeon[ty][tx] = 'tile';
-            }
 
             const plantCount = Math.floor(size * 0.05);
             for (let i = 0; i < plantCount; i++) {
@@ -7373,32 +7328,6 @@ function processTurn() {
             }
         }
 
-        function spawnStartingTiles() {
-            const tileKeys = [TILE_TYPES.FLOWER, TILE_TYPES.VOLCANO, TILE_TYPES.METAL];
-            const dirs = [
-                {dx:1, dy:0}, {dx:-1, dy:0}, {dx:0, dy:1}, {dx:0, dy:-1},
-                {dx:1, dy:1}, {dx:-1, dy:-1}, {dx:1, dy:-1}, {dx:-1, dy:1}
-            ];
-            tileKeys.forEach(key => {
-                let pos = findAdjacentEmpty(gameState.player.x, gameState.player.y);
-                if (pos.x === gameState.player.x && pos.y === gameState.player.y) {
-                    for (const d of dirs) {
-                        const cx = gameState.player.x + d.dx;
-                        const cy = gameState.player.y + d.dy;
-                        if (cx < 0 || cy < 0 || cx >= gameState.dungeonSize || cy >= gameState.dungeonSize) continue;
-                        pos = findAdjacentEmpty(cx, cy);
-                        if (pos.x !== cx || pos.y !== cy) break;
-                    }
-                }
-                if (pos.x === gameState.player.x && pos.y === gameState.player.y) {
-                    pos = findNearestEmpty(gameState.player.x, gameState.player.y);
-                    if (pos.x === gameState.player.x && pos.y === gameState.player.y) return;
-                }
-                const tileData = { ...TILE_DEFS[key], x: pos.x, y: pos.y };
-                gameState.mapTiles.push(tileData);
-                gameState.dungeon[pos.y][pos.x] = 'tile';
-            });
-        }
 
         function startGame() {
             // SoundEngine.initialize(); // 오디오 초기화는 사용자 입력 후 수행
@@ -7429,7 +7358,6 @@ function processTurn() {
                 gameState.player.inventory.push(createItem('smallExpScroll', 0, 0));
             }
             spawnStartingRecipes();
-            spawnStartingTiles();
             updateInventoryDisplay();
             updateSkillDisplay();
             updateIncubatorDisplay();
@@ -7556,7 +7484,7 @@ removeEggFromIncubator, renderDungeon, reviveMercenary, reviveMonsterCorpse,
  rollDice, saveGame, sellItem, confirmAndSell, enhanceItem, disassembleItem, setMercenaryLevel, setMonsterLevel, setChampionLevel,
 showChampionDetails, showItemDetailPanel, showItemTargetPanel, showMercenaryDetails,
 showMonsterDetails, showShop, showSkillDamage, showAuraDetails, skill1Action, skill2Action,
-spawnMercenaryNearPlayer, spawnStartingRecipes, spawnStartingTiles, startGame, swapActiveAndStandby, tryApplyStatus,
+spawnMercenaryNearPlayer, spawnStartingRecipes, startGame, swapActiveAndStandby, tryApplyStatus,
 unequipAccessory, unequipWeapon, unequipArmor, unequipItemFromMercenary, updateActionButtons, updateCamera,
 updateFogOfWar, updateIncubatorDisplay,
  updateInventoryDisplay, updateMaterialsDisplay, updateMercenaryDisplay,
