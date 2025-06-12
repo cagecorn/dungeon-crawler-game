@@ -43,6 +43,8 @@ async function loadGame(options = {}) {
     script.runInContext(ctx);
   }
 
+  dom.window.gameState.player.manaRegen = 0.5;
+
   dom.window.generateStars = () => ({ strength: 0, agility: 0, endurance: 0, focus: 0, intelligence: 0 });
 
   return dom.window;

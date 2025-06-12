@@ -1376,7 +1376,7 @@ const MERCENARY_NAMES = [
         };
 
         const SKILL_DEFS = {
-            Fireball: { name: 'Fireball', icon: '🔥', damageDice: '1d10', range: 5, magic: true, element: 'fire', manaCost: 3 },
+            Fireball: { name: 'Fireball', icon: '🔥', damageDice: '1d10', range: 5, magic: true, element: 'fire', manaCost: 3, cooldown: 2 },
             Iceball: { name: 'Iceball', icon: '❄️', damageDice: '1d8', range: 5, magic: true, element: 'ice', manaCost: 2 },
             FireNova: { name: 'Fire Nova', icon: '🔥', damageDice: '1d6', radius: 3, magic: true, element: 'fire', manaCost: 5 },
             IceNova: { name: 'Ice Nova', icon: '❄️', damageDice: '1d6', radius: 3, magic: true, element: 'ice', manaCost: 4 },
@@ -5917,6 +5917,12 @@ function processTurn() {
     if (!gameState.gameRunning) return;
     gameState.turn++;
 
+    Object.keys(gameState.player.skillCooldowns).forEach(key => {
+        if (gameState.player.skillCooldowns[key] > 0) {
+            gameState.player.skillCooldowns[key]--;
+        }
+    });
+
     for (let i = gameState.corpses.length - 1; i >= 0; i--) {
         const corpse = gameState.corpses[i];
         corpse.turnsLeft--;
@@ -7019,7 +7025,7 @@ function processTurn() {
             useSkill(skill);
         }
 
-        function skill2Action() {
+       function skill2Action() {
             const skill = gameState.player.assignedSkills[2];
             useSkill(skill);
         }
@@ -7042,8 +7048,18 @@ function processTurn() {
                 return;
             }
             const skill = SKILL_DEFS[skillKey];
+            if (gameState.player.skillCooldowns[skillKey] && gameState.player.skillCooldowns[skillKey] > 0) {
+                addMessage('⏳ 스킬이 아직 준비되지 않았습니다.', 'info');
+                processTurn();
+                return;
+            }
             const level = gameState.player.skillLevels[skillKey] || 1;
             const manaCost = skill.manaCost + level - 1;
+            const startCooldown = () => {
+                if (skill.cooldown) {
+                    gameState.player.skillCooldowns[skillKey] = skill.cooldown + 1;
+                }
+            };
             if (skill.passive) {
                 addMessage('이 스킬은 항상 효과가 발동중입니다.', 'info');
                 processTurn();
@@ -7070,6 +7086,7 @@ function processTurn() {
                 }
                 const target = targets.sort((a,b) => (getStat(b,'maxHealth')-b.health)-(getStat(a,'maxHealth')-a.health))[0];
                 gameState.player.mana -= manaCost;
+                startCooldown();
                 healTarget(gameState.player, target, skill, level);
                 updateStats();
                 updateMercenaryDisplay();
@@ -7087,6 +7104,7 @@ function processTurn() {
                 }
                 const target = targets[0];
                 gameState.player.mana -= manaCost;
+                startCooldown();
                 purifyTarget(gameState.player, target, skill);
                 updateStats();
                 updateMercenaryDisplay();
@@ -7115,6 +7133,7 @@ function processTurn() {
                     addMessage('🌀 이전 위치로 돌아왔습니다.', 'info');
                 }
                 p.mana -= manaCost;
+                startCooldown();
                 renderDungeon();
                 updateCamera();
                 updateStats();
@@ -7129,6 +7148,7 @@ function processTurn() {
                     return;
                 }
                 gameState.player.mana -= manaCost;
+                startCooldown();
 
                 if (skillKey === 'FireNova') {
                     createNovaEffect(gameState.player.x, gameState.player.y, 'fire', skill.radius);
@@ -7215,6 +7235,7 @@ function processTurn() {
                 const attackMult = skill.multiplier || 1;
                 const hits = skill.hits || 1;
                 gameState.player.mana -= manaCost;
+                startCooldown();
                 for (let i = 0; i < hits; i++) {
                     const attackValue = Math.floor(getStat(gameState.player, 'attack') * attackMult * level);
                     const result = performAttack(gameState.player, target, { attackValue, status: gameState.player.equipped.weapon && gameState.player.equipped.weapon.status });
@@ -7242,6 +7263,7 @@ function processTurn() {
             const dx = Math.sign(target.x - gameState.player.x);
             const dy = Math.sign(target.y - gameState.player.y);
             gameState.player.mana -= manaCost;
+            startCooldown();
             const proj = {
                 x: gameState.player.x,
                 y: gameState.player.y,
