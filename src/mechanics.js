@@ -177,6 +177,10 @@ const SoundEngine = {
                 this.createOscillator('noise', 1, gainNode, now, 0.05);
                 this.playNote('square', 880, 0.2, now + 0.05);
                 break;
+            case 'unequipItem': // 아이템 해제
+                this.playNote('square', 660, 0.2, now);
+                this.playNote('square', 440, 0.2, now + 0.1);
+                break;
             case 'treasure': // 골드/보물 획득
                 this.playNote('sine', 1046, 0.2, now); // C6
                 this.playNote('sine', 1396, 0.2, now + 0.1); // F6
@@ -4964,6 +4968,7 @@ function killMonster(monster) {
         function unequipAccessory(slot) {
             const item = gameState.player.equipped[slot];
             if (item) {
+                SoundEngine.playSound('unequipItem');
                 addToInventory(item);
                 gameState.player.equipped[slot] = null;
                 addMessage(`📦 ${item.name}을(를) 해제했습니다.`, 'item');
@@ -4975,6 +4980,7 @@ function killMonster(monster) {
         function unequipWeapon() {
             const item = gameState.player.equipped.weapon;
             if (item) {
+                SoundEngine.playSound('unequipItem');
                 addToInventory(item);
                 gameState.player.equipped.weapon = null;
                 addMessage(`📦 ${item.name}을(를) 해제했습니다.`, 'item');
@@ -4986,6 +4992,7 @@ function killMonster(monster) {
         function unequipArmor() {
             const item = gameState.player.equipped.armor;
             if (item) {
+                SoundEngine.playSound('unequipItem');
                 addToInventory(item);
                 gameState.player.equipped.armor = null;
                 addMessage(`📦 ${item.name}을(를) 해제했습니다.`, 'item');
@@ -5018,6 +5025,7 @@ function killMonster(monster) {
         function unequipTile(unit) {
             if (!unit.equipped || !unit.equipped.tile) return;
             const tile = unit.equipped.tile;
+            SoundEngine.playSound('unequipItem');
             addToInventory(tile);
             unit.equipped.tile = null;
             addMessage(`📦 ${tile.name}을(를) 해제했습니다.`, 'item');
@@ -5074,6 +5082,7 @@ function killMonster(monster) {
 
             const item = mercenary.equipped[slotType];
             if (item) {
+                SoundEngine.playSound('unequipItem');
                 addToInventory(item);
                 mercenary.equipped[slotType] = null;
                 addMessage(`📦 ${mercenary.name}의 ${item.name}을(를) 해제했습니다.`, 'mercenary');
