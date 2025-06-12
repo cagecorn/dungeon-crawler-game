@@ -1485,6 +1485,13 @@ const MERCENARY_NAMES = [
             royalBanquet: { name: 'Royal Banquet', output: 'royalBanquet', materials: { meatStew: 1, vegetableSoup: 1, sandwich: 1 }, turns: 5 }
         };
 
+        const MATERIAL_ICONS = {
+            wood: '🪵',
+            iron: '⛓️',
+            bone: '🦴',
+            herb: '🌿'
+        };
+
 
 
         const HEAL_MANA_COST = 2;
@@ -2305,7 +2312,8 @@ function updateMaterialsDisplay() {
             matList.innerHTML = '';
             Object.entries(gameState.materials).forEach(([m, q]) => {
                 const div = document.createElement('div');
-                div.textContent = `${m}: ${formatNumber(q)}`;
+                const icon = (ITEMS[m] && ITEMS[m].icon) || MATERIAL_ICONS[m] || '';
+                div.textContent = `${icon ? icon + ' ' : ''}${m}: ${formatNumber(q)}`;
                 matList.appendChild(div);
             });
 
@@ -2316,9 +2324,14 @@ function updateMaterialsDisplay() {
                 if (!r) return;
                 const div = document.createElement('div');
                 div.className = 'recipe-item';
-                const req = Object.entries(r.materials).map(([m,q]) => `${m}:${q}`).join(', ');
+                const req = Object.entries(r.materials)
+                    .map(([m,q]) => {
+                        const icon = (ITEMS[m] && ITEMS[m].icon) || MATERIAL_ICONS[m] || '';
+                        return `${m}:${q}${icon ? ' ' + icon : ''}`;
+                    }).join(', ');
                 const span = document.createElement('span');
-                span.textContent = `${r.name} (${req})`;
+                const outIcon = ITEMS[r.output]?.icon || '';
+                span.textContent = `${outIcon ? outIcon + ' ' : ''}${r.name} (${req})`;
                 div.appendChild(span);
                 const btn = document.createElement('button');
                 btn.textContent = 'Craft';
@@ -2332,7 +2345,8 @@ function updateMaterialsDisplay() {
             gameState.craftingQueue.forEach(entry => {
                 const div = document.createElement('div');
                 const r = RECIPES[entry.recipe];
-                div.textContent = `${r.name} (${entry.turnsLeft}T)`;
+                const icon = ITEMS[r.output]?.icon || '';
+                div.textContent = `${icon ? icon + ' ' : ''}${r.name} (${entry.turnsLeft}T)`;
                 queueDiv.appendChild(div);
             });
 }
@@ -7494,7 +7508,8 @@ function processTurn() {
                     btn.textContent = '넣기';
                     btn.onclick = () => addRecipeToTab(key);
                 }
-                div.textContent = r.name + ' ';
+                const icon = ITEMS[r.output]?.icon || '';
+                div.textContent = `${icon ? icon + ' ' : ''}${r.name} `;
                 div.appendChild(btn);
                 list.appendChild(div);
             });
