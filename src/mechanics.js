@@ -1375,6 +1375,8 @@ const MERCENARY_NAMES = [
 
         };
 
+        // Skill definitions used throughout the game
+        // Each entry must specify a numeric cooldown; set to 0 for passive or always-available skills.
         const SKILL_DEFS = {
             Fireball: { name: 'Fireball', icon: '🔥', damageDice: '1d10', range: 5, magic: true, element: 'fire', manaCost: 3, cooldown: 2 },
             Iceball: { name: 'Iceball', icon: '❄️', damageDice: '1d8', range: 5, magic: true, element: 'ice', manaCost: 2, cooldown: 2 },
