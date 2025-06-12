@@ -3687,7 +3687,9 @@ function killMonster(monster) {
                             } else if (baseCellType === 'altar') {
                                 div.textContent = '🗺️';
                             } else if (baseCellType === 'corpse') {
-                                // div.textContent = '☠️';
+                                const corpse = gameState.corpses.find(c => c.x === x && c.y === y);
+                                div.textContent = (corpse && corpse.icon) ? corpse.icon : '💀';
+                                finalClasses.push('corpse');
                             } else if (baseCellType === 'treasure') {
                                 div.textContent = '💰';
                             } else if (baseCellType === 'exit') {
