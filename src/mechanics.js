@@ -1925,6 +1925,31 @@ const MERCENARY_NAMES = [
             return bonus;
         }
 
+        /**
+         * 유닛의 장비에 있는 Proc 효과를 확인하고 발동시킵니다.
+         * @param {object} unit - 효과를 발동시킬 유닛 (공격자 또는 방어자)
+         * @param {'onAttack' | 'onDamaged'} triggerType - 발동 조건
+         * @param {object} opponent - 상대방 유닛
+         */
+        function handleProcs(unit, triggerType, opponent) {
+            if (!unit || !unit.equipped) return;
+
+            for (const slot of ['weapon', 'armor', 'accessory1', 'accessory2']) {
+                const item = unit.equipped[slot];
+                if (item && item.procs) {
+                    for (const proc of item.procs) {
+                        const trig = proc.trigger || proc.event;
+                        if (trig === triggerType && Math.random() < proc.chance) {
+                            addMessage(`✨ ${unit.name}의 ${item.name} 효과 발동!`, 'treasure');
+                            if (typeof triggerProcSkill === 'function') {
+                                triggerProcSkill(unit, opponent, proc);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
         // 통합 공격 처리
         function performAttack(attacker, defender, options = {}) {
             combatOccurredInTurn = true;
@@ -2036,7 +2061,14 @@ const MERCENARY_NAMES = [
                 }
             }
 
-            return { hit: true, crit, damage, baseDamage, elementDamage, element, elementBaseDamage, elementResist, statusApplied, statusEffects, hitRoll, damageRoll, defenseTarget, attackBonus, attackValue: attackStat, defenseStat };
+            const result = { hit: true, crit, damage, baseDamage, elementDamage, element, elementBaseDamage, elementResist, statusApplied, statusEffects, hitRoll, damageRoll, defenseTarget, attackBonus, attackValue: attackStat, defenseStat };
+
+            if (result.hit) {
+                handleProcs(attacker, 'onAttack', defender);
+                handleProcs(defender, 'onDamaged', attacker);
+            }
+
+            return result;
         }
 
         function buildAttackDetail(type, skill, result) {
