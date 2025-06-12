@@ -3128,7 +3128,8 @@ function updateMaterialsDisplay() {
                 statusEffect: data.statusEffect,
                 lootChance: 0.3,
                 fullness: 75,
-                hasActed: false
+                hasActed: false,
+                skillCooldowns: {}
             };
             setMonsterLevel(monster, level);
             monster.skillLevels = {};
@@ -3161,6 +3162,7 @@ function updateMaterialsDisplay() {
             monster.health = Math.floor(monster.health * 1.5);
             monster.maxHealth = monster.health;
             monster.lootChance = 0.6;
+            monster.skillCooldowns = {};
             return monster;
         }
 
@@ -3186,6 +3188,7 @@ function updateMaterialsDisplay() {
             monster.maxMana = getStat(monster, 'maxMana');
             monster.mana = monster.maxMana;
             monster.lootChance = 0.8;
+            monster.skillCooldowns = {};
             return monster;
         }
 
@@ -3447,6 +3450,7 @@ function killMonster(monster) {
                     }
                     return obj;
                 })(),
+                skillCooldowns: {},
                 alive: true,
                 affinity: 30,
                 fullness: 75,
@@ -4595,6 +4599,7 @@ function killMonster(monster) {
                     if (assignedSkill2) obj[assignedSkill2] = 1;
                     return obj;
                 })(),
+                skillCooldowns: {},
                 alive: true,
                 hasActed: false,
                 affinity: 50,

@@ -29,6 +29,7 @@
             fullness: 0,
             skills: [],
             skillLevels: {},
+            skillCooldowns: {},
             assignedSkills: { '1': null, '2': null },
             equipped: {
                 weapon: null,
