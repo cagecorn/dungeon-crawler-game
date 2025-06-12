@@ -3197,7 +3197,7 @@ function findNearestEmpty(x, y) {
 function killMonster(monster) {
             let itemOnCorpse = false;
             SoundEngine.playSound('monsterDie'); // 몬스터 사망음 재생
-            addMessage(`💀 ${monster.name}을(를) 처치했습니다!`, 'combat');
+            addMessage(`💀 ${monster.name}을(를) 처치했습니다!`, 'combat', null, getMonsterImage(monster));
             gameState.player.exp += monster.exp;
             let goldGain = monster.gold;
             if (gameState.currentMapModifiers && gameState.currentMapModifiers.goldMultiplier) {
@@ -3435,6 +3435,34 @@ function killMonster(monster) {
             if (monster.isSuperior) return '상급';
             if (monster.isElite) return '엘리트';
             return '일반';
+        }
+
+        function getMonsterImage(monster) {
+            const type = typeof monster === 'string' ? monster : monster.type;
+            const map = {
+                SLIME: 'slime.png',
+                GOBLIN: 'goblin.png',
+                GOBLIN_ARCHER: 'goblin-archer.png',
+                GOBLIN_WIZARD: 'goblin-wizard.png',
+                ZOMBIE: 'zombie.png',
+                KOBOLD: 'kobold.png',
+                SKELETON: 'skeleton.png',
+                SKELETON_MAGE: 'skeleton.png',
+                ARCHER: 'archer.png',
+                WIZARD: 'wizard.png'
+            };
+            return map[type] ? `assets/images/${map[type]}` : null;
+        }
+
+        function getMercImage(merc) {
+            const type = typeof merc === 'string' ? merc : merc.type;
+            const map = {
+                WARRIOR: 'warrior.png',
+                ARCHER: 'archer.png',
+                HEALER: 'healer.png',
+                WIZARD: 'wizard.png'
+            };
+            return map[type] ? `assets/images/${map[type]}` : null;
         }
 
         function placeEggInIncubator(eggItem, turns) {
@@ -4717,11 +4745,20 @@ function killMonster(monster) {
         }
 
         // 메시지 로그 추가
-        function addMessage(text, type = 'info', detail = null) {
+        function addMessage(text, type = 'info', detail = null, imageUrl = null) {
             const messageLog = document.getElementById('message-log');
             const message = document.createElement('div');
             message.className = `message ${type}`;
-            message.textContent = text;
+            if (imageUrl) {
+                const img = document.createElement('img');
+                img.src = imageUrl;
+                img.className = 'log-icon';
+                img.width = 16;
+                img.height = 16;
+                img.style.imageRendering = 'pixelated';
+                message.appendChild(img);
+            }
+            message.appendChild(document.createTextNode(text));
             if (detail) {
                 message.dataset.detail = detail;
                 message.classList.add('clickable');
@@ -6254,7 +6291,7 @@ function processTurn() {
 
                     if (nearestMonster.health <= 0) {
                         playRandomKillQuote(mercenary);
-                        addMessage(`💀 ${mercenary.name}이(가) ${nearestMonster.name}을(를) 처치했습니다!`, "mercenary");
+                        addMessage(`💀 ${mercenary.name}이(가) ${nearestMonster.name}을(를) 처치했습니다!`, "mercenary", null, getMercImage(mercenary.type));
 
                         const mercExp = Math.floor(nearestMonster.exp * 0.6);
                         const playerExp = Math.floor(nearestMonster.exp * 0.4);
@@ -6334,7 +6371,7 @@ function processTurn() {
 
                     if (nearestMonster.health <= 0) {
                         playRandomKillQuote(mercenary);
-                        addMessage(`💀 ${mercenary.name}이(가) ${nearestMonster.name}을(를) 처치했습니다!`, "mercenary");
+                        addMessage(`💀 ${mercenary.name}이(가) ${nearestMonster.name}을(를) 처치했습니다!`, "mercenary", null, getMercImage(mercenary.type));
 
                         const mercExp = Math.floor(nearestMonster.exp * 0.6);
                         const playerExp = Math.floor(nearestMonster.exp * 0.4);
@@ -6423,7 +6460,7 @@ function processTurn() {
 
                     if (nearestMonster.health <= 0) {
                         playRandomKillQuote(mercenary);
-                        addMessage(`💀 ${mercenary.name}이(가) ${nearestMonster.name}을(를) 처치했습니다!`, "mercenary");
+                        addMessage(`💀 ${mercenary.name}이(가) ${nearestMonster.name}을(를) 처치했습니다!`, "mercenary", null, getMercImage(mercenary.type));
 
                         const mercExp = Math.floor(nearestMonster.exp * 0.6);
                         const playerExp = Math.floor(nearestMonster.exp * 0.4);
@@ -6508,7 +6545,7 @@ function processTurn() {
                     
                     if (nearestMonster.health <= 0) {
                         playRandomKillQuote(mercenary);
-                        addMessage(`💀 ${mercenary.name}이(가) ${nearestMonster.name}을(를) 처치했습니다!`, "mercenary");
+                        addMessage(`💀 ${mercenary.name}이(가) ${nearestMonster.name}을(를) 처치했습니다!`, "mercenary", null, getMercImage(mercenary.type));
                         
                         const mercExp = Math.floor(nearestMonster.exp * 0.6);
                         const playerExp = Math.floor(nearestMonster.exp * 0.4);
@@ -7547,7 +7584,8 @@ upgradeMercenarySkill, upgradeMonsterSkill, useItem, useItemOnTarget, useSkill, 
     dismiss, sacrifice, allocateStat, exitMap,
     addRecipeToTab, removeRecipeFromTab,
     updateCraftingDetailDisplay, showCraftingDetailPanel, hideCraftingDetailPanel,
-    showCorpsePanel, hideCorpsePanel, ignoreCorpse, getMonsterRank
+    showCorpsePanel, hideCorpsePanel, ignoreCorpse, getMonsterRank,
+    getMonsterImage, getMercImage
 };
 Object.assign(window, exportsObj, {SKILL_DEFS, MERCENARY_SKILLS, MONSTER_SKILLS, MONSTER_SKILL_SETS, MONSTER_TRAITS, MONSTER_TRAIT_SETS, PREFIXES, SUFFIXES, MAP_PREFIXES, MAP_SUFFIXES, MAP_TILE_TYPES, CORPSE_TURNS});
 
