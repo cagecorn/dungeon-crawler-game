@@ -9,7 +9,7 @@ async function run() {
   win.updateCamera = () => {};
   win.requestAnimationFrame = fn => fn();
 
-  const { createMonster, killMonster, ignoreCorpse, gameState } = win;
+  const { createMonster, killMonster, ignoreCorpse, processTurn, findAdjacentEmpty, gameState } = win;
 
   const size = 3;
   gameState.dungeonSize = size;
@@ -34,17 +34,19 @@ async function run() {
   }
 
   ignoreCorpse(monster);
+  processTurn();
 
-  if (gameState.player.x !== 2 || gameState.player.y !== 1) {
-    console.error('player did not move past corpse');
+  const expected = findAdjacentEmpty(1, 1);
+  if (gameState.player.x !== expected.x || gameState.player.y !== expected.y) {
+    console.error('player not moved to adjacent empty tile');
     process.exit(1);
   }
-  if (gameState.dungeon[1][1] !== 'corpse') {
-    console.error('corpse removed after ignore');
+  if (gameState.dungeon[1][1] !== 'empty') {
+    console.error('corpse not removed after ignore');
     process.exit(1);
   }
-  if (gameState.turn !== 2) {
-    console.error('turn count not advanced twice');
+  if (gameState.turn !== 1) {
+    console.error('turn count should increase once');
     process.exit(1);
   }
 }
