@@ -1885,8 +1885,6 @@ const MERCENARY_NAMES = [
             }
             return { applied: false, roll, dc };
         }
-        // Duplicate declarations of isPlayerSide and isSameSide existed here.
-        // The global versions defined earlier are used instead.
 
         function getStatusResist(character, status) {
             let value = character.statusResistances && character.statusResistances[status] ? character.statusResistances[status] : 0;
