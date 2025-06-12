@@ -6727,6 +6727,27 @@ function processTurn() {
                         return;
                     }
                 }
+
+                // 3순위: 안전 거리 확보를 위한 이동
+                if (playerDistance > 3) {
+                    const path = findPath(mercenary.x, mercenary.y, gameState.player.x, gameState.player.y);
+                    if (path && path.length > 1) {
+                        const step = path[1];
+                        const valid = step.x >= 0 && step.x < gameState.dungeonSize &&
+                            step.y >= 0 && step.y < gameState.dungeonSize &&
+                            gameState.dungeon[step.y][step.x] !== 'wall' &&
+                            !(step.x === gameState.player.x && step.y === gameState.player.y);
+
+                        if (valid) {
+                            mercenary.nextX = step.x;
+                            mercenary.nextY = step.y;
+                        }
+                    }
+                }
+
+                // --- FIX: 모든 조건이 충족되지 않았을 때의 최종 처리 ---
+                mercenary.hasActed = true;
+                return; // << 중요: 힐러의 턴을 여기서 명시적으로 종료하여 다른 로직으로 넘어가지 않도록 방지
             }
             
             // 가장 가까운 시야 내 몬스터 찾기 (fog of war 고려)
