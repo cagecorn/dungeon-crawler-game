@@ -7399,9 +7399,240 @@ function processTurn() {
             useSkill(skill);
         }
 
+
         function skill2Action() {
             const skill = gameState.player.assignedSkills[2];
             useSkill(skill);
+        }
+
+        function handleHeal(skillKey, skill, level, manaCost) {
+            const targets = [gameState.player, ...gameState.activeMercenaries.filter(m => m.alive)]
+                .filter(t => getDistance(gameState.player.x, gameState.player.y, t.x, t.y) <= skill.range && t.health < getStat(t, 'maxHealth'));
+            if (targets.length === 0) {
+                addMessage('❤️ 회복할 대상이 없습니다.', 'info');
+                processTurn();
+                return;
+            }
+            const target = targets.sort((a, b) => (getStat(b, 'maxHealth') - b.health) - (getStat(a, 'maxHealth') - a.health))[0];
+            gameState.player.mana -= manaCost;
+            healTarget(gameState.player, target, skill, level);
+            updateStats();
+            updateMercenaryDisplay();
+            gameState.player.skillCooldowns[skillKey] = skill.cooldown;
+            processTurn();
+        }
+
+        function handlePurify(skillKey, skill, level, manaCost) {
+            const hasStatus = t => t.poison || t.burn || t.freeze || t.bleed || t.paralysis || t.nightmare || t.silence || t.petrify || t.debuff;
+            const targets = [gameState.player, ...gameState.activeMercenaries.filter(m => m.alive)]
+                .filter(t => getDistance(gameState.player.x, gameState.player.y, t.x, t.y) <= skill.range && hasStatus(t));
+            if (targets.length === 0) {
+                addMessage('해제할 상태이상이 없습니다.', 'info');
+                processTurn();
+                return;
+            }
+            const target = targets[0];
+            gameState.player.mana -= manaCost;
+            purifyTarget(gameState.player, target, skill);
+            updateStats();
+            updateMercenaryDisplay();
+            gameState.player.skillCooldowns[skillKey] = skill.cooldown;
+            processTurn();
+        }
+
+        function handleShield(skillKey, skill, level, manaCost) {
+            const allies = gameState.activeMercenaries.filter(m => m.alive);
+            let nearest = null;
+            let nearestDist = Infinity;
+            allies.forEach(a => {
+                const d = getDistance(gameState.player.x, gameState.player.y, a.x, a.y);
+                if (d <= skill.range && d < nearestDist) { nearestDist = d; nearest = a; }
+            });
+            gameState.player.mana -= manaCost;
+            applyShield(gameState.player, gameState.player, skill, level);
+            if (nearest) applyShield(gameState.player, nearest, skill, level);
+            updateStats();
+            updateMercenaryDisplay();
+            gameState.player.skillCooldowns[skillKey] = skill.cooldown;
+            processTurn();
+        }
+
+        function handleAttackBuff(skillKey, skill, level, manaCost) {
+            const allies = gameState.activeMercenaries.filter(m => m.alive);
+            let nearest = null;
+            let nearestDist = Infinity;
+            allies.forEach(a => {
+                const d = getDistance(gameState.player.x, gameState.player.y, a.x, a.y);
+                if (d <= skill.range && d < nearestDist) { nearestDist = d; nearest = a; }
+            });
+            gameState.player.mana -= manaCost;
+            applyAttackBuff(gameState.player, gameState.player, skill, level);
+            if (nearest) applyAttackBuff(gameState.player, nearest, skill, level);
+            updateStats();
+            updateMercenaryDisplay();
+            gameState.player.skillCooldowns[skillKey] = skill.cooldown;
+            processTurn();
+        }
+
+        function handleTeleport(skillKey, skill, level, manaCost) {
+            const p = gameState.player;
+            if (p.teleportSavedX === null) {
+                p.teleportSavedX = p.x;
+                p.teleportSavedY = p.y;
+                addMessage('🌀 위치를 저장했습니다.', 'info');
+            } else if (p.teleportReturnX === null) {
+                p.teleportReturnX = p.x;
+                p.teleportReturnY = p.y;
+                p.x = p.teleportSavedX;
+                p.y = p.teleportSavedY;
+                addMessage('🌀 저장된 위치로 이동했습니다.', 'info');
+            } else {
+                const tx = p.teleportReturnX;
+                const ty = p.teleportReturnY;
+                p.teleportReturnX = null;
+                p.teleportReturnY = null;
+                p.x = tx;
+                p.y = ty;
+                addMessage('🌀 이전 위치로 돌아왔습니다.', 'info');
+            }
+            p.mana -= manaCost;
+            renderDungeon();
+            updateCamera();
+            updateStats();
+            gameState.player.skillCooldowns[skillKey] = skill.cooldown;
+            processTurn();
+        }
+
+        function handleNovaSkill(skillKey, skill, level, manaCost) {
+            const targets = gameState.monsters.filter(m => getDistance(gameState.player.x, gameState.player.y, m.x, m.y) <= skill.radius);
+            if (targets.length === 0) {
+                addMessage('🎯 사거리 내에 몬스터가 없습니다.', 'info');
+                processTurn();
+                return;
+            }
+            gameState.player.mana -= manaCost;
+
+            if (skillKey === 'FireNova') {
+                createNovaEffect(gameState.player.x, gameState.player.y, 'fire', skill.radius);
+                createScreenShake(3, 200);
+            } else if (skillKey === 'IceNova') {
+                createNovaEffect(gameState.player.x, gameState.player.y, 'ice', skill.radius);
+            }
+
+            const isTestEnv = typeof navigator !== 'undefined' && /jsdom/i.test(navigator.userAgent);
+            const novaAction = () => {
+                targets.slice().forEach(monster => {
+                    const attackValue = rollDice(skill.damageDice) * level + getStat(gameState.player, 'magicPower');
+                    const result = performAttack(gameState.player, monster, {
+                        attackValue,
+                        magic: skill.magic,
+                        element: skill.element,
+                        damageDice: skill.damageDice,
+                        status: gameState.player.equipped.weapon && gameState.player.equipped.weapon.status
+                    });
+                    const detail = buildAttackDetail(skill.icon, skill.name, result);
+                    const img = getPlayerImage();
+                    if (!result.hit) {
+                        addMessage(`❌ ${monster.name}에게 ${skill.name}이 빗나갔습니다!`, 'combat', detail, img);
+                    } else {
+                        const critMsg = result.crit ? ' (치명타!)' : '';
+                        let dmgStr = formatNumber(result.baseDamage);
+                        if (result.elementDamage) {
+                            const emoji = ELEMENT_EMOJI[result.element] || '';
+                            dmgStr = `${formatNumber(result.baseDamage)}+${emoji}${formatNumber(result.elementDamage)}`;
+                        }
+                        addMessage(`${skill.icon} ${monster.name}에게 ${dmgStr}의 피해를 입혔습니다${critMsg}!`, 'combat', detail, img);
+                    }
+                    if (monster.health <= 0) {
+                        killMonster(monster);
+                    }
+                });
+            };
+            if (isTestEnv) {
+                novaAction();
+            } else {
+                setTimeout(novaAction, 200);
+            }
+            gameState.player.skillCooldowns[skillKey] = skill.cooldown;
+            processTurn();
+        }
+
+        function handleMeleeSkill(skillKey, skill, level, manaCost, target, dist) {
+            if (skill.dashRange && dist <= skill.dashRange && hasLineOfSight(gameState.player.x, gameState.player.y, target.x, target.y)) {
+                const path = findPath(gameState.player.x, gameState.player.y, target.x, target.y);
+                let destX = gameState.player.x;
+                let destY = gameState.player.y;
+                if (path && path.length > 1) {
+                    const maxSteps = Math.min(skill.dashRange, path.length - 2);
+                    for (let i = 1; i <= maxSteps; i++) {
+                        const step = path[i];
+                        const blocked =
+                            gameState.dungeon[step.y][step.x] === 'wall' ||
+                            gameState.dungeon[step.y][step.x] === 'monster' ||
+                            gameState.activeMercenaries.some(m => m.alive && m.x === step.x && m.y === step.y);
+                        if (blocked) {
+                            break;
+                        }
+                        destX = step.x;
+                        destY = step.y;
+                    }
+                }
+                gameState.player.x = destX;
+                gameState.player.y = destY;
+            }
+            const attackMult = skill.multiplier || 1;
+            const hits = skill.hits || 1;
+            gameState.player.mana -= manaCost;
+            for (let i = 0; i < hits; i++) {
+                const attackValue = Math.floor(getStat(gameState.player, 'attack') * attackMult * level);
+                const result = performAttack(gameState.player, target, { attackValue, status: gameState.player.equipped.weapon && gameState.player.equipped.weapon.status });
+                const detail = buildAttackDetail(skill.icon, skill.name, result);
+                const img = getPlayerImage();
+                if (!result.hit) {
+                    addMessage(`❌ ${target.name}에게 ${skill.name}이 빗나갔습니다!`, 'combat', detail, img);
+                } else {
+                    const critMsg = result.crit ? ' (치명타!)' : '';
+                    let dmgStr = formatNumber(result.baseDamage);
+                    if (result.elementDamage) {
+                        const emoji = ELEMENT_EMOJI[result.element] || '';
+                        dmgStr = `${formatNumber(result.baseDamage)}+${emoji}${formatNumber(result.elementDamage)}`;
+                    }
+                    addMessage(`${skill.icon} ${target.name}에게 ${dmgStr}의 피해를 입혔습니다${critMsg}!`, 'combat', detail, img);
+                }
+                if (target.health <= 0) {
+                    killMonster(target);
+                    break;
+                }
+            }
+            gameState.player.skillCooldowns[skillKey] = skill.cooldown;
+            processTurn();
+        }
+
+        function handleProjectileSkill(skillKey, skill, level, manaCost, target, dist) {
+            const dx = Math.sign(target.x - gameState.player.x);
+            const dy = Math.sign(target.y - gameState.player.y);
+            gameState.player.mana -= manaCost;
+            const proj = {
+                x: gameState.player.x,
+                y: gameState.player.y,
+                dx,
+                dy,
+                rangeLeft: dist,
+                icon: skill.icon,
+                damageDice: skill.damageDice,
+                magic: skill.magic,
+                skill: skillKey,
+                element: skill.element,
+                level,
+                attacker: gameState.player
+            };
+            if (skillKey === 'Fireball' || skillKey === 'Iceball') {
+                proj.homing = true;
+                proj.target = target;
+            }
+            gameState.projectiles.push(proj);
+            gameState.player.skillCooldowns[skillKey] = skill.cooldown;
+            processTurn();
         }
 
        function useSkill(skillKey) {
@@ -7447,158 +7678,32 @@ function processTurn() {
             } else if (skill.heal !== undefined) {
                 SoundEngine.playSound('spellHeal');
             }
+
             if (skill.heal !== undefined) {
-                const targets = [gameState.player, ...gameState.activeMercenaries.filter(m => m.alive)]
-                    .filter(t => getDistance(gameState.player.x, gameState.player.y, t.x, t.y) <= skill.range && t.health < getStat(t, 'maxHealth'));
-                if (targets.length === 0) {
-                    addMessage('❤️ 회복할 대상이 없습니다.', 'info');
-                    processTurn();
-                    return;
-                }
-                const target = targets.sort((a,b) => (getStat(b,'maxHealth')-b.health)-(getStat(a,'maxHealth')-a.health))[0];
-                gameState.player.mana -= manaCost;
-                healTarget(gameState.player, target, skill, level);
-                updateStats();
-                updateMercenaryDisplay();
-                gameState.player.skillCooldowns[skillKey] = skill.cooldown;
-                processTurn();
+                handleHeal(skillKey, skill, level, manaCost);
                 return;
             }
             if (skill.purify) {
-                const hasStatus = t => t.poison || t.burn || t.freeze || t.bleed || t.paralysis || t.nightmare || t.silence || t.petrify || t.debuff;
-                const targets = [gameState.player, ...gameState.activeMercenaries.filter(m => m.alive)]
-                    .filter(t => getDistance(gameState.player.x, gameState.player.y, t.x, t.y) <= skill.range && hasStatus(t));
-                if (targets.length === 0) {
-                    addMessage('해제할 상태이상이 없습니다.', 'info');
-                    processTurn();
-                    return;
-                }
-                const target = targets[0];
-                gameState.player.mana -= manaCost;
-                purifyTarget(gameState.player, target, skill);
-                updateStats();
-                updateMercenaryDisplay();
-                gameState.player.skillCooldowns[skillKey] = skill.cooldown;
-                processTurn();
+                handlePurify(skillKey, skill, level, manaCost);
                 return;
             }
             if (skill.shield) {
-                const allies = gameState.activeMercenaries.filter(m => m.alive);
-                let nearest = null;
-                let nearestDist = Infinity;
-                allies.forEach(a => {
-                    const d = getDistance(gameState.player.x, gameState.player.y, a.x, a.y);
-                    if (d <= skill.range && d < nearestDist) { nearestDist = d; nearest = a; }
-                });
-                gameState.player.mana -= manaCost;
-                applyShield(gameState.player, gameState.player, skill, level);
-                if (nearest) applyShield(gameState.player, nearest, skill, level);
-                updateStats();
-                updateMercenaryDisplay();
-                gameState.player.skillCooldowns[skillKey] = skill.cooldown;
-                processTurn();
+                handleShield(skillKey, skill, level, manaCost);
                 return;
             }
             if (skill.attackBuff) {
-                const allies = gameState.activeMercenaries.filter(m => m.alive);
-                let nearest = null;
-                let nearestDist = Infinity;
-                allies.forEach(a => {
-                    const d = getDistance(gameState.player.x, gameState.player.y, a.x, a.y);
-                    if (d <= skill.range && d < nearestDist) { nearestDist = d; nearest = a; }
-                });
-                gameState.player.mana -= manaCost;
-                applyAttackBuff(gameState.player, gameState.player, skill, level);
-                if (nearest) applyAttackBuff(gameState.player, nearest, skill, level);
-                updateStats();
-                updateMercenaryDisplay();
-                gameState.player.skillCooldowns[skillKey] = skill.cooldown;
-                processTurn();
+                handleAttackBuff(skillKey, skill, level, manaCost);
                 return;
             }
             if (skill.teleport) {
-                const p = gameState.player;
-                if (p.teleportSavedX === null) {
-                    p.teleportSavedX = p.x;
-                    p.teleportSavedY = p.y;
-                    addMessage('🌀 위치를 저장했습니다.', 'info');
-                } else if (p.teleportReturnX === null) {
-                    p.teleportReturnX = p.x;
-                    p.teleportReturnY = p.y;
-                    p.x = p.teleportSavedX;
-                    p.y = p.teleportSavedY;
-                    addMessage('🌀 저장된 위치로 이동했습니다.', 'info');
-                } else {
-                    const tx = p.teleportReturnX;
-                    const ty = p.teleportReturnY;
-                    p.teleportReturnX = null;
-                    p.teleportReturnY = null;
-                    p.x = tx;
-                    p.y = ty;
-                    addMessage('🌀 이전 위치로 돌아왔습니다.', 'info');
-                }
-                p.mana -= manaCost;
-                renderDungeon();
-                updateCamera();
-                updateStats();
-                gameState.player.skillCooldowns[skillKey] = skill.cooldown;
-                processTurn();
+                handleTeleport(skillKey, skill, level, manaCost);
                 return;
             }
             if (skill.radius !== undefined) {
-                const targets = gameState.monsters.filter(m => getDistance(gameState.player.x, gameState.player.y, m.x, m.y) <= skill.radius);
-                if (targets.length === 0) {
-                    addMessage('🎯 사거리 내에 몬스터가 없습니다.', 'info');
-                    processTurn();
-                    return;
-                }
-                gameState.player.mana -= manaCost;
-
-                if (skillKey === 'FireNova') {
-                    createNovaEffect(gameState.player.x, gameState.player.y, 'fire', skill.radius);
-                    createScreenShake(3, 200);
-                } else if (skillKey === 'IceNova') {
-                    createNovaEffect(gameState.player.x, gameState.player.y, 'ice', skill.radius);
-                }
-
-                const isTestEnv = typeof navigator !== 'undefined' && /jsdom/i.test(navigator.userAgent);
-                const novaAction = () => {
-                    targets.slice().forEach(monster => {
-                        const attackValue = rollDice(skill.damageDice) * level + getStat(gameState.player, 'magicPower');
-                        const result = performAttack(gameState.player, monster, {
-                            attackValue,
-                            magic: skill.magic,
-                            element: skill.element,
-                            damageDice: skill.damageDice,
-                            status: gameState.player.equipped.weapon && gameState.player.equipped.weapon.status
-                        });
-                        const detail = buildAttackDetail(skill.icon, skill.name, result);
-                        const img = getPlayerImage();
-                        if (!result.hit) {
-                            addMessage(`❌ ${monster.name}에게 ${skill.name}이 빗나갔습니다!`, 'combat', detail, img);
-                        } else {
-                            const critMsg = result.crit ? ' (치명타!)' : '';
-                            let dmgStr = formatNumber(result.baseDamage);
-                            if (result.elementDamage) {
-                                const emoji = ELEMENT_EMOJI[result.element] || '';
-                                dmgStr = `${formatNumber(result.baseDamage)}+${emoji}${formatNumber(result.elementDamage)}`;
-                            }
-                            addMessage(`${skill.icon} ${monster.name}에게 ${dmgStr}의 피해를 입혔습니다${critMsg}!`, 'combat', detail, img);
-                        }
-                        if (monster.health <= 0) {
-                            killMonster(monster);
-                        }
-                    });
-                };
-                if (isTestEnv) {
-                    novaAction();
-                } else {
-                    setTimeout(novaAction, 200);
-                }
-                gameState.player.skillCooldowns[skillKey] = skill.cooldown;
-                processTurn();
+                handleNovaSkill(skillKey, skill, level, manaCost);
                 return;
             }
+
             let target = null;
             let dist = Infinity;
             const searchRange = (skill.melee && skill.dashRange) ? skill.dashRange : skill.range;
@@ -7615,80 +7720,10 @@ function processTurn() {
                 return;
             }
             if (skill.melee) {
-                if (skill.dashRange && dist <= skill.dashRange && hasLineOfSight(gameState.player.x, gameState.player.y, target.x, target.y)) {
-                    const path = findPath(gameState.player.x, gameState.player.y, target.x, target.y);
-                    let destX = gameState.player.x;
-                    let destY = gameState.player.y;
-                    if (path && path.length > 1) {
-                        const maxSteps = Math.min(skill.dashRange, path.length - 2);
-                        for (let i = 1; i <= maxSteps; i++) {
-                            const step = path[i];
-                            const blocked =
-                                gameState.dungeon[step.y][step.x] === 'wall' ||
-                                gameState.dungeon[step.y][step.x] === 'monster' ||
-                                gameState.activeMercenaries.some(m => m.alive && m.x === step.x && m.y === step.y);
-                            if (blocked) {
-                                break;
-                            }
-                            destX = step.x;
-                            destY = step.y;
-                        }
-                    }
-                    gameState.player.x = destX;
-                    gameState.player.y = destY;
-                }
-                const attackMult = skill.multiplier || 1;
-                const hits = skill.hits || 1;
-                gameState.player.mana -= manaCost;
-                for (let i = 0; i < hits; i++) {
-                    const attackValue = Math.floor(getStat(gameState.player, 'attack') * attackMult * level);
-                    const result = performAttack(gameState.player, target, { attackValue, status: gameState.player.equipped.weapon && gameState.player.equipped.weapon.status });
-                    const detail = buildAttackDetail(skill.icon, skill.name, result);
-                    const img = getPlayerImage();
-                    if (!result.hit) {
-                        addMessage(`❌ ${target.name}에게 ${skill.name}이 빗나갔습니다!`, 'combat', detail, img);
-                    } else {
-                        const critMsg = result.crit ? ' (치명타!)' : '';
-                        let dmgStr = formatNumber(result.baseDamage);
-                        if (result.elementDamage) {
-                            const emoji = ELEMENT_EMOJI[result.element] || '';
-                            dmgStr = `${formatNumber(result.baseDamage)}+${emoji}${formatNumber(result.elementDamage)}`;
-                        }
-                        addMessage(`${skill.icon} ${target.name}에게 ${dmgStr}의 피해를 입혔습니다${critMsg}!`, 'combat', detail, img);
-                    }
-                    if (target.health <= 0) {
-                        killMonster(target);
-                        break;
-                    }
-                }
-                gameState.player.skillCooldowns[skillKey] = skill.cooldown;
-                processTurn();
+                handleMeleeSkill(skillKey, skill, level, manaCost, target, dist);
                 return;
             }
-            const dx = Math.sign(target.x - gameState.player.x);
-            const dy = Math.sign(target.y - gameState.player.y);
-            gameState.player.mana -= manaCost;
-            const proj = {
-                x: gameState.player.x,
-                y: gameState.player.y,
-                dx,
-                dy,
-                rangeLeft: dist,
-                icon: skill.icon,
-                damageDice: skill.damageDice,
-                magic: skill.magic,
-                skill: skillKey,
-                element: skill.element,
-                level,
-                attacker: gameState.player
-            };
-            if (skillKey === 'Fireball' || skillKey === 'Iceball') {
-                proj.homing = true;
-                proj.target = target;
-            }
-            gameState.projectiles.push(proj);
-            gameState.player.skillCooldowns[skillKey] = skill.cooldown;
-            processTurn();
+            handleProjectileSkill(skillKey, skill, level, manaCost, target, dist);
         }
 
         function healAction() {
