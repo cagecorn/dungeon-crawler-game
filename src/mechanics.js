@@ -1387,6 +1387,35 @@ const MERCENARY_NAMES = [
 
         };
 
+        // 유니크 아이템 데이터베이스
+        const UNIQUE_ITEMS = {
+            volcanicEruptor: {
+                name: '🌋 화산의 분출자',
+                type: ITEM_TYPES.WEAPON,
+                attack: 8,
+                damageDice: '1d12',
+                tier: 'unique',
+                procs: [
+                    { event: 'onHit', skill: 'Fireball', chance: 0.2 }
+                ],
+                icon: '🌋',
+                level: 1,
+                price: 0
+            },
+            glacialGuard: {
+                name: '🧊 빙하의 수호자',
+                type: ITEM_TYPES.ARMOR,
+                defense: 8,
+                tier: 'unique',
+                procs: [
+                    { event: 'onHitTaken', skill: 'IceNova', chance: 0.15 }
+                ],
+                icon: '🛡️',
+                level: 1,
+                price: 0
+            }
+        };
+
         // Skill definitions used throughout the game
         // Each entry must specify a numeric cooldown; set to 0 for passive or always-available skills.
         const SKILL_DEFS = {
@@ -2074,7 +2103,8 @@ const MERCENARY_NAMES = [
             if (item.status) stats.push(`${item.status} 부여`);
             const levelText = item.enhanceLevel ? ` +Lv.${item.enhanceLevel}` : '';
             const name = formatItemName(item);
-            return `${name}${levelText}${stats.length ? ' (' + stats.join(', ') + ')' : ''}`;
+            const prefix = item.tier === 'unique' ? '[유니크] ' : '';
+            return `${prefix}${name}${levelText}${stats.length ? ' (' + stats.join(', ') + ')' : ''}`;
         }
 
         function getStat(character, stat) {
@@ -4716,7 +4746,7 @@ function killMonster(monster) {
 
         // 아이템 생성 함수
         function createItem(itemKey, x, y, prefixName, enhanceLevel = 0, rare = false) {
-            const itemData = ITEMS[itemKey];
+            const itemData = ITEMS[itemKey] || UNIQUE_ITEMS[itemKey];
             const item = {
                 id: Math.random().toString(36).substr(2, 9),
                 key: itemKey,
@@ -4729,6 +4759,13 @@ function killMonster(monster) {
                 baseStats: {},
                 ...itemData
             };
+
+            if (itemData.tier) {
+                item.tier = itemData.tier;
+            }
+            if (Array.isArray(itemData.procs)) {
+                item.procs = itemData.procs.map(p => ({ ...p }));
+            }
 
             if (item.type === ITEM_TYPES.MAP) {
                 item.modifiers = {};
@@ -8001,5 +8038,5 @@ upgradeMercenarySkill, upgradeMonsterSkill, useItem, useItemOnTarget, useSkill, 
     showCorpsePanel, hideCorpsePanel, ignoreCorpse, getMonsterRank,
     getMonsterImage, getMercImage, getPlayerImage
 };
-Object.assign(window, exportsObj, {SKILL_DEFS, MERCENARY_SKILLS, MONSTER_SKILLS, MONSTER_SKILL_SETS, MONSTER_TRAITS, MONSTER_TRAIT_SETS, PREFIXES, SUFFIXES, RARE_PREFIXES, RARE_SUFFIXES, MAP_PREFIXES, MAP_SUFFIXES, MAP_TILE_TYPES, CORPSE_TURNS});
+Object.assign(window, exportsObj, {SKILL_DEFS, MERCENARY_SKILLS, MONSTER_SKILLS, MONSTER_SKILL_SETS, MONSTER_TRAITS, MONSTER_TRAIT_SETS, PREFIXES, SUFFIXES, RARE_PREFIXES, RARE_SUFFIXES, MAP_PREFIXES, MAP_SUFFIXES, MAP_TILE_TYPES, CORPSE_TURNS, UNIQUE_ITEMS});
 
