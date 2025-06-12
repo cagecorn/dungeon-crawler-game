@@ -124,6 +124,18 @@ const SoundEngine = {
                 this.createOscillator('noise', 0, filter, now, 0.5);
                 break;
 
+            case 'spellIce':
+                gainNode.gain.setValueAtTime(0.25, now);
+                gainNode.gain.linearRampToValueAtTime(0, now + 0.4);
+                const iceFilter = this.audioContext.createBiquadFilter();
+                iceFilter.type = 'highpass';
+                iceFilter.frequency.setValueAtTime(1000, now);
+                iceFilter.Q.setValueAtTime(15, now);
+                iceFilter.connect(gainNode);
+                this.createOscillator('noise', 0, iceFilter, now, 0.4);
+                this.playNote('sine', 1200, 0.2, now, 0.2);
+                break;
+
             case 'spellHeal':
                 this.playNote('sine', 600, 0.3, now);
                 this.playNote('sine', 800, 0.3, now + 0.15);
@@ -7211,6 +7223,8 @@ function processTurn() {
 
             if (skill.element === 'fire') {
                 SoundEngine.playSound('spellFire');
+            } else if (skill.element === 'ice') {
+                SoundEngine.playSound('spellIce');
             } else if (skill.heal !== undefined) {
                 SoundEngine.playSound('spellHeal');
             }
