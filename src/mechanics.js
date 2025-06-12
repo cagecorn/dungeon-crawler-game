@@ -257,6 +257,16 @@ const SoundEngine = {
                 this.playNote('sine', 987, 0.1, now + 0.1); // crack 2
                 this.playNote('triangle', 1318, 0.3, now + 0.2); // reveal
                 break;
+            case 'auraActivateMajor': // 용기의 찬가 같은 공격적 오라
+                this.playNote('sawtooth', 330, 0.2, now); // E4
+                this.playNote('sawtooth', 440, 0.2, now + 0.15); // A4
+                this.playNote('sawtooth', 554, 0.3, now + 0.3);  // C#5
+                break;
+            case 'auraActivateMinor': // 수호의 찬가 같은 방어적 오라
+                this.playNote('triangle', 392, 0.2, now); // G4
+                this.playNote('triangle', 493, 0.2, now + 0.15); // B4
+                this.playNote('triangle', 659, 0.3, now + 0.3);  // E5
+                break;
             // ========================== 추가 끝 ==========================
         }
     },
@@ -2689,12 +2699,24 @@ function updateMaterialsDisplay() {
             }
         }
 
-        function assignSkill(slot, skill) {
+        function assignSkill(slot, skillKey) {
             const other = slot === 1 ? 2 : 1;
-            if (gameState.player.assignedSkills[other] === skill) {
+            if (gameState.player.assignedSkills[other] === skillKey) {
                 gameState.player.assignedSkills[other] = null;
             }
-            gameState.player.assignedSkills[slot] = skill;
+            gameState.player.assignedSkills[slot] = skillKey;
+
+            if (skillKey) {
+                const skillInfo = SKILL_DEFS[skillKey];
+                if (skillInfo && skillInfo.passive && skillInfo.aura) {
+                    if (skillInfo.aura.attack) {
+                        SoundEngine.playSound('auraActivateMajor');
+                    } else {
+                        SoundEngine.playSound('auraActivateMinor');
+                    }
+                }
+            }
+
             updateSkillDisplay();
         }
 
