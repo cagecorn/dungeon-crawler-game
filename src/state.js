@@ -1,6 +1,8 @@
 ((global) => {
     const MONSTER_VISION = 7; // 몬스터가 플레이어를 인지하는 최대 거리
     const FOG_RADIUS = 5;     // 플레이어 주변의 시야 반경
+    const CELL_SIZE = 33;     // 셀 크기(갭 포함)
+    const CELL_WIDTH = CELL_SIZE - 1; // 실제 셀 너비
 
     let gameState = {
         turn: 0,
@@ -81,7 +83,12 @@
     global.gameState = gameState;
     global.MONSTER_VISION = MONSTER_VISION;
     global.FOG_RADIUS = FOG_RADIUS;
+    global.CELL_SIZE = CELL_SIZE;
+    global.CELL_WIDTH = CELL_WIDTH;
+    if (typeof document !== 'undefined') {
+        document.documentElement.style.setProperty('--cell-width', `${CELL_WIDTH}px`);
+    }
     if (typeof module !== 'undefined' && module.exports) {
-        module.exports = { gameState, MONSTER_VISION, FOG_RADIUS };
+        module.exports = { gameState, MONSTER_VISION, FOG_RADIUS, CELL_SIZE, CELL_WIDTH };
     }
 })(typeof globalThis !== 'undefined' ? globalThis : this);
