@@ -300,8 +300,7 @@ const BgmPlayer = {
         // 다음 트랙 인덱스로 이동, 마지막 트랙이었으면 0으로 돌아감 (나머지 연산자 %)
         this.currentTrackIndex = (this.currentTrackIndex + 1) % this.playlist.length;
 
-        // 현재 곡을 정지하고 다음 곡으로 교체
-        this.audioElement.pause();
+        // 현재 곡을 다음 곡으로 교체
         this.audioElement.src = this.playlist[this.currentTrackIndex];
 
         try {
@@ -342,12 +341,10 @@ function initializeAudio() {
         return;
     }
 
-    SoundEngine.initialize();
     try {
-        BgmPlayer.init();
-        BgmPlayer.play();
+        SoundEngine.initialize();
     } catch (err) {
-        console.error("BGM playback failed during initializeAudio", err);
+        console.error("Audio initialization failed", err);
     }
     
     isAudioInitialized = true;
