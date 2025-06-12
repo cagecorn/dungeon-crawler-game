@@ -1376,16 +1376,16 @@ const MERCENARY_NAMES = [
         };
 
         const SKILL_DEFS = {
-            Fireball: { name: 'Fireball', icon: '🔥', damageDice: '1d10', range: 5, magic: true, element: 'fire', manaCost: 3 },
-            Iceball: { name: 'Iceball', icon: '❄️', damageDice: '1d8', range: 5, magic: true, element: 'ice', manaCost: 2 },
-            FireNova: { name: 'Fire Nova', icon: '🔥', damageDice: '1d6', radius: 3, magic: true, element: 'fire', manaCost: 5 },
-            IceNova: { name: 'Ice Nova', icon: '❄️', damageDice: '1d6', radius: 3, magic: true, element: 'ice', manaCost: 4 },
-            Heal: { name: 'Heal', icon: '💖', heal: 10, range: 2, manaCost: 3 },
-            Purify: { name: 'Purify', icon: '🌀', purify: true, range: 2, manaCost: 2 },
-            Teleport: { name: 'Teleport', icon: '🌀', teleport: true, manaCost: 2 },
-            DoubleStrike: { name: 'Double Strike', icon: '🔪', range: 1, manaCost: 3, melee: true, hits: 2 },
-            ChargeAttack: { name: 'Charge Attack', icon: '⚡', range: 2, manaCost: 2, melee: true, multiplier: 1.5, dashRange: 4 },
-            HawkEye: { name: 'Hawk Eye', icon: '🦅', range: 5, manaCost: 2, damageDice: '1d6' },
+            Fireball: { name: 'Fireball', icon: '🔥', damageDice: '1d10', range: 5, magic: true, element: 'fire', manaCost: 3, cooldown: 3 },
+            Iceball: { name: 'Iceball', icon: '❄️', damageDice: '1d8', range: 5, magic: true, element: 'ice', manaCost: 2, cooldown: 3 },
+            FireNova: { name: 'Fire Nova', icon: '🔥', damageDice: '1d6', radius: 3, magic: true, element: 'fire', manaCost: 5, cooldown: 4 },
+            IceNova: { name: 'Ice Nova', icon: '❄️', damageDice: '1d6', radius: 3, magic: true, element: 'ice', manaCost: 4, cooldown: 4 },
+            Heal: { name: 'Heal', icon: '💖', heal: 10, range: 2, manaCost: 3, cooldown: 2 },
+            Purify: { name: 'Purify', icon: '🌀', purify: true, range: 2, manaCost: 2, cooldown: 2 },
+            Teleport: { name: 'Teleport', icon: '🌀', teleport: true, manaCost: 2, cooldown: 2 },
+            DoubleStrike: { name: 'Double Strike', icon: '🔪', range: 1, manaCost: 3, melee: true, hits: 2, cooldown: 2 },
+            ChargeAttack: { name: 'Charge Attack', icon: '⚡', range: 2, manaCost: 2, melee: true, multiplier: 1.5, dashRange: 4, cooldown: 3 },
+            HawkEye: { name: 'Hawk Eye', icon: '🦅', range: 5, manaCost: 2, damageDice: '1d6', cooldown: 2 },
             MightAura: { name: 'Might Aura', icon: '💪', passive: true, radius: 6, aura: { attack: 1, magicPower: 1 } },
             ProtectAura: { name: 'Protect Aura', icon: '🛡️', passive: true, radius: 6, aura: { defense: 1, magicResist: 1 } },
             RegenerationAura: { name: 'Regeneration Aura', icon: '💚', passive: true, radius: 6, aura: { healthRegen: 1 } },
@@ -2304,7 +2304,9 @@ const MERCENARY_NAMES = [
                 const level = gameState.player.skillLevels[skill] || 1;
 
                 const nameSpan = document.createElement('span');
-                nameSpan.textContent = `${info.icon} ${info.name} (Lv ${level})`;
+                const cd = gameState.player.skillCooldowns[skill] || 0;
+                const cdText = cd > 0 ? ` - ${cd}` : '';
+                nameSpan.textContent = `${info.icon} ${info.name} (Lv ${level})${cdText}`;
                 div.appendChild(nameSpan);
 
                 const btn1 = document.createElement('button');
@@ -2454,6 +2456,7 @@ function updateMaterialsDisplay() {
             }
             gameState.player.assignedSkills[slot] = skill;
             updateSkillDisplay();
+            if (typeof updateSkillButtons === 'function') updateSkillButtons();
         }
 
         // 용병 목록 갱신
@@ -3899,6 +3902,22 @@ function killMonster(monster) {
             atk.style.display = 'inline-block';
             rng.style.display = 'inline-block';
             heal.style.display = 'inline-block';
+        }
+
+        function formatSkillButtonLabel(key) {
+            if (!key) return '';
+            const info = SKILL_DEFS[key];
+            const cd = gameState.player.skillCooldowns[key] || 0;
+            return cd > 0 ? `${info.name} (${cd})` : info.name;
+        }
+
+        function updateSkillButtons() {
+            const btn1 = document.getElementById('skill1');
+            const btn2 = document.getElementById('skill2');
+            const s1 = gameState.player.assignedSkills[1];
+            const s2 = gameState.player.assignedSkills[2];
+            if (btn1) btn1.textContent = s1 ? formatSkillButtonLabel(s1) : 'Skill1';
+            if (btn2) btn2.textContent = s2 ? formatSkillButtonLabel(s2) : 'Skill2';
         }
 
         // 플레이어 레벨업 체크
@@ -5917,6 +5936,14 @@ function processTurn() {
     if (!gameState.gameRunning) return;
     gameState.turn++;
 
+    Object.keys(gameState.player.skillCooldowns).forEach(key => {
+        if (gameState.player.skillCooldowns[key] > 0) {
+            gameState.player.skillCooldowns[key]--;
+        }
+    });
+    updateSkillDisplay();
+    if (typeof updateSkillButtons === 'function') updateSkillButtons();
+
     for (let i = gameState.corpses.length - 1; i >= 0; i--) {
         const corpse = gameState.corpses[i];
         corpse.turnsLeft--;
@@ -7041,9 +7068,15 @@ function processTurn() {
                 processTurn();
                 return;
             }
-            const skill = SKILL_DEFS[skillKey];
-            const level = gameState.player.skillLevels[skillKey] || 1;
-            const manaCost = skill.manaCost + level - 1;
+           const skill = SKILL_DEFS[skillKey];
+           const level = gameState.player.skillLevels[skillKey] || 1;
+           const manaCost = skill.manaCost + level - 1;
+            const currentCd = gameState.player.skillCooldowns[skillKey] || 0;
+            if (currentCd > 0) {
+                addMessage(`${skill.name} 스킬은 ${currentCd}턴 후에 사용 가능합니다.`, 'info');
+                processTurn();
+                return;
+            }
             if (skill.passive) {
                 addMessage('이 스킬은 항상 효과가 발동중입니다.', 'info');
                 processTurn();
@@ -7071,6 +7104,8 @@ function processTurn() {
                 const target = targets.sort((a,b) => (getStat(b,'maxHealth')-b.health)-(getStat(a,'maxHealth')-a.health))[0];
                 gameState.player.mana -= manaCost;
                 healTarget(gameState.player, target, skill, level);
+                if (skill.cooldown) gameState.player.skillCooldowns[skillKey] = skill.cooldown;
+                if (typeof updateSkillButtons === 'function') updateSkillButtons();
                 updateStats();
                 updateMercenaryDisplay();
                 processTurn();
@@ -7088,6 +7123,8 @@ function processTurn() {
                 const target = targets[0];
                 gameState.player.mana -= manaCost;
                 purifyTarget(gameState.player, target, skill);
+                if (skill.cooldown) gameState.player.skillCooldowns[skillKey] = skill.cooldown;
+                if (typeof updateSkillButtons === 'function') updateSkillButtons();
                 updateStats();
                 updateMercenaryDisplay();
                 processTurn();
@@ -7115,6 +7152,8 @@ function processTurn() {
                     addMessage('🌀 이전 위치로 돌아왔습니다.', 'info');
                 }
                 p.mana -= manaCost;
+                if (skill.cooldown) gameState.player.skillCooldowns[skillKey] = skill.cooldown;
+                if (typeof updateSkillButtons === 'function') updateSkillButtons();
                 renderDungeon();
                 updateCamera();
                 updateStats();
@@ -7129,6 +7168,8 @@ function processTurn() {
                     return;
                 }
                 gameState.player.mana -= manaCost;
+                if (skill.cooldown) gameState.player.skillCooldowns[skillKey] = skill.cooldown;
+                if (typeof updateSkillButtons === 'function') updateSkillButtons();
 
                 if (skillKey === 'FireNova') {
                     createNovaEffect(gameState.player.x, gameState.player.y, 'fire', skill.radius);
@@ -7215,6 +7256,7 @@ function processTurn() {
                 const attackMult = skill.multiplier || 1;
                 const hits = skill.hits || 1;
                 gameState.player.mana -= manaCost;
+                if (skill.cooldown) gameState.player.skillCooldowns[skillKey] = skill.cooldown;
                 for (let i = 0; i < hits; i++) {
                     const attackValue = Math.floor(getStat(gameState.player, 'attack') * attackMult * level);
                     const result = performAttack(gameState.player, target, { attackValue, status: gameState.player.equipped.weapon && gameState.player.equipped.weapon.status });
@@ -7242,6 +7284,8 @@ function processTurn() {
             const dx = Math.sign(target.x - gameState.player.x);
             const dy = Math.sign(target.y - gameState.player.y);
             gameState.player.mana -= manaCost;
+            if (skill.cooldown) gameState.player.skillCooldowns[skillKey] = skill.cooldown;
+            if (typeof updateSkillButtons === 'function') updateSkillButtons();
             const proj = {
                 x: gameState.player.x,
                 y: gameState.player.y,
@@ -7799,7 +7843,7 @@ removeEggFromIncubator, renderDungeon, reviveMercenary, reviveMonsterCorpse,
 showChampionDetails, showItemDetailPanel, showItemTargetPanel, showMercenaryDetails,
 showMonsterDetails, showShop, showSkillDamage, showAuraDetails, skill1Action, skill2Action,
 spawnMercenaryNearPlayer, spawnStartingMaps, startGame, swapActiveAndStandby, tryApplyStatus,
-unequipAccessory, unequipWeapon, unequipArmor, unequipItemFromMercenary, updateActionButtons, updateCamera,
+unequipAccessory, unequipWeapon, unequipArmor, unequipItemFromMercenary, updateActionButtons, updateSkillButtons, updateCamera,
 updateFogOfWar, updateIncubatorDisplay,
  updateInventoryDisplay, updateMaterialsDisplay, updateMercenaryDisplay,
  updateShopDisplay, updateSkillDisplay, updateStats, updateTurnEffects,
