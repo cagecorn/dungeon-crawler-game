@@ -33,6 +33,7 @@
             statPoints: 0,
             gold: 1000,
             fullness: 0,
+            buffs: [],
             skills: [],
             skillLevels: {},
             skillCooldowns: {},
