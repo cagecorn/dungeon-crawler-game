@@ -3522,7 +3522,20 @@ function killMonster(monster) {
             gameState.player.gold += goldGain;
             checkLevelUp();
             updateStats();
-            if (monster.isChampion) {
+            if ((monster.special === 'boss' || monster.isChampion) && Math.random() < 0.10) {
+                const uniqueKeys = Object.keys(UNIQUE_ITEMS);
+                if (uniqueKeys.length > 0) {
+                    const randomUniqueKey = uniqueKeys[Math.floor(Math.random() * uniqueKeys.length)];
+                    const pos = findAdjacentEmpty(monster.x, monster.y);
+                    if (pos.x === monster.x && pos.y === monster.y) {
+                        itemOnCorpse = true;
+                    }
+                    const droppedItem = createItem(randomUniqueKey, pos.x, pos.y);
+                    gameState.items.push(droppedItem);
+                    gameState.dungeon[pos.y][pos.x] = 'item';
+                    addMessage(`✨ 전설이 깃든... [유니크] ${droppedItem.name}을(를) 획득했습니다!`, 'treasure');
+                }
+            } else if (monster.isChampion) {
                 const eq = Object.values(monster.equipped || {}).filter(i => i);
                 if (eq.length) {
                     const drop = eq[Math.floor(Math.random() * eq.length)];
