@@ -3419,7 +3419,7 @@ function killMonster(monster) {
                 affinity: 30,
                 fullness: 75,
                 hasActed: false,
-                equipped: { weapon: null, armor: null, accessory1: null, accessory2: null, tile: null },
+                equipped: { weapon: null, armor: null, accessory1: null, accessory2: null, tile: null, trophy: null, artifact: null },
                 range: monster.range,
                 special: monster.special,
                 trait: monster.trait || null,
@@ -4572,7 +4572,9 @@ function killMonster(monster) {
                     armor: null,
                     accessory1: null,
                     accessory2: null,
-                    tile: null
+                    tile: null,
+                    trophy: null,
+                    artifact: null
                 }
             };
         }
@@ -4725,7 +4727,7 @@ function killMonster(monster) {
                 lootChance: 1,
                 hasActed: false,
                 isChampion: true,
-                equipped: { weapon: null, armor: null, accessory1: null, accessory2: null, tile: null },
+                equipped: { weapon: null, armor: null, accessory1: null, accessory2: null, tile: null, trophy: null, artifact: null },
                 elementResistances: {fire:0, ice:0, lightning:0, earth:0, light:0, dark:0},
                 statusResistances: {poison:0, bleed:0, burn:0, freeze:0, paralysis:0, nightmare:0, silence:0, petrify:0, debuff:0},
                 poison:false,burn:false,freeze:false,bleed:false,
@@ -5055,7 +5057,7 @@ function killMonster(monster) {
         function equipTile(tile, unit) {
             SoundEngine.playSound('equipItem');
             if (!unit.equipped) {
-                unit.equipped = { weapon: null, armor: null, accessory1: null, accessory2: null, tile: null };
+                unit.equipped = { weapon: null, armor: null, accessory1: null, accessory2: null, tile: null, trophy: null, artifact: null };
             }
             if (unit.equipped.tile) {
                 addToInventory(unit.equipped.tile);
@@ -5088,7 +5090,7 @@ function killMonster(monster) {
         function equipItemToMercenary(item, mercenary) {
             // 용병 장비 초기화 확인
             if (!mercenary.equipped) {
-                mercenary.equipped = { weapon: null, armor: null, accessory1: null, accessory2: null, tile: null };
+                mercenary.equipped = { weapon: null, armor: null, accessory1: null, accessory2: null, tile: null, trophy: null, artifact: null };
             }
             
             if (item.type === ITEM_TYPES.WEAPON) {
@@ -6203,7 +6205,7 @@ function processTurn() {
             
             // 장비 초기화 확인
             if (!mercenary.equipped) {
-                mercenary.equipped = { weapon: null, armor: null, accessory1: null, accessory2: null, tile: null };
+                mercenary.equipped = { weapon: null, armor: null, accessory1: null, accessory2: null, tile: null, trophy: null, artifact: null };
             }
             
             // 플레이어와의 거리 유지 (1~3칸 사이)
@@ -6869,10 +6871,14 @@ function processTurn() {
                         armor: null,
                         accessory1: null,
                         accessory2: null,
-                        tile: null
+                        tile: null,
+                        trophy: null,
+                        artifact: null
                     };
-                } else if (!('tile' in m.equipped)) {
-                    m.equipped.tile = null;
+                } else {
+                    if (!('tile' in m.equipped)) m.equipped.tile = null;
+                    if (!('trophy' in m.equipped)) m.equipped.trophy = null;
+                    if (!('artifact' in m.equipped)) m.equipped.artifact = null;
                 }
             };
 
