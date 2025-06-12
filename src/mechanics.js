@@ -197,8 +197,8 @@ const SoundEngine = {
                 this.playNote('triangle', 2093, 0.2, now + 0.3);  // C7
                 break;
             case 'enhanceFail': // 강화 실패
-                this.playNote('sawtooth', 200, 0.3, now, 0, 10);
-                this.playNote('sawtooth', 190, 0.3, now + 0.05, 0, -10);
+                this.playNote('sawtooth', 200, 0.3, now, 0.5, 10);
+                this.playNote('sawtooth', 190, 0.3, now + 0.05, 0.5, -10);
                 break;
 
             // 전투 관련
@@ -258,12 +258,14 @@ const SoundEngine = {
     },
 
     // 단일 노트를 재생하는 헬퍼 함수 (레벨업 효과용)
-    playNote(type, frequency, volume, startTime) {
+    // duration과 detune을 선택적으로 지정할 수 있도록 인자를 확장한다.
+    // 기본값은 duration 0.5초, detune 0으로 기존 동작을 유지한다.
+    playNote(type, frequency, volume, startTime, duration = 0.5, detune = 0) {
         const gainNode = this.audioContext.createGain();
         gainNode.connect(this.audioContext.destination);
         gainNode.gain.setValueAtTime(volume, startTime);
-        gainNode.gain.exponentialRampToValueAtTime(0.001, startTime + 0.5);
-        this.createOscillator(type, frequency, gainNode, startTime, 0.5);
+        gainNode.gain.exponentialRampToValueAtTime(0.001, startTime + duration);
+        this.createOscillator(type, frequency, gainNode, startTime, duration, detune);
     }
 };
 if (typeof window !== 'undefined') {
