@@ -30,10 +30,13 @@ async function run() {
   gameState.monsters = [monster];
   gameState.dungeon[monster.y][monster.x] = 'monster';
 
+  const origRoll = win.rollDice;
+  win.rollDice = notation => notation.includes('d20') ? 20 : 4;
   const origRandom = win.Math.random;
   win.Math.random = () => 0.99; // ensure hit
   monsterAttack(monster);
   win.Math.random = origRandom;
+  win.rollDice = origRoll;
 
   if (monster.level < 2) {
     console.error('monster did not gain experience from kill');
