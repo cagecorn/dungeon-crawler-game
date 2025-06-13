@@ -4680,6 +4680,15 @@ function killMonster(monster, killer = null) {
                 essences.forEach(k => {
                     gameState.player.inventory.push(createItem(k, 0, 0));
                 });
+
+                const equipmentKeys = Object.keys(ITEMS).filter(k => {
+                    const t = ITEMS[k].type;
+                    return t === ITEM_TYPES.WEAPON || t === ITEM_TYPES.ARMOR || t === ITEM_TYPES.ACCESSORY;
+                });
+                for (let i = 0; i < 6; i++) {
+                    const key = equipmentKeys[Math.floor(Math.random() * equipmentKeys.length)];
+                    gameState.player.inventory.push(createItem(key, 0, 0, null, 0, true));
+                }
             }
 
             if (gameState.floor === 1) {
