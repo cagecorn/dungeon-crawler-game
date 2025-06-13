@@ -2058,8 +2058,14 @@ const MERCENARY_NAMES = [
                 });
 
                 aoeTargets.forEach(enemy => {
-                    const attackValue = rollDice(skill.damageDice) * level + getStat(source, 'magicPower');
-                    const result = performAttack(source, enemy, { attackValue, magic: true, element: skill.element, skipProcs: true });
+                    const attackValue = getStat(source, 'magicPower');
+                    const result = performAttack(source, enemy, {
+                        attackValue,
+                        magic: true,
+                        element: skill.element,
+                        skipProcs: true,
+                        damageDice: skill.damageDice
+                    });
                     const detail = buildAttackDetail(skill.icon, skill.name, result);
                     if (!result.hit) {
                         addMessage(`❌ ${enemy.name}에게 ${skill.name}이 빗나갔습니다!`, 'combat', detail, getUnitImage(source));
