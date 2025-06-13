@@ -5308,7 +5308,8 @@ function killMonster(monster, killer = null) {
             let assignedSkill2 = type === 'HEALER' ? 'Purify' : null;
             if (type === 'BARD') assignedSkill2 = 'Heal';
             if (type === 'PALADIN') {
-                const keys = Object.keys(MERCENARY_SKILLS);
+                const paladinSet = MERCENARY_SKILL_SETS['PALADIN'] || [];
+                const keys = Object.keys(MERCENARY_SKILLS).filter(k => !paladinSet.includes(k));
                 assignedSkill2 = keys.length ? (isTestMerc ? keys[0] : keys[Math.floor(Math.random() * keys.length)]) : null;
             }
             const randomBaseName = MERCENARY_NAMES[Math.floor(Math.random() * MERCENARY_NAMES.length)];
