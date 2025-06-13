@@ -2049,7 +2049,8 @@ const MERCENARY_NAMES = [
                     const effectSize = skill.radius * 2 * 33;
                     playSkillOverlayEffect(source, 'assets/images/ice-nova-effect.png', effectSize, 600);
                 } else if (proc.skill === 'FireNova') {
-                    createNovaEffect(source.x, source.y, skill.element, skill.radius);
+                    const effectSize = skill.radius * 2 * 33;
+                    playSkillOverlayEffect(source, 'assets/images/fire-nova-effect.png', effectSize, 600);
                 }
                 const allUnits = [gameState.player, ...gameState.activeMercenaries, ...gameState.monsters];
                 const aoeTargets = allUnits.filter(unit => {
@@ -7711,7 +7712,8 @@ function processTurn() {
             gameState.player.mana -= manaCost;
 
             if (skillKey === 'FireNova') {
-                createNovaEffect(gameState.player.x, gameState.player.y, 'fire', skill.radius);
+                const effectSize = skill.radius * 2 * 33;
+                playSkillOverlayEffect(gameState.player, 'assets/images/fire-nova-effect.png', effectSize, 600);
                 createScreenShake(3, 200);
             } else if (skillKey === 'IceNova') {
                 const effectSize = skill.radius * 2 * 33;
