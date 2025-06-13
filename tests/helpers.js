@@ -5,7 +5,7 @@ const fs = require('fs');
 const vm = require('vm');
 
 async function loadGame(options = {}) {
-  const { confirmReturn = true } = options;
+  const { confirmReturn = true, spawnPaladin = false } = options;
   const htmlPath = path.join(__dirname, '..', 'index.html');
   let html = fs.readFileSync(htmlPath, 'utf8');
   html = html.replace(/<link rel="stylesheet" href="style.css">/, '');
@@ -17,6 +17,7 @@ async function loadGame(options = {}) {
     beforeParse(window) {
       window.rollDice = rollDice;
       window.confirm = () => confirmReturn;
+      window.spawnPaladinTest = spawnPaladin;
     }
   });
 
