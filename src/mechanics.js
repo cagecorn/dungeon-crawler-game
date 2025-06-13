@@ -1487,7 +1487,7 @@ const MERCENARY_NAMES = [
             IceNova: { name: 'Ice Nova', icon: '❄️', damageDice: '1d6', radius: 3, magic: true, element: 'ice', manaCost: 4, cooldown: 3 },
             Heal: { name: 'Heal', icon: '💖', heal: 10, range: 2, manaCost: 3, cooldown: 0 },
             Purify: { name: 'Purify', icon: '🌀', purify: true, range: 2, manaCost: 2, cooldown: 0 },
-            Teleport: { name: 'Teleport', icon: '🌀', teleport: true, manaCost: 2, cooldown: 5 },
+            Teleport: { name: 'Teleport', icon: '🌀', teleport: true, manaCost: 2, cooldown: 1 },
             GuardianHymn: { name: '수호의 찬가', icon: '🎶', range: 3, manaCost: 3, shield: true, duration: 5, cooldown: 3 },
             CourageHymn: { name: '용기의 찬가', icon: '🎵', range: 3, manaCost: 3, attackBuff: true, duration: 5, cooldown: 3 },
             DoubleStrike: { name: 'Double Strike', icon: '🔪', range: 1, manaCost: 3, melee: true, hits: 2, cooldown: 2 },
@@ -6941,29 +6941,47 @@ function processTurn() {
                 } else if (skillKey === 'GuardianHymn') {
                     let nearestAlly = null;
                     let distAlly = Infinity;
-                    const allies = [gameState.player, ...gameState.activeMercenaries.filter(m=>m.alive && m!==mercenary)];
-                    allies.forEach(a=>{ const d=getDistance(mercenary.x, mercenary.y, a.x, a.y); if(d<=skillInfo.range && d<distAlly){distAlly=d; nearestAlly=a;} });
-                    mercenary.mana -= skillManaCost;
-                    SoundEngine.playSound('auraActivateMinor');
-                    applyShield(mercenary, mercenary, skillInfo, skillLevel);
-                    if(nearestAlly) applyShield(mercenary, nearestAlly, skillInfo, skillLevel);
-                    updateMercenaryDisplay();
-                    mercenary.skillCooldowns[skillKey] = skillInfo.cooldown;
-                    mercenary.hasActed = true;
-                    return;
+                    const allies = [gameState.player, ...gameState.activeMercenaries.filter(m => m.alive && m !== mercenary)];
+                    allies.forEach(a => {
+                        const d = getDistance(mercenary.x, mercenary.y, a.x, a.y);
+                        if (d <= skillInfo.range && d < distAlly) {
+                            distAlly = d;
+                            nearestAlly = a;
+                        }
+                    });
+
+                    const appliedSelf = applyShield(mercenary, mercenary, skillInfo, skillLevel);
+                    const appliedAlly = nearestAlly ? applyShield(mercenary, nearestAlly, skillInfo, skillLevel) : false;
+                    if (appliedSelf || appliedAlly) {
+                        mercenary.mana -= skillManaCost;
+                        SoundEngine.playSound('auraActivateMinor');
+                        updateMercenaryDisplay();
+                        mercenary.skillCooldowns[skillKey] = skillInfo.cooldown;
+                        mercenary.hasActed = true;
+                        return;
+                    }
                 } else if (skillKey === 'CourageHymn') {
                     let nearestAlly = null;
                     let distAlly = Infinity;
-                    const allies = [gameState.player, ...gameState.activeMercenaries.filter(m=>m.alive && m!==mercenary)];
-                    allies.forEach(a=>{ const d=getDistance(mercenary.x, mercenary.y, a.x, a.y); if(d<=skillInfo.range && d<distAlly){distAlly=d; nearestAlly=a;} });
-                    mercenary.mana -= skillManaCost;
-                    SoundEngine.playSound('auraActivateMajor');
-                    applyAttackBuff(mercenary, mercenary, skillInfo, skillLevel);
-                    if(nearestAlly) applyAttackBuff(mercenary, nearestAlly, skillInfo, skillLevel);
-                    updateMercenaryDisplay();
-                    mercenary.skillCooldowns[skillKey] = skillInfo.cooldown;
-                    mercenary.hasActed = true;
-                    return;
+                    const allies = [gameState.player, ...gameState.activeMercenaries.filter(m => m.alive && m !== mercenary)];
+                    allies.forEach(a => {
+                        const d = getDistance(mercenary.x, mercenary.y, a.x, a.y);
+                        if (d <= skillInfo.range && d < distAlly) {
+                            distAlly = d;
+                            nearestAlly = a;
+                        }
+                    });
+
+                    const appliedSelf = applyAttackBuff(mercenary, mercenary, skillInfo, skillLevel);
+                    const appliedAlly = nearestAlly ? applyAttackBuff(mercenary, nearestAlly, skillInfo, skillLevel) : false;
+                    if (appliedSelf || appliedAlly) {
+                        mercenary.mana -= skillManaCost;
+                        SoundEngine.playSound('auraActivateMajor');
+                        updateMercenaryDisplay();
+                        mercenary.skillCooldowns[skillKey] = skillInfo.cooldown;
+                        mercenary.hasActed = true;
+                        return;
+                    }
                 } else if (skillKey === 'ChargeAttack' && nearestMonster && nearestDistance <= skillInfo.dashRange && hasLineOfSight(mercenary.x, mercenary.y, nearestMonster.x, nearestMonster.y)) {
                     let attackValue = getStat(mercenary, 'attack');
                     attackValue = Math.floor(attackValue * skillInfo.multiplier * skillLevel);
