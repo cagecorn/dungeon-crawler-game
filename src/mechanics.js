@@ -31,7 +31,7 @@ function playRandomKillQuote(mercenary) {
     const data = MERCENARY_TYPES[mercenary.type];
     if (data && Array.isArray(data.killQuotes) && data.killQuotes.length) {
         const index = Math.floor(Math.random() * data.killQuotes.length);
-        playSoundFile(data.killQuotes[index]);
+        playSoundFile(String(data.killQuotes[index]));
     }
 }
 const SoundEngine = {
@@ -363,7 +363,7 @@ const BgmPlayer = {
         this.currentTrackIndex = (this.currentTrackIndex + 1) % this.playlist.length;
 
         // 현재 곡을 다음 곡으로 교체
-        this.audioElement.src = this.playlist[this.currentTrackIndex];
+        this.audioElement.src = String(this.playlist[this.currentTrackIndex]);
 
         try {
             await this.audioElement.play();
@@ -377,7 +377,7 @@ const BgmPlayer = {
      */
     async playPreviousTrack() {
         this.currentTrackIndex = (this.currentTrackIndex - 1 + this.playlist.length) % this.playlist.length;
-        this.audioElement.src = this.playlist[this.currentTrackIndex];
+        this.audioElement.src = String(this.playlist[this.currentTrackIndex]);
         try {
             await this.audioElement.play();
         } catch (err) {
@@ -397,7 +397,7 @@ const BgmPlayer = {
         try {
             // 처음 재생 시, 첫 번째 트랙으로 소스를 설정
             if (!this.audioElement.src) {
-                this.audioElement.src = this.playlist[this.currentTrackIndex];
+                this.audioElement.src = String(this.playlist[this.currentTrackIndex]);
             }
             await this.audioElement.play();
         } catch (err) {
@@ -2684,7 +2684,7 @@ function updateMaterialsDisplay() {
             gameState.player.tileInventory.forEach(tile => {
                 const slot = document.createElement('div');
                 slot.className = 'tile-tab-slot';
-                slot.style.backgroundImage = `url('${tile.imageUrl}')`;
+                slot.style.backgroundImage = `url('${String(tile.imageUrl)}')`;
                 slot.title = `${tile.name}\n${tile.description}`;
                 // slot.onclick = () => showTileDetailPanel(tile);
                 container.appendChild(slot);
@@ -4122,9 +4122,9 @@ function killMonster(monster) {
                     if (x === gameState.player.x && y === gameState.player.y) {
                         finalClasses.push('player');
                         const bgImages = [];
-                        if (mapTile) bgImages.push(`url('${mapTile.imageUrl}')`);
+                        if (mapTile) bgImages.push(`url('${String(mapTile.imageUrl)}')`);
                         if (gameState.player.equipped.tile) {
-                            bgImages.push(`url('${gameState.player.equipped.tile.imageUrl}')`);
+                            bgImages.push(`url('${String(gameState.player.equipped.tile.imageUrl)}')`);
                         }
                         if (tileBg && bgImages.length) tileBg.style.backgroundImage = bgImages.join(', ');
                         const maxHealth = getStat(gameState.player, 'maxHealth');
@@ -4147,9 +4147,9 @@ function killMonster(monster) {
                                 else if (merc.isChampion) finalClasses.push('champion');
                                 else if (merc.isElite) finalClasses.push('elite');
                                 const mercBgImages = [];
-                                if (mapTile) mercBgImages.push(`url('${mapTile.imageUrl}')`);
+                                if (mapTile) mercBgImages.push(`url('${String(mapTile.imageUrl)}')`);
                                 if (merc.equipped.tile) {
-                                    mercBgImages.push(`url('${merc.equipped.tile.imageUrl}')`);
+                                    mercBgImages.push(`url('${String(merc.equipped.tile.imageUrl)}')`);
                                 }
                                 if (tileBg && mercBgImages.length) tileBg.style.backgroundImage = mercBgImages.join(', ');
                                 const maxHealth = getStat(merc, 'maxHealth');
@@ -4193,7 +4193,7 @@ function killMonster(monster) {
                                     else if (m.isChampion) finalClasses.push('champion');
                                     else if (m.isElite) finalClasses.push('elite');
                                     if (tileBg && mapTile) {
-                                        tileBg.style.backgroundImage = `url('${mapTile.imageUrl}')`;
+                                        tileBg.style.backgroundImage = `url('${String(mapTile.imageUrl)}')`;
                                     }
                                     updateUnitEffectIcons(m, div);
                                 }
@@ -4202,7 +4202,7 @@ function killMonster(monster) {
                                 if (it) div.textContent = it.icon;
                             } else if (baseCellType === 'tile') {
                                 if (tileBg && mapTile) {
-                                    tileBg.style.backgroundImage = `url('${mapTile.imageUrl}')`;
+                                    tileBg.style.backgroundImage = `url('${String(mapTile.imageUrl)}')`;
                                 }
                             } else if (baseCellType === 'plant') {
                                 div.textContent = '🌿';
@@ -4851,12 +4851,12 @@ function killMonster(monster) {
                 }
                 gameState.player.gold -= mercType.cost;
                 gameState.activeMercenaries.push(mercenary);
-                playSoundFile(mercType.voiceFile);
+                playSoundFile(String(mercType.voiceFile));
                 addMessage(`🎉 ${mercType.name}을(를) 고용했습니다!`, 'mercenary');
             } else if (gameState.standbyMercenaries.length < 5) {
                 gameState.player.gold -= mercType.cost;
                 gameState.standbyMercenaries.push(mercenary);
-                playSoundFile(mercType.voiceFile);
+                playSoundFile(String(mercType.voiceFile));
                 addMessage(`📋 ${mercType.name}을(를) 대기열에 추가했습니다.`, 'mercenary');
             } else {
                 const options = gameState.activeMercenaries.map((m, i) => `${i + 1}: ${m.name}`).join('\n');
@@ -4880,7 +4880,7 @@ function killMonster(monster) {
                 removed.x = -1;
                 removed.y = -1;
                 gameState.player.gold -= mercType.cost;
-                playSoundFile(mercType.voiceFile);
+                playSoundFile(String(mercType.voiceFile));
                 addMessage(`🗑️ ${removed.name}을(를) 내보내고 ${mercType.name}을(를) 고용했습니다. 레벨 ${removed.level}을(를) 승계합니다.`, 'mercenary');
             }
 
@@ -5307,7 +5307,7 @@ function killMonster(monster) {
             message.className = `message ${type}`;
             if (imageUrl) {
                 const img = document.createElement('img');
-                img.src = imageUrl;
+                img.src = String(imageUrl);
                 img.className = 'log-icon';
                 img.width = 16;
                 img.height = 16;
@@ -5417,7 +5417,7 @@ function killMonster(monster) {
             overlay.style.height = `${size}px`;
             overlay.style.left = `${centerX}px`;
             overlay.style.top = `${centerY}px`;
-            overlay.style.backgroundImage = `url('${imagePath}')`;
+            overlay.style.backgroundImage = `url('${String(imagePath)}')`;
 
             dungeonEl.appendChild(overlay);
 
