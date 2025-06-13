@@ -10,7 +10,7 @@ async function run() {
   win.updateSkillDisplay = () => {};
   win.requestAnimationFrame = fn => fn();
 
-  const { gameState, createMonster, createItem, performAttack } = win;
+  const { gameState, createMonster, createItem, getStat } = win;
 
   const size = 9;
   gameState.dungeonSize = size;
@@ -41,7 +41,14 @@ async function run() {
   };
   win.Math.random = () => 0;
 
-  performAttack(gameState.player, m1);
+  let captured = [];
+  const origPerform = win.performAttack;
+  win.performAttack = (att, def, opts, skillName) => {
+    captured.push(opts || {});
+    return origPerform(att, def, opts, skillName);
+  };
+
+  win.performAttack(gameState.player, m1);
 
   const damaged = [m1, m2];
   const untouched = [m3, m4];
@@ -51,6 +58,16 @@ async function run() {
   }
   if (untouched.some(mon => mon.health !== mon.maxHealth)) {
     console.error('monsters out of range damaged');
+    process.exit(1);
+  }
+
+  const novaCalls = captured.filter(c => c && c.skipProcs);
+  const expectedAttack = getStat(gameState.player, 'magicPower');
+  if (
+    novaCalls.length !== 2 ||
+    novaCalls.some(c => c.damageDice !== '1d6' || c.attackValue !== expectedAttack)
+  ) {
+    console.error('nova proc attack options incorrect', JSON.stringify(novaCalls));
     process.exit(1);
   }
 }
