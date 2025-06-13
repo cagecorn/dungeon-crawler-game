@@ -3875,7 +3875,9 @@ function updateMaterialsDisplay() {
         function createSuperiorMonster(type, x, y, level = 1) {
             const monster = createMonster(type, x, y, level + 1);
             const auraKeys = ['MightAura','ProtectAura','RegenerationAura','MeditationAura','HasteAura','ConcentrationAura','CondemnAura','NaturalAura'];
-            const skillKeys = Object.keys(MERCENARY_SKILLS).filter(k => !k.endsWith('Aura'));
+            const DEBUFF_SKILLS = ['Weaken','Sunder','Regression','SpellWeakness','ElementalWeakness'];
+            const skillKeys = Object.keys(MERCENARY_SKILLS)
+                .filter(k => !k.endsWith('Aura') && !DEBUFF_SKILLS.includes(k));
             const skill = skillKeys[Math.floor(Math.random() * skillKeys.length)];
             const auraSkill = auraKeys[Math.floor(Math.random() * auraKeys.length)];
             monster.isElite = true;
