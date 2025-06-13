@@ -2299,6 +2299,9 @@ const MERCENARY_NAMES = [
         }
 
         function formatItemName(item) {
+            if (item.tier === 'unique') {
+                return `<span class="unique">${item.name}</span>`;
+            }
             if (item.rarity === 'rare') {
                 return `<span class="rare">${item.name}</span>`;
             }
@@ -2338,8 +2341,7 @@ const MERCENARY_NAMES = [
             if (item.status) stats.push(`${item.status} 부여`);
             const levelText = item.enhanceLevel ? ` +Lv.${item.enhanceLevel}` : '';
             const name = formatItemName(item);
-            const prefix = item.tier === 'unique' ? '[유니크] ' : '';
-            return `${prefix}${name}${levelText}${stats.length ? ' (' + stats.join(', ') + ')' : ''}`;
+            return `${name}${levelText}${stats.length ? ' (' + stats.join(', ') + ')' : ''}`;
         }
 
         function getStat(character, stat) {
@@ -3718,7 +3720,7 @@ function killMonster(monster) {
                     const droppedItem = createItem(randomUniqueKey, pos.x, pos.y);
                     gameState.items.push(droppedItem);
                     gameState.dungeon[pos.y][pos.x] = 'item';
-                    addMessage(`✨ 전설이 깃든... [유니크] ${droppedItem.name}을(를) 획득했습니다!`, 'treasure');
+                    addMessage(`✨ 전설이 깃든... ${formatItemName(droppedItem)}을(를) 획득했습니다!`, 'treasure');
                 }
             } else if (monster.isChampion) {
                 const eq = Object.values(monster.equipped || {}).filter(i => i);
