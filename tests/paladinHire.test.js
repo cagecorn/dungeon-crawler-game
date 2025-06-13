@@ -27,6 +27,11 @@ async function run() {
     console.error('paladin second skill should not be an aura');
     process.exit(1);
   }
+  const DEBUFFS = ['Weaken','Sunder','Regression','SpellWeakness','ElementalWeakness'];
+  if (paladin.skill2 && DEBUFFS.includes(paladin.skill2)) {
+    console.error('paladin second skill should not be a debuff');
+    process.exit(1);
+  }
 }
 
 run().catch(e => { console.error(e); process.exit(1); });

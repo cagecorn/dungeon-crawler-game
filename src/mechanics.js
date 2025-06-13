@@ -1639,6 +1639,9 @@ const MERCENARY_NAMES = [
             PALADIN: ['Berserk', 'Fortress', 'ArcaneBurst', 'Barrier', 'Divinity']
         };
 
+        // 디버프 스킬 목록 (일부 로직에서 제외용)
+        const DEBUFF_SKILLS = ['Weaken','Sunder','Regression','SpellWeakness','ElementalWeakness'];
+
         const MONSTER_SKILL_SETS = {
             ZOMBIE: ['RottingBite', 'PoisonCloud', 'PoisonStrike'],
             GOBLIN: ['PowerStrike', 'WindStrike'],
@@ -3881,7 +3884,6 @@ function updateMaterialsDisplay() {
         function createSuperiorMonster(type, x, y, level = 1) {
             const monster = createMonster(type, x, y, level + 1);
             const auraKeys = ['MightAura','ProtectAura','RegenerationAura','MeditationAura','HasteAura','ConcentrationAura','CondemnAura','NaturalAura'];
-            const DEBUFF_SKILLS = ['Weaken','Sunder','Regression','SpellWeakness','ElementalWeakness'];
             const skillKeys = Object.keys(MERCENARY_SKILLS)
                 .filter(k => !k.endsWith('Aura') && !DEBUFF_SKILLS.includes(k));
             const skill = skillKeys[Math.floor(Math.random() * skillKeys.length)];
@@ -5366,7 +5368,7 @@ function killMonster(monster, killer = null) {
             if (type === 'PALADIN') {
                 const paladinSet = MERCENARY_SKILL_SETS['PALADIN'] || [];
                 const keys = Object.keys(MERCENARY_SKILLS)
-                    .filter(k => !paladinSet.includes(k) && !k.endsWith('Aura'));
+                    .filter(k => !paladinSet.includes(k) && !k.endsWith('Aura') && !DEBUFF_SKILLS.includes(k));
                 assignedSkill2 = keys.length ? (isTestMerc ? keys[0] : keys[Math.floor(Math.random() * keys.length)]) : null;
             }
             const randomBaseName = MERCENARY_NAMES[Math.floor(Math.random() * MERCENARY_NAMES.length)];
@@ -5684,7 +5686,7 @@ function killMonster(monster, killer = null) {
             if (accChoices.length) champion.equipped.accessory1 = createItem(accChoices[Math.floor(Math.random()*accChoices.length)], 0, 0, null, enhanceLv);
 
             const skillKeys = Object.keys(MONSTER_SKILLS)
-                .concat(['Weaken','Sunder','Regression','SpellWeakness','ElementalWeakness']);
+                .concat(DEBUFF_SKILLS);
             const sk = skillKeys[Math.floor(Math.random() * skillKeys.length)];
             champion.monsterSkill = sk;
             champion.skillLevels = {};
@@ -7439,7 +7441,7 @@ function processTurn() {
 
     // 챔피언 AI 로직
     function processChampionTurn(champion, visibleMonsters = null) {
-        const debuffSkills = ['Weaken', 'Sunder', 'Regression', 'SpellWeakness', 'ElementalWeakness'];
+        const debuffSkills = DEBUFF_SKILLS;
         const skillKey = champion.monsterSkill;
 
         function moveTowardPlayer() {
