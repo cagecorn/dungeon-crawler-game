@@ -397,57 +397,6 @@
 .rare {
   color: #42a5f5;
 }
-  /* Nova visual effects */
-  .nova-effect {
-      position: absolute;
-      border-radius: 50%;
-      pointer-events: none;
-      z-index: 1000;
-      animation: nova-expand 0.8s ease-out forwards;
-  }
-  .fire-nova {
-      background: radial-gradient(circle, rgba(255,69,0,0.8) 0%, rgba(255,140,0,0.4) 50%, transparent 100%);
-      box-shadow: 0 0 20px rgba(255,69,0,0.6), inset 0 0 20px rgba(255,215,0,0.3);
-  }
-  .ice-nova {
-      background: radial-gradient(circle, rgba(135,206,250,0.8) 0%, rgba(173,216,230,0.4) 50%, transparent 100%);
-      box-shadow: 0 0 20px rgba(135,206,250,0.6), inset 0 0 20px rgba(255,255,255,0.3);
-  }
-  @keyframes nova-expand {
-      0% {
-          width: calc(var(--cell-width) + 1px);
-          height: calc(var(--cell-width) + 1px);
-          opacity: 1;
-      }
-      100% {
-          width: 231px;
-          height: 231px;
-          opacity: 0;
-      }
-  }
-  .fire-particle {
-      position: absolute;
-      width: 4px;
-      height: 4px;
-      background: #ff4500;
-      border-radius: 50%;
-      animation: fire-particle 0.6s ease-out forwards;
-  }
-  .ice-particle {
-      position: absolute;
-      width: 3px;
-      height: 8px;
-      background: linear-gradient(to bottom, #87ceeb, #add8e6);
-      animation: ice-particle 0.8s ease-out forwards;
-  }
-  @keyframes fire-particle {
-      0% { transform: scale(1) rotate(0deg); opacity: 1; }
-      100% { transform: scale(0.3) rotate(360deg); opacity: 0; }
-  }
-  @keyframes ice-particle {
-      0% { transform: scale(1) translateY(0); opacity: 1; }
-      100% { transform: scale(0.5) translateY(-20px); opacity: 0; }
-  }
 
 /* --- Panel Styling --- */
 /* 모든 정보창에 적용될 공통 스타일 */
