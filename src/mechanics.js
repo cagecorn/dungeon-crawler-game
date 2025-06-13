@@ -8913,6 +8913,7 @@ function processTurn() {
                     const pal = createMercenary('PALADIN', palPos.x, palPos.y);
                     gameState.paladinSpawns.push({ x: palPos.x, y: palPos.y, mercenary: pal, cost: 1 });
                     gameState.dungeon[palPos.y][palPos.x] = 'paladin';
+                    renderDungeon();
                 }
             }
             for (let i = 0; i < 5; i++) {
