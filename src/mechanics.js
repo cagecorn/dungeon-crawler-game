@@ -2019,7 +2019,7 @@ const MERCENARY_NAMES = [
                             const unitName = unit.name || '유닛';
                             const itemName = item.name || '장비';
                             const skillName = skill ? skill.name : proc.skill;
-                            addMessage(`✨ ${unitName}의 ${itemName} 효과로 ${skillName} 스킬이 발동했습니다!`, 'treasure', null, unit);
+                            addMessage(`✨ ${unitName}의 ${itemName} 효과로 ${skillName} 스킬이 발동했습니다!`, 'treasure', null, getUnitImage(unit));
                             if (typeof triggerProcSkill === 'function') {
                                 triggerProcSkill(unit, opponent, proc);
                             }
@@ -2060,7 +2060,7 @@ const MERCENARY_NAMES = [
                     const attackValue = rollDice(skill.damageDice) * level + getStat(source, 'magicPower');
                     const result = performAttack(source, enemy, { attackValue, magic: true, element: skill.element });
                     if (result.hit) {
-                         addMessage(`${skill.icon} ${enemy.name}에게 ${formatNumber(result.damage)}의 광역 피해!`, 'combat', null, source);
+                         addMessage(`${skill.icon} ${enemy.name}에게 ${formatNumber(result.damage)}의 광역 피해!`, 'combat', null, getUnitImage(source));
                          if(enemy.health <= 0) {
                              if(gameState.monsters.includes(enemy)) killMonster(enemy);
                              else killMercenary(enemy);
@@ -2080,7 +2080,7 @@ const MERCENARY_NAMES = [
                 });
 
                 if (result.hit) {
-                    addMessage(`${skill.icon} ${target.name}에게 ${formatNumber(result.damage)}의 원거리 피해!`, 'combat', null, source);
+                    addMessage(`${skill.icon} ${target.name}에게 ${formatNumber(result.damage)}의 원거리 피해!`, 'combat', null, getUnitImage(source));
                     if(target.health <= 0) {
                         if(gameState.monsters.includes(target)) killMonster(target);
                         else if (target !== gameState.player) killMercenary(target);
@@ -3947,6 +3947,16 @@ function killMonster(monster) {
 
         function getPlayerImage() {
             return 'assets/images/player.png';
+        }
+
+        function getUnitImage(unit) {
+            if (unit === gameState.player) {
+                return getPlayerImage();
+            }
+            if (gameState.activeMercenaries && gameState.activeMercenaries.includes(unit)) {
+                return getMercImage(unit.type);
+            }
+            return getMonsterImage(unit);
         }
 
         function placeEggInIncubator(eggItem, turns) {
@@ -8415,7 +8425,7 @@ upgradeMercenarySkill, upgradeMonsterSkill, useItem, useItemOnTarget, useSkill, 
     addRecipeToTab, removeRecipeFromTab,
     updateCraftingDetailDisplay, showCraftingDetailPanel, hideCraftingDetailPanel,
     showCorpsePanel, hideCorpsePanel, ignoreCorpse, getMonsterRank,
-    getMonsterImage, getMercImage, getPlayerImage,
+    getMonsterImage, getMercImage, getPlayerImage, getUnitImage,
     isPlayerSide, isSameSide
 };
 Object.assign(window, exportsObj, {SKILL_DEFS, MERCENARY_SKILLS, MONSTER_SKILLS, MONSTER_SKILL_SETS, MONSTER_TRAITS, MONSTER_TRAIT_SETS, PREFIXES, SUFFIXES, RARE_PREFIXES, RARE_SUFFIXES, MAP_PREFIXES, MAP_SUFFIXES, MAP_TILE_TYPES, CORPSE_TURNS, UNIQUE_ITEMS, UNIQUE_EFFECT_POOL});
