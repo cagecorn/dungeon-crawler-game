@@ -33,8 +33,12 @@ async function run() {
   weapon.procs = [{ trigger: 'onAttack', skill: 'FireNova', chance: 1 }];
   gameState.player.equipped.weapon = weapon;
 
-  // prevent recursive procs from nova hits
-  win.handleProcs = () => {};
+  let procCalls = 0;
+  const origHandle = win.handleProcs;
+  win.handleProcs = (...args) => {
+    procCalls++;
+    return origHandle(...args);
+  };
 
   win.rollDice = spec => {
     if (spec === '1d20') return 20;
@@ -56,6 +60,10 @@ async function run() {
   }
   if (ally.health !== ally.maxHealth) {
     console.error('ally was damaged');
+    process.exit(1);
+  }
+  if (procCalls !== 2) {
+    console.error('proc triggered multiple times');
     process.exit(1);
   }
 }

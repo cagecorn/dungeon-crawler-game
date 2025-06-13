@@ -2058,7 +2058,7 @@ const MERCENARY_NAMES = [
 
                 aoeTargets.forEach(enemy => {
                     const attackValue = rollDice(skill.damageDice) * level + getStat(source, 'magicPower');
-                    const result = performAttack(source, enemy, { attackValue, magic: true, element: skill.element });
+                    const result = performAttack(source, enemy, { attackValue, magic: true, element: skill.element, skipProcs: true });
                     if (result.hit) {
                          addMessage(`${skill.icon} ${enemy.name}에게 ${formatNumber(result.damage)}의 광역 피해!`, 'combat', null, source);
                          if(enemy.health <= 0) {
@@ -2076,7 +2076,8 @@ const MERCENARY_NAMES = [
                 const result = performAttack(source, target, {
                     attackValue: attackValue,
                     magic: skill.magic,
-                    element: skill.element
+                    element: skill.element,
+                    skipProcs: true
                 });
 
                 if (result.hit) {
@@ -2123,6 +2124,7 @@ const MERCENARY_NAMES = [
             const magic = options.magic || false;
             const element = options.element;
             const status = options.status;
+            const skipProcs = options.skipProcs || false;
             let attackStat = options.attackValue !== undefined ? options.attackValue : (magic ? getStat(attacker, 'magicPower') : getStat(attacker, 'attack'));
             let defenseStat = options.defenseValue !== undefined ? options.defenseValue : (magic ? getStat(defender, 'magicResist') : getStat(defender, 'defense'));
 
@@ -2230,7 +2232,7 @@ const MERCENARY_NAMES = [
 
             const result = { hit: true, crit, damage, baseDamage, elementDamage, element, elementBaseDamage, elementResist, statusApplied, statusEffects, hitRoll, damageRoll, defenseTarget, attackBonus, attackValue: attackStat, defenseStat };
 
-            if (result.hit) {
+            if (result.hit && !skipProcs) {
                 handleProcs(attacker, 'onAttack', defender);
                 handleProcs(defender, 'onDamaged', attacker);
             }
