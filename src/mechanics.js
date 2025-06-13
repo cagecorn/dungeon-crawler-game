@@ -1868,7 +1868,8 @@ const MERCENARY_NAMES = [
         function healTarget(healer, target, skillInfo, level = 1) {
             const base = skillInfo?.heal ?? (3 + healer.level);
             const power = getStat(healer, 'magicPower');
-            let healAmount = Math.min((base + power) * level, getStat(target, 'maxHealth') - target.health);
+            const mult = getSkillPowerMult(healer);
+            let healAmount = Math.min((base + power) * level * mult, getStat(target, 'maxHealth') - target.health);
             if (healAmount > 0) {
                 target.health += healAmount;
                 const name = target === gameState.player ? '플레이어' : target.name;
@@ -1887,7 +1888,7 @@ const MERCENARY_NAMES = [
         function applyShield(caster, target, skillInfo, level = 1) {
             if (!isSameSide(caster, target)) return false;
             const power = getStat(caster, 'magicPower');
-            const amount = Math.floor(power * level);
+            const amount = Math.floor(power * level * getSkillPowerMult(caster));
             if (amount <= 0) return false;
 
             let applied = false;
@@ -1909,7 +1910,7 @@ const MERCENARY_NAMES = [
         function applyAttackBuff(caster, target, skillInfo, level = 1) {
             if (!isSameSide(caster, target)) return false;
             const power = getStat(caster, 'magicPower');
-            const amount = Math.floor(power * level);
+            const amount = Math.floor(power * level * getSkillPowerMult(caster));
             if (amount <= 0) return false;
 
             let applied = false;
@@ -2490,6 +2491,29 @@ const MERCENARY_NAMES = [
             return 0;
         }
 
+        function getSkillRange(unit, skill) {
+            const base = skill.range !== undefined ? skill.range : skill.radius;
+            if (base === undefined) return base;
+            return base + getStat(unit, 'skillRange');
+        }
+
+        function getSkillCooldown(unit, skill) {
+            const reduction = getStat(unit, 'skillCooldownReduction');
+            const cd = skill.cooldown || 0;
+            const modified = Math.max(0, Math.floor(cd * (1 - reduction)));
+            return modified;
+        }
+
+        function getSkillManaCost(unit, skill) {
+            const reduction = getStat(unit, 'skillManaCostReduction');
+            const cost = skill.manaCost || 0;
+            return Math.max(0, Math.floor(cost * (1 - reduction)));
+        }
+
+        function getSkillPowerMult(unit) {
+            return 1 + getStat(unit, 'skillPowerMult');
+        }
+
         function showSkillDamage(owner, key, defs) {
             if (!key) return;
             const dmg = estimateSkillDamage(owner, key, defs);
@@ -2547,6 +2571,7 @@ const MERCENARY_NAMES = [
                     } else {
                         attackValue = getStat(attacker, 'attack');
                     }
+                    attackValue = Math.floor(attackValue * getSkillPowerMult(attacker));
                     const result = performAttack(attacker, monster, { attackValue, magic, element: proj.element, status: attacker.equipped && attacker.equipped.weapon && attacker.equipped.weapon.status, damageDice: proj.damageDice });
                     const icon = proj.icon || '➡️';
                     const name = proj.skill ? SKILL_DEFS[proj.skill].name : '원거리 공격';
@@ -6119,14 +6144,15 @@ function killMonster(monster, killer = null) {
             if (!skillInfo) return false;
             if (monster.skillCooldowns[monster.monsterSkill] > 0) return false;
 
-            const manaCost = skillInfo.manaCost || 0;
+            const manaCost = getSkillManaCost(monster, skillInfo);
             if (monster.mana < manaCost) return false;
 
             monster.mana -= manaCost;
 
             const level = monster.skillLevels[monster.monsterSkill] || 1;
             const base = skillInfo.magic ? getStat(monster, 'magicPower') : getStat(monster, 'attack');
-            const attackValue = (skillInfo.damageDice ? rollDice(skillInfo.damageDice) * level : 0) + base;
+            let attackValue = (skillInfo.damageDice ? rollDice(skillInfo.damageDice) * level : 0) + base;
+            attackValue = Math.floor(attackValue * getSkillPowerMult(monster));
 
             const result = performAttack(monster, target, {
                 attackValue: attackValue,
@@ -6164,7 +6190,7 @@ function killMonster(monster, killer = null) {
                     updateMercenaryDisplay();
                 }
             }
-            monster.skillCooldowns[monster.monsterSkill] = skillInfo.cooldown;
+            monster.skillCooldowns[monster.monsterSkill] = getSkillCooldown(monster, skillInfo);
             return true;
         }
 
@@ -6752,7 +6778,7 @@ function processTurn() {
                         hasLineOfSight(monster.x, monster.y, nearestTarget.x, nearestTarget.y)) {
 
                         const skillInfo = monster.monsterSkill ? MONSTER_SKILLS[monster.monsterSkill] : null;
-                        const canUseSkill = skillInfo && monster.mana >= (skillInfo.manaCost || 0);
+                        const canUseSkill = skillInfo && monster.mana >= getSkillManaCost(monster, skillInfo);
                         let playerDied = false;
 
                         if (canUseSkill && Math.random() < 0.5) {
@@ -6800,7 +6826,7 @@ function processTurn() {
                             if (newDistance <= monster.range &&
                                 hasLineOfSight(monster.x, monster.y, nearestTarget.x, nearestTarget.y)) {
                                 const skillInfo = monster.monsterSkill ? MONSTER_SKILLS[monster.monsterSkill] : null;
-                                const canUseSkill = skillInfo && monster.mana >= (skillInfo.manaCost || 0);
+                                const canUseSkill = skillInfo && monster.mana >= getSkillManaCost(monster, skillInfo);
                                 let playerDied = false;
 
                                 if (canUseSkill && Math.random() < 0.5) {
@@ -6947,7 +6973,8 @@ function processTurn() {
             const maxDistanceFromPlayer = 3;
             const skillInfo = MERCENARY_SKILLS[mercenary.skill] || MONSTER_SKILLS[mercenary.skill];
             const skillLevel = mercenary.skillLevels && mercenary.skillLevels[mercenary.skill] || 1;
-            const skillManaCost = skillInfo ? skillInfo.manaCost + skillLevel - 1 : 0;
+            const baseSkillMana = skillInfo ? (skillInfo.manaCost || 0) + skillLevel - 1 : 0;
+            const skillManaCost = skillInfo ? getSkillManaCost(mercenary, { manaCost: baseSkillMana }) : 0;
             const baseAttackRange = mercenary.role === 'ranged' ? 3 :
                                    mercenary.role === 'caster' ? 2 : 1;
             let attackRange = baseAttackRange;
@@ -6973,10 +7000,11 @@ function processTurn() {
             if (mercenary.role === 'support') {
                 const purifyInfo = MERCENARY_SKILLS[mercenary.skill2];
                 const purifyLevel = mercenary.skillLevels && mercenary.skillLevels[mercenary.skill2] || 1;
-                const purifyMana = purifyInfo ? purifyInfo.manaCost + purifyLevel - 1 : 0;
+                const purifyBaseMana = purifyInfo ? (purifyInfo.manaCost || 0) + purifyLevel - 1 : 0;
+                const purifyMana = purifyInfo ? getSkillManaCost(mercenary, { manaCost: purifyBaseMana }) : 0;
                 const purifyOnCooldown = purifyInfo && mercenary.skillCooldowns[mercenary.skill2] > 0;
                 if (purifyInfo && mercenary.skill2 === 'Purify' && !purifyOnCooldown && mercenary.mana >= purifyMana) {
-                    const inRange = target => getDistance(mercenary.x, mercenary.y, target.x, target.y) <= purifyInfo.range;
+                    const inRange = target => getDistance(mercenary.x, mercenary.y, target.x, target.y) <= getSkillRange(mercenary, purifyInfo);
                     const hasStatus = t => t.poison || t.burn || t.freeze || t.bleed || t.paralysis || t.nightmare || t.silence || t.petrify || t.debuff;
 
                     const targetToPurify = [gameState.player, ...gameState.activeMercenaries.filter(m => m.alive)].find(
@@ -6986,7 +7014,7 @@ function processTurn() {
                     if (targetToPurify) {
                         if (purifyTarget(mercenary, targetToPurify, purifyInfo)) {
                             mercenary.mana -= purifyMana;
-                            mercenary.skillCooldowns[mercenary.skill2] = purifyInfo.cooldown;
+                            mercenary.skillCooldowns[mercenary.skill2] = getSkillCooldown(mercenary, purifyInfo);
                             updateMercenaryDisplay();
                             mercenary.hasActed = true;
                             return; // 정화 후 턴 종료
@@ -6998,7 +7026,7 @@ function processTurn() {
                 const healOnCooldown = knowsHeal && mercenary.skillCooldowns[mercenary.skill] > 0;
                 const manaCost = knowsHeal ? skillManaCost : HEAL_MANA_COST;
                 const healLevel = knowsHeal ? skillLevel : 1;
-                const healRange = knowsHeal ? skillInfo.range : 2;
+                const healRange = knowsHeal ? getSkillRange(mercenary, skillInfo) : 2;
 
                 if (!healOnCooldown && mercenary.mana >= manaCost && gameState.player.health < getStat(gameState.player, 'maxHealth') * 0.7) {
                     if (getDistance(mercenary.x, mercenary.y, gameState.player.x, gameState.player.y) <= healRange) {
@@ -7007,7 +7035,7 @@ function processTurn() {
                             : healTarget(mercenary, gameState.player);
                         if (healed) {
                             mercenary.mana -= manaCost;
-                            if (knowsHeal) mercenary.skillCooldowns[mercenary.skill] = skillInfo.cooldown;
+                            if (knowsHeal) mercenary.skillCooldowns[mercenary.skill] = getSkillCooldown(mercenary, skillInfo);
                             updateMercenaryDisplay();
                             mercenary.hasActed = true;
                             return;
@@ -7023,7 +7051,7 @@ function processTurn() {
                                 : healTarget(mercenary, otherMerc);
                             if (healed) {
                                 mercenary.mana -= manaCost;
-                                if (knowsHeal) mercenary.skillCooldowns[mercenary.skill] = skillInfo.cooldown;
+                                if (knowsHeal) mercenary.skillCooldowns[mercenary.skill] = getSkillCooldown(mercenary, skillInfo);
                                 updateMercenaryDisplay();
                                 mercenary.hasActed = true;
                                 return;
@@ -7038,7 +7066,7 @@ function processTurn() {
                         : healTarget(mercenary, mercenary);
                     if (healed) {
                         mercenary.mana -= manaCost;
-                        if (knowsHeal) mercenary.skillCooldowns[mercenary.skill] = skillInfo.cooldown;
+                        if (knowsHeal) mercenary.skillCooldowns[mercenary.skill] = getSkillCooldown(mercenary, skillInfo);
                         updateMercenaryDisplay();
                         mercenary.hasActed = true;
                         return;
@@ -7091,7 +7119,7 @@ function processTurn() {
 
             const skillKey = mercenary.skill;
             let forceSkill = false;
-            if (skillKey === 'HawkEye' && nearestMonster && nearestDistance > attackRange && nearestDistance <= skillInfo.range) {
+            if (skillKey === 'HawkEye' && nearestMonster && nearestDistance > attackRange && nearestDistance <= getSkillRange(mercenary, skillInfo)) {
                 forceSkill = true;
             }
             if (mercenary.silence && mercenary.silenceTurns > 0) {
@@ -7105,12 +7133,12 @@ function processTurn() {
             ) {
                 if (skillKey === 'Heal') {
                     let target = null;
-                    if (gameState.player.health < getStat(gameState.player, 'maxHealth') && getDistance(mercenary.x, mercenary.y, gameState.player.x, gameState.player.y) <= skillInfo.range) {
+                    if (gameState.player.health < getStat(gameState.player, 'maxHealth') && getDistance(mercenary.x, mercenary.y, gameState.player.x, gameState.player.y) <= getSkillRange(mercenary, skillInfo)) {
                         target = gameState.player;
                     }
                     if (!target) {
                         for (const m of gameState.activeMercenaries) {
-                            if (m !== mercenary && m.alive && m.health < getStat(m, 'maxHealth') && getDistance(mercenary.x, mercenary.y, m.x, m.y) <= skillInfo.range) {
+                            if (m !== mercenary && m.alive && m.health < getStat(m, 'maxHealth') && getDistance(mercenary.x, mercenary.y, m.x, m.y) <= getSkillRange(mercenary, skillInfo)) {
                                 target = m;
                                 break;
                             }
@@ -7121,7 +7149,7 @@ function processTurn() {
                     }
                     if (target && healTarget(mercenary, target, skillInfo, skillLevel)) {
                         mercenary.mana -= skillManaCost;
-                        mercenary.skillCooldowns[skillKey] = skillInfo.cooldown;
+                        mercenary.skillCooldowns[skillKey] = getSkillCooldown(mercenary, skillInfo);
                         updateMercenaryDisplay();
                         mercenary.hasActed = true;
                         return;
@@ -7132,7 +7160,7 @@ function processTurn() {
                     const allies = [gameState.player, ...gameState.activeMercenaries.filter(m => m.alive && m !== mercenary)];
                     allies.forEach(a => {
                         const d = getDistance(mercenary.x, mercenary.y, a.x, a.y);
-                        if (d <= skillInfo.range && d < distAlly) {
+                        if (d <= getSkillRange(mercenary, skillInfo) && d < distAlly) {
                             distAlly = d;
                             nearestAlly = a;
                         }
@@ -7144,7 +7172,7 @@ function processTurn() {
                         mercenary.mana -= skillManaCost;
                         SoundEngine.playSound('auraActivateMinor');
                         updateMercenaryDisplay();
-                        mercenary.skillCooldowns[skillKey] = skillInfo.cooldown;
+                        mercenary.skillCooldowns[skillKey] = getSkillCooldown(mercenary, skillInfo);
                         mercenary.hasActed = true;
                         return;
                     }
@@ -7154,7 +7182,7 @@ function processTurn() {
                     const allies = [gameState.player, ...gameState.activeMercenaries.filter(m => m.alive && m !== mercenary)];
                     allies.forEach(a => {
                         const d = getDistance(mercenary.x, mercenary.y, a.x, a.y);
-                        if (d <= skillInfo.range && d < distAlly) {
+                        if (d <= getSkillRange(mercenary, skillInfo) && d < distAlly) {
                             distAlly = d;
                             nearestAlly = a;
                         }
@@ -7166,7 +7194,7 @@ function processTurn() {
                         mercenary.mana -= skillManaCost;
                         SoundEngine.playSound('auraActivateMajor');
                         updateMercenaryDisplay();
-                        mercenary.skillCooldowns[skillKey] = skillInfo.cooldown;
+                        mercenary.skillCooldowns[skillKey] = getSkillCooldown(mercenary, skillInfo);
                         mercenary.hasActed = true;
                         return;
                     }
@@ -7219,13 +7247,13 @@ function processTurn() {
                         killMonster(nearestMonster, mercenary);
                     }
                     mercenary.mana -= skillManaCost;
-                    mercenary.skillCooldowns[skillKey] = skillInfo.cooldown;
+                    mercenary.skillCooldowns[skillKey] = getSkillCooldown(mercenary, skillInfo);
                     updateMercenaryDisplay();
                     mercenary.hasActed = true;
                     return;
-                } else if (MONSTER_SKILLS[skillKey] && nearestMonster && nearestDistance <= skillInfo.range && hasLineOfSight(mercenary.x, mercenary.y, nearestMonster.x, nearestMonster.y)) {
+                } else if (MONSTER_SKILLS[skillKey] && nearestMonster && nearestDistance <= getSkillRange(mercenary, skillInfo) && hasLineOfSight(mercenary.x, mercenary.y, nearestMonster.x, nearestMonster.y)) {
                     const base = skillInfo.magic ? getStat(mercenary, 'magicPower') : getStat(mercenary, 'attack');
-                    const attackValue = rollDice(skillInfo.damageDice) * skillLevel + base;
+                    const attackValue = (rollDice(skillInfo.damageDice) * skillLevel + base) * getSkillPowerMult(mercenary);
                     const hits = skillInfo.hits || 1;
                     const icon = skillInfo.icon;
                     for (let i = 0; i < hits; i++) {
@@ -7250,20 +7278,20 @@ function processTurn() {
                         killMonster(nearestMonster, mercenary);
                     }
                     mercenary.mana -= skillManaCost;
-                    mercenary.skillCooldowns[skillKey] = skillInfo.cooldown;
+                    mercenary.skillCooldowns[skillKey] = getSkillCooldown(mercenary, skillInfo);
                     updateMercenaryDisplay();
                     mercenary.hasActed = true;
                     return;
-                } else if (nearestMonster && nearestDistance <= skillInfo.range && hasLineOfSight(mercenary.x, mercenary.y, nearestMonster.x, nearestMonster.y)) {
+                } else if (nearestMonster && nearestDistance <= getSkillRange(mercenary, skillInfo) && hasLineOfSight(mercenary.x, mercenary.y, nearestMonster.x, nearestMonster.y)) {
                     let attackValue = getStat(mercenary, 'attack');
                     if (skillKey === 'ChargeAttack') {
-                        attackValue = Math.floor(attackValue * skillInfo.multiplier * skillLevel);
+                        attackValue = Math.floor(attackValue * skillInfo.multiplier * skillLevel * getSkillPowerMult(mercenary));
                     } else if (skillKey === 'Fireball' || skillKey === 'Iceball') {
-                        attackValue = rollDice(skillInfo.damageDice) * skillLevel + getStat(mercenary, 'magicPower');
+                        attackValue = (rollDice(skillInfo.damageDice) * skillLevel + getStat(mercenary, 'magicPower')) * getSkillPowerMult(mercenary);
                     } else if (skillKey === 'HawkEye') {
-                        attackValue = rollDice(skillInfo.damageDice) * skillLevel + getStat(mercenary, 'attack');
+                        attackValue = (rollDice(skillInfo.damageDice) * skillLevel + getStat(mercenary, 'attack')) * getSkillPowerMult(mercenary);
                     } else {
-                        attackValue = Math.floor(attackValue * skillLevel);
+                        attackValue = Math.floor(attackValue * skillLevel * getSkillPowerMult(mercenary));
                     }
 
                     const hits = skillKey === 'DoubleStrike' ? 2 : 1;
@@ -7290,7 +7318,7 @@ function processTurn() {
                         killMonster(nearestMonster, mercenary);
                     }
                     mercenary.mana -= skillManaCost;
-                    mercenary.skillCooldowns[skillKey] = skillInfo.cooldown;
+                    mercenary.skillCooldowns[skillKey] = getSkillCooldown(mercenary, skillInfo);
                     updateMercenaryDisplay();
                     mercenary.hasActed = true;
                     return;
@@ -7592,8 +7620,9 @@ function processTurn() {
         }
 
         function handleHeal(skillKey, skill, level, manaCost) {
+            const range = getSkillRange(gameState.player, skill);
             const targets = [gameState.player, ...gameState.activeMercenaries.filter(m => m.alive)]
-                .filter(t => getDistance(gameState.player.x, gameState.player.y, t.x, t.y) <= skill.range && t.health < getStat(t, 'maxHealth'));
+                .filter(t => getDistance(gameState.player.x, gameState.player.y, t.x, t.y) <= range && t.health < getStat(t, 'maxHealth'));
             if (targets.length === 0) {
                 addMessage('❤️ 회복할 대상이 없습니다.', 'info');
                 processTurn();
@@ -7601,17 +7630,18 @@ function processTurn() {
             }
             const target = targets.sort((a, b) => (getStat(b, 'maxHealth') - b.health) - (getStat(a, 'maxHealth') - a.health))[0];
             gameState.player.mana -= manaCost;
-            healTarget(gameState.player, target, skill, level);
+            healTarget(gameState.player, target, skill, level * getSkillPowerMult(gameState.player));
             updateStats();
             updateMercenaryDisplay();
-            gameState.player.skillCooldowns[skillKey] = skill.cooldown;
+            gameState.player.skillCooldowns[skillKey] = getSkillCooldown(gameState.player, skill);
             processTurn();
         }
 
         function handlePurify(skillKey, skill, level, manaCost) {
             const hasStatus = t => t.poison || t.burn || t.freeze || t.bleed || t.paralysis || t.nightmare || t.silence || t.petrify || t.debuff;
+            const range = getSkillRange(gameState.player, skill);
             const targets = [gameState.player, ...gameState.activeMercenaries.filter(m => m.alive)]
-                .filter(t => getDistance(gameState.player.x, gameState.player.y, t.x, t.y) <= skill.range && hasStatus(t));
+                .filter(t => getDistance(gameState.player.x, gameState.player.y, t.x, t.y) <= range && hasStatus(t));
             if (targets.length === 0) {
                 addMessage('해제할 상태이상이 없습니다.', 'info');
                 processTurn();
@@ -7622,17 +7652,18 @@ function processTurn() {
             purifyTarget(gameState.player, target, skill);
             updateStats();
             updateMercenaryDisplay();
-            gameState.player.skillCooldowns[skillKey] = skill.cooldown;
+            gameState.player.skillCooldowns[skillKey] = getSkillCooldown(gameState.player, skill);
             processTurn();
         }
 
         function handleShield(skillKey, skill, level, manaCost) {
+            const range = getSkillRange(gameState.player, skill);
             const allies = gameState.activeMercenaries.filter(m => m.alive);
             let nearest = null;
             let nearestDist = Infinity;
             allies.forEach(a => {
                 const d = getDistance(gameState.player.x, gameState.player.y, a.x, a.y);
-                if (d <= skill.range && d < nearestDist) { nearestDist = d; nearest = a; }
+                if (d <= range && d < nearestDist) { nearestDist = d; nearest = a; }
             });
             gameState.player.mana -= manaCost;
             SoundEngine.playSound('auraActivateMinor');
@@ -7640,17 +7671,18 @@ function processTurn() {
             if (nearest) applyShield(gameState.player, nearest, skill, level);
             updateStats();
             updateMercenaryDisplay();
-            gameState.player.skillCooldowns[skillKey] = skill.cooldown;
+            gameState.player.skillCooldowns[skillKey] = getSkillCooldown(gameState.player, skill);
             processTurn();
         }
 
         function handleAttackBuff(skillKey, skill, level, manaCost) {
+            const range = getSkillRange(gameState.player, skill);
             const allies = gameState.activeMercenaries.filter(m => m.alive);
             let nearest = null;
             let nearestDist = Infinity;
             allies.forEach(a => {
                 const d = getDistance(gameState.player.x, gameState.player.y, a.x, a.y);
-                if (d <= skill.range && d < nearestDist) { nearestDist = d; nearest = a; }
+                if (d <= range && d < nearestDist) { nearestDist = d; nearest = a; }
             });
             gameState.player.mana -= manaCost;
             SoundEngine.playSound('auraActivateMajor');
@@ -7658,7 +7690,7 @@ function processTurn() {
             if (nearest) applyAttackBuff(gameState.player, nearest, skill, level);
             updateStats();
             updateMercenaryDisplay();
-            gameState.player.skillCooldowns[skillKey] = skill.cooldown;
+            gameState.player.skillCooldowns[skillKey] = getSkillCooldown(gameState.player, skill);
             processTurn();
         }
 
@@ -7687,12 +7719,13 @@ function processTurn() {
             renderDungeon();
             updateCamera();
             updateStats();
-            gameState.player.skillCooldowns[skillKey] = skill.cooldown;
+            gameState.player.skillCooldowns[skillKey] = getSkillCooldown(gameState.player, skill);
             processTurn();
         }
 
         function handleNovaSkill(skillKey, skill, level, manaCost) {
-            const targets = gameState.monsters.filter(m => getDistance(gameState.player.x, gameState.player.y, m.x, m.y) <= skill.radius);
+            const radius = getSkillRange(gameState.player, { range: skill.radius });
+            const targets = gameState.monsters.filter(m => getDistance(gameState.player.x, gameState.player.y, m.x, m.y) <= radius);
             if (targets.length === 0) {
                 addMessage('🎯 사거리 내에 몬스터가 없습니다.', 'info');
                 processTurn();
@@ -7708,7 +7741,7 @@ function processTurn() {
             const isTestEnv = typeof navigator !== 'undefined' && /jsdom/i.test(navigator.userAgent);
             const novaAction = () => {
                 targets.slice().forEach(monster => {
-                    const attackValue = rollDice(skill.damageDice) * level + getStat(gameState.player, 'magicPower');
+                    const attackValue = (rollDice(skill.damageDice) * level + getStat(gameState.player, 'magicPower')) * getSkillPowerMult(gameState.player);
                     const result = performAttack(gameState.player, monster, {
                         attackValue,
                         magic: skill.magic,
@@ -7739,17 +7772,17 @@ function processTurn() {
             } else {
                 setTimeout(novaAction, 200);
             }
-            gameState.player.skillCooldowns[skillKey] = skill.cooldown;
+            gameState.player.skillCooldowns[skillKey] = getSkillCooldown(gameState.player, skill);
             processTurn();
         }
 
         function handleMeleeSkill(skillKey, skill, level, manaCost, target, dist) {
-            if (skill.dashRange && dist <= skill.dashRange && hasLineOfSight(gameState.player.x, gameState.player.y, target.x, target.y)) {
+            if (skill.dashRange && dist <= getSkillRange(gameState.player, { range: skill.dashRange }) && hasLineOfSight(gameState.player.x, gameState.player.y, target.x, target.y)) {
                 const path = findPath(gameState.player.x, gameState.player.y, target.x, target.y);
                 let destX = gameState.player.x;
                 let destY = gameState.player.y;
                 if (path && path.length > 1) {
-                    const maxSteps = Math.min(skill.dashRange, path.length - 2);
+                    const maxSteps = Math.min(getSkillRange(gameState.player, { range: skill.dashRange }), path.length - 2);
                     for (let i = 1; i <= maxSteps; i++) {
                         const step = path[i];
                         const blocked =
@@ -7770,7 +7803,7 @@ function processTurn() {
             const hits = skill.hits || 1;
             gameState.player.mana -= manaCost;
             for (let i = 0; i < hits; i++) {
-                const attackValue = Math.floor(getStat(gameState.player, 'attack') * attackMult * level);
+                const attackValue = Math.floor(getStat(gameState.player, 'attack') * attackMult * level * getSkillPowerMult(gameState.player));
                 const result = performAttack(gameState.player, target, { attackValue, status: gameState.player.equipped.weapon && gameState.player.equipped.weapon.status });
                 const detail = buildAttackDetail(skill.icon, skill.name, result);
                 const img = getPlayerImage();
@@ -7790,7 +7823,7 @@ function processTurn() {
                     break;
                 }
             }
-            gameState.player.skillCooldowns[skillKey] = skill.cooldown;
+            gameState.player.skillCooldowns[skillKey] = getSkillCooldown(gameState.player, skill);
             processTurn();
         }
 
@@ -7817,7 +7850,7 @@ function processTurn() {
                 proj.target = target;
             }
             gameState.projectiles.push(proj);
-            gameState.player.skillCooldowns[skillKey] = skill.cooldown;
+            gameState.player.skillCooldowns[skillKey] = getSkillCooldown(gameState.player, skill);
             processTurn();
         }
 
@@ -7847,7 +7880,8 @@ function processTurn() {
                 return;
             }
             const level = gameState.player.skillLevels[skillKey] || 1;
-            const manaCost = skill.manaCost + level - 1;
+            const baseCost = (skill.manaCost || 0) + level - 1;
+            const manaCost = getSkillManaCost(gameState.player, { manaCost: baseCost });
             if (skill.passive) {
                 addMessage('이 스킬은 항상 효과가 발동중입니다.', 'info');
                 processTurn();
@@ -7893,7 +7927,9 @@ function processTurn() {
 
             let target = null;
             let dist = Infinity;
-            const searchRange = (skill.melee && skill.dashRange) ? skill.dashRange : skill.range;
+            const searchRange = (skill.melee && skill.dashRange)
+                ? getSkillRange(gameState.player, { range: skill.dashRange })
+                : getSkillRange(gameState.player, skill);
             for (const monster of gameState.monsters) {
                 const d = getDistance(gameState.player.x, gameState.player.y, monster.x, monster.y);
                 if (d <= searchRange && d < dist && hasLineOfSight(gameState.player.x, gameState.player.y, monster.x, monster.y)) {
@@ -8437,6 +8473,7 @@ equipItemToMercenary, estimateSkillDamage, findAdjacentEmpty, findNearestEmpty, 
  formatItem, formatItemName, formatNumber, generateDungeon, rebuildDungeonDOM, generateStars, getAuraBonus,
 getDistance, getMonsterPoolForFloor, getPlayerEmoji, getStat, getStatusResist,
 getActiveAuraIcons, buildEffectDetails, updateUnitEffectIcons,
+getSkillRange, getSkillCooldown, getSkillManaCost, getSkillPowerMult,
 handleDungeonClick, handleItemClick, handlePlayerDeath,
 hasLineOfSight, healAction, healTarget, hideItemTargetPanel, hideItemDetailPanel,
 hideMercenaryDetails, hideMonsterDetails, hideShop, hireMercenary, killMonster, killMercenary,
