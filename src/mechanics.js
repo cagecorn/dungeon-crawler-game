@@ -5633,6 +5633,15 @@ function killMonster(monster, killer = null) {
                     item[stat] = item.baseStats[stat] + item.enhanceLevel * 1;
                 } else if (stat.endsWith('Resist')) {
                     item[stat] = item.baseStats[stat] + item.enhanceLevel * 0.01;
+                } else if ([
+                    'damageReflect',
+                    'lifeSteal',
+                    'skillManaCostMult',
+                    'skillPowerMult',
+                    'skillRangeBonus',
+                    'skillCooldownMod'
+                ].includes(stat)) {
+                    item[stat] = item.baseStats[stat] + item.enhanceLevel * 0.1;
                 } else {
                     item[stat] = item.baseStats[stat] + item.enhanceLevel * 0.5;
                 }
