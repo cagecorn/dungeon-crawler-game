@@ -398,6 +398,10 @@
   color: #42a5f5;
 }
 
+.unique {
+  color: #e53935;
+}
+
 /* --- Panel Styling --- */
 /* 모든 정보창에 적용될 공통 스타일 */
 .panel {
