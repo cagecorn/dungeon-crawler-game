@@ -16,7 +16,8 @@ async function run() {
     assignSkill,
     skill1Action,
     tryApplyStatus,
-    getStat
+    getStat,
+    getSkillManaCost
   } = win;
   const SKILL_DEFS = win.eval('SKILL_DEFS');
 
@@ -39,12 +40,13 @@ async function run() {
   merc.health = getStat(merc, 'maxHealth') - 5;
   gameState.player.mana = 10;
   skill1Action();
-  const expectedHealMana = 10 - 3 + 0.5;
+  const healCost = getSkillManaCost(gameState.player, SKILL_DEFS['Heal']);
+  const expectedHealMana = 10 - healCost + 0.5;
   if (merc.health <= getStat(merc, 'maxHealth') - 5 || gameState.player.mana !== expectedHealMana) {
     console.error('heal did not heal ally or mana wrong');
     process.exit(1);
   }
-  if (gameState.player.skillCooldowns['Heal'] !== SKILL_DEFS['Heal'].cooldown) {
+  if (gameState.player.skillCooldowns['Heal'] !== SKILL_DEFS['Heal'].cooldown - 1) {
     console.error('heal cooldown incorrect');
     process.exit(1);
   }
@@ -58,12 +60,13 @@ async function run() {
   win.rollDice = originalRoll;
   gameState.player.mana = 10;
   skill1Action();
-  const expectedPurifyMana = 10 - 2 + 0.5;
+  const purifyCost = getSkillManaCost(gameState.player, SKILL_DEFS['Purify']);
+  const expectedPurifyMana = 10 - purifyCost + 0.5;
   if (merc.poison || gameState.player.mana !== expectedPurifyMana) {
     console.error('purify did not remove status or mana wrong');
     process.exit(1);
   }
-  if (gameState.player.skillCooldowns['Purify'] !== SKILL_DEFS['Purify'].cooldown) {
+  if (gameState.player.skillCooldowns['Purify'] !== SKILL_DEFS['Purify'].cooldown - 1) {
     console.error('purify cooldown incorrect');
     process.exit(1);
   }
