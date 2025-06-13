@@ -29,6 +29,7 @@ async function run() {
   gameState.dungeon[2][2] = 'empty';
 
   const bard = createMercenary('BARD', 2, 1);
+  assert.strictEqual(bard.skill2, 'Heal', 'Bard should start with Heal as skill2');
   bard.skill = 'GuardianHymn';
   bard.mana = bard.maxMana;
   gameState.activeMercenaries.push(bard);
