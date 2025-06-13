@@ -75,6 +75,12 @@
   background-position: center, center;
   background-repeat: no-repeat, no-repeat;
 }
+.cell.empty.mercenary.bard {
+  background-image: url("assets/images/bard.png"), url("assets/images/floor-tile.png");
+  background-size: contain, cover;
+  background-position: center, center;
+  background-repeat: no-repeat, no-repeat;
+ }
 
 /* Individual mercenary sprites */
 .mercenary.warrior {
@@ -91,6 +97,9 @@
 
 .mercenary.wizard {
   background-image: url("assets/images/wizard.png");
+}
+.mercenary.bard {
+  background-image: url("assets/images/bard.png");
 }
 
 /* --- Mercenary Sprite Styling --- */
@@ -111,6 +120,9 @@
 /* 마법사 용병 이미지 적용 */
 .cell.mercenary.wizard {
   background-image: url('assets/images/wizard.png');
+}
+.cell.mercenary.bard {
+  background-image: url('assets/images/bard.png');
 }
 
 /* --- 신규 몬스터 이미지 스타일 --- */
