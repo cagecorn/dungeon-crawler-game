@@ -78,6 +78,17 @@ detail panel and in the side list by their portrait. Open a mercenary's detail
 panel with the corresponding number key (`1`-`9`) or by clicking their portrait
 in the UI.
 
+### Bard Mercenaries
+
+Bards are support units that join with songs ready to boost the party. Each bard
+comes with one of two skill sets:
+
+- **Heal** + **Guardian Hymn**
+- **Heal** + **Courage Hymn**
+
+These hymns play `auraActivateMinor` or `auraActivateMajor` sound cues when
+activated, letting you know their protective or offensive effects are in play.
+
 
 ### Mercenary Traits
 
