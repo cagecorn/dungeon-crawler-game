@@ -2543,11 +2543,37 @@ const MERCENARY_NAMES = [
         }
 
         function getStat(character, stat) {
-            const e = character.endurance || 0;
-            const f = character.focus || 0;
-            const s = character.strength || 0;
-            const a = character.agility || 0;
-            const i = character.intelligence || 0;
+            // [수정됨] 2차 스탯(공격력 등)을 계산하기 전에, 1차 스탯(힘 등)의 최종값을 먼저 가져옵니다.
+            // 이렇게 하면 getStat('공격력') 호출 시, getStat('힘')을 통해 버프가 적용된 힘 수치를 기반으로 계산하게 됩니다.
+            if (['strength', 'agility', 'endurance', 'focus', 'intelligence'].includes(stat)) {
+                let value = character[stat] || 0;
+                if (character.equipped) {
+                    if (character.equipped.tile && character.equipped.tile.effects && character.equipped.tile.effects[stat]) {
+                        value += character.equipped.tile.effects[stat];
+                    }
+                    ['weapon', 'armor', 'accessory1', 'accessory2'].forEach(slot => {
+                        const it = character.equipped[slot];
+                        if (it && it[stat] !== undefined) {
+                            value += it[stat];
+                        }
+                    });
+                }
+                if (Array.isArray(character.buffs)) {
+                    character.buffs.forEach(b => {
+                        if (b.effects && b.effects[stat]) value += b.effects[stat];
+                    });
+                }
+                value += getAuraBonus(character, stat);
+                return value;
+            }
+
+
+            const e = getStat(character, 'endurance');
+            const f = getStat(character, 'focus');
+            const s = getStat(character, 'strength');
+            const a = getStat(character, 'agility');
+            const i = getStat(character, 'intelligence');
+
             let value = 0;
             switch (stat) {
                 case 'maxHealth':
@@ -2560,7 +2586,8 @@ const MERCENARY_NAMES = [
                     value = s;
                     break;
                 case 'defense':
-                    value = Math.floor(e * 0.1) + (character.baseDefense || 0);
+                    // 기본 방어력은 캐릭터 생성 시의 값을 유지하고, 체력(endurance)에 의한 보너스를 추가합니다.
+                    value = (character.baseDefense || 0) + Math.floor(e * 0.1);
                     break;
                 case 'accuracy':
                     value = 0.7 + a * 0.02;
@@ -2580,6 +2607,7 @@ const MERCENARY_NAMES = [
                 default:
                     value = character[stat] || 0;
             }
+
             if (character.equipped) {
                 if (character.equipped.tile && character.equipped.tile.effects && character.equipped.tile.effects[stat]) {
                     value += character.equipped.tile.effects[stat];
