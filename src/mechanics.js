@@ -2023,7 +2023,8 @@ const MERCENARY_NAMES = [
                             const msgType = item.tier === 'unique' ? 'unique-skill' : 'treasure';
                             addMessage(`✨ ${unitName}의 ${itemName} 효과로 ${skillName} 스킬이 발동했습니다!`, msgType, null, getUnitImage(unit));
                             if (typeof triggerProcSkill === 'function') {
-                                triggerProcSkill(unit, opponent, proc);
+                                const supportive = skill && (skill.heal || skill.shield || skill.attackBuff || skill.buff);
+                                triggerProcSkill(unit, supportive ? null : opponent, proc);
                             }
                         }
                     }
