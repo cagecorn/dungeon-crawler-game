@@ -3724,45 +3724,49 @@ function updateMaterialsDisplay() {
                 cellDiv.appendChild(statusContainer);
             }
 
-            // 이전 아이콘 초기화
+            // clear previous icons
             buffContainer.innerHTML = '';
             statusContainer.innerHTML = '';
 
             if (!unit || !unit.id) return;
 
-            // 1. 모든 활성 효과 아이콘 수집 (오라 + 상태이상)
+            // 1. Collect aura, status and buff icons
             const auraIcons = getActiveAuraIcons(unit);
             const statusIcons = [];
             const STATUS_KEYS = ['poison', 'burn', 'freeze', 'bleed', 'paralysis', 'nightmare', 'silence', 'petrify', 'debuff'];
-            STATUS_KEYS.forEach(status => {
-                if (unit[status] && unit[status + 'Turns'] > 0) {
-                    statusIcons.push(STATUS_ICONS[status]);
+            STATUS_KEYS.forEach(key => {
+                if (unit[key] && unit[key + 'Turns'] > 0) {
+                    statusIcons.push(STATUS_ICONS[key]);
                 }
             });
-            const allIcons = [...auraIcons, ...statusIcons];
 
-            // 2. 전역 순환 상태 업데이트
-            if (allIcons.length === 0) {
+            const buffIcons = [];
+            if (Array.isArray(unit.buffs)) {
+                unit.buffs.forEach(b => {
+                    const info = SKILL_DEFS[b.name] || MERCENARY_SKILLS[b.name] || MONSTER_SKILLS[b.name];
+                    if (info && info.icon) buffIcons.push(info.icon);
+                });
+            }
+
+            const icons = [...auraIcons, ...statusIcons, ...buffIcons];
+
+            // 2. Update effectCycleState when icons change
+            if (icons.length === 0) {
                 delete effectCycleState[unit.id];
             } else {
-                const currentState = effectCycleState[unit.id];
-                const iconsChanged = !currentState || JSON.stringify(currentState.icons) !== JSON.stringify(allIcons);
-
-                if (iconsChanged) {
-                    effectCycleState[unit.id] = {
-                        icons: allIcons,
-                        currentIndex: 0
-                    };
+                const current = effectCycleState[unit.id];
+                const changed = !current || JSON.stringify(current.icons) !== JSON.stringify(icons);
+                if (changed) {
+                    effectCycleState[unit.id] = { icons, currentIndex: 0 };
                 }
             }
 
-            // 3. 현재 인덱스의 아이콘만 렌더링
+            // 3. Render only the current icon
             const state = effectCycleState[unit.id];
             if (state && state.icons.length > 0) {
-                const currentIcon = state.icons[state.currentIndex];
                 const iconSpan = document.createElement('span');
                 iconSpan.className = 'effect-icon';
-                iconSpan.textContent = currentIcon;
+                iconSpan.textContent = state.icons[state.currentIndex];
                 buffContainer.appendChild(iconSpan);
             }
         }
