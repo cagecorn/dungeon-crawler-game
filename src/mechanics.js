@@ -5613,6 +5613,13 @@ function killMonster(monster, killer = null) {
         // 메시지 로그 추가
         function addMessage(text, type = 'info', detail = null, imageUrl = null) {
             const messageLog = document.getElementById('message-log');
+            const last = messageLog.lastElementChild;
+
+            // Prevent consecutive duplicate messages
+            if (last && last.dataset && last.dataset.text === text && last.dataset.type === type) {
+                return;
+            }
+
             const message = document.createElement('div');
             message.className = `message ${type}`;
             if (imageUrl) {
@@ -5625,6 +5632,8 @@ function killMonster(monster, killer = null) {
                 message.appendChild(img);
             }
             message.innerHTML += text;
+            message.dataset.text = text;
+            message.dataset.type = type;
             if (detail) {
                 message.dataset.detail = detail;
                 message.classList.add('clickable');
