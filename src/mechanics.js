@@ -6292,6 +6292,61 @@ function killMonster(monster, killer = null) {
             return true;
         }
 
+        function processMonsterBardTurn(monster) {
+            const skillKey = monster.skill;
+            const hymnInfo = MERCENARY_SKILLS[skillKey];
+            if (!hymnInfo) return false;
+            if (monster.skillCooldowns[skillKey] > 0) return false;
+            const manaCost = getSkillManaCost(monster, hymnInfo);
+            if (monster.mana < manaCost) return false;
+            const enemies = [gameState.player, ...gameState.activeMercenaries.filter(m => m.alive)];
+            const enemyNearby = enemies.some(e => getDistance(monster.x, monster.y, e.x, e.y) <= MONSTER_VISION);
+            if (!enemyNearby) return false;
+            const level = monster.skillLevels && monster.skillLevels[skillKey] || 1;
+            const allies = gameState.monsters.filter(m => m.alive);
+            const targets = allies.filter(ally =>
+                getDistance(monster.x, monster.y, ally.x, ally.y) <= getSkillRange(monster, hymnInfo) &&
+                (!ally.buffs || !ally.buffs.find(b => b.name === skillKey))
+            );
+            if (targets.length === 0) return false;
+            addMessage(`🎵 ${monster.name}이(가) ${hymnInfo.name}을(를) 연주합니다!`, 'combat', null, getMonsterImage(monster));
+            targets.forEach(ally => {
+                if (hymnInfo.shield) applyShield(monster, ally, hymnInfo, level);
+                if (hymnInfo.attackBuff) applyAttackBuff(monster, ally, hymnInfo, level);
+                if (hymnInfo.aura) {
+                    if (!ally.buffs) ally.buffs = [];
+                    ally.buffs.push({ name: skillKey, effects: hymnInfo.aura, turnsLeft: 5 });
+                }
+            });
+            monster.mana -= manaCost;
+            monster.skillCooldowns[skillKey] = getSkillCooldown(monster, hymnInfo);
+            return true;
+        }
+
+        function processMonsterHealerTurn(monster) {
+            const skillKey = monster.skill;
+            const healInfo = MERCENARY_SKILLS[skillKey];
+            if (!healInfo || !healInfo.heal) return false;
+            if (monster.skillCooldowns[skillKey] > 0) return false;
+            const manaCost = getSkillManaCost(monster, healInfo);
+            if (monster.mana < manaCost) return false;
+            const level = monster.skillLevels && monster.skillLevels[skillKey] || 1;
+            const healRange = getSkillRange(monster, healInfo);
+            const allies = gameState.monsters.filter(m => m.alive);
+            let target = allies.find(a => a.health < getStat(a, 'maxHealth') * 0.7 &&
+                getDistance(monster.x, monster.y, a.x, a.y) <= healRange);
+            if (!target && monster.health < getStat(monster, 'maxHealth')) {
+                target = monster;
+            }
+            if (!target) return false;
+            if (healTarget(monster, target, healInfo, level)) {
+                monster.mana -= manaCost;
+                monster.skillCooldowns[skillKey] = getSkillCooldown(monster, healInfo);
+                return true;
+            }
+            return false;
+        }
+
         // 플레이어 사망 처리
         function handlePlayerDeath() {
             gameState.gameRunning = false;
@@ -6839,7 +6894,7 @@ function processTurn() {
                 monster.hasActed = false;
             });
             
-           for (const monster of [...gameState.monsters]) {
+            for (const monster of [...gameState.monsters]) {
                 if (monster.hasActed || !gameState.gameRunning) continue;
                 if ((monster.paralysis && monster.paralysisTurns > 0) || (monster.petrify && monster.petrifyTurns > 0)) {
                     monster.paralysisTurns && monster.paralysisTurns--;
@@ -6848,6 +6903,20 @@ function processTurn() {
                     if (monster.petrifyTurns <= 0) monster.petrify = false;
                     monster.hasActed = true;
                     continue;
+                }
+
+                if (monster.isSuperior && monster.skill) {
+                    if (['GuardianHymn','CourageHymn'].includes(monster.skill)) {
+                        if (processMonsterBardTurn(monster)) {
+                            monster.hasActed = true;
+                            continue;
+                        }
+                    } else if (monster.skill === 'Heal') {
+                        if (processMonsterHealerTurn(monster)) {
+                            monster.hasActed = true;
+                            continue;
+                        }
+                    }
                 }
                 
                 let nearestTarget = null;
