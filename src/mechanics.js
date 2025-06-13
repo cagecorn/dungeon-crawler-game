@@ -7242,6 +7242,14 @@ function processTurn() {
                 let nearestMonster = null;
                 let nearestDistance = Infinity;
                 visibleMonsters.forEach(monster => {
+                    const distanceFromPlayer = getDistance(monster.x, monster.y, gameState.player.x, gameState.player.y);
+                    if (distanceFromPlayer > PARTY_LEASH_RADIUS) {
+                        return;
+                    }
+                    if (!hasLineOfSight(mercenary.x, mercenary.y, monster.x, monster.y)) {
+                        return;
+                    }
+
                     const dist = getDistance(mercenary.x, mercenary.y, monster.x, monster.y);
                     if (dist < nearestDistance) {
                         nearestDistance = dist;
