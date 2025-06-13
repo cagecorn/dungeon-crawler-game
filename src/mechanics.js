@@ -3428,7 +3428,9 @@ function updateMaterialsDisplay() {
             const armor = eq.armor ? eq.armor.name : '없음';
             const acc1 = eq.accessory1 ? eq.accessory1.name : '없음';
             const acc2 = eq.accessory2 ? eq.accessory2.name : '없음';
-            const skillInfo = champion.monsterSkill ? MONSTER_SKILLS[champion.monsterSkill] : null;
+            const skillInfo = champion.monsterSkill
+                ? (MONSTER_SKILLS[champion.monsterSkill] || MERCENARY_SKILLS[champion.monsterSkill])
+                : null;
             let skillLine = '<div>스킬: 없음</div>';
             if (skillInfo) {
                 const lvl = champion.skillLevels && champion.skillLevels[champion.monsterSkill] || 1;
