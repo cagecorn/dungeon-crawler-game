@@ -2732,19 +2732,20 @@ const MERCENARY_NAMES = [
                 const monster = gameState.monsters.find(m => m.x === nx && m.y === ny);
                 if (monster) {
                     const attacker = proj.attacker || gameState.player;
-                    let attackValue;
-                    let magic = !!proj.magic;
+                    const magic = !!proj.magic;
+
+                    // [수정된 공격력 계산 로직]
+                    // 1. 마법/물리에 따라 기본 스탯(magicPower/attack)을 먼저 가져옵니다.
+                    let attackValue = magic ? getStat(attacker, 'magicPower') : getStat(attacker, 'attack');
+
+                    // 2. 투사체에 데미지 주사위(damageDice)가 있으면 그 값을 더합니다.
                     if (proj.damageDice !== undefined) {
-                        attackValue = rollDice(proj.damageDice) * (proj.level || 1);
-                        if (magic) {
-                            attackValue += getStat(attacker, 'magicPower');
-                        }
-                    } else if (magic) {
-                        attackValue = getStat(attacker, 'magicPower');
-                    } else {
-                        attackValue = getStat(attacker, 'attack');
+                        attackValue += rollDice(proj.damageDice) * (proj.level || 1);
                     }
+
+                    // 3. 마지막으로 스킬 위력 배율을 적용합니다.
                     attackValue = Math.floor(attackValue * getSkillPowerMult(attacker));
+
                     const result = performAttack(attacker, monster, { attackValue, magic, element: proj.element, status: attacker.equipped && attacker.equipped.weapon && attacker.equipped.weapon.status, damageDice: proj.damageDice });
                     const icon = proj.icon || '➡️';
                     const name = proj.skill ? SKILL_DEFS[proj.skill].name : '원거리 공격';
@@ -2764,12 +2765,9 @@ const MERCENARY_NAMES = [
                         addMessage(`${icon} ${attackerPart}${monster.name}에게 ${dmgStr}의 피해를 입혔습니다${critMsg}!`, msgType, detail, img);
                     }
 
-                    // --- BUG FIX START ---
-                    // 몬스터가 사망한 경우만 처리하고, 살아있을 때는 별도 작업을 하지 않는다.
                     if (monster.health <= 0) {
                         killMonster(monster);
                     }
-                    // --- BUG FIX END ---
 
                     continue;
                 }
