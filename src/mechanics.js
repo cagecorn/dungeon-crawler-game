@@ -1428,7 +1428,7 @@ const MERCENARY_NAMES = [
                 damageDice: '1d12',
                 tier: 'unique',
                 procs: [
-                    { event: 'onAttack', skill: 'Fireball', chance: 0.2 }
+                    { event: 'onAttack', skill: 'Fireball', chance: 0.1, level: 0.5 }
                 ],
                 icon: '🌋',
                 level: 1,
@@ -1440,7 +1440,7 @@ const MERCENARY_NAMES = [
                 defense: 8,
                 tier: 'unique',
                 procs: [
-                    { event: 'onDamaged', skill: 'IceNova', chance: 0.15 }
+                    { event: 'onDamaged', skill: 'IceNova', chance: 0.075, level: 0.5 }
                 ],
                 icon: '🛡️',
                 level: 1,
@@ -1451,7 +1451,7 @@ const MERCENARY_NAMES = [
                 type: ITEM_TYPES.ACCESSORY,
                 tier: 'unique',
                 procs: [
-                    { event: 'onDamaged', skill: 'GuardianHymn', chance: 0.1 }
+                    { event: 'onDamaged', skill: 'GuardianHymn', chance: 0.05, level: 0.5 }
                 ],
                 icon: '🛡️',
                 level: 1,
@@ -1462,7 +1462,7 @@ const MERCENARY_NAMES = [
                 type: ITEM_TYPES.ACCESSORY,
                 tier: 'unique',
                 procs: [
-                    { event: 'onDamaged', skill: 'CourageHymn', chance: 0.1 }
+                    { event: 'onDamaged', skill: 'CourageHymn', chance: 0.05, level: 0.5 }
                 ],
                 icon: '🎵',
                 level: 1,
@@ -2287,6 +2287,11 @@ const MERCENARY_NAMES = [
             if (item.lightDamage !== undefined) stats.push(`✨+${formatNumber(item.lightDamage)}`);
             if (item.darkDamage !== undefined) stats.push(`🌑+${formatNumber(item.darkDamage)}`);
             if (item.lightningDamage !== undefined) stats.push(`⚡+${formatNumber(item.lightningDamage)}`);
+            if (item.strength !== undefined) stats.push(`힘+${formatNumber(item.strength)}`);
+            if (item.agility !== undefined) stats.push(`민첩+${formatNumber(item.agility)}`);
+            if (item.endurance !== undefined) stats.push(`체력+${formatNumber(item.endurance)}`);
+            if (item.focus !== undefined) stats.push(`집중+${formatNumber(item.focus)}`);
+            if (item.intelligence !== undefined) stats.push(`지능+${formatNumber(item.intelligence)}`);
             if (item.maxHealth !== undefined && item.type !== ITEM_TYPES.POTION && item.type !== ITEM_TYPES.REVIVE) stats.push(`HP+${formatNumber(item.maxHealth)}`);
             if (item.healthRegen !== undefined) stats.push(`HP회복+${formatNumber(item.healthRegen)}`);
             if (item.accuracy !== undefined) stats.push(`명중+${formatNumber(item.accuracy)}`);
@@ -5027,8 +5032,16 @@ function killMonster(monster) {
                     item.suffix = suffix.name;
                 }
             } else if (item.type === ITEM_TYPES.WEAPON || item.type === ITEM_TYPES.ARMOR || item.type === ITEM_TYPES.ACCESSORY) {
+                const addRandomStat = rand => {
+                    const attrs = ['strength','agility','endurance','focus','intelligence'];
+                    const idx = Math.floor(rand * attrs.length);
+                    const key = attrs[idx];
+                    item[key] = (item[key] || 0) + 1;
+                };
+
                 if (rare) {
-                    const prefix = RARE_PREFIXES[Math.floor(Math.random() * RARE_PREFIXES.length)];
+                    const randPre = Math.random();
+                    const prefix = RARE_PREFIXES[Math.floor(randPre * RARE_PREFIXES.length)];
                     item.prefix = prefix.name;
                     item.name = `${prefix.name} ${item.name}`;
                     for (const stat in prefix.modifiers) {
@@ -5036,7 +5049,10 @@ function killMonster(monster) {
                         if (typeof val === 'number') item[stat] = (item[stat] || 0) + val;
                         else item[stat] = val;
                     }
-                    const suffix = RARE_SUFFIXES[Math.floor(Math.random() * RARE_SUFFIXES.length)];
+                    addRandomStat(randPre);
+
+                    const randSuf = Math.random();
+                    const suffix = RARE_SUFFIXES[Math.floor(randSuf * RARE_SUFFIXES.length)];
                     item.suffix = suffix.name;
                     item.name = `${item.name} ${suffix.name}`;
                     for (const stat in suffix.modifiers) {
@@ -5044,6 +5060,7 @@ function killMonster(monster) {
                         if (typeof val === 'number') item[stat] = (item[stat] || 0) + val;
                         else item[stat] = val;
                     }
+                    addRandomStat(randSuf);
                     item.rarity = 'rare';
                 } else if (prefixName) {
                     const prefix = PREFIXES.find(p => p.name === prefixName);
@@ -5058,9 +5075,11 @@ function killMonster(monster) {
                                 item[stat] = val;
                             }
                         }
+                        addRandomStat(Math.random());
                     }
                 } else if (Math.random() < 0.5) {
-                    const prefix = PREFIXES[Math.floor(Math.random() * PREFIXES.length)];
+                    const randPre = Math.random();
+                    const prefix = PREFIXES[Math.floor(randPre * PREFIXES.length)];
                     item.prefix = prefix.name;
                     item.name = `${prefix.name} ${item.name}`;
                     for (const stat in prefix.modifiers) {
@@ -5071,9 +5090,11 @@ function killMonster(monster) {
                             item[stat] = val;
                         }
                     }
+                    addRandomStat(randPre);
                 }
                 if (!rare && Math.random() < 0.5) {
-                    const suffix = SUFFIXES[Math.floor(Math.random() * SUFFIXES.length)];
+                    const randSuf = Math.random();
+                    const suffix = SUFFIXES[Math.floor(randSuf * SUFFIXES.length)];
                     item.suffix = suffix.name;
                     item.name = `${item.name} ${suffix.name}`;
                     for (const stat in suffix.modifiers) {
@@ -5084,6 +5105,7 @@ function killMonster(monster) {
                             item[stat] = val;
                         }
                     }
+                    addRandomStat(randSuf);
                 }
             }
 
