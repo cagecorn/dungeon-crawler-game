@@ -40,6 +40,8 @@ async function run() {
   gameState.dungeon[monster.y][monster.x] = 'monster';
 
   gameState.player.health = 10;
+  // Boost player attack so life steal has damage to work with
+  gameState.player.strength = 20;
 
   win.rollDice = spec => {
     if (spec === '1d20') return 20;
