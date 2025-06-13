@@ -596,6 +596,11 @@ const MERCENARY_NAMES = [
                 "저 수정들... 마법 에너지를 저장하고 있는 것 같은데.",
                 "공간이 비틀어진 느낌이야. 이곳엔 차원 마법의 잔재가 남아있어.",
                 "내 지팡이가 진동하고 있어. 뭔가 강력한 마법 아이템이 가까이 있나?"
+            ],
+            BARD: [
+                "이 던전의 메아리가 훌륭하네! 나중에 여기서 콘서트를 열어볼까?",
+                "어둠 속에서도 음악은 희망의 빛이 되어줘. 다들 용기 내!",
+                "저 돌계단의 소리... 완벽한 리듬감이야. 새로운 곡 아이디어가 떠오르는데?"
             ]
         };
 
@@ -690,6 +695,29 @@ const MERCENARY_NAMES = [
                 killQuotes: [
                     'assets/audio/wizard_kill_1.mp3',
                     'assets/audio/wizard_kill_2.mp3'
+                ]
+            },
+            BARD: {
+                name: '🎶 음유시인',
+                icon: '🎶',
+                baseHealth: 9,
+                baseAttack: 3,
+                baseDefense: 1,
+                baseAccuracy: 0.8,
+                baseEvasion: 0.12,
+                baseCritChance: 0.08,
+                baseMagicPower: 2,
+                baseMagicResist: 1,
+                baseMaxMana: 8,
+                baseHealthRegen: 0.25,
+                baseManaRegen: 0.4,
+                role: 'support',
+                description: '버프와 노래로 아군을 돕는 만능 지원가',
+                cost: 65,
+                voiceFile: 'assets/audio/bard_hire.mp3',
+                killQuotes: [
+                    'assets/audio/bard_kill_1.mp3',
+                    'assets/audio/bard_kill_2.mp3'
                 ]
             }
         };
@@ -1538,7 +1566,8 @@ const MERCENARY_NAMES = [
             WARRIOR: ['ChargeAttack', 'DoubleStrike'],
             ARCHER: ['DoubleStrike', 'HawkEye'],
             HEALER: ['Heal'],
-            WIZARD: ['Fireball', 'Iceball']
+            WIZARD: ['Fireball', 'Iceball'],
+            BARD: ['GuardianHymn', 'CourageHymn']
         };
 
         const MONSTER_SKILL_SETS = {
@@ -3983,7 +4012,8 @@ function killMonster(monster) {
                 SKELETON: 'skeleton.png',
                 SKELETON_MAGE: 'skeleton.png',
                 ARCHER: 'archer.png',
-                WIZARD: 'wizard.png'
+                WIZARD: 'wizard.png',
+                BARD: 'bard.png'
             };
             return map[type] ? `assets/images/${map[type]}` : null;
         }
@@ -3994,7 +4024,8 @@ function killMonster(monster) {
                 WARRIOR: 'warrior.png',
                 ARCHER: 'archer.png',
                 HEALER: 'healer.png',
-                WIZARD: 'wizard.png'
+                WIZARD: 'wizard.png',
+                BARD: 'bard.png'
             };
             return map[type] ? `assets/images/${map[type]}` : null;
         }
