@@ -249,8 +249,9 @@ const SoundEngine = {
                 this.playNote('triangle', 1760, 0.35, now + 0.6);
                 break;
             case 'gatherMaterial':
-                this.playNote('square', 600, 0.15, now);
-                this.playNote('square', 800, 0.15, now + 0.1);
+                // Lower the volume so material gathering is less jarring
+                this.playNote('square', 600, 0.07, now);
+                this.playNote('square', 800, 0.07, now + 0.1);
                 break;
             case 'eggHatch': // 알 부화
                 this.playNote('sine', 880, 0.1, now); // crack 1
