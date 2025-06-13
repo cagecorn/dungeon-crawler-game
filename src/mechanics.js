@@ -7441,13 +7441,29 @@ function processTurn() {
     function processChampionTurn(champion, visibleMonsters = null) {
         const debuffSkills = ['Weaken', 'Sunder', 'Regression', 'SpellWeakness', 'ElementalWeakness'];
         const skillKey = champion.monsterSkill;
-        if (!skillKey) return;
+
+        function moveTowardPlayer() {
+            const path = findPath(champion.x, champion.y, gameState.player.x, gameState.player.y);
+            if (path && path.length > 1) {
+                champion.nextX = path[1].x;
+                champion.nextY = path[1].y;
+            }
+        }
+
+        if (!skillKey) {
+            if (isPlayerSide(champion)) {
+                const dist = getDistance(champion.x, champion.y, gameState.player.x, gameState.player.y);
+                if (dist > 3) moveTowardPlayer();
+            }
+            return;
+        }
 
         const isDebuffSkill = debuffSkills.includes(skillKey);
 
         // 1. 가장 가까운 적 찾기
         const opponents = isPlayerSide(champion)
-            ? (visibleMonsters || gameState.monsters)
+            ? (visibleMonsters || gameState.monsters).filter(op =>
+                getDistance(op.x, op.y, gameState.player.x, gameState.player.y) <= PARTY_LEASH_RADIUS)
             : [gameState.player, ...gameState.activeMercenaries.filter(m => m.alive)];
 
         let nearestOpponent = null;
@@ -7460,7 +7476,13 @@ function processTurn() {
             }
         });
 
-        if (!nearestOpponent) return;
+        if (!nearestOpponent) {
+            if (isPlayerSide(champion)) {
+                const dist = getDistance(champion.x, champion.y, gameState.player.x, gameState.player.y);
+                if (dist > 3) moveTowardPlayer();
+            }
+            return;
+        }
 
         // 2. AI 행동 결정
         if (isDebuffSkill) {
