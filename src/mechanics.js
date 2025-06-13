@@ -2759,11 +2759,22 @@ const MERCENARY_NAMES = [
                 div.className = 'skill-item';
                 const info = SKILL_DEFS[skill];
                 const level = gameState.player.skillLevels[skill] || 1;
+                const baseCost = (info.manaCost || 0) + level - 1;
+                const mana = getSkillManaCost(gameState.player, { manaCost: baseCost });
+                const range = getSkillRange(gameState.player, info);
+                const baseCd = getSkillCooldown(gameState.player, info);
                 const cooldown = gameState.player.skillCooldowns[skill] || 0;
+                const power = getSkillPowerMult(gameState.player);
 
                 const nameSpan = document.createElement('span');
-                const cdText = cooldown > 0 ? `, CD ${cooldown}` : '';
-                nameSpan.textContent = `${info.icon} ${info.name} (Lv ${level}${cdText})`;
+                const cdRemain = cooldown > 0 ? `, 남은 ${cooldown}` : '';
+                const extra = [
+                    info.manaCost ? `MP ${mana}` : null,
+                    baseCd ? `쿨타임 ${baseCd}${cdRemain}` : (cooldown > 0 ? `CD ${cooldown}` : null),
+                    range !== undefined ? `사거리 ${range}` : null,
+                    power !== 1 ? `파워 x${power.toFixed(2)}` : null,
+                ].filter(Boolean).join(', ');
+                nameSpan.textContent = `${info.icon} ${info.name} (Lv ${level}${extra ? ', ' + extra : ''})`;
                 div.appendChild(nameSpan);
 
                 const btn1 = document.createElement('button');
@@ -3091,15 +3102,21 @@ function updateMaterialsDisplay() {
                 const info = MERCENARY_SKILLS[key] || MONSTER_SKILLS[key] || SKILL_DEFS[key];
                 if (!info) return `<div>스킬: ${key}</div>`;
                 const lvl = merc.skillLevels && merc.skillLevels[key] || 1;
-                const cost = (info.manaCost || 0) + lvl - 1;
-                const mpText = info.manaCost ? ` (MP ${cost})` : '';
+                const baseCost = (info.manaCost || 0) + lvl - 1;
+                const mana = getSkillManaCost(merc, { manaCost: baseCost });
+                const range = getSkillRange(merc, info);
+                const baseCd = getSkillCooldown(merc, info);
                 const cd = merc.skillCooldowns ? merc.skillCooldowns[key] || 0 : 0;
-                const cdText = cd > 0 ? ` (CD ${cd})` : '';
+                const power = getSkillPowerMult(merc);
+                const mpText = info.manaCost ? ` (MP ${mana})` : '';
+                const cdText = baseCd ? ` (쿨타임 ${baseCd}${cd > 0 ? ` / 남은 ${cd}` : ''})` : (cd > 0 ? ` (CD ${cd})` : '');
+                const rangeText = range !== undefined ? ` (사거리 ${range})` : '';
+                const powerText = power !== 1 ? ` (파워 x${power.toFixed(2)})` : '';
                 const defs = MERCENARY_SKILLS[key] ? 'MERCENARY_SKILLS' : MONSTER_SKILLS[key] ? 'MONSTER_SKILLS' : 'SKILL_DEFS';
                 const levelUp = (MERCENARY_SKILLS[key] || MONSTER_SKILLS[key])
                     ? ` <button onclick="upgradeMercenarySkill(window.currentDetailMercenary,'${key}')">레벨업</button>`
                     : '';
-                return `<div><span class="merc-skill" onclick="showSkillDamage(window.currentDetailMercenary,'${key}',${defs})">${info.icon || ''} ${info.name || key} Lv.${lvl}${mpText}${cdText}</span>${levelUp}</div>`;
+                return `<div><span class="merc-skill" onclick="showSkillDamage(window.currentDetailMercenary,'${key}',${defs})">${info.icon || ''} ${info.name || key} Lv.${lvl}${mpText}${cdText}${rangeText}${powerText}</span>${levelUp}</div>`;
             }).join('');
 
             const actionBtn = merc.affinity >= 200
@@ -3221,11 +3238,17 @@ function updateMaterialsDisplay() {
             }
             const skillLine = skills.map(({key, info}) => {
                 const lvl = monster.skillLevels && monster.skillLevels[key] || 1;
-                const cost = (info.manaCost || 0) + lvl - 1;
-                const mpText = info.manaCost ? ` (MP ${cost})` : '';
+                const baseCost = (info.manaCost || 0) + lvl - 1;
+                const mana = getSkillManaCost(monster, { manaCost: baseCost });
+                const range = getSkillRange(monster, info);
+                const baseCd = getSkillCooldown(monster, info);
                 const cd = monster.skillCooldowns ? monster.skillCooldowns[key] || 0 : 0;
-                const cdText = cd > 0 ? ` (CD ${cd})` : '';
-                return `<div>스킬: ${info.icon} ${info.name} Lv.${lvl}${mpText}${cdText}</div>`;
+                const power = getSkillPowerMult(monster);
+                const mpText = info.manaCost ? ` (MP ${mana})` : '';
+                const cdText = baseCd ? ` (쿨타임 ${baseCd}${cd > 0 ? ` / 남은 ${cd}` : ''})` : (cd > 0 ? ` (CD ${cd})` : '');
+                const rangeText = range !== undefined ? ` (사거리 ${range})` : '';
+                const powerText = power !== 1 ? ` (파워 x${power.toFixed(2)})` : '';
+                return `<div>스킬: ${info.icon} ${info.name} Lv.${lvl}${mpText}${cdText}${rangeText}${powerText}</div>`;
             }).join('');
             const actionBtn = monster.affinity !== undefined
                 ? (monster.affinity >= 200
@@ -3278,11 +3301,17 @@ function updateMaterialsDisplay() {
             let skillLine = '<div>스킬: 없음</div>';
             if (skillInfo) {
                 const lvl = champion.skillLevels && champion.skillLevels[champion.monsterSkill] || 1;
-                const cost = (skillInfo.manaCost || 0) + lvl - 1;
-                const mpText = skillInfo.manaCost ? ` (MP ${cost})` : '';
+                const baseCost = (skillInfo.manaCost || 0) + lvl - 1;
+                const mana = getSkillManaCost(champion, { manaCost: baseCost });
+                const range = getSkillRange(champion, skillInfo);
+                const baseCd = getSkillCooldown(champion, skillInfo);
                 const cd = champion.skillCooldowns ? champion.skillCooldowns[champion.monsterSkill] || 0 : 0;
-                const cdText = cd > 0 ? ` (CD ${cd})` : '';
-                skillLine = `<div>스킬: ${skillInfo.icon} ${skillInfo.name} Lv.${lvl}${mpText}${cdText}</div>`;
+                const power = getSkillPowerMult(champion);
+                const mpText = skillInfo.manaCost ? ` (MP ${mana})` : '';
+                const cdText = baseCd ? ` (쿨타임 ${baseCd}${cd > 0 ? ` / 남은 ${cd}` : ''})` : (cd > 0 ? ` (CD ${cd})` : '');
+                const rangeText = range !== undefined ? ` (사거리 ${range})` : '';
+                const powerText = power !== 1 ? ` (파워 x${power.toFixed(2)})` : '';
+                skillLine = `<div>스킬: ${skillInfo.icon} ${skillInfo.name} Lv.${lvl}${mpText}${cdText}${rangeText}${powerText}</div>`;
             }
             const shieldText = champion.shield > 0 ? ` <span style="color: blue">+${formatNumber(champion.shield)}</span>` : '';
             const atkBuffText = champion.attackBuff > 0 ?
