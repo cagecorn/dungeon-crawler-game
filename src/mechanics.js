@@ -2967,6 +2967,8 @@ function updateMaterialsDisplay() {
                 : `<button class="sell-button" onclick="dismiss(window.currentDetailMercenary)">해고</button>`;
 
             const shieldText = merc.shield > 0 ? ` <span style="color: blue">+${formatNumber(merc.shield)}</span>` : '';
+            const atkBuffText = merc.attackBuff > 0 ?
+                ` <span class="attack-buff-text">(+${formatNumber(merc.attackBuff)})</span>` : '';
             const html = `
                 <h3>${merc.icon} ${merc.name} Lv.${formatNumber(merc.level)}</h3>
                 <div>💪 힘: ${formatNumber(merc.strength)} ${'⭐'.repeat(merc.stars.strength)}</div>
@@ -2979,7 +2981,7 @@ function updateMaterialsDisplay() {
                 <hr>
                 <div>❤️ HP: ${formatNumber(merc.health)}/${formatNumber(getStat(merc, 'maxHealth'))}${shieldText}</div>
                 <div>🔋 MP: ${formatNumber(merc.mana)}/${formatNumber(getStat(merc, 'maxMana'))}</div>
-                <div>⚔️ 공격력: ${formatNumber(getStat(merc, 'attack'))}</div>
+                <div>⚔️ 공격력: ${formatNumber(getStat(merc, 'attack'))}${atkBuffText}</div>
                 <div>🛡️ 방어력: ${formatNumber(getStat(merc, 'defense'))}</div>
                 <div>🎯 명중률: ${formatNumber(getStat(merc, 'accuracy'))}</div>
                 <div>💨 회피율: ${formatNumber(getStat(merc, 'evasion'))}</div>
@@ -3091,11 +3093,13 @@ function updateMaterialsDisplay() {
                     : `<button class="sell-button" onclick="dismiss(window.currentDetailMonster)">해고</button>`)
                 : '';
             const shieldText = monster.shield > 0 ? ` <span style="color: blue">+${formatNumber(monster.shield)}</span>` : '';
+            const atkBuffText = monster.attackBuff > 0 ?
+                ` <span class="attack-buff-text">(+${formatNumber(monster.attackBuff)})</span>` : '';
             const html = `
                 <h3>${monster.icon} ${monster.name} (Lv.${monster.level})</h3>
                 <div>❤️ HP: ${monster.health}/${formatNumber(getStat(monster,'maxHealth'))}${shieldText}</div>
                 <div>🔋 MP: ${formatNumber(monster.mana)}/${formatNumber(getStat(monster,'maxMana'))}</div>
-                <div>⚔️ 공격력: ${formatNumber(getStat(monster,'attack'))}</div>
+                <div>⚔️ 공격력: ${formatNumber(getStat(monster,'attack'))}${atkBuffText}</div>
                 <div>🛡️ 방어력: ${formatNumber(getStat(monster,'defense'))}</div>
                 <div>🎯 명중률: ${formatNumber(getStat(monster,'accuracy'))}</div>
                 <div>💨 회피율: ${formatNumber(getStat(monster,'evasion'))}</div>
@@ -3141,6 +3145,8 @@ function updateMaterialsDisplay() {
                 skillLine = `<div>스킬: ${skillInfo.icon} ${skillInfo.name} Lv.${lvl}${mpText}${cdText}</div>`;
             }
             const shieldText = champion.shield > 0 ? ` <span style="color: blue">+${formatNumber(champion.shield)}</span>` : '';
+            const atkBuffText = champion.attackBuff > 0 ?
+                ` <span class="attack-buff-text">(+${formatNumber(champion.attackBuff)})</span>` : '';
             const html = `
                 <h3>${champion.icon} ${champion.name} (Lv.${champion.level})</h3>
                 <div>💪 힘: ${formatNumber(champion.strength)} ${'⭐'.repeat(champion.stars.strength)}</div>
@@ -3152,7 +3158,7 @@ function updateMaterialsDisplay() {
                 <hr>
                 <div>❤️ HP: ${formatNumber(champion.health)}/${formatNumber(getStat(champion,'maxHealth'))}${shieldText}</div>
                 <div>🔋 MP: ${formatNumber(champion.mana)}/${formatNumber(getStat(champion,'maxMana'))}</div>
-                <div>⚔️ 공격력: ${formatNumber(getStat(champion,'attack'))}</div>
+                <div>⚔️ 공격력: ${formatNumber(getStat(champion,'attack'))}${atkBuffText}</div>
                 <div>🛡️ 방어력: ${formatNumber(getStat(champion,'defense'))}</div>
                 <div>🎯 명중률: ${formatNumber(getStat(champion,'accuracy'))}</div>
                 <div>💨 회피율: ${formatNumber(getStat(champion,'evasion'))}</div>
