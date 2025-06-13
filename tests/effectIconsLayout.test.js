@@ -13,6 +13,7 @@ async function run() {
   win.getActiveAuraIcons = () => ['🔥', '🛡️', '❄️', '⚡', '💨'];
 
   const unit = {
+    id: 'test-unit',
     poison: true, poisonTurns: 1,
     burn: true, burnTurns: 1,
     freeze: true, freezeTurns: 1,
@@ -35,8 +36,8 @@ async function run() {
     process.exit(1);
   }
 
-  if (buff.children.length !== 5 || status.children.length !== 4) {
-    console.error('icons not added');
+  if (buff.children.length !== 1 || status.children.length !== 0) {
+    console.error('incorrect number of icons');
     process.exit(1);
   }
 

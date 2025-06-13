@@ -3700,27 +3700,43 @@ function updateMaterialsDisplay() {
             buffContainer.innerHTML = '';
             statusContainer.innerHTML = '';
 
-            if (!unit) return;
+            if (!unit || !unit.id) return;
 
-            // 1. 버프/디버프 아이콘 표시 (오라)
+            // 1. 모든 활성 효과 아이콘 수집 (오라 + 상태이상)
             const auraIcons = getActiveAuraIcons(unit);
-            auraIcons.forEach(icon => {
-                const iconSpan = document.createElement('span');
-                iconSpan.className = 'effect-icon';
-                iconSpan.textContent = icon;
-                buffContainer.appendChild(iconSpan);
-            });
-
-            // 2. 상태이상 아이콘 표시
+            const statusIcons = [];
             const STATUS_KEYS = ['poison', 'burn', 'freeze', 'bleed', 'paralysis', 'nightmare', 'silence', 'petrify', 'debuff'];
             STATUS_KEYS.forEach(status => {
                 if (unit[status] && unit[status + 'Turns'] > 0) {
-                    const iconSpan = document.createElement('span');
-                    iconSpan.className = 'effect-icon';
-                    iconSpan.textContent = STATUS_ICONS[status];
-                    statusContainer.appendChild(iconSpan);
+                    statusIcons.push(STATUS_ICONS[status]);
                 }
             });
+            const allIcons = [...auraIcons, ...statusIcons];
+
+            // 2. 전역 순환 상태 업데이트
+            if (allIcons.length === 0) {
+                delete effectCycleState[unit.id];
+            } else {
+                const currentState = effectCycleState[unit.id];
+                const iconsChanged = !currentState || JSON.stringify(currentState.icons) !== JSON.stringify(allIcons);
+
+                if (iconsChanged) {
+                    effectCycleState[unit.id] = {
+                        icons: allIcons,
+                        currentIndex: 0
+                    };
+                }
+            }
+
+            // 3. 현재 인덱스의 아이콘만 렌더링
+            const state = effectCycleState[unit.id];
+            if (state && state.icons.length > 0) {
+                const currentIcon = state.icons[state.currentIndex];
+                const iconSpan = document.createElement('span');
+                iconSpan.className = 'effect-icon';
+                iconSpan.textContent = currentIcon;
+                buffContainer.appendChild(iconSpan);
+            }
         }
 
         // 몬스터 생성
