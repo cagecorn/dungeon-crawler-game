@@ -4010,10 +4010,21 @@ function killMonster(monster) {
                 ZOMBIE: 'zombie.png',
                 KOBOLD: 'kobold.png',
                 SKELETON: 'skeleton.png',
-                SKELETON_MAGE: 'skeleton.png',
+                SKELETON_MAGE: 'skeleton_mage.png',
                 ARCHER: 'archer.png',
                 WIZARD: 'wizard.png',
-                BARD: 'bard.png'
+                BARD: 'bard.png',
+                GARGOYLE: 'gargoyle.png',
+                ORC: 'orc.png',
+                ORC_ARCHER: 'orc_archer.png',
+                TROLL: 'troll.png',
+                BANSHEE: 'banshee.png',
+                DARK_MAGE: 'dark_mage.png',
+                MINOTAUR: 'minotaur.png',
+                DEMON_WARRIOR: 'demon_warrior.png',
+                LICH: 'lich.png',
+                DRAGON_WHELP: 'dragon_whelp.png',
+                ELEMENTAL_GOLEM: 'elemental_golem.png'
             };
             return map[type] ? `assets/images/${map[type]}` : null;
         }
