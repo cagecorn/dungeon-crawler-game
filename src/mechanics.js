@@ -2095,11 +2095,13 @@ const MERCENARY_NAMES = [
             // 보호막 부여 스킬 처리
             else if (skill.shield) {
                 if (!target) target = source;
+                SoundEngine.playSound('auraActivateMinor');
                 applyShield(source, target, skill, level);
             }
             // 공격력 증가 버프 스킬 처리
             else if (skill.attackBuff) {
                 if (!target) target = source;
+                SoundEngine.playSound('auraActivateMajor');
                 applyAttackBuff(source, target, skill, level);
             }
             // 버프 스킬 처리
@@ -6916,6 +6918,7 @@ function processTurn() {
                     const allies = [gameState.player, ...gameState.activeMercenaries.filter(m=>m.alive && m!==mercenary)];
                     allies.forEach(a=>{ const d=getDistance(mercenary.x, mercenary.y, a.x, a.y); if(d<=skillInfo.range && d<distAlly){distAlly=d; nearestAlly=a;} });
                     mercenary.mana -= skillManaCost;
+                    SoundEngine.playSound('auraActivateMinor');
                     applyShield(mercenary, mercenary, skillInfo, skillLevel);
                     if(nearestAlly) applyShield(mercenary, nearestAlly, skillInfo, skillLevel);
                     updateMercenaryDisplay();
@@ -6928,6 +6931,7 @@ function processTurn() {
                     const allies = [gameState.player, ...gameState.activeMercenaries.filter(m=>m.alive && m!==mercenary)];
                     allies.forEach(a=>{ const d=getDistance(mercenary.x, mercenary.y, a.x, a.y); if(d<=skillInfo.range && d<distAlly){distAlly=d; nearestAlly=a;} });
                     mercenary.mana -= skillManaCost;
+                    SoundEngine.playSound('auraActivateMajor');
                     applyAttackBuff(mercenary, mercenary, skillInfo, skillLevel);
                     if(nearestAlly) applyAttackBuff(mercenary, nearestAlly, skillInfo, skillLevel);
                     updateMercenaryDisplay();
@@ -7599,6 +7603,7 @@ function processTurn() {
                 if (d <= skill.range && d < nearestDist) { nearestDist = d; nearest = a; }
             });
             gameState.player.mana -= manaCost;
+            SoundEngine.playSound('auraActivateMinor');
             applyShield(gameState.player, gameState.player, skill, level);
             if (nearest) applyShield(gameState.player, nearest, skill, level);
             updateStats();
@@ -7616,6 +7621,7 @@ function processTurn() {
                 if (d <= skill.range && d < nearestDist) { nearestDist = d; nearest = a; }
             });
             gameState.player.mana -= manaCost;
+            SoundEngine.playSound('auraActivateMajor');
             applyAttackBuff(gameState.player, gameState.player, skill, level);
             if (nearest) applyAttackBuff(gameState.player, nearest, skill, level);
             updateStats();
