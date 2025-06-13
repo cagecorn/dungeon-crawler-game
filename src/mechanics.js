@@ -2600,14 +2600,12 @@ const MERCENARY_NAMES = [
                 btn1.className = 'assign-btn';
                 btn1.textContent = '1';
                 btn1.onclick = (e) => { e.stopPropagation(); assignSkill(1, skill); };
-                btn1.disabled = cooldown > 0;
                 div.appendChild(btn1);
 
                 const btn2 = document.createElement('button');
                 btn2.className = 'assign-btn';
                 btn2.textContent = '2';
                 btn2.onclick = (e) => { e.stopPropagation(); assignSkill(2, skill); };
-                btn2.disabled = cooldown > 0;
                 div.appendChild(btn2);
 
                 div.onclick = () => {
