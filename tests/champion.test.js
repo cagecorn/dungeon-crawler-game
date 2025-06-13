@@ -12,7 +12,7 @@ async function run() {
 
   const { createChampion, killMonster, reviveMonsterCorpse, gameState, createItem } = win;
   const MONSTER_SKILLS = win.eval('MONSTER_SKILLS');
-  const EXTRA_SKILLS = ['Weaken','Sunder','Regression','SpellWeakness','ElementalWeakness'];
+  const MERCENARY_SKILLS = win.eval('MERCENARY_SKILLS');
 
   const champ = createChampion('WARRIOR', 0, 0, 3);
   if (!champ.isChampion || champ.level !== 3) {
@@ -24,7 +24,8 @@ async function run() {
     console.error('champion stars invalid');
     process.exit(1);
   }
-  if (!MONSTER_SKILLS[champ.monsterSkill] && !EXTRA_SKILLS.includes(champ.monsterSkill)) {
+  const skillInfo = MONSTER_SKILLS[champ.monsterSkill] || MERCENARY_SKILLS[champ.monsterSkill];
+  if (!skillInfo) {
     console.error('champion skill invalid');
     process.exit(1);
   }
@@ -35,7 +36,7 @@ async function run() {
     console.error('champion details missing info');
     process.exit(1);
   }
-  if (MONSTER_SKILLS[champ.monsterSkill] && !html.includes(MONSTER_SKILLS[champ.monsterSkill].name)) {
+  if (!html.includes(skillInfo.name)) {
     console.error('champion details missing info');
     process.exit(1);
   }
