@@ -1717,7 +1717,8 @@ const MERCENARY_NAMES = [
             { name: 'of Poison Resistance', modifiers: { poisonResist: 0.3 } },
             { name: 'of Bleed Resistance', modifiers: { bleedResist: 0.3 } },
             { name: 'of Burn Resistance', modifiers: { burnResist: 0.3 } },
-            { name: 'of Frost Resistance', modifiers: { freezeResist: 0.3 } }
+            { name: 'of Frost Resistance', modifiers: { freezeResist: 0.3 } },
+            { name: 'of Leeching', modifiers: { killHealth: 2, killMana: 2 } }
         ];
 
         const RARE_PREFIXES = [
@@ -1731,7 +1732,8 @@ const MERCENARY_NAMES = [
             { name: 'of Mastery', modifiers: { attack: 2, defense: 2 } },
             { name: 'of the Magus', modifiers: { magicPower: 3, manaRegen: 1 } },
             { name: 'of Vitality', modifiers: { maxHealth: 10, healthRegen: 1 } },
-            { name: 'of Quickness', modifiers: { accuracy: 0.05, evasion: 0.05, critChance: 0.05 } }
+            { name: 'of Quickness', modifiers: { accuracy: 0.05, evasion: 0.05, critChance: 0.05 } },
+            { name: 'of Vampirism', modifiers: { killHealth: 4, killMana: 4 } }
         ];
 
         const MAP_PREFIXES = [
@@ -2066,7 +2068,7 @@ const MERCENARY_NAMES = [
                     } else {
                         addMessage(`${skill.icon} ${enemy.name}에게 ${formatNumber(result.damage)}의 광역 피해!`, 'combat', detail, getUnitImage(source));
                         if (enemy.health <= 0) {
-                            if (gameState.monsters.includes(enemy)) killMonster(enemy);
+                            if (gameState.monsters.includes(enemy)) killMonster(enemy, source);
                             else killMercenary(enemy);
                         }
                     }
@@ -2090,7 +2092,7 @@ const MERCENARY_NAMES = [
                 } else {
                     addMessage(`${skill.icon} ${target.name}에게 ${formatNumber(result.damage)}의 원거리 피해!`, 'combat', detail, getUnitImage(source));
                     if (target.health <= 0) {
-                        if (gameState.monsters.includes(target)) killMonster(target);
+                        if (gameState.monsters.includes(target)) killMonster(target, source);
                         else if (target !== gameState.player) killMercenary(target);
                         else handlePlayerDeath();
                     }
@@ -2311,6 +2313,11 @@ const MERCENARY_NAMES = [
             if (item.magicPower !== undefined) stats.push(`마공+${formatNumber(item.magicPower)}`);
             if (item.magicResist !== undefined) stats.push(`마방+${formatNumber(item.magicResist)}`);
             if (item.manaRegen !== undefined) stats.push(`MP회복+${formatNumber(item.manaRegen)}`);
+            if (item.killHealth !== undefined || item.killMana !== undefined) {
+                const hp = item.killHealth ? `HP+${formatNumber(item.killHealth)}` : '';
+                const mp = item.killMana ? `MP+${formatNumber(item.killMana)}` : '';
+                stats.push(`처치시 ${[hp, mp].filter(Boolean).join(' ')}`.trim());
+            }
             if (item.poisonResist !== undefined) stats.push(`독저항+${formatNumber(item.poisonResist * 100)}%`);
             if (item.bleedResist !== undefined) stats.push(`출혈저항+${formatNumber(item.bleedResist * 100)}%`);
             if (item.burnResist !== undefined) stats.push(`화상저항+${formatNumber(item.burnResist * 100)}%`);
@@ -2488,7 +2495,7 @@ const MERCENARY_NAMES = [
                     // --- BUG FIX START ---
                     // 몬스터가 사망한 경우만 처리하고, 살아있을 때는 별도 작업을 하지 않는다.
                     if (monster.health <= 0) {
-                        killMonster(monster);
+                        killMonster(monster, gameState.player);
                     }
                     // --- BUG FIX END ---
 
@@ -3669,7 +3676,7 @@ function findNearestEmpty(x, y) {
             return {x, y};
         }
 
-function killMonster(monster) {
+function killMonster(monster, killer = gameState.player) {
             let itemOnCorpse = false;
             SoundEngine.playSound('monsterDie'); // 몬스터 사망음 재생
             addMessage(`💀 ${monster.name}을(를) 처치했습니다!`, 'combat', null, getMonsterImage(monster));
@@ -3679,8 +3686,31 @@ function killMonster(monster) {
                 goldGain = Math.floor(goldGain * gameState.currentMapModifiers.goldMultiplier);
             }
             gameState.player.gold += goldGain;
+
+            if (killer) {
+                let hpGain = 0;
+                let mpGain = 0;
+                if (killer.equipped) {
+                    ['weapon','armor','accessory1','accessory2'].forEach(slot => {
+                        const it = killer.equipped[slot];
+                        if (it) {
+                            if (typeof it.killHealth === 'number') hpGain += it.killHealth;
+                            if (typeof it.killMana === 'number') mpGain += it.killMana;
+                        }
+                    });
+                }
+                if (hpGain > 0) {
+                    killer.health = Math.min(getStat(killer, 'maxHealth'), killer.health + hpGain);
+                }
+                if (mpGain > 0) {
+                    killer.mana = Math.min(getStat(killer, 'maxMana'), killer.mana + mpGain);
+                }
+                if (killer === gameState.player) updateStats();
+                else refreshDetailPanel(killer);
+            }
+
             checkLevelUp();
-            updateStats();
+            if (killer === gameState.player) updateStats();
             if ((monster.special === 'boss' || monster.isChampion) && Math.random() < 0.10) {
                 const uniqueKeys = Object.keys(UNIQUE_ITEMS);
                 if (uniqueKeys.length > 0) {
@@ -6097,7 +6127,7 @@ function killMonster(monster) {
                     }
                     
                     if (monster.health <= 0) {
-                        killMonster(monster);
+                        killMonster(monster, gameState.player);
                     }
                     
                     processTurn();
@@ -6508,7 +6538,7 @@ function processTurn() {
             }
             gameState.monsters.slice().forEach(monster => {
                 if (applyStatusEffects(monster)) {
-                    killMonster(monster);
+                    killMonster(monster, null);
                 }
             });
 
@@ -7752,7 +7782,7 @@ function processTurn() {
                         addMessage(`${skill.icon} ${monster.name}에게 ${dmgStr}의 피해를 입혔습니다${critMsg}!`, 'combat', detail, img);
                     }
                     if (monster.health <= 0) {
-                        killMonster(monster);
+                        killMonster(monster, attacker);
                     }
                 });
             };
@@ -7808,7 +7838,7 @@ function processTurn() {
                     addMessage(`${skill.icon} ${target.name}에게 ${dmgStr}의 피해를 입혔습니다${critMsg}!`, 'combat', detail, img);
                 }
                 if (target.health <= 0) {
-                    killMonster(target);
+                    killMonster(target, gameState.player);
                     break;
                 }
             }
