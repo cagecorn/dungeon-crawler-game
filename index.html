@@ -120,10 +120,11 @@
         }
         .treasure {
             background: none;
-            background-image: url('assets/images/floor-tile.png');
-            background-size: cover;
-            background-position: center;
-            color: #8B4513;
+            background-image: url('assets/images/gold.png'), url('assets/images/floor-tile.png');
+            background-size: contain, cover;
+            background-position: center, center;
+            background-repeat: no-repeat, no-repeat;
+            color: transparent;
             box-shadow: 0 0 10px rgba(255, 215, 0, 0.7);
             animation: treasureSparkle 1s ease-in-out infinite alternate;
             font-size: 20px;
@@ -143,10 +144,11 @@
         }
         .chest {
             background: none;
-            background-image: url('assets/images/floor-tile.png');
-            background-size: cover;
-            background-position: center;
-            color: #fff;
+            background-image: url('assets/images/chest.png'), url('assets/images/floor-tile.png');
+            background-size: contain, cover;
+            background-position: center, center;
+            background-repeat: no-repeat, no-repeat;
+            color: transparent;
             font-size: 20px;
         }
         .mine {
@@ -221,10 +223,11 @@
         }
         .corpse {
             background: none;
-            background-image: url('assets/images/floor-tile.png');
-            background-size: cover;
-            background-position: center;
-            color: #ccc;
+            background-image: url('assets/images/corpse.png'), url('assets/images/floor-tile.png');
+            background-size: contain, cover;
+            background-position: center, center;
+            background-repeat: no-repeat, no-repeat;
+            color: transparent;
             font-size: 20px;
         }
         .exit {
@@ -587,6 +590,12 @@
             vertical-align: middle;
             image-rendering: pixelated;
         }
+        .inline-icon {
+            width: 16px;
+            height: 16px;
+            vertical-align: middle;
+            image-rendering: pixelated;
+        }
         .message.dialogue {
             color: #a7d8ff;
             background-color: #2a3a4a;
@@ -909,7 +918,7 @@
                 <div>🔮 마법공격: <span id="magicPower">0</span></div>
                 <div>✨ 마법방어: <span id="magicResist">0</span></div>
                 <div>⭐ 경험치: <span id="exp">0</span>/<span id="expNeeded">20</span></div>
-                <div>💰 골드: <span id="gold">0</span></div>
+                <div><img src="assets/images/gold.png" class="inline-icon"> 골드: <span id="gold">0</span></div>
                 <div>🏰 층: <span id="floor">1</span></div>
             </div>
             
