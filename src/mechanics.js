@@ -1696,6 +1696,7 @@ const MERCENARY_NAMES = [
             { name: 'Refreshing', modifiers: { healthRegen: 1 } },
             { name: 'Mystic', modifiers: { manaRegen: 1 } },
             { name: 'Vampiric', modifiers: { lifeSteal: 0.05 } },
+            { name: 'Thorny', modifiers: { damageReflect: 0.1 } },
             { name: 'Venomous', modifiers: { status: 'poison' } },
             { name: 'Serrated', modifiers: { status: 'bleed' } },
             { name: 'Smoldering', modifiers: { status: 'burn' } },
@@ -1716,6 +1717,7 @@ const MERCENARY_NAMES = [
             { name: 'of Burning', modifiers: { status: 'burn' } },
             { name: 'of Frost', modifiers: { status: 'freeze' } },
             { name: 'of Leeching', modifiers: { lifeSteal: 0.05 } },
+            { name: 'of Thorns', modifiers: { damageReflect: 0.1 } },
             { name: 'of Poison Resistance', modifiers: { poisonResist: 0.3 } },
             { name: 'of Bleed Resistance', modifiers: { bleedResist: 0.3 } },
             { name: 'of Burn Resistance', modifiers: { burnResist: 0.3 } },
@@ -2215,6 +2217,15 @@ const MERCENARY_NAMES = [
 
             let damage = baseDamage + elementDamage;
             applyDamage(defender, damage);
+            const reflect = getStat(defender, 'damageReflect');
+            if (reflect > 0) {
+                const reflected = Math.floor(damage * reflect);
+                if (reflected > 0) {
+                    applyDamage(attacker, reflected);
+                    const attName = attacker === gameState.player ? '플레이어' : attacker.name;
+                    addMessage(`🔄 ${attName}이(가) ${formatNumber(reflected)} 피해를 반사로 입었습니다.`, 'combat');
+                }
+            }
             if (!crit) SoundEngine.playSound('takeDamage');
 
             const lifeSteal = getStat(attacker, 'lifeSteal');
@@ -2335,6 +2346,7 @@ const MERCENARY_NAMES = [
             if (item.burnResist !== undefined) stats.push(`화상저항+${formatNumber(item.burnResist * 100)}%`);
             if (item.freezeResist !== undefined) stats.push(`동결저항+${formatNumber(item.freezeResist * 100)}%`);
             if (item.lifeSteal !== undefined) stats.push(`흡혈+${formatNumber(item.lifeSteal * 100)}%`);
+            if (item.damageReflect !== undefined) stats.push(`피해반사+${formatNumber(item.damageReflect * 100)}%`);
             if (item.status) stats.push(`${item.status} 부여`);
             const levelText = item.enhanceLevel ? ` +Lv.${item.enhanceLevel}` : '';
             const name = formatItemName(item);

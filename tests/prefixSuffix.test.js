@@ -11,7 +11,7 @@ async function run() {
 
   const { createItem, formatItem, PREFIXES, SUFFIXES } = win;
 
-  const seq = [0, 0, 0.45, 0, 0.25];
+  const seq = [0, 0, 0.42, 0, 0.25];
   const origRandom = win.Math.random;
   win.Math.random = () => seq.shift() ?? origRandom();
 
