@@ -3769,7 +3769,6 @@ function killMonster(monster) {
             }
             gameState.player.gold += goldGain;
             checkLevelUp();
-            updateStats();
             if ((monster.special === 'boss' || monster.isChampion) && Math.random() < 0.10) {
                 const uniqueKeys = Object.keys(UNIQUE_ITEMS);
                 if (uniqueKeys.length > 0) {
