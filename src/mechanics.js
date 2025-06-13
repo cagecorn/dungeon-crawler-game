@@ -8884,6 +8884,7 @@ function processTurn() {
 
         function startGame() {
             // SoundEngine.initialize(); // 오디오 초기화는 사용자 입력 후 수행
+            globalThis.spawnPaladinTest = true;
             gameState.player.job = null;
             // Ensure player starts with initial gold
             gameState.player.gold = 1000;
