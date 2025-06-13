@@ -27,6 +27,11 @@ async function run() {
     console.error('skills not assigned');
     process.exit(1);
   }
+  const DEBUFFS = ['Weaken','Sunder','Regression','SpellWeakness','ElementalWeakness'];
+  if (DEBUFFS.includes(monster.skill)) {
+    console.error('debuff skill assigned');
+    process.exit(1);
+  }
   if (!monster.stars || Object.values(monster.stars).reduce((a,b)=>a+b,0) > 9) {
     console.error('invalid star values');
     process.exit(1);
