@@ -5230,9 +5230,8 @@ function killMonster(monster) {
             const dungeonEl = document.getElementById('dungeon');
             if (!dungeonEl) return;
 
-            const cellSize = 33;
-            const centerX = (x - gameState.camera.x) * cellSize + cellSize / 2;
-            const centerY = (y - gameState.camera.y) * cellSize + cellSize / 2;
+            const centerX = x * CELL_SIZE + CELL_SIZE / 2;
+            const centerY = y * CELL_SIZE + CELL_SIZE / 2;
 
             const novaDiv = document.createElement('div');
             novaDiv.className = `nova-effect ${type}-nova`;
@@ -5411,9 +5410,8 @@ function killMonster(monster) {
             const dungeonEl = document.getElementById('dungeon');
             if (!dungeonEl) return;
 
-            const cellSize = 33;
-            const centerX = (unit.x - gameState.camera.x) * cellSize + cellSize / 2;
-            const centerY = (unit.y - gameState.camera.y) * cellSize + cellSize / 2;
+            const centerX = unit.x * CELL_SIZE + CELL_SIZE / 2;
+            const centerY = unit.y * CELL_SIZE + CELL_SIZE / 2;
 
             const overlay = document.createElement('div');
             overlay.className = 'skill-effect-overlay';
