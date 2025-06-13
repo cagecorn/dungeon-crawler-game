@@ -628,6 +628,7 @@ const MERCENARY_NAMES = [
                 description: '높은 체력과 방어력을 가진 근접 전투 용병',
                 cost: 50,
                 voiceFile: 'assets/audio/warrior_hire.mp3',
+                reviveVoice: 'assets/audio/warrior_revive.mp3',
                 deathVoice: 'assets/audio/warrior_death.mp3',
                 killQuotes: [
                     'assets/audio/warrior_kill_1.mp3',
@@ -652,6 +653,7 @@ const MERCENARY_NAMES = [
                 description: '원거리에서 적을 공격하는 용병',
                 cost: 60,
                 voiceFile: 'assets/audio/archer_hire.mp3',
+                reviveVoice: 'assets/audio/archer_revive.mp3',
                 deathVoice: 'assets/audio/archer_death.mp3',
                 killQuotes: [
                     'assets/audio/archer_kill_1.mp3',
@@ -676,6 +678,7 @@ const MERCENARY_NAMES = [
                 description: '아군을 치료하는 지원 용병',
                 cost: 70,
                 voiceFile: 'assets/audio/healer_hire.mp3',
+                reviveVoice: 'assets/audio/healer_revive.mp3',
                 deathVoice: 'assets/audio/healer_death.mp3',
                 killQuotes: [
                     'assets/audio/healer_kill_1.mp3',
@@ -700,6 +703,7 @@ const MERCENARY_NAMES = [
                 description: '마법 공격에 특화된 용병',
                 cost: 80,
                 voiceFile: 'assets/audio/wizard_hire.mp3',
+                reviveVoice: 'assets/audio/wizard_revive.mp3',
                 deathVoice: 'assets/audio/wizard_death.mp3',
                 killQuotes: [
                     'assets/audio/wizard_kill_1.mp3',
@@ -724,6 +728,7 @@ const MERCENARY_NAMES = [
                 description: '버프와 노래로 아군을 돕는 만능 지원가',
                 cost: 65,
                 voiceFile: 'assets/audio/bard_hire.mp3',
+                reviveVoice: 'assets/audio/bard_revive.mp3',
                 deathVoice: 'assets/audio/bard_death.mp3',
                 killQuotes: [
                     'assets/audio/bard_kill_1.mp3',
@@ -748,6 +753,7 @@ const MERCENARY_NAMES = [
                 description: '신성한 힘을 사용하는 근접 전투 용병',
                 cost: 200,
                 voiceFile: 'assets/audio/paladin_hire.mp3',
+                reviveVoice: 'assets/audio/paladin_revive.mp3',
                 deathVoice: 'assets/audio/paladin_death.mp3',
                 killQuotes: [
                     'assets/audio/paladin_kill_1.mp3',
@@ -6264,6 +6270,9 @@ function killMonster(monster, killer = null) {
                 mercenary.health = getStat(mercenary, 'maxHealth');
                 addMessage(`💰 ${formatNumber(cost)}골드를 사용해 ${mercenary.name}을(를) 부활시켰습니다.`, 'mercenary');
             }
+
+            const data = MERCENARY_TYPES[mercenary.type];
+            if (data && data.reviveVoice) playSoundFile(String(data.reviveVoice));
 
             updateStats();
             updateMercenaryDisplay();
