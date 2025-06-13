@@ -6908,6 +6908,7 @@ function processTurn() {
             
             // 힐러는 상태 이상 해제를 우선 고려
             if (mercenary.role === 'support') {
+                const isHealer = mercenary.type === 'HEALER';
                 const purifyInfo = MERCENARY_SKILLS[mercenary.skill2];
                 const purifyLevel = mercenary.skillLevels && mercenary.skillLevels[mercenary.skill2] || 1;
                 const purifyMana = purifyInfo ? purifyInfo.manaCost + purifyLevel - 1 : 0;
@@ -6931,33 +6932,18 @@ function processTurn() {
                     }
                 }
 
-                const knowsHeal = skillInfo && mercenary.skill === 'Heal';
-                const healOnCooldown = knowsHeal && mercenary.skillCooldowns[mercenary.skill] > 0;
-                const manaCost = knowsHeal ? skillManaCost : HEAL_MANA_COST;
-                const healLevel = knowsHeal ? skillLevel : 1;
-                const healRange = knowsHeal ? skillInfo.range : 2;
+                if (isHealer) {
+                    const knowsHeal = skillInfo && mercenary.skill === 'Heal';
+                    const healOnCooldown = knowsHeal && mercenary.skillCooldowns[mercenary.skill] > 0;
+                    const manaCost = knowsHeal ? skillManaCost : HEAL_MANA_COST;
+                    const healLevel = knowsHeal ? skillLevel : 1;
+                    const healRange = knowsHeal ? skillInfo.range : 2;
 
-                if (!healOnCooldown && mercenary.mana >= manaCost && gameState.player.health < getStat(gameState.player, 'maxHealth') * 0.7) {
-                    if (getDistance(mercenary.x, mercenary.y, gameState.player.x, gameState.player.y) <= healRange) {
-                        const healed = knowsHeal
-                            ? healTarget(mercenary, gameState.player, skillInfo, healLevel)
-                            : healTarget(mercenary, gameState.player);
-                        if (healed) {
-                            mercenary.mana -= manaCost;
-                            if (knowsHeal) mercenary.skillCooldowns[mercenary.skill] = skillInfo.cooldown;
-                            updateMercenaryDisplay();
-                            mercenary.hasActed = true;
-                            return;
-                        }
-                    }
-                }
-
-                for (const otherMerc of gameState.activeMercenaries) {
-                    if (otherMerc !== mercenary && otherMerc.alive && otherMerc.health < getStat(otherMerc, 'maxHealth') * 0.5) {
-                        if (!healOnCooldown && mercenary.mana >= manaCost && getDistance(mercenary.x, mercenary.y, otherMerc.x, otherMerc.y) <= healRange) {
+                    if (!healOnCooldown && mercenary.mana >= manaCost && gameState.player.health < getStat(gameState.player, 'maxHealth') * 0.7) {
+                        if (getDistance(mercenary.x, mercenary.y, gameState.player.x, gameState.player.y) <= healRange) {
                             const healed = knowsHeal
-                                ? healTarget(mercenary, otherMerc, skillInfo, healLevel)
-                                : healTarget(mercenary, otherMerc);
+                                ? healTarget(mercenary, gameState.player, skillInfo, healLevel)
+                                : healTarget(mercenary, gameState.player);
                             if (healed) {
                                 mercenary.mana -= manaCost;
                                 if (knowsHeal) mercenary.skillCooldowns[mercenary.skill] = skillInfo.cooldown;
@@ -6967,18 +6953,35 @@ function processTurn() {
                             }
                         }
                     }
-                }
 
-                if (!healOnCooldown && mercenary.health < getStat(mercenary, 'maxHealth') && mercenary.mana >= manaCost) {
-                    const healed = knowsHeal
-                        ? healTarget(mercenary, mercenary, skillInfo, healLevel)
-                        : healTarget(mercenary, mercenary);
-                    if (healed) {
-                        mercenary.mana -= manaCost;
-                        if (knowsHeal) mercenary.skillCooldowns[mercenary.skill] = skillInfo.cooldown;
-                        updateMercenaryDisplay();
-                        mercenary.hasActed = true;
-                        return;
+                    for (const otherMerc of gameState.activeMercenaries) {
+                        if (otherMerc !== mercenary && otherMerc.alive && otherMerc.health < getStat(otherMerc, 'maxHealth') * 0.5) {
+                            if (!healOnCooldown && mercenary.mana >= manaCost && getDistance(mercenary.x, mercenary.y, otherMerc.x, otherMerc.y) <= healRange) {
+                                const healed = knowsHeal
+                                    ? healTarget(mercenary, otherMerc, skillInfo, healLevel)
+                                    : healTarget(mercenary, otherMerc);
+                                if (healed) {
+                                    mercenary.mana -= manaCost;
+                                    if (knowsHeal) mercenary.skillCooldowns[mercenary.skill] = skillInfo.cooldown;
+                                    updateMercenaryDisplay();
+                                    mercenary.hasActed = true;
+                                    return;
+                                }
+                            }
+                        }
+                    }
+
+                    if (!healOnCooldown && mercenary.health < getStat(mercenary, 'maxHealth') && mercenary.mana >= manaCost) {
+                        const healed = knowsHeal
+                            ? healTarget(mercenary, mercenary, skillInfo, healLevel)
+                            : healTarget(mercenary, mercenary);
+                        if (healed) {
+                            mercenary.mana -= manaCost;
+                            if (knowsHeal) mercenary.skillCooldowns[mercenary.skill] = skillInfo.cooldown;
+                            updateMercenaryDisplay();
+                            mercenary.hasActed = true;
+                            return;
+                        }
                     }
                 }
 
