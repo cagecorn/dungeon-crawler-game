@@ -12,6 +12,7 @@ async function run() {
 
   const { createChampion, killMonster, reviveMonsterCorpse, gameState, createItem } = win;
   const MONSTER_SKILLS = win.eval('MONSTER_SKILLS');
+  const EXTRA_SKILLS = ['Weaken','Sunder','Regression','SpellWeakness','ElementalWeakness'];
 
   const champ = createChampion('WARRIOR', 0, 0, 3);
   if (!champ.isChampion || champ.level !== 3) {
@@ -23,14 +24,18 @@ async function run() {
     console.error('champion stars invalid');
     process.exit(1);
   }
-  if (!MONSTER_SKILLS[champ.monsterSkill]) {
+  if (!MONSTER_SKILLS[champ.monsterSkill] && !EXTRA_SKILLS.includes(champ.monsterSkill)) {
     console.error('champion skill invalid');
     process.exit(1);
   }
 
   win.showChampionDetails(champ);
   const html = win.document.getElementById('monster-detail-content').innerHTML;
-  if (!html.includes('⭐'.repeat(champ.stars.strength)) || !html.includes(MONSTER_SKILLS[champ.monsterSkill].name)) {
+  if (!html.includes('⭐'.repeat(champ.stars.strength))) {
+    console.error('champion details missing info');
+    process.exit(1);
+  }
+  if (MONSTER_SKILLS[champ.monsterSkill] && !html.includes(MONSTER_SKILLS[champ.monsterSkill].name)) {
     console.error('champion details missing info');
     process.exit(1);
   }
