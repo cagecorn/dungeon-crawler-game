@@ -1537,7 +1537,7 @@ const MERCENARY_NAMES = [
         const MERCENARY_SKILL_SETS = {
             WARRIOR: ['ChargeAttack', 'DoubleStrike'],
             ARCHER: ['DoubleStrike', 'HawkEye'],
-            HEALER: ['Heal', 'GuardianHymn'],
+            HEALER: ['Heal'],
             WIZARD: ['Fireball', 'Iceball']
         };
 
