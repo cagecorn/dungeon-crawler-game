@@ -1483,8 +1483,8 @@ const MERCENARY_NAMES = [
         const SKILL_DEFS = {
             Fireball: { name: 'Fireball', icon: '🔥', damageDice: '1d10', range: 5, magic: true, element: 'fire', manaCost: 3, cooldown: 2 },
             Iceball: { name: 'Iceball', icon: '❄️', damageDice: '1d8', range: 5, magic: true, element: 'ice', manaCost: 2, cooldown: 2 },
-            FireNova: { name: 'Fire Nova', icon: '🔥', damageDice: '1d6', radius: 3, magic: true, element: 'fire', manaCost: 5, cooldown: 3 },
-            IceNova: { name: 'Ice Nova', icon: '❄️', damageDice: '1d6', radius: 3, magic: true, element: 'ice', manaCost: 4, cooldown: 3 },
+            FireNova: { name: 'Fire Nova', icon: '🔥', damageDice: '1d6', radius: 3, magic: true, element: 'fire', manaCost: 5, cooldown: 3, novaType: 'fire', screenShake: { intensity: 3, duration: 200 } },
+            IceNova: { name: 'Ice Nova', icon: '❄️', damageDice: '1d6', radius: 3, magic: true, element: 'ice', manaCost: 4, cooldown: 3, novaType: 'ice' },
             Heal: { name: 'Heal', icon: '💖', heal: 10, range: 2, manaCost: 3, cooldown: 0 },
             Purify: { name: 'Purify', icon: '🌀', purify: true, range: 2, manaCost: 2, cooldown: 0 },
             Teleport: { name: 'Teleport', icon: '🌀', teleport: true, manaCost: 2, cooldown: 1 },
@@ -2045,12 +2045,9 @@ const MERCENARY_NAMES = [
 
             // 노바(광역) 스킬 처리
             if (skill.radius !== undefined) {
-                if (proc.skill === 'IceNova') {
-                    const effectSize = skill.radius * 2 * 33;
-                    playSkillOverlayEffect(source, 'assets/images/ice-nova-effect.png', effectSize, 600);
-                } else if (proc.skill === 'FireNova') {
-                    const effectSize = skill.radius * 2 * 33;
-                    playSkillOverlayEffect(source, 'assets/images/fire-nova-effect.png', effectSize, 600);
+                playNovaSkillEffect(source, skill);
+                if (skill.screenShake) {
+                    createScreenShake(skill.screenShake.intensity, skill.screenShake.duration);
                 }
                 const allUnits = [gameState.player, ...gameState.activeMercenaries, ...gameState.monsters];
                 const aoeTargets = allUnits.filter(unit => {
@@ -5455,6 +5452,13 @@ function killMonster(monster) {
             }, duration);
         }
 
+        function playNovaSkillEffect(unit, skill) {
+            if (!skill.novaType || skill.radius === undefined) return;
+            const effectSize = skill.radius * 2 * CELL_SIZE;
+            const imagePath = `assets/images/${skill.novaType}-nova-effect.png`;
+            playSkillOverlayEffect(unit, imagePath, effectSize, 600);
+        }
+
         function disassembleItem(item) {
             if (item.type !== ITEM_TYPES.WEAPON && item.type !== ITEM_TYPES.ARMOR && item.type !== ITEM_TYPES.ACCESSORY) {
                 addMessage('분해할 수 없는 아이템입니다.', 'info');
@@ -7711,13 +7715,9 @@ function processTurn() {
             }
             gameState.player.mana -= manaCost;
 
-            if (skillKey === 'FireNova') {
-                const effectSize = skill.radius * 2 * 33;
-                playSkillOverlayEffect(gameState.player, 'assets/images/fire-nova-effect.png', effectSize, 600);
-                createScreenShake(3, 200);
-            } else if (skillKey === 'IceNova') {
-                const effectSize = skill.radius * 2 * 33;
-                playSkillOverlayEffect(gameState.player, 'assets/images/ice-nova-effect.png', effectSize, 600);
+            playNovaSkillEffect(gameState.player, skill);
+            if (skill.screenShake) {
+                createScreenShake(skill.screenShake.intensity, skill.screenShake.duration);
             }
 
             const isTestEnv = typeof navigator !== 'undefined' && /jsdom/i.test(navigator.userAgent);
@@ -8447,7 +8447,7 @@ buyShopItem, checkLevelUp, checkMercenaryLevelUp, checkMonsterLevelUp,
 convertMonsterToMercenary, craftItem, createChampion, createEliteMonster, 
 createHomingProjectile, createItem, createMercenary, createMonster,
 createRecipeScroll, learnRecipe,
-createSuperiorMonster, createTreasure, createNovaEffect, createScreenShake, playSkillOverlayEffect, dissectCorpse, equipItem,
+createSuperiorMonster, createTreasure, createNovaEffect, createScreenShake, playSkillOverlayEffect, playNovaSkillEffect, dissectCorpse, equipItem,
 equipItemToMercenary, estimateSkillDamage, findAdjacentEmpty, findNearestEmpty, findPath,
  formatItem, formatItemName, formatNumber, generateDungeon, rebuildDungeonDOM, generateStars, getAuraBonus,
 getDistance, getMonsterPoolForFloor, getPlayerEmoji, getStat, getStatusResist,
