@@ -2551,7 +2551,7 @@ const MERCENARY_NAMES = [
         }
 
         function getSkillPowerMult(unit) {
-            return 1 + getStat(unit, 'skillPowerMult');
+            return getStat(unit, 'skillPowerMult') || 1;
         }
 
         function showSkillDamage(owner, key, defs) {
