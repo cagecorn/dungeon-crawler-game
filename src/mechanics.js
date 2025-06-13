@@ -1525,8 +1525,8 @@ const MERCENARY_NAMES = [
             Iceball: { name: 'Iceball', icon: '❄️', damageDice: '1d8', range: 5, magic: true, element: 'ice', manaCost: 2, cooldown: 2 },
             FireNova: { name: 'Fire Nova', icon: '🔥', damageDice: '1d6', radius: 3, magic: true, element: 'fire', manaCost: 5, cooldown: 3, novaType: 'fire', screenShake: { intensity: 3, duration: 200 } },
             IceNova: { name: 'Ice Nova', icon: '❄️', damageDice: '1d6', radius: 3, magic: true, element: 'ice', manaCost: 4, cooldown: 3, novaType: 'ice' },
-            Heal: { name: 'Heal', icon: '💖', heal: 10, range: 2, manaCost: 3, cooldown: 0 },
-            Purify: { name: 'Purify', icon: '🌀', purify: true, range: 2, manaCost: 2, cooldown: 0 },
+            Heal: { name: 'Heal', icon: '💖', heal: 10, range: 2, manaCost: 3, cooldown: 2 },
+            Purify: { name: 'Purify', icon: '🌀', purify: true, range: 2, manaCost: 2, cooldown: 2 },
             Teleport: { name: 'Teleport', icon: '🌀', teleport: true, manaCost: 2, cooldown: 1 },
             GuardianHymn: { name: '수호의 찬가', icon: '🎶', range: 3, manaCost: 3, shield: true, duration: 5, cooldown: 3 },
             CourageHymn: { name: '용기의 찬가', icon: '🎵', range: 3, manaCost: 3, attackBuff: true, duration: 5, cooldown: 3 },
@@ -1547,8 +1547,8 @@ const MERCENARY_NAMES = [
         const MERCENARY_SKILLS = {
             ChargeAttack: { name: 'Charge Attack', icon: '⚡', range: 2, manaCost: 2, multiplier: 1.5, dashRange: 4, cooldown: 3 },
             DoubleStrike: { name: 'Double Strike', icon: '🔪', range: 1, manaCost: 3, cooldown: 2 },
-            Heal: { name: 'Heal', icon: '✨', range: 2, manaCost: 2, cooldown: 0 },
-            Purify: { name: 'Purify', icon: '🌀', range: 2, manaCost: 2, cooldown: 0 },
+            Heal: { name: 'Heal', icon: '✨', range: 2, manaCost: 2, cooldown: 2 },
+            Purify: { name: 'Purify', icon: '🌀', range: 2, manaCost: 2, cooldown: 2 },
             Fireball: { name: 'Fireball', icon: '🔥', range: 4, manaCost: 3, damageDice: '1d8', magic: true, element: 'fire', cooldown: 2 },
             Iceball: { name: 'Iceball', icon: '❄️', range: 5, manaCost: 2, damageDice: '1d8', magic: true, element: 'ice', cooldown: 2 },
             GuardianHymn: { name: '수호의 찬가', icon: '🎶', range: 3, manaCost: 3, shield: true, duration: 5, cooldown: 3 },
@@ -2001,14 +2001,16 @@ const MERCENARY_NAMES = [
 
         function getStatusResist(character, status) {
             let value = character.statusResistances && character.statusResistances[status] ? character.statusResistances[status] : 0;
+            let equipBonus = 0;
             if (character.equipped) {
                 ['weapon', 'armor', 'accessory1', 'accessory2', 'tile'].forEach(slot => {
                     const it = character.equipped[slot];
                     if (it && it[status + 'Resist'] !== undefined) {
-                        value += it[status + 'Resist'];
+                        equipBonus += it[status + 'Resist'];
                     }
                 });
             }
+            value += Math.min(equipBonus, 0.75);
             function checkAura(source, target) {
                 let bonus = 0;
                 if (!source || !isSameSide(source, target)) return bonus;
@@ -2538,8 +2540,13 @@ const MERCENARY_NAMES = [
         function getSkillCooldown(unit, skill) {
             const reduction = getStat(unit, 'skillCooldownReduction');
             const mod = getStat(unit, 'skillCooldownMod');
-            const cd = skill.cooldown || 0;
-            const modified = Math.max(0, Math.floor(cd * (1 - reduction)) + mod);
+            const base = skill.cooldown || 0;
+            let modified = Math.floor(base * (1 - reduction)) + mod;
+            if (base > 0) {
+                modified = Math.max(1, modified);
+            } else {
+                modified = Math.max(0, modified);
+            }
             return modified;
         }
 
