@@ -4896,13 +4896,6 @@ function killMonster(monster, killer = null) {
                 }
             }
 
-            if (gameState.floor === 1) {
-                const altPos = findAdjacentEmpty(gameState.player.x, gameState.player.y);
-                if (altPos.x !== gameState.player.x || altPos.y !== gameState.player.y) {
-                    gameState.altarLocation = { x: altPos.x, y: altPos.y };
-                    gameState.dungeon[altPos.y][altPos.x] = 'altar';
-                }
-            }
 
             gameState.exitLocations = [];
             let exitCount = Math.floor(Math.random() * 4) + 1; // 1~4개 출구 생성
