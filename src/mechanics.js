@@ -8921,7 +8921,7 @@ function processTurn() {
             for (let i = 0; i < 5; i++) {
                 gameState.player.inventory.push(createItem('smallExpScroll', 0, 0));
             }
-            spawnStartingMaps();
+            // spawnStartingMaps();
             updateInventoryDisplay();
             updateSkillDisplay();
             updateIncubatorDisplay();
