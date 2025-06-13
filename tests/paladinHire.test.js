@@ -18,8 +18,13 @@ async function run() {
   gameState.player.gold = spawn.cost || 1;
   win.confirm = () => true;
   movePlayer(spawn.x - gameState.player.x, spawn.y - gameState.player.y);
-  if (!gameState.activeMercenaries.some(m => m.type === 'PALADIN')) {
+  const paladin = gameState.activeMercenaries.find(m => m.type === 'PALADIN');
+  if (!paladin) {
     console.error('paladin not hired');
+    process.exit(1);
+  }
+  if (paladin.skill2 && paladin.skill2.endsWith('Aura')) {
+    console.error('paladin second skill should not be an aura');
     process.exit(1);
   }
 }
