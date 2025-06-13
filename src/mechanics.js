@@ -7107,6 +7107,13 @@ function processTurn() {
                     continue;
                 }
 
+                // 챔피언 몬스터 전용 AI
+                if (monster.isChampion) {
+                    processChampionTurn(monster);
+                    monster.hasActed = true;
+                    continue;
+                }
+
                 if (monster.isSuperior && monster.skill) {
                     if (['GuardianHymn','CourageHymn'].includes(monster.skill)) {
                         if (processMonsterBardTurn(monster)) {
@@ -7422,6 +7429,75 @@ function processTurn() {
         }
     }
 
+    // 챔피언 AI 로직
+    function processChampionTurn(champion, visibleMonsters = null) {
+        const debuffSkills = ['Weaken', 'Sunder', 'Regression', 'SpellWeakness', 'ElementalWeakness'];
+        const skillKey = champion.monsterSkill;
+        if (!skillKey) return;
+
+        const isDebuffSkill = debuffSkills.includes(skillKey);
+
+        // 1. 가장 가까운 적 찾기
+        const opponents = isPlayerSide(champion)
+            ? (visibleMonsters || gameState.monsters)
+            : [gameState.player, ...gameState.activeMercenaries.filter(m => m.alive)];
+
+        let nearestOpponent = null;
+        let nearestDistance = Infinity;
+        opponents.forEach(opp => {
+            const dist = getDistance(champion.x, champion.y, opp.x, opp.y);
+            if (dist < nearestDistance && hasLineOfSight(champion.x, champion.y, opp.x, opp.y)) {
+                nearestOpponent = opp;
+                nearestDistance = dist;
+            }
+        });
+
+        if (!nearestOpponent) return;
+
+        // 2. AI 행동 결정
+        if (isDebuffSkill) {
+            const skillInfo = SKILL_DEFS[skillKey];
+            const hasDebuff = nearestOpponent.buffs && nearestOpponent.buffs.some(b => b.name === skillInfo.name);
+            const canUseSkill = !(champion.skillCooldowns[skillKey] > 0) && champion.mana >= getSkillManaCost(champion, skillInfo);
+            const inRange = nearestDistance <= getSkillRange(champion, skillInfo);
+
+            if (!hasDebuff && canUseSkill && inRange) {
+                const level = (champion.skillLevels && champion.skillLevels[skillKey]) || 1;
+                applyStatPercentBuff(champion, nearestOpponent, skillInfo, level);
+                champion.mana -= getSkillManaCost(champion, skillInfo);
+                champion.skillCooldowns[skillKey] = getSkillCooldown(champion, skillInfo);
+                addMessage(`${champion.name}이(가) ${nearestOpponent.name}에게 ${skillInfo.name}을(를) 시전했습니다!`, 'combat', null, getUnitImage(champion));
+                return;
+            }
+        }
+
+        const attackRange = champion.range || 1;
+        if (nearestDistance <= attackRange) {
+            performAttack(champion, nearestOpponent);
+            if (nearestOpponent.health <= 0) {
+                if (isPlayerSide(nearestOpponent)) {
+                    if (nearestOpponent === gameState.player) handlePlayerDeath();
+                    else killMercenary(nearestOpponent);
+                } else {
+                    killMonster(nearestOpponent, champion);
+                }
+            }
+        } else {
+            const path = findPath(champion.x, champion.y, nearestOpponent.x, nearestOpponent.y);
+            if (path && path.length > 1) {
+                if (isPlayerSide(champion)) {
+                    champion.nextX = path[1].x;
+                    champion.nextY = path[1].y;
+                } else {
+                    gameState.dungeon[champion.y][champion.x] = 'empty';
+                    champion.x = path[1].x;
+                    champion.y = path[1].y;
+                    gameState.dungeon[champion.y][champion.x] = 'monster';
+                }
+            }
+        }
+    }
+
         // 용병 AI (개선됨 - 장비 보너스 적용, 안전성 체크 추가)
         function processMercenaryTurn(mercenary, visibleMonsters = gameState.monsters) {
             if (!mercenary.alive || mercenary.hasActed) return;
@@ -7430,6 +7506,12 @@ function processTurn() {
                 mercenary.petrifyTurns && mercenary.petrifyTurns--;
                 if (mercenary.paralysisTurns <= 0) mercenary.paralysis = false;
                 if (mercenary.petrifyTurns <= 0) mercenary.petrify = false;
+                mercenary.hasActed = true;
+                return;
+            }
+
+            if (mercenary.isChampion) {
+                processChampionTurn(mercenary, visibleMonsters);
                 mercenary.hasActed = true;
                 return;
             }
