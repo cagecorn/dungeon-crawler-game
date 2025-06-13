@@ -9090,5 +9090,36 @@ upgradeMercenarySkill, upgradeMonsterSkill, useItem, useItemOnTarget, useSkill, 
     getMonsterImage, getMercImage, getPlayerImage, getUnitImage,
     isPlayerSide, isSameSide
 };
+// ======================= 추가 시작 =======================
+// 1초마다 모든 유닛의 효과 아이콘 인덱스를 업데이트하고, 다시 렌더링합니다.
+if (!(typeof navigator !== 'undefined' && navigator.userAgent &&
+    (navigator.userAgent.includes('Node.js') || navigator.userAgent.includes('jsdom')))) {
+    setInterval(() => {
+        if (!gameState.gameRunning) return; // 게임이 멈췄을 땐 실행하지 않음
+
+        const allUnits = [
+            gameState.player,
+            ...gameState.activeMercenaries.filter(m => m.alive),
+            ...gameState.monsters
+        ];
+
+        let needsRender = false;
+
+        allUnits.forEach(unit => {
+            if (unit && effectCycleState[unit.id]) {
+                const state = effectCycleState[unit.id];
+                if (state.icons.length > 1) { // 아이콘이 2개 이상일 때만 순환
+                    state.currentIndex = (state.currentIndex + 1) % state.icons.length;
+                    needsRender = true;
+                }
+            }
+        });
+
+        if (needsRender) {
+            renderDungeon(); // 아이콘이 변경되었으므로 던전을 다시 렌더링
+        }
+    }, 1000); // 1초 간격
+}
+// ======================= 추가 끝 =======================
 Object.assign(window, exportsObj, {SKILL_DEFS, MERCENARY_SKILLS, MONSTER_SKILLS, MONSTER_SKILL_SETS, MONSTER_TRAITS, MONSTER_TRAIT_SETS, PREFIXES, SUFFIXES, RARE_PREFIXES, RARE_SUFFIXES, MAP_PREFIXES, MAP_SUFFIXES, MAP_TILE_TYPES, CORPSE_TURNS, UNIQUE_ITEMS, UNIQUE_EFFECT_POOL});
 
