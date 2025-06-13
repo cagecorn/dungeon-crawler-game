@@ -15,6 +15,7 @@ async function run() {
 
   gameState.player.health = 10;
   const bard = createMercenary('BARD', 1, 1);
+  assert.strictEqual(bard.skill2, 'Heal', 'Bard should start with Heal as skill2');
   bard.intelligence = 5;
   const expected = Math.min(getStat(bard, 'magicPower'), getStat(gameState.player, 'maxHealth') - gameState.player.health);
   healTarget(bard, gameState.player);

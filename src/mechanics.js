@@ -1579,7 +1579,7 @@ const MERCENARY_NAMES = [
             ARCHER: ['DoubleStrike', 'HawkEye'],
             HEALER: ['Heal'],
             WIZARD: ['Fireball', 'Iceball'],
-            BARD: ['GuardianHymn', 'CourageHymn']
+            BARD: ['GuardianHymn', 'CourageHymn', 'Heal']
         };
 
         const MONSTER_SKILL_SETS = {
@@ -5154,8 +5154,15 @@ function killMonster(monster, killer = null) {
             const mercType = MERCENARY_TYPES[type];
             const skillPool = MERCENARY_SKILL_SETS[type] || [];
             const isTestMerc = typeof navigator !== 'undefined' && /jsdom/i.test(navigator.userAgent);
-            const assignedSkill = skillPool.length ? (isTestMerc ? skillPool[0] : skillPool[Math.floor(Math.random() * skillPool.length)]) : null;
-            const assignedSkill2 = type === 'HEALER' ? 'Purify' : null;
+            let assignedSkill;
+            if (type === 'BARD') {
+                const hymns = skillPool.filter(s => s !== 'Heal');
+                assignedSkill = hymns.length ? (isTestMerc ? hymns[0] : hymns[Math.floor(Math.random() * hymns.length)]) : null;
+            } else {
+                assignedSkill = skillPool.length ? (isTestMerc ? skillPool[0] : skillPool[Math.floor(Math.random() * skillPool.length)]) : null;
+            }
+            let assignedSkill2 = type === 'HEALER' ? 'Purify' : null;
+            if (type === 'BARD') assignedSkill2 = 'Heal';
             const randomBaseName = MERCENARY_NAMES[Math.floor(Math.random() * MERCENARY_NAMES.length)];
             const jobLabel = mercType.name.split(' ')[1] || mercType.name;
             const name = `${randomBaseName} (${jobLabel})`;
