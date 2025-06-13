@@ -6974,6 +6974,13 @@ function processTurn() {
             // 가장 가까운 시야 내 몬스터 찾기 (fog of war 고려)
             let nearestMonster = null;
             let nearestDistance = Infinity;
+
+            // 플레이어 시야 내 몬스터 존재 여부 확인
+            const enemyInPlayerSight = gameState.monsters.some(mon =>
+                mon.alive &&
+                getDistance(mon.x, mon.y, gameState.player.x, gameState.player.y) <= FOG_RADIUS &&
+                hasLineOfSight(gameState.player.x, gameState.player.y, mon.x, mon.y)
+            );
             
             visibleMonsters.forEach(monster => {
                 const distanceFromPlayer = getDistance(monster.x, monster.y, gameState.player.x, gameState.player.y);
@@ -6995,7 +7002,13 @@ function processTurn() {
             }
             if (mercenary.silence && mercenary.silenceTurns > 0) {
                 // silence just decrements in applyStatusEffects
-            } else if (skillInfo && mercenary.mana >= skillManaCost && !(mercenary.skillCooldowns[skillKey] > 0) && (forceSkill || Math.random() < 0.5)) {
+            } else if (
+                skillInfo &&
+                mercenary.mana >= skillManaCost &&
+                !(mercenary.skillCooldowns[skillKey] > 0) &&
+                (forceSkill || Math.random() < 0.5) &&
+                ((skillKey !== 'GuardianHymn' && skillKey !== 'CourageHymn') || combatOccurredInTurn || enemyInPlayerSight)
+            ) {
                 if (skillKey === 'Heal') {
                     let target = null;
                     if (gameState.player.health < getStat(gameState.player, 'maxHealth') && getDistance(mercenary.x, mercenary.y, gameState.player.x, gameState.player.y) <= skillInfo.range) {
