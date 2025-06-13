@@ -8024,7 +8024,7 @@ function processTurn() {
                 }
                 choices.push({ label: fullLabel, action });
                 const btn = document.createElement('button');
-                btn.textContent = fullLabel;
+                btn.innerHTML = fullLabel;
                 btn.className = 'target-button';
                 btn.onclick = () => { action(); hideItemTargetPanel(); };
                 content.appendChild(btn);
