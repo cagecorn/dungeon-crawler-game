@@ -2060,8 +2060,14 @@ const MERCENARY_NAMES = [
                 });
 
                 aoeTargets.forEach(enemy => {
-                    const attackValue = rollDice(skill.damageDice) * level + getStat(source, 'magicPower');
-                    const result = performAttack(source, enemy, { attackValue, magic: true, element: skill.element, skipProcs: true });
+                    const attackValue = getStat(source, 'magicPower');
+                    const result = performAttack(source, enemy, {
+                        attackValue,
+                        magic: true,
+                        element: skill.element,
+                        damageDice: skill.damageDice,
+                        skipProcs: true
+                    });
                     if (result.hit) {
                          addMessage(`${skill.icon} ${enemy.name}에게 ${formatNumber(result.damage)}의 광역 피해!`, 'combat', null, getUnitImage(source));
                          if(enemy.health <= 0) {
@@ -2075,11 +2081,12 @@ const MERCENARY_NAMES = [
             else if (skill.damageDice && skill.range) {
                 if (!target) return;
 
-                const attackValue = rollDice(skill.damageDice) * level + getStat(source, 'magicPower');
+                const attackValue = getStat(source, 'magicPower');
                 const result = performAttack(source, target, {
-                    attackValue: attackValue,
+                    attackValue,
                     magic: skill.magic,
                     element: skill.element,
+                    damageDice: skill.damageDice,
                     skipProcs: true
                 });
 
