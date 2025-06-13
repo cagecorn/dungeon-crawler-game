@@ -1736,6 +1736,8 @@ const MERCENARY_NAMES = [
             { name: 'Sturdy', modifiers: { defense: 1 } },
             { name: 'Refreshing', modifiers: { healthRegen: 1 } },
             { name: 'Mystic', modifiers: { manaRegen: 1 } },
+            { name: 'Rejuvenating', modifiers: { healOnKill: 5 } },
+            { name: 'Soulful', modifiers: { manaOnKill: 5 } },
             { name: 'Vampiric', modifiers: { lifeSteal: 0.05 } },
             { name: 'Thorny', modifiers: { damageReflect: 0.1 } },
             { name: 'Venomous', modifiers: { status: 'poison' } },
@@ -1753,6 +1755,8 @@ const MERCENARY_NAMES = [
             { name: 'of Vitality', modifiers: { maxHealth: 5 } },
             { name: 'of Wisdom', modifiers: { manaRegen: 1 } },
             { name: 'of Mending', modifiers: { healthRegen: 1 } },
+            { name: 'of Rejuvenation', modifiers: { healOnKill: 5 } },
+            { name: 'of Souls', modifiers: { manaOnKill: 5 } },
             { name: 'of Venom', modifiers: { status: 'poison' } },
             { name: 'of Bleeding', modifiers: { status: 'bleed' } },
             { name: 'of Burning', modifiers: { status: 'burn' } },
@@ -2391,6 +2395,8 @@ const MERCENARY_NAMES = [
             if (item.freezeResist !== undefined) stats.push(`동결저항+${formatNumber(item.freezeResist * 100)}%`);
             if (item.lifeSteal !== undefined) stats.push(`흡혈+${formatNumber(item.lifeSteal * 100)}%`);
             if (item.damageReflect !== undefined) stats.push(`피해반사+${formatNumber(item.damageReflect * 100)}%`);
+            if (item.healOnKill !== undefined) stats.push(`처치회복+${formatNumber(item.healOnKill)}`);
+            if (item.manaOnKill !== undefined) stats.push(`처치마나+${formatNumber(item.manaOnKill)}`);
             if (item.status) stats.push(`${item.status} 부여`);
             const levelText = item.enhanceLevel ? ` +Lv.${item.enhanceLevel}` : '';
             const name = formatItemName(item);
@@ -3773,6 +3779,20 @@ function killMonster(monster, killer = null) {
                 checkMercenaryLevelUp(killer);
                 checkLevelUp();
                 updateStats();
+                const healOnKill = getStat(killer, 'healOnKill');
+                if (healOnKill) {
+                    killer.health = Math.min(getStat(killer, 'maxHealth'), killer.health + healOnKill);
+                    const name = killer === gameState.player ? '플레이어' : killer.name;
+                    addMessage(`❤️ ${name}이(가) 적을 처치하고 체력을 ${formatNumber(healOnKill)} 회복했습니다!`, 'combat');
+                    refreshDetailPanel(killer);
+                }
+                const manaOnKill = getStat(killer, 'manaOnKill');
+                if (manaOnKill) {
+                    killer.mana = Math.min(getStat(killer, 'maxMana'), (killer.mana || 0) + manaOnKill);
+                    const name = killer === gameState.player ? '플레이어' : killer.name;
+                    addMessage(`💧 ${name}이(가) 적을 처치하고 마나를 ${formatNumber(manaOnKill)} 회복했습니다!`, 'combat');
+                    refreshDetailPanel(killer);
+                }
             } else {
                 addMessage(`💀 ${monster.name}을(를) 처치했습니다!`, 'combat', null, getMonsterImage(monster));
                 gameState.player.exp += monster.exp;
@@ -3782,6 +3802,17 @@ function killMonster(monster, killer = null) {
                 }
                 gameState.player.gold += goldGain;
                 checkLevelUp();
+                const healOnKill = getStat(gameState.player, 'healOnKill');
+                if (healOnKill) {
+                    gameState.player.health = Math.min(getStat(gameState.player, 'maxHealth'), gameState.player.health + healOnKill);
+                    addMessage(`❤️ 플레이어가 적을 처치하고 체력을 ${formatNumber(healOnKill)} 회복했습니다!`, 'combat');
+                }
+                const manaOnKill = getStat(gameState.player, 'manaOnKill');
+                if (manaOnKill) {
+                    gameState.player.mana = Math.min(getStat(gameState.player, 'maxMana'), gameState.player.mana + manaOnKill);
+                    addMessage(`💧 플레이어가 적을 처치하고 마나를 ${formatNumber(manaOnKill)} 회복했습니다!`, 'combat');
+                }
+                updateStats();
             }
             if ((monster.special === 'boss' || monster.isChampion) && Math.random() < 0.10) {
                 const uniqueKeys = Object.keys(UNIQUE_ITEMS);
