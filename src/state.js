@@ -27,7 +27,7 @@
             agility: 5,
             endurance: 10,
             focus: 5,
-            intelligence: 0,
+            intelligence: 5,
             manaRegen: 0.5,
             skillPoints: 0,
             statPoints: 0,
