@@ -711,7 +711,7 @@ const MERCENARY_NAMES = [
                 baseMaxMana: 8,
                 baseHealthRegen: 0.25,
                 baseManaRegen: 0.4,
-                role: 'support',
+                role: 'bard',
                 description: '버프와 노래로 아군을 돕는 만능 지원가',
                 cost: 65,
                 voiceFile: 'assets/audio/bard_hire.mp3',
@@ -7036,7 +7036,7 @@ function processTurn() {
             }
             
             // 힐러는 상태 이상 해제를 우선 고려
-            if (mercenary.role === 'support') {
+            if (mercenary.role === 'support' || mercenary.role === 'bard') {
                 const purifyInfo = MERCENARY_SKILLS[mercenary.skill2];
                 const purifyLevel = mercenary.skillLevels && mercenary.skillLevels[mercenary.skill2] || 1;
                 const purifyBaseMana = purifyInfo ? (purifyInfo.manaCost || 0) + purifyLevel - 1 : 0;
