@@ -87,7 +87,7 @@
   background-repeat: no-repeat, no-repeat;
  }
 .cell.empty.mercenary.paladin {
-  background-image: url("assets/images/holy_knight.png"), url("assets/images/floor-tile.png");
+  background-image: url("assets/images/paladin.png"), url("assets/images/floor-tile.png");
   background-size: contain, cover;
   background-position: center, center;
   background-repeat: no-repeat, no-repeat;
@@ -113,7 +113,7 @@
   background-image: url("assets/images/bard.png");
 }
 .mercenary.paladin {
-  background-image: url("assets/images/holy_knight.png");
+  background-image: url("assets/images/paladin.png");
 }
 
 /* --- Mercenary Sprite Styling --- */
@@ -139,7 +139,7 @@
   background-image: url('assets/images/bard.png');
 }
 .cell.mercenary.paladin {
-  background-image: url('assets/images/holy_knight.png');
+  background-image: url('assets/images/paladin.png');
 }
 
 /* --- 신규 몬스터 이미지 스타일 --- */
