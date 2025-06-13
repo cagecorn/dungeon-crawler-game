@@ -12,7 +12,7 @@ async function run() {
 
   const { createItem, formatItem, gameState, createMonster, performAttack, getStat } = win;
 
-  const seq = [0, 0, 0.55, 0, 0.65];
+  const seq = [0, 0, 0.55, 0, 0.95];
   const origRandom = win.Math.random;
   win.Math.random = () => seq.shift() ?? origRandom();
 
@@ -24,7 +24,7 @@ async function run() {
     console.error('affixes not applied');
     process.exit(1);
   }
-  if (Math.abs(weapon.lifeSteal - 0.1) > 1e-6) {
+  if (Math.abs(weapon.lifeSteal - 0.05) > 1e-6) {
     console.error('lifesteal value incorrect');
     process.exit(1);
   }
