@@ -1531,6 +1531,7 @@ const MERCENARY_NAMES = [
             GuardianHymn: { name: '수호의 찬가', icon: '🎶', range: 3, manaCost: 3, shield: true, duration: 5, cooldown: 3 },
             CourageHymn: { name: '용기의 찬가', icon: '🎵', range: 3, manaCost: 3, attackBuff: true, duration: 5, cooldown: 3 },
             DoubleStrike: { name: 'Double Strike', icon: '🔪', range: 1, manaCost: 3, melee: true, hits: 2, cooldown: 2 },
+            DoubleThrust: { name: 'Double Thrust', icon: '🏹', range: 3, manaCost: 3, hits: 2, cooldown: 2 },
             ChargeAttack: { name: 'Charge Attack', icon: '⚡', range: 2, manaCost: 2, melee: true, multiplier: 1.5, dashRange: 4, cooldown: 3 },
             HawkEye: { name: 'Hawk Eye', icon: '🦅', range: 5, manaCost: 2, damageDice: '1d6', cooldown: 2 },
             MightAura: { name: 'Might Aura', icon: '💪', passive: true, radius: 6, aura: { attack: 1, magicPower: 1 }, cooldown: 0 },
@@ -1547,6 +1548,7 @@ const MERCENARY_NAMES = [
         const MERCENARY_SKILLS = {
             ChargeAttack: { name: 'Charge Attack', icon: '⚡', range: 2, manaCost: 2, multiplier: 1.5, dashRange: 4, cooldown: 3 },
             DoubleStrike: { name: 'Double Strike', icon: '🔪', range: 1, manaCost: 3, cooldown: 2 },
+            DoubleThrust: { name: 'Double Thrust', icon: '🏹', range: 3, manaCost: 3, cooldown: 2 },
             Heal: { name: 'Heal', icon: '✨', range: 2, manaCost: 2, cooldown: 2 },
             Purify: { name: 'Purify', icon: '🌀', range: 2, manaCost: 2, cooldown: 2 },
             Fireball: { name: 'Fireball', icon: '🔥', range: 4, manaCost: 3, damageDice: '1d8', magic: true, element: 'fire', cooldown: 2 },
@@ -1576,7 +1578,7 @@ const MERCENARY_NAMES = [
 
         const MERCENARY_SKILL_SETS = {
             WARRIOR: ['ChargeAttack', 'DoubleStrike'],
-            ARCHER: ['DoubleStrike', 'HawkEye'],
+            ARCHER: ['DoubleThrust', 'HawkEye'],
             HEALER: ['Heal'],
             WIZARD: ['Fireball', 'Iceball'],
             BARD: ['GuardianHymn', 'CourageHymn', 'Heal']
@@ -7570,7 +7572,7 @@ function processTurn() {
                         attackValue = Math.floor(attackValue * skillLevel * getSkillPowerMult(mercenary));
                     }
 
-                    const hits = skillKey === 'DoubleStrike' ? 2 : 1;
+                    const hits = (skillKey === 'DoubleStrike' || skillKey === 'DoubleThrust') ? 2 : 1;
                     const icon = skillInfo.icon;
                     for (let i = 0; i < hits; i++) {
                         const result = performAttack(mercenary, nearestMonster, { attackValue, magic: skillInfo.magic, element: skillInfo.element, status: mercenary.equipped.weapon && mercenary.equipped.weapon.status, damageDice: skillInfo.damageDice });
