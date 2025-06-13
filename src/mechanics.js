@@ -4300,7 +4300,7 @@ function killMonster(monster, killer = null) {
                 HEALER: 'healer.png',
                 WIZARD: 'wizard.png',
                 BARD: 'bard.png',
-                PALADIN: 'holy_knight.png'
+                PALADIN: 'paladin.png'
             };
             return map[type] ? `assets/images/${map[type]}` : null;
         }
@@ -4585,7 +4585,7 @@ function killMonster(monster, killer = null) {
                             } else if (baseCellType === 'tree') {
                                 div.textContent = '🌳';
                             } else if (baseCellType === 'paladin') {
-                                div.style.backgroundImage = `url('assets/images/holy_knight.png'), url('assets/images/floor-tile.png')`;
+                                div.style.backgroundImage = `url('assets/images/paladin.png'), url('assets/images/floor-tile.png')`;
                                 div.style.backgroundSize = 'contain, cover';
                                 div.style.backgroundPosition = 'center, center';
                                 div.style.backgroundRepeat = 'no-repeat, no-repeat';
