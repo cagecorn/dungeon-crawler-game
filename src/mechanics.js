@@ -1866,7 +1866,14 @@ const MERCENARY_NAMES = [
 
         // 간단한 치유 로직
         function healTarget(healer, target, skillInfo, level = 1) {
-            const base = skillInfo?.heal ?? (3 + healer.level);
+            let base;
+            if (skillInfo && typeof skillInfo.heal === 'number') {
+                base = skillInfo.heal;
+            } else if (healer.type === 'BARD') {
+                base = 0;
+            } else {
+                base = 3 + healer.level;
+            }
             const power = getStat(healer, 'magicPower');
             let healAmount = Math.min((base + power) * level, getStat(target, 'maxHealth') - target.health);
             if (healAmount > 0) {
@@ -6990,6 +6997,55 @@ function processTurn() {
                             updateMercenaryDisplay();
                             mercenary.hasActed = true;
                             return; // 정화 후 턴 종료
+                        }
+                    }
+                }
+
+                if (mercenary.type === 'BARD') {
+                    const hymnSkill = mercenary.skill;
+                    const hymnInfo = MERCENARY_SKILLS[hymnSkill];
+                    const hymnLevel = mercenary.skillLevels && mercenary.skillLevels[hymnSkill] || 1;
+                    const hymnCost = hymnInfo ? hymnInfo.manaCost + hymnLevel - 1 : 0;
+                    const enemyInSight = gameState.monsters.some(mon =>
+                        mon.alive &&
+                        getDistance(mon.x, mon.y, mercenary.x, mercenary.y) <= FOG_RADIUS &&
+                        hasLineOfSight(mercenary.x, mercenary.y, mon.x, mon.y)
+                    );
+                    if (enemyInSight && hymnInfo && (hymnSkill === 'GuardianHymn' || hymnSkill === 'CourageHymn') &&
+                        !(mercenary.skillCooldowns[hymnSkill] > 0) && mercenary.mana >= hymnCost) {
+                        let nearestAlly = null;
+                        let distAlly = Infinity;
+                        const allies = [gameState.player, ...gameState.activeMercenaries.filter(m => m.alive && m !== mercenary)];
+                        allies.forEach(a => {
+                            const d = getDistance(mercenary.x, mercenary.y, a.x, a.y);
+                            if (d <= hymnInfo.range && d < distAlly) {
+                                distAlly = d;
+                                nearestAlly = a;
+                            }
+                        });
+
+                        if (hymnSkill === 'GuardianHymn') {
+                            const appliedSelf = applyShield(mercenary, mercenary, hymnInfo, hymnLevel);
+                            const appliedAlly = nearestAlly ? applyShield(mercenary, nearestAlly, hymnInfo, hymnLevel) : false;
+                            if (appliedSelf || appliedAlly) {
+                                mercenary.mana -= hymnCost;
+                                SoundEngine.playSound('auraActivateMinor');
+                                updateMercenaryDisplay();
+                                mercenary.skillCooldowns[hymnSkill] = hymnInfo.cooldown;
+                                mercenary.hasActed = true;
+                                return;
+                            }
+                        } else if (hymnSkill === 'CourageHymn') {
+                            const appliedSelf = applyAttackBuff(mercenary, mercenary, hymnInfo, hymnLevel);
+                            const appliedAlly = nearestAlly ? applyAttackBuff(mercenary, nearestAlly, hymnInfo, hymnLevel) : false;
+                            if (appliedSelf || appliedAlly) {
+                                mercenary.mana -= hymnCost;
+                                SoundEngine.playSound('auraActivateMajor');
+                                updateMercenaryDisplay();
+                                mercenary.skillCooldowns[hymnSkill] = hymnInfo.cooldown;
+                                mercenary.hasActed = true;
+                                return;
+                            }
                         }
                     }
                 }
