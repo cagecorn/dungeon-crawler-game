@@ -1542,6 +1542,16 @@ const MERCENARY_NAMES = [
             ConcentrationAura: { name: 'Concentration Aura', icon: '🎯', passive: true, radius: 6, aura: { accuracy: 0.05 }, cooldown: 0 },
             CondemnAura: { name: 'Condemn Aura', icon: '⚔️', passive: true, radius: 6, aura: { critChance: 0.05 }, cooldown: 0 },
             NaturalAura: { name: 'Natural Aura', icon: '🌿', passive: true, radius: 6, aura: { allResist: 0.05 }, cooldown: 0 } // 레벨당 5% 저항
+            ,Berserk: { name: '광전사', icon: '⬆️', statBuff: { stat: 'attack', mult: 0.25 }, duration: 3, cooldown: 3 }
+            ,Fortress: { name: '요새', icon: '⬆️', statBuff: { stat: 'defense', mult: 0.25 }, duration: 3, cooldown: 3 }
+            ,ArcaneBurst: { name: '비전 폭발', icon: '⬆️', statBuff: { stat: 'magicPower', mult: 0.25 }, duration: 3, cooldown: 3 }
+            ,Barrier: { name: '결계', icon: '⬆️', statBuff: { stat: 'magicResist', mult: 0.25 }, duration: 3, cooldown: 3 }
+            ,Divinity: { name: '신격화', icon: '⬆️', statBuff: { stats: ['strength','agility','endurance','focus','intelligence'], mult: 0.25 }, duration: 3, cooldown: 3 }
+            ,Weaken: { name: '약화', icon: '⬇️', statBuff: { stat: 'attack', mult: -0.25, target: 'enemy' }, duration: 3, cooldown: 3 }
+            ,Sunder: { name: '분쇄', icon: '⬇️', statBuff: { stat: 'defense', mult: -0.25, target: 'enemy' }, duration: 3, cooldown: 3 }
+            ,Regression: { name: '퇴행', icon: '⬇️', statBuff: { stat: 'magicPower', mult: -0.25, target: 'enemy' }, duration: 3, cooldown: 3 }
+            ,SpellWeakness: { name: '마법 취약', icon: '⬇️', statBuff: { stat: 'magicResist', mult: -0.25, target: 'enemy' }, duration: 3, cooldown: 3 }
+            ,ElementalWeakness: { name: '원소 취약', icon: '⬇️', statBuff: { elementResists: true, mult: -0.25, target: 'enemy' }, duration: 3, cooldown: 3 }
         };
 
         // 용병 전용 스킬 정의
@@ -1563,7 +1573,17 @@ const MERCENARY_NAMES = [
             HasteAura: { name: 'Haste Aura', icon: '💨', passive: true, radius: 6, aura: { evasion: 0.05 }, cooldown: 0 },
             ConcentrationAura: { name: 'Concentration Aura', icon: '🎯', passive: true, radius: 6, aura: { accuracy: 0.05 }, cooldown: 0 },
             CondemnAura: { name: 'Condemn Aura', icon: '⚔️', passive: true, radius: 6, aura: { critChance: 0.05 }, cooldown: 0 },
-            NaturalAura: { name: 'Natural Aura', icon: '🌿', passive: true, radius: 6, aura: { allResist: 0.05 }, cooldown: 0 } // 레벨당 5% 저항
+            NaturalAura: { name: 'Natural Aura', icon: '🌿', passive: true, radius: 6, aura: { allResist: 0.05 }, cooldown: 0 }, // 레벨당 5% 저항
+            Berserk: { name: '광전사', icon: '⬆️', statBuff: { stat: 'attack', mult: 0.25 }, duration: 3, cooldown: 3 },
+            Fortress: { name: '요새', icon: '⬆️', statBuff: { stat: 'defense', mult: 0.25 }, duration: 3, cooldown: 3 },
+            ArcaneBurst: { name: '비전 폭발', icon: '⬆️', statBuff: { stat: 'magicPower', mult: 0.25 }, duration: 3, cooldown: 3 },
+            Barrier: { name: '결계', icon: '⬆️', statBuff: { stat: 'magicResist', mult: 0.25 }, duration: 3, cooldown: 3 },
+            Divinity: { name: '신격화', icon: '⬆️', statBuff: { stats: ['strength','agility','endurance','focus','intelligence'], mult: 0.25 }, duration: 3, cooldown: 3 },
+            Weaken: { name: '약화', icon: '⬇️', statBuff: { stat: 'attack', mult: -0.25, target: 'enemy' }, duration: 3, cooldown: 3 },
+            Sunder: { name: '분쇄', icon: '⬇️', statBuff: { stat: 'defense', mult: -0.25, target: 'enemy' }, duration: 3, cooldown: 3 },
+            Regression: { name: '퇴행', icon: '⬇️', statBuff: { stat: 'magicPower', mult: -0.25, target: 'enemy' }, duration: 3, cooldown: 3 },
+            SpellWeakness: { name: '마법 취약', icon: '⬇️', statBuff: { stat: 'magicResist', mult: -0.25, target: 'enemy' }, duration: 3, cooldown: 3 },
+            ElementalWeakness: { name: '원소 취약', icon: '⬇️', statBuff: { elementResists: true, mult: -0.25, target: 'enemy' }, duration: 3, cooldown: 3 }
         };
 
 
@@ -1954,6 +1974,41 @@ const MERCENARY_NAMES = [
             return applied;
         }
 
+        function applyStatPercentBuff(caster, target, skillInfo, level = 1) {
+            const info = skillInfo.statBuff || {};
+            const stats = info.stats || (info.stat ? [info.stat] : []);
+            const mult = info.mult || 0;
+            if (stats.length === 0 || mult === 0) return false;
+            const scale = 1 + (level - 1) * 0.001;
+            const effects = {};
+            stats.forEach(s => {
+                const base = getStat(target, s);
+                effects[s] = Math.floor(base * mult * scale);
+            });
+            if (info.elementResists) {
+                const elems = ['fire','ice','wind','earth','light','dark'];
+                effects.elementResistances = {};
+                elems.forEach(e => {
+                    const base = target.elementResistances[e] || 0;
+                    effects.elementResistances[e] = base * mult * scale;
+                });
+            }
+            if (!Array.isArray(target.buffs)) target.buffs = [];
+            const duration = skillInfo.duration || 3;
+            const existing = target.buffs.find(b => b.name === skillInfo.name);
+            if (existing) {
+                existing.effects = effects;
+                existing.turnsLeft = duration;
+            } else {
+                target.buffs.push({ name: skillInfo.name, effects, turnsLeft: duration });
+            }
+            const name = target === gameState.player ? '플레이어' : target.name;
+            const img = caster === gameState.player ? getPlayerImage() : getMercImage(caster.type);
+            addMessage(`${skillInfo.icon} ${caster.name}의 ${skillInfo.name}이(가) ${name}에게 적용되었습니다.`, 'mercenary', null, img);
+            refreshDetailPanel(target);
+            return true;
+        }
+
         // 피해를 적용할 때 보호막을 우선 소모합니다.
         function applyDamage(target, amount) {
             if (amount <= 0) return;
@@ -2195,6 +2250,11 @@ const MERCENARY_NAMES = [
                 SoundEngine.playSound('auraActivateMajor');
                 applyAttackBuff(source, target, skill, level);
             }
+            else if (skill.statBuff) {
+                if (!target) target = source;
+                SoundEngine.playSound('auraActivateMajor');
+                applyStatPercentBuff(source, target, skill, level);
+            }
             // 버프 스킬 처리
             else if (skill.buff) {
                 if (!target) target = source;
@@ -2273,6 +2333,13 @@ const MERCENARY_NAMES = [
                 }
 
                 let totalResist = defender.elementResistances[element] || 0;
+                if (Array.isArray(defender.buffs)) {
+                    defender.buffs.forEach(b => {
+                        if (b.effects && b.effects.elementResistances && b.effects.elementResistances[element] !== undefined) {
+                            totalResist += b.effects.elementResistances[element];
+                        }
+                    });
+                }
                 let auraBonus = 0;
                 auraBonus += checkAura(gameState.player);
                 gameState.activeMercenaries.filter(m => m.alive).forEach(m => {
@@ -7972,6 +8039,32 @@ function processTurn() {
             processTurn();
         }
 
+        function handleStatBuff(skillKey, skill, level, manaCost) {
+            const range = getSkillRange(gameState.player, skill);
+            let target = gameState.player;
+            if (skill.statBuff && skill.statBuff.target === 'enemy') {
+                let nearest = null;
+                let nearestDist = Infinity;
+                gameState.monsters.forEach(m => {
+                    const d = getDistance(gameState.player.x, gameState.player.y, m.x, m.y);
+                    if (d <= range && d < nearestDist) { nearestDist = d; nearest = m; }
+                });
+                if (!nearest) {
+                    addMessage('🎯 사거리 내에 몬스터가 없습니다.', 'info');
+                    processTurn();
+                    return;
+                }
+                target = nearest;
+            }
+            gameState.player.mana -= manaCost;
+            SoundEngine.playSound('auraActivateMajor');
+            applyStatPercentBuff(gameState.player, target, skill, level);
+            updateStats();
+            updateMercenaryDisplay();
+            gameState.player.skillCooldowns[skillKey] = getSkillCooldown(gameState.player, skill);
+            processTurn();
+        }
+
         function handleTeleport(skillKey, skill, level, manaCost) {
             const p = gameState.player;
             if (p.teleportSavedX === null) {
@@ -8192,6 +8285,10 @@ function processTurn() {
             }
             if (skill.attackBuff) {
                 handleAttackBuff(skillKey, skill, level, manaCost);
+                return;
+            }
+            if (skill.statBuff) {
+                handleStatBuff(skillKey, skill, level, manaCost);
                 return;
             }
             if (skill.teleport) {
