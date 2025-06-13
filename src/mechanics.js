@@ -601,6 +601,11 @@ const MERCENARY_NAMES = [
                 "이 던전의 메아리가 훌륭하네! 나중에 여기서 콘서트를 열어볼까?",
                 "어둠 속에서도 음악은 희망의 빛이 되어줘. 다들 용기 내!",
                 "저 돌계단의 소리... 완벽한 리듬감이야. 새로운 곡 아이디어가 떠오르는데?"
+            ],
+            PALADIN: [
+                "신의 가호가 함께하길.",
+                "어둠 속에서도 빛은 사라지지 않는다.",
+                "정의를 위해 검을 들겠다." 
             ]
         };
 
@@ -718,6 +723,29 @@ const MERCENARY_NAMES = [
                 killQuotes: [
                     'assets/audio/bard_kill_1.mp3',
                     'assets/audio/bard_kill_2.mp3'
+                ]
+            },
+            PALADIN: {
+                name: '✝️ 성기사',
+                icon: '⚔️',
+                baseHealth: 14,
+                baseAttack: 5,
+                baseDefense: 3,
+                baseAccuracy: 0.85,
+                baseEvasion: 0.12,
+                baseCritChance: 0.1,
+                baseMagicPower: 3,
+                baseMagicResist: 2,
+                baseMaxMana: 8,
+                baseHealthRegen: 0.3,
+                baseManaRegen: 0.4,
+                role: 'paladin',
+                description: '신성한 힘을 사용하는 근접 전투 용병',
+                cost: 200,
+                voiceFile: 'assets/audio/warrior_hire.mp3',
+                killQuotes: [
+                    'assets/audio/warrior_kill_1.mp3',
+                    'assets/audio/warrior_kill_2.mp3'
                 ]
             }
         };
@@ -1601,7 +1629,8 @@ const MERCENARY_NAMES = [
             ARCHER: ['DoubleThrust', 'HawkEye'],
             HEALER: ['Heal'],
             WIZARD: ['Fireball', 'Iceball'],
-            BARD: ['GuardianHymn', 'CourageHymn', 'Heal']
+            BARD: ['GuardianHymn', 'CourageHymn', 'Heal'],
+            PALADIN: ['Berserk', 'Fortress', 'ArcaneBurst', 'Barrier', 'Divinity']
         };
 
         const MONSTER_SKILL_SETS = {
@@ -4270,7 +4299,8 @@ function killMonster(monster, killer = null) {
                 ARCHER: 'archer.png',
                 HEALER: 'healer.png',
                 WIZARD: 'wizard.png',
-                BARD: 'bard.png'
+                BARD: 'bard.png',
+                PALADIN: 'holy_knight.png'
             };
             return map[type] ? `assets/images/${map[type]}` : null;
         }
@@ -4554,6 +4584,11 @@ function killMonster(monster, killer = null) {
                                 div.textContent = '⛏️';
                             } else if (baseCellType === 'tree') {
                                 div.textContent = '🌳';
+                            } else if (baseCellType === 'paladin') {
+                                div.style.backgroundImage = `url('assets/images/holy_knight.png'), url('assets/images/floor-tile.png')`;
+                                div.style.backgroundSize = 'contain, cover';
+                                div.style.backgroundPosition = 'center, center';
+                                div.style.backgroundRepeat = 'no-repeat, no-repeat';
                             } else if (baseCellType === 'bones') {
                                 div.textContent = '🦴';
                             } else if (baseCellType === 'grave') {
@@ -5036,6 +5071,17 @@ function killMonster(monster, killer = null) {
                     gameState.dungeon[y][x] = 'bones';
                 }
 
+                if (!globalThis.spawnPaladinTest && Math.random() < 0.02) {
+                    let px, py;
+                    do {
+                        px = Math.floor(Math.random() * size);
+                        py = Math.floor(Math.random() * size);
+                    } while (gameState.dungeon[py][px] !== 'empty');
+                    const pal = createMercenary('PALADIN', px, py);
+                    gameState.paladinSpawns.push({ x: px, y: py, mercenary: pal });
+                    gameState.dungeon[py][px] = 'paladin';
+                }
+
                 const templeCount = 1 + Math.floor(Math.random() * 3);
                 const templeTypes = ['templeHeal', 'templeFood', 'templeFood', 'templeHeal', 'templeAffinity'];
                 for (let i = 0; i < templeCount; i++) {
@@ -5268,6 +5314,10 @@ function killMonster(monster, killer = null) {
             }
             let assignedSkill2 = type === 'HEALER' ? 'Purify' : null;
             if (type === 'BARD') assignedSkill2 = 'Heal';
+            if (type === 'PALADIN') {
+                const keys = Object.keys(MERCENARY_SKILLS);
+                assignedSkill2 = keys.length ? (isTestMerc ? keys[0] : keys[Math.floor(Math.random() * keys.length)]) : null;
+            }
             const randomBaseName = MERCENARY_NAMES[Math.floor(Math.random() * MERCENARY_NAMES.length)];
             const jobLabel = mercType.name.split(' ')[1] || mercType.name;
             const name = `${randomBaseName} (${jobLabel})`;
@@ -6621,6 +6671,34 @@ function killMonster(monster, killer = null) {
                 addMessage(`🌳 나무 ${qty}개를 얻었습니다.`, 'info');
                 gameState.dungeon[newY][newX] = 'empty';
                 updateMaterialsDisplay();
+            }
+
+            if (cellType === 'paladin') {
+                const spawn = gameState.paladinSpawns.find(p => p.x === newX && p.y === newY);
+                if (spawn) {
+                    const cost = spawn.cost || MERCENARY_TYPES.PALADIN.cost;
+                    if (gameState.activeMercenaries.concat(gameState.standbyMercenaries).some(m => m.type === 'PALADIN')) {
+                        addMessage('이미 성기사가 있습니다.', 'info');
+                    } else if (gameState.player.gold < cost) {
+                        addMessage(`💸 골드가 부족합니다. 성기사 고용에는 ${formatNumber(cost)} 골드가 필요합니다.`, 'info');
+                    } else if (typeof confirm !== 'function' || confirm(`성기사를 ${formatNumber(cost)}골드에 고용하시겠습니까?`)) {
+                        const mercenary = spawn.mercenary;
+                        if (!spawnMercenaryNearPlayer(mercenary)) {
+                            addMessage('❌ 용병을 배치할 공간이 없습니다.', 'info');
+                        } else {
+                            gameState.player.gold -= cost;
+                            gameState.activeMercenaries.push(mercenary);
+                            gameState.paladinSpawns.splice(gameState.paladinSpawns.indexOf(spawn),1);
+                            gameState.dungeon[newY][newX] = 'empty';
+                            playSoundFile(String(MERCENARY_TYPES.PALADIN.voiceFile));
+                            addMessage(`🎉 ${MERCENARY_TYPES.PALADIN.name}을(를) 고용했습니다!`, 'mercenary');
+                            updateStats();
+                            updateMercenaryDisplay();
+                            renderDungeon();
+                        }
+                    }
+                }
+                return;
             }
 
             if (cellType === 'bones') {
@@ -8717,6 +8795,17 @@ function processTurn() {
             zombieMerc.affinity = 195;
             zombieMerc.fullness = 50;
             gameState.standbyMercenaries.push(zombieMerc);
+            if (globalThis.spawnPaladinTest) {
+                let palPos = { x: gameState.player.x, y: gameState.player.y + 2 };
+                if (palPos.x >= gameState.dungeonSize || palPos.y >= gameState.dungeonSize || gameState.dungeon[palPos.y][palPos.x] !== 'empty') {
+                    palPos = findAdjacentEmpty(gameState.player.x, gameState.player.y);
+                }
+                if (palPos.x !== gameState.player.x || palPos.y !== gameState.player.y) {
+                    const pal = createMercenary('PALADIN', palPos.x, palPos.y);
+                    gameState.paladinSpawns.push({ x: palPos.x, y: palPos.y, mercenary: pal, cost: 1 });
+                    gameState.dungeon[palPos.y][palPos.x] = 'paladin';
+                }
+            }
             for (let i = 0; i < 5; i++) {
                 gameState.player.inventory.push(createItem('cookedMeal', 0, 0));
             }
