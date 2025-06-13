@@ -1781,7 +1781,7 @@ const MERCENARY_NAMES = [
             { name: 'Long-range', modifiers: { skillRangeBonus: 1 } },
             { name: 'Quickcast', modifiers: { skillCooldownMod: -1 } },
             { name: 'Efficient', modifiers: { skillManaCostMult: 0.5 } },
-            { name: 'Empowered', modifiers: { skillPowerMult: () => 0.1 + Math.random() * 0.4 } }
+            { name: 'Empowered', modifiers: { skillPowerMult: () => 1.1 + Math.random() * 0.4 } }
         ];
 
         const RARE_SUFFIXES = [
@@ -1792,7 +1792,11 @@ const MERCENARY_NAMES = [
             { name: 'of Leeching', modifiers: { lifeSteal: 0.1 } },
             { name: 'of Thorns', modifiers: { damageReflect: 0.2 } },
             { name: 'of Rejuvenation', modifiers: { healOnKill: 10 } },
-            { name: 'of Souls', modifiers: { manaOnKill: 10 } }
+            { name: 'of Souls', modifiers: { manaOnKill: 10 } },
+            { name: 'of Range', modifiers: { skillRangeBonus: 1 } },
+            { name: 'of Quickcasting', modifiers: { skillCooldownMod: -1 } },
+            { name: 'of Efficiency', modifiers: { skillManaCostMult: 0.5 } },
+            { name: 'of Power', modifiers: { skillPowerMult: () => 1.1 + Math.random() * 0.4 } }
         ];
 
         const MAP_PREFIXES = [
@@ -2528,20 +2532,22 @@ const MERCENARY_NAMES = [
         function getSkillRange(unit, skill) {
             const base = skill.range !== undefined ? skill.range : skill.radius;
             if (base === undefined) return base;
-            return base + getStat(unit, 'skillRange');
+            return base + getStat(unit, 'skillRangeBonus');
         }
 
         function getSkillCooldown(unit, skill) {
             const reduction = getStat(unit, 'skillCooldownReduction');
+            const mod = getStat(unit, 'skillCooldownMod');
             const cd = skill.cooldown || 0;
-            const modified = Math.max(0, Math.floor(cd * (1 - reduction)));
+            const modified = Math.max(0, Math.floor(cd * (1 - reduction)) + mod);
             return modified;
         }
 
         function getSkillManaCost(unit, skill) {
             const reduction = getStat(unit, 'skillManaCostReduction');
+            const mult = getStat(unit, 'skillManaCostMult') || 1;
             const cost = skill.manaCost || 0;
-            return Math.max(0, Math.floor(cost * (1 - reduction)));
+            return Math.max(0, Math.floor(cost * mult * (1 - reduction)));
         }
 
         function getSkillPowerMult(unit) {
