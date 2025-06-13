@@ -1,3 +1,8 @@
+:root {
+  --panel-bg: #f5f5dc;
+  --slot-bg: #f7ead9;
+}
+
 .player {
   /* background-image: url("assets/images/player.png"); */
   /* background-size: cover; */
@@ -204,7 +209,7 @@
 .inv-filter-btn {
   padding: 4px 8px;
   border: 1px solid #777;
-  background-color: #444;
+  background-color: var(--slot-bg);
   color: #ddd;
   cursor: pointer;
   border-radius: 4px;
@@ -248,7 +253,7 @@
     text-shadow: 0px 0px 3px rgba(0, 0, 0, 0.9);
 }
 .tile-tab-container {
-  background: linear-gradient(135deg, #2a2a2a, #333);
+  background: linear-gradient(135deg, var(--panel-bg), #ddd);
   padding: 15px;
   border-radius: 8px;
   border: 1px solid #555;
@@ -312,7 +317,7 @@
 .tile-tab-container {
     width: 100%;
     max-width: 1400px;
-    background: linear-gradient(135deg, #2a2a2a, #333);
+    background: linear-gradient(135deg, var(--panel-bg), #ddd);
     padding: 10px;
     border-radius: 8px;
     box-shadow: 0 0 15px rgba(0, 0, 0, 0.7);
@@ -342,7 +347,7 @@
     width: 48px;
     height: 48px;
     background-color: #1a1a1a;
-    border: 1px solid #444;
+    border: 1px solid var(--slot-bg);
     border-radius: 4px;
     cursor: pointer;
     background-size: cover;
