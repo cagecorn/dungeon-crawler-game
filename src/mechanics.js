@@ -3758,17 +3758,31 @@ function findNearestEmpty(x, y) {
             return {x, y};
         }
 
-function killMonster(monster) {
+function killMonster(monster, killer = null) {
             let itemOnCorpse = false;
             SoundEngine.playSound('monsterDie'); // 몬스터 사망음 재생
-            addMessage(`💀 ${monster.name}을(를) 처치했습니다!`, 'combat', null, getMonsterImage(monster));
-            gameState.player.exp += monster.exp;
-            let goldGain = monster.gold;
-            if (gameState.currentMapModifiers && gameState.currentMapModifiers.goldMultiplier) {
-                goldGain = Math.floor(goldGain * gameState.currentMapModifiers.goldMultiplier);
+            if (killer) {
+                playRandomKillQuote(killer);
+                addMessage(`💀 ${killer.name}이(가) ${monster.name}을(를) 처치했습니다!`,
+                           'mercenary', null, getMercImage(killer.type));
+                const mercExp = Math.floor(monster.exp * 0.6);
+                const playerExp = Math.floor(monster.exp * 0.4);
+                killer.exp += mercExp;
+                gameState.player.exp += playerExp;
+                gameState.player.gold += monster.gold;
+                checkMercenaryLevelUp(killer);
+                checkLevelUp();
+                updateStats();
+            } else {
+                addMessage(`💀 ${monster.name}을(를) 처치했습니다!`, 'combat', null, getMonsterImage(monster));
+                gameState.player.exp += monster.exp;
+                let goldGain = monster.gold;
+                if (gameState.currentMapModifiers && gameState.currentMapModifiers.goldMultiplier) {
+                    goldGain = Math.floor(goldGain * gameState.currentMapModifiers.goldMultiplier);
+                }
+                gameState.player.gold += goldGain;
+                checkLevelUp();
             }
-            gameState.player.gold += goldGain;
-            checkLevelUp();
             if ((monster.special === 'boss' || monster.isChampion) && Math.random() < 0.10) {
                 const uniqueKeys = Object.keys(UNIQUE_ITEMS);
                 if (uniqueKeys.length > 0) {
@@ -7162,57 +7176,7 @@ function processTurn() {
                     }
 
                     if (nearestMonster.health <= 0) {
-                        playRandomKillQuote(mercenary);
-                        addMessage(`💀 ${mercenary.name}이(가) ${nearestMonster.name}을(를) 처치했습니다!`, "mercenary", null, getMercImage(mercenary.type));
-
-                        const mercExp = Math.floor(nearestMonster.exp * 0.6);
-                        const playerExp = Math.floor(nearestMonster.exp * 0.4);
-
-                        mercenary.exp += mercExp;
-                        gameState.player.exp += playerExp;
-                        gameState.player.gold += nearestMonster.gold;
-
-                        checkMercenaryLevelUp(mercenary);
-                        checkLevelUp();
-                        updateStats();
-
-                        if (nearestMonster.special === 'boss') {
-                            const bossItems = ['magicSword', 'plateArmor', 'greaterHealthPotion'];
-                            if (Math.random() < 0.2) bossItems.push('reviveScroll');
-                            const bossItemKey = bossItems[Math.floor(Math.random() * bossItems.length)];
-                            const pos = findAdjacentEmpty(nearestMonster.x, nearestMonster.y);
-                            const bossItem = createItem(bossItemKey, pos.x, pos.y, null, Math.floor(gameState.floor / 5));
-                            gameState.items.push(bossItem);
-                            gameState.dungeon[pos.y][pos.x] = 'item';
-                            addMessage(`🎁 ${nearestMonster.name}이(가) ${bossItem.name}을(를) 떨어뜨렸습니다!`, "treasure");
-                        } else if (Math.random() < nearestMonster.lootChance) {
-                            const itemKeys = Object.keys(ITEMS).filter(k => k !== 'reviveScroll');
-                            const availableItems = itemKeys.filter(key =>
-                                ITEMS[key].level <= Math.ceil(gameState.floor / 2 + 1) &&
-                                ITEMS[key].type !== ITEM_TYPES.ESSENCE
-                            );
-                            let randomItemKey = availableItems[Math.floor(Math.random() * availableItems.length)];
-                            if (Math.random() < 0.1 && ITEMS.reviveScroll.level <= Math.ceil(gameState.floor / 2 + 1)) {
-                                randomItemKey = 'reviveScroll';
-                            }
-
-                            const pos = findAdjacentEmpty(nearestMonster.x, nearestMonster.y);
-                            const droppedItem = createItem(randomItemKey, pos.x, pos.y, null, Math.floor(gameState.floor / 5));
-                            gameState.items.push(droppedItem);
-                            gameState.dungeon[pos.y][pos.x] = 'item';
-                            addMessage(`📦 ${nearestMonster.name}이(가) ${droppedItem.name}을(를) 떨어뜨렸습니다!`, "item");
-                        } else {
-                            gameState.dungeon[nearestMonster.y][nearestMonster.x] = 'empty';
-                        }
-
-                        const monsterIndex = gameState.monsters.findIndex(m => m === nearestMonster);
-                        if (monsterIndex !== -1) {
-                            gameState.monsters.splice(monsterIndex, 1);
-                        }
-                        nearestMonster.health = 0;
-                        nearestMonster.turnsLeft = CORPSE_TURNS;
-                        gameState.corpses.push(nearestMonster);
-                        gameState.dungeon[nearestMonster.y][nearestMonster.x] = 'corpse';
+                        killMonster(nearestMonster, mercenary);
                     }
                     mercenary.mana -= skillManaCost;
                     mercenary.skillCooldowns[skillKey] = skillInfo.cooldown;
@@ -7243,57 +7207,7 @@ function processTurn() {
                     }
 
                     if (nearestMonster.health <= 0) {
-                        playRandomKillQuote(mercenary);
-                        addMessage(`💀 ${mercenary.name}이(가) ${nearestMonster.name}을(를) 처치했습니다!`, "mercenary", null, getMercImage(mercenary.type));
-
-                        const mercExp = Math.floor(nearestMonster.exp * 0.6);
-                        const playerExp = Math.floor(nearestMonster.exp * 0.4);
-
-                        mercenary.exp += mercExp;
-                        gameState.player.exp += playerExp;
-                        gameState.player.gold += nearestMonster.gold;
-
-                        checkMercenaryLevelUp(mercenary);
-                        checkLevelUp();
-                        updateStats();
-
-                        if (nearestMonster.special === 'boss') {
-                            const bossItems = ['magicSword', 'plateArmor', 'greaterHealthPotion'];
-                            if (Math.random() < 0.2) bossItems.push('reviveScroll');
-                            const bossItemKey = bossItems[Math.floor(Math.random() * bossItems.length)];
-                            const pos = findAdjacentEmpty(nearestMonster.x, nearestMonster.y);
-                            const bossItem = createItem(bossItemKey, pos.x, pos.y, null, Math.floor(gameState.floor / 5));
-                            gameState.items.push(bossItem);
-                            gameState.dungeon[pos.y][pos.x] = 'item';
-                            addMessage(`🎁 ${nearestMonster.name}이(가) ${bossItem.name}을(를) 떨어뜨렸습니다!`, "treasure");
-                        } else if (Math.random() < nearestMonster.lootChance) {
-                            const itemKeys = Object.keys(ITEMS).filter(k => k !== 'reviveScroll');
-                            const availableItems = itemKeys.filter(key =>
-                                ITEMS[key].level <= Math.ceil(gameState.floor / 2 + 1) &&
-                                ITEMS[key].type !== ITEM_TYPES.ESSENCE
-                            );
-                            let randomItemKey = availableItems[Math.floor(Math.random() * availableItems.length)];
-                            if (Math.random() < 0.1 && ITEMS.reviveScroll.level <= Math.ceil(gameState.floor / 2 + 1)) {
-                                randomItemKey = 'reviveScroll';
-                            }
-
-                            const pos = findAdjacentEmpty(nearestMonster.x, nearestMonster.y);
-                            const droppedItem = createItem(randomItemKey, pos.x, pos.y, null, Math.floor(gameState.floor / 5));
-                            gameState.items.push(droppedItem);
-                            gameState.dungeon[pos.y][pos.x] = 'item';
-                            addMessage(`📦 ${nearestMonster.name}이(가) ${droppedItem.name}을(를) 떨어뜨렸습니다!`, "item");
-                        } else {
-                            gameState.dungeon[nearestMonster.y][nearestMonster.x] = 'empty';
-                        }
-
-                        const monsterIndex = gameState.monsters.findIndex(m => m === nearestMonster);
-                        if (monsterIndex !== -1) {
-                            gameState.monsters.splice(monsterIndex, 1);
-                        }
-                        nearestMonster.health = 0;
-                        nearestMonster.turnsLeft = CORPSE_TURNS;
-                        gameState.corpses.push(nearestMonster);
-                        gameState.dungeon[nearestMonster.y][nearestMonster.x] = 'corpse';
+                        killMonster(nearestMonster, mercenary);
                     }
                     mercenary.mana -= skillManaCost;
                     mercenary.skillCooldowns[skillKey] = skillInfo.cooldown;
@@ -7333,57 +7247,7 @@ function processTurn() {
                     }
 
                     if (nearestMonster.health <= 0) {
-                        playRandomKillQuote(mercenary);
-                        addMessage(`💀 ${mercenary.name}이(가) ${nearestMonster.name}을(를) 처치했습니다!`, "mercenary", null, getMercImage(mercenary.type));
-
-                        const mercExp = Math.floor(nearestMonster.exp * 0.6);
-                        const playerExp = Math.floor(nearestMonster.exp * 0.4);
-
-                        mercenary.exp += mercExp;
-                        gameState.player.exp += playerExp;
-                        gameState.player.gold += nearestMonster.gold;
-
-                        checkMercenaryLevelUp(mercenary);
-                        checkLevelUp();
-                        updateStats();
-
-                        if (nearestMonster.special === 'boss') {
-                            const bossItems = ['magicSword', 'plateArmor', 'greaterHealthPotion'];
-                            if (Math.random() < 0.2) bossItems.push('reviveScroll');
-                            const bossItemKey = bossItems[Math.floor(Math.random() * bossItems.length)];
-                            const pos = findAdjacentEmpty(nearestMonster.x, nearestMonster.y);
-                            const bossItem = createItem(bossItemKey, pos.x, pos.y, null, Math.floor(gameState.floor / 5));
-                            gameState.items.push(bossItem);
-                            gameState.dungeon[pos.y][pos.x] = 'item';
-                            addMessage(`🎁 ${nearestMonster.name}이(가) ${bossItem.name}을(를) 떨어뜨렸습니다!`, "treasure");
-                        } else if (Math.random() < nearestMonster.lootChance) {
-                            const itemKeys = Object.keys(ITEMS).filter(k => k !== 'reviveScroll');
-                            const availableItems = itemKeys.filter(key =>
-                                ITEMS[key].level <= Math.ceil(gameState.floor / 2 + 1) &&
-                                ITEMS[key].type !== ITEM_TYPES.ESSENCE
-                            );
-                            let randomItemKey = availableItems[Math.floor(Math.random() * availableItems.length)];
-                            if (Math.random() < 0.1 && ITEMS.reviveScroll.level <= Math.ceil(gameState.floor / 2 + 1)) {
-                                randomItemKey = 'reviveScroll';
-                            }
-
-                            const pos = findAdjacentEmpty(nearestMonster.x, nearestMonster.y);
-                            const droppedItem = createItem(randomItemKey, pos.x, pos.y, null, Math.floor(gameState.floor / 5));
-                            gameState.items.push(droppedItem);
-                            gameState.dungeon[pos.y][pos.x] = 'item';
-                            addMessage(`📦 ${nearestMonster.name}이(가) ${droppedItem.name}을(를) 떨어뜨렸습니다!`, "item");
-                        } else {
-                            gameState.dungeon[nearestMonster.y][nearestMonster.x] = 'empty';
-                        }
-
-                        const monsterIndex = gameState.monsters.findIndex(m => m === nearestMonster);
-                        if (monsterIndex !== -1) {
-                            gameState.monsters.splice(monsterIndex, 1);
-                        }
-                        nearestMonster.health = 0;
-                        nearestMonster.turnsLeft = CORPSE_TURNS;
-                        gameState.corpses.push(nearestMonster);
-                        gameState.dungeon[nearestMonster.y][nearestMonster.x] = 'corpse';
+                        killMonster(nearestMonster, mercenary);
                     }
                     mercenary.mana -= skillManaCost;
                     mercenary.skillCooldowns[skillKey] = skillInfo.cooldown;
@@ -7419,57 +7283,7 @@ function processTurn() {
                     }
                     
                     if (nearestMonster.health <= 0) {
-                        playRandomKillQuote(mercenary);
-                        addMessage(`💀 ${mercenary.name}이(가) ${nearestMonster.name}을(를) 처치했습니다!`, "mercenary", null, getMercImage(mercenary.type));
-                        
-                        const mercExp = Math.floor(nearestMonster.exp * 0.6);
-                        const playerExp = Math.floor(nearestMonster.exp * 0.4);
-                        
-                        mercenary.exp += mercExp;
-                        gameState.player.exp += playerExp;
-                        gameState.player.gold += nearestMonster.gold;
-                        
-                        checkMercenaryLevelUp(mercenary);
-                        checkLevelUp();
-                        updateStats();
-                        
-                        if (nearestMonster.special === 'boss') {
-                            const bossItems = ['magicSword', 'magicStaff', 'plateArmor', 'greaterHealthPotion'];
-                            if (Math.random() < 0.2) bossItems.push('reviveScroll');
-                            const bossItemKey = bossItems[Math.floor(Math.random() * bossItems.length)];
-                            const pos = findAdjacentEmpty(nearestMonster.x, nearestMonster.y);
-                            const bossItem = createItem(bossItemKey, pos.x, pos.y, null, Math.floor(gameState.floor / 5));
-                            gameState.items.push(bossItem);
-                            gameState.dungeon[pos.y][pos.x] = 'item';
-                            addMessage(`🎁 ${nearestMonster.name}이(가) ${bossItem.name}을(를) 떨어뜨렸습니다!`, "treasure");
-                        } else if (Math.random() < nearestMonster.lootChance) {
-                            const itemKeys = Object.keys(ITEMS).filter(k => k !== 'reviveScroll');
-                            const availableItems = itemKeys.filter(key =>
-                                ITEMS[key].level <= Math.ceil(gameState.floor / 2 + 1) &&
-                                ITEMS[key].type !== ITEM_TYPES.ESSENCE
-                            );
-                            let randomItemKey = availableItems[Math.floor(Math.random() * availableItems.length)];
-                            if (Math.random() < 0.1 && ITEMS.reviveScroll.level <= Math.ceil(gameState.floor / 2 + 1)) {
-                                randomItemKey = 'reviveScroll';
-                            }
-
-                            const pos = findAdjacentEmpty(nearestMonster.x, nearestMonster.y);
-                            const droppedItem = createItem(randomItemKey, pos.x, pos.y, null, Math.floor(gameState.floor / 5));
-                            gameState.items.push(droppedItem);
-                            gameState.dungeon[pos.y][pos.x] = 'item';
-                            addMessage(`📦 ${nearestMonster.name}이(가) ${droppedItem.name}을(를) 떨어뜨렸습니다!`, "item");
-                        } else {
-                            gameState.dungeon[nearestMonster.y][nearestMonster.x] = 'empty';
-                        }
-                        
-                        const monsterIndex = gameState.monsters.findIndex(m => m === nearestMonster);
-                        if (monsterIndex !== -1) {
-                            gameState.monsters.splice(monsterIndex, 1);
-                        }
-                        nearestMonster.health = 0;
-                        nearestMonster.turnsLeft = CORPSE_TURNS;
-                        gameState.corpses.push(nearestMonster);
-                        gameState.dungeon[nearestMonster.y][nearestMonster.x] = 'corpse';
+                        killMonster(nearestMonster, mercenary);
                     }
                     mercenary.hasActed = true;
                     return;
