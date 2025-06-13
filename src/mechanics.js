@@ -1777,7 +1777,11 @@ const MERCENARY_NAMES = [
             { name: 'Vampiric', modifiers: { lifeSteal: 0.1 } },
             { name: 'Thorned', modifiers: { damageReflect: 0.2 } },
             { name: 'Rejuvenating', modifiers: { healOnKill: 10 } },
-            { name: 'Soulful', modifiers: { manaOnKill: 10 } }
+            { name: 'Soulful', modifiers: { manaOnKill: 10 } },
+            { name: 'Long-range', modifiers: { skillRangeBonus: 1 } },
+            { name: 'Quickcast', modifiers: { skillCooldownMod: -1 } },
+            { name: 'Efficient', modifiers: { skillManaCostMult: 0.5 } },
+            { name: 'Empowered', modifiers: { skillPowerMult: () => 0.1 + Math.random() * 0.4 } }
         ];
 
         const RARE_SUFFIXES = [
@@ -5252,7 +5256,8 @@ function killMonster(monster, killer = null) {
                     item.prefix = prefix.name;
                     item.name = `${prefix.name} ${item.name}`;
                     for (const stat in prefix.modifiers) {
-                        const val = prefix.modifiers[stat];
+                        let val = prefix.modifiers[stat];
+                        if (typeof val === 'function') val = val();
                         if (typeof val === 'number') item[stat] = (item[stat] || 0) + val;
                         else item[stat] = val;
                     }
@@ -5263,7 +5268,8 @@ function killMonster(monster, killer = null) {
                     item.suffix = suffix.name;
                     item.name = `${item.name} ${suffix.name}`;
                     for (const stat in suffix.modifiers) {
-                        const val = suffix.modifiers[stat];
+                        let val = suffix.modifiers[stat];
+                        if (typeof val === 'function') val = val();
                         if (typeof val === 'number') item[stat] = (item[stat] || 0) + val;
                         else item[stat] = val;
                     }
@@ -5275,7 +5281,8 @@ function killMonster(monster, killer = null) {
                         item.prefix = prefix.name;
                         item.name = `${prefix.name} ${item.name}`;
                         for (const stat in prefix.modifiers) {
-                            const val = prefix.modifiers[stat];
+                            let val = prefix.modifiers[stat];
+                            if (typeof val === 'function') val = val();
                             if (typeof val === 'number') {
                                 item[stat] = (item[stat] || 0) + val;
                             } else {
@@ -5290,7 +5297,8 @@ function killMonster(monster, killer = null) {
                     item.prefix = prefix.name;
                     item.name = `${prefix.name} ${item.name}`;
                     for (const stat in prefix.modifiers) {
-                        const val = prefix.modifiers[stat];
+                        let val = prefix.modifiers[stat];
+                        if (typeof val === 'function') val = val();
                         if (typeof val === 'number') {
                             item[stat] = (item[stat] || 0) + val;
                         } else {
@@ -5305,7 +5313,8 @@ function killMonster(monster, killer = null) {
                     item.suffix = suffix.name;
                     item.name = `${item.name} ${suffix.name}`;
                     for (const stat in suffix.modifiers) {
-                        const val = suffix.modifiers[stat];
+                        let val = suffix.modifiers[stat];
+                        if (typeof val === 'function') val = val();
                         if (typeof val === 'number') {
                             item[stat] = (item[stat] || 0) + val;
                         } else {
