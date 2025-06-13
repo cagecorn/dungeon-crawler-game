@@ -1144,7 +1144,8 @@ const MERCENARY_NAMES = [
                 damageDice: "1d6",
                 price: 10,
                 level: 1,
-                icon: '🗡️'
+                icon: '🗡️',
+                imageUrl: 'assets/images/shortsword.png'
             },
             longSword: {
                 name: '⚔️ 장검',
@@ -1154,6 +1155,16 @@ const MERCENARY_NAMES = [
                 damageDice: "1d8",
                 level: 2,
                 icon: '⚔️'
+            },
+            bow: {
+                name: '🏹 활',
+                type: ITEM_TYPES.WEAPON,
+                attack: 3,
+                damageDice: "1d6",
+                price: 20,
+                level: 1,
+                icon: '🏹',
+                imageUrl: 'assets/images/bow.png'
             },
             magicSword: {
                 name: '✨ 마법검',
@@ -1180,7 +1191,8 @@ const MERCENARY_NAMES = [
                 defense: 2,
                 price: 15,
                 level: 1,
-                icon: '🛡️'
+                icon: '🛡️',
+                imageUrl: 'assets/images/leatherarmor.png'
             },
             chainMail: {
                 name: '🔗 사슬 갑옷',
@@ -2599,7 +2611,11 @@ const MERCENARY_NAMES = [
                 div.className = 'inventory-item';
                 const span = document.createElement('span');
                 const label = count > 1 ? `${formatItem(item)} x ${count}` : formatItem(item);
-                span.innerHTML = label;
+                if (item.imageUrl) {
+                    span.innerHTML = `<img src="${item.imageUrl}" class="inline-icon" style="margin-right:4px;">${label}`;
+                } else {
+                    span.innerHTML = label;
+                }
                 div.appendChild(span);
                 div.onclick = () => handleItemClick(item);
                 if (item.type !== ITEM_TYPES.WEAPON && item.type !== ITEM_TYPES.ARMOR && item.type !== ITEM_TYPES.ACCESSORY) {
@@ -2617,7 +2633,9 @@ const MERCENARY_NAMES = [
 
             const weaponSlot = document.getElementById('equipped-weapon');
             if (gameState.player.equipped.weapon) {
-                weaponSlot.innerHTML = `무기: ${formatItem(gameState.player.equipped.weapon)}`;
+                const w = gameState.player.equipped.weapon;
+                const prefix = w.imageUrl ? `<img src="${w.imageUrl}" class="inline-icon" style="margin-right:4px;">` : '';
+                weaponSlot.innerHTML = `무기: ${prefix}${formatItem(w)}`;
                 weaponSlot.onclick = unequipWeapon;
             } else {
                 weaponSlot.textContent = '무기: 없음';
@@ -2625,7 +2643,9 @@ const MERCENARY_NAMES = [
             }
             const armorSlot = document.getElementById('equipped-armor');
             if (gameState.player.equipped.armor) {
-                armorSlot.innerHTML = `방어구: ${formatItem(gameState.player.equipped.armor)}`;
+                const a = gameState.player.equipped.armor;
+                const prefix = a.imageUrl ? `<img src="${a.imageUrl}" class="inline-icon" style="margin-right:4px;">` : '';
+                armorSlot.innerHTML = `방어구: ${prefix}${formatItem(a)}`;
                 armorSlot.onclick = unequipArmor;
             } else {
                 armorSlot.textContent = '방어구: 없음';
