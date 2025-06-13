@@ -7252,9 +7252,122 @@ function processTurn() {
                 }
             }
 
-            // 다음 턴을 위해 전투 발생 플래그를 리셋합니다.
-            combatOccurredInTurn = false;
+        // 다음 턴을 위해 전투 발생 플래그를 리셋합니다.
+        combatOccurredInTurn = false;
+    }
+
+    function processPaladinTurn(mercenary, visibleMonsters = gameState.monsters) {
+        let nearestMonster = null;
+        let nearestDistance = Infinity;
+        visibleMonsters.forEach(mon => {
+            const distanceFromPlayer = getDistance(mon.x, mon.y, gameState.player.x, gameState.player.y);
+            if (distanceFromPlayer > PARTY_LEASH_RADIUS) return;
+            const dist = getDistance(mercenary.x, mercenary.y, mon.x, mon.y);
+            if (dist < nearestDistance && hasLineOfSight(mercenary.x, mercenary.y, mon.x, mon.y)) {
+                nearestDistance = dist;
+                nearestMonster = mon;
+            }
+        });
+
+        const buffKey = mercenary.skill;
+        const buffInfo = MERCENARY_SKILLS[buffKey] || MONSTER_SKILLS[buffKey];
+        const buffLevel = mercenary.skillLevels && mercenary.skillLevels[buffKey] || 1;
+        const buffMana = buffInfo ? getSkillManaCost(mercenary, buffInfo) : 0;
+        const hasBuff = buffInfo && Array.isArray(mercenary.buffs) && mercenary.buffs.some(b => b.name === buffInfo.name);
+
+        if (nearestMonster && buffInfo && buffInfo.statBuff && !hasBuff && !(mercenary.skillCooldowns[buffKey] > 0) && mercenary.mana >= buffMana) {
+            applyStatPercentBuff(mercenary, mercenary, buffInfo, buffLevel);
+            mercenary.mana -= buffMana;
+            mercenary.skillCooldowns[buffKey] = getSkillCooldown(mercenary, buffInfo);
+            updateMercenaryDisplay();
+            mercenary.hasActed = true;
+            return;
         }
+
+        if (nearestMonster) {
+            const secondKey = mercenary.skill2;
+            const secondInfo = MERCENARY_SKILLS[secondKey] || MONSTER_SKILLS[secondKey];
+            const secondLevel = mercenary.skillLevels && mercenary.skillLevels[secondKey] || 1;
+            const secondMana = secondInfo ? getSkillManaCost(mercenary, secondInfo) : 0;
+            if (secondInfo && !(mercenary.skillCooldowns[secondKey] > 0) && mercenary.mana >= secondMana &&
+                nearestDistance <= getSkillRange(mercenary, secondInfo) &&
+                hasLineOfSight(mercenary.x, mercenary.y, nearestMonster.x, nearestMonster.y)) {
+                if (secondInfo.statBuff) {
+                    applyStatPercentBuff(mercenary, mercenary, secondInfo, secondLevel);
+                } else if (secondInfo.shield) {
+                    applyShield(mercenary, mercenary, secondInfo, secondLevel);
+                } else if (secondInfo.attackBuff) {
+                    applyAttackBuff(mercenary, mercenary, secondInfo, secondLevel);
+                } else {
+                    let attackValue = getStat(mercenary, 'attack');
+                    if (secondInfo.magic) {
+                        attackValue = (rollDice(secondInfo.damageDice || '1d6') * secondLevel + getStat(mercenary, 'magicPower')) * getSkillPowerMult(mercenary);
+                    } else if (secondInfo.damageDice) {
+                        attackValue = (rollDice(secondInfo.damageDice) * secondLevel + getStat(mercenary, 'attack')) * getSkillPowerMult(mercenary);
+                    } else if (secondInfo.multiplier) {
+                        attackValue = Math.floor(attackValue * secondInfo.multiplier * secondLevel * getSkillPowerMult(mercenary));
+                    }
+                    const hits = secondInfo.hits || 1;
+                    const icon = secondInfo.icon;
+                    for (let i = 0; i < hits; i++) {
+                        const result = performAttack(mercenary, nearestMonster, {
+                            attackValue,
+                            magic: secondInfo.magic,
+                            element: secondInfo.element,
+                            status: secondInfo.status || (mercenary.equipped.weapon && mercenary.equipped.weapon.status),
+                            damageDice: secondInfo.damageDice
+                        });
+                        const detail = buildAttackDetail(icon, secondInfo.name, result);
+                        if (!result.hit) {
+                            addMessage(`❌ ${mercenary.name}의 ${secondInfo.name}이 빗나갔습니다!`, 'mercenary', detail);
+                        } else {
+                            const critMsg = result.crit ? ' (치명타!)' : '';
+                            let dmgStr = result.baseDamage;
+                            if (result.elementDamage) {
+                                const emoji = ELEMENT_EMOJI[result.element] || '';
+                                dmgStr = `${result.baseDamage}+${emoji}${result.elementDamage}`;
+                            }
+                            addMessage(`${icon} ${mercenary.name}이(가) ${nearestMonster.name}에게 ${dmgStr}의 피해를 입혔습니다${critMsg}!`, 'mercenary', detail);
+                        }
+                        if (nearestMonster.health <= 0) break;
+                    }
+                    if (nearestMonster.health <= 0) {
+                        killMonster(nearestMonster, mercenary);
+                    }
+                }
+                mercenary.mana -= secondMana;
+                mercenary.skillCooldowns[secondKey] = getSkillCooldown(mercenary, secondInfo);
+                updateMercenaryDisplay();
+                mercenary.hasActed = true;
+                return;
+            }
+
+            const baseAttackRange = 1;
+            if (nearestDistance <= baseAttackRange) {
+                performAttack(mercenary, nearestMonster);
+                if (nearestMonster.health <= 0) killMonster(nearestMonster, mercenary);
+                mercenary.hasActed = true;
+                return;
+            }
+            const path = findPath(mercenary.x, mercenary.y, nearestMonster.x, nearestMonster.y);
+            if (path && path.length > 1) {
+                mercenary.nextX = path[1].x;
+                mercenary.nextY = path[1].y;
+            }
+            mercenary.hasActed = true;
+            return;
+        }
+
+        const playerDistance = getDistance(mercenary.x, mercenary.y, gameState.player.x, gameState.player.y);
+        if (playerDistance > 3) {
+            const path = findPath(mercenary.x, mercenary.y, gameState.player.x, gameState.player.y);
+            if (path && path.length > 1) {
+                mercenary.nextX = path[1].x;
+                mercenary.nextY = path[1].y;
+                mercenary.hasActed = true;
+            }
+        }
+    }
 
         // 용병 AI (개선됨 - 장비 보너스 적용, 안전성 체크 추가)
         function processMercenaryTurn(mercenary, visibleMonsters = gameState.monsters) {
@@ -7415,6 +7528,9 @@ function processTurn() {
                 }
 
                 // 이동만 했다면 이후 일반 행동 로직을 계속 진행합니다.
+            }
+            else if (mercenary.role === 'paladin') {
+                processPaladinTurn(mercenary, visibleMonsters);
             }
             else if (mercenary.role === 'bard') {
                 const hymnSkillKey = mercenary.skill;
