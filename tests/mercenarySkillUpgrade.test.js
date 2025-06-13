@@ -62,8 +62,7 @@ async function run() {
   win.Math.random = () => 0;
   processMercenaryTurn(merc, gameState.monsters);
   win.Math.random = origRandom;
-  const startMana = Math.min(manaBefore + getStat(merc, 'manaRegen'), getStat(merc, 'maxMana'));
-  const manaExpected = startMana - (MERCENARY_SKILLS[skillKey].manaCost + healLevel - 1);
+  const manaExpected = manaBefore - (MERCENARY_SKILLS[skillKey].manaCost + healLevel - 1);
   assert.strictEqual(merc.mana, manaExpected, 'mana cost not scaled with level');
   const base = 3 + merc.level;
   const power = getStat(merc, 'magicPower');

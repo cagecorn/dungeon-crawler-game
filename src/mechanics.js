@@ -7252,10 +7252,17 @@ function processTurn() {
                 updateCamera();
                 renderDungeon();
             });
-            const hpRegen = getStat(gameState.player, 'healthRegen');
-            const mpRegen = getStat(gameState.player, 'manaRegen');
-            gameState.player.health = Math.min(getStat(gameState.player, 'maxHealth'), gameState.player.health + hpRegen);
-            gameState.player.mana = Math.min(getStat(gameState.player, 'maxMana'), gameState.player.mana + mpRegen);
+            const allPlayerUnits = [gameState.player, ...gameState.activeMercenaries.filter(m => m.alive)];
+            allPlayerUnits.forEach(unit => {
+                const hpRegen = getStat(unit, 'healthRegen');
+                const mpRegen = getStat(unit, 'manaRegen');
+                if (hpRegen > 0) {
+                    unit.health = Math.min(getStat(unit, 'maxHealth'), unit.health + hpRegen);
+                }
+                if (mpRegen > 0) {
+                    unit.mana = Math.min(getStat(unit, 'maxMana'), (unit.mana || 0) + mpRegen);
+                }
+            });
             updateStats();
             updateMercenaryDisplay();
             gameState.craftingQueue.forEach(entry => entry.turnsLeft--);
@@ -7435,10 +7442,6 @@ function processTurn() {
                 mercenary.bleedTurns--;
             }
 
-            const hpRegen = getStat(mercenary, 'healthRegen');
-            const mpRegen = getStat(mercenary, 'manaRegen');
-            mercenary.health = Math.min(getStat(mercenary, 'maxHealth'), mercenary.health + hpRegen);
-            mercenary.mana = Math.min(getStat(mercenary, 'maxMana'), mercenary.mana + mpRegen);
             
             // 장비 초기화 확인
             if (!mercenary.equipped) {
