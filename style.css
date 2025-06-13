@@ -426,11 +426,13 @@
 
 /* --- Panel Styling --- */
 /* 모든 정보창에 적용될 공통 스타일 */
+
 .panel {
-    background-image: url('assets/images/ui-panel-bg.png');
+    background-image: url('assets/images/ui-bg.png');
     background-color: #3a2d1d; /* 이미지 로딩 실패 시 대비용 색상 */
     background-size: cover;
-    color: #1a1a1a;
+    color: #111;
+    font-weight: bold;
 
     border: 20px solid transparent;
     border-image-source: url('assets/images/ui-border.png');
