@@ -3726,7 +3726,7 @@ function updateMaterialsDisplay() {
             buffContainer.innerHTML = '';
             statusContainer.innerHTML = '';
 
-            if (!unit || !unit.id) return;
+            if (!unit || unit.id === undefined || unit.id === null) return;
 
             // 1. Collect aura, status and buff icons
             const auraIcons = getActiveAuraIcons(unit);
@@ -5355,7 +5355,8 @@ function killMonster(monster, killer = null) {
             if (type === 'BARD') assignedSkill2 = 'Heal';
             if (type === 'PALADIN') {
                 const paladinSet = MERCENARY_SKILL_SETS['PALADIN'] || [];
-                const keys = Object.keys(MERCENARY_SKILLS).filter(k => !paladinSet.includes(k));
+                const keys = Object.keys(MERCENARY_SKILLS)
+                    .filter(k => !paladinSet.includes(k) && !k.endsWith('Aura'));
                 assignedSkill2 = keys.length ? (isTestMerc ? keys[0] : keys[Math.floor(Math.random() * keys.length)]) : null;
             }
             const randomBaseName = MERCENARY_NAMES[Math.floor(Math.random() * MERCENARY_NAMES.length)];
