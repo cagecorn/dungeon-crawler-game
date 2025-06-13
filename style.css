@@ -173,6 +173,15 @@
   background-image: url("assets/images/goblin-wizard.png"), url("assets/images/floor-tile.png");
 }
 
+/* Item sprite styling */
+.cell.item {
+  background-size: contain, cover;
+  background-position: center, center;
+  background-repeat: no-repeat, no-repeat;
+  background-color: transparent;
+  image-rendering: pixelated;
+}
+
 /* ---- Special unit glow effects ---- */
 .cell.elite {
   box-shadow: 0 0 8px rgba(244, 67, 54, 0.7);

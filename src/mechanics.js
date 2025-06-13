@@ -4315,8 +4315,18 @@ function killMonster(monster) {
                                     updateUnitEffectIcons(m, div);
                                 }
                             } else if (baseCellType === 'item') {
-                                const it = gameState.items.find(it => it.x === x && it.y === y);
-                                if (it) div.textContent = it.icon;
+                                const item = gameState.items.find(it => it.x === x && it.y === y);
+                                if (item) {
+                                    if (item.imageUrl) {
+                                        div.style.backgroundImage = `url('${String(item.imageUrl)}'), url('assets/images/floor-tile.png')`;
+                                        div.style.backgroundSize = 'contain, cover';
+                                        div.style.backgroundPosition = 'center, center';
+                                        div.style.backgroundRepeat = 'no-repeat, no-repeat';
+                                        div.textContent = '';
+                                    } else {
+                                        div.textContent = item.icon;
+                                    }
+                                }
                             } else if (baseCellType === 'tile') {
                                 if (tileBg && mapTile) {
                                     tileBg.style.backgroundImage = `url('${String(mapTile.imageUrl)}')`;
