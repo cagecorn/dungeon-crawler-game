@@ -2397,6 +2397,21 @@ const MERCENARY_NAMES = [
             if (item.damageReflect !== undefined) stats.push(`피해반사+${formatNumber(item.damageReflect * 100)}%`);
             if (item.healOnKill !== undefined) stats.push(`처치회복+${formatNumber(item.healOnKill)}`);
             if (item.manaOnKill !== undefined) stats.push(`처치마나+${formatNumber(item.manaOnKill)}`);
+            if (item.skillRangeBonus !== undefined) stats.push(`스킬 사거리+${formatNumber(item.skillRangeBonus)}`);
+            if (item.skillCooldownMod !== undefined) {
+                const sign = item.skillCooldownMod > 0 ? '+' : '';
+                stats.push(`쿨타임${sign}${formatNumber(item.skillCooldownMod)}`);
+            }
+            if (item.skillManaCostMult !== undefined) {
+                const perc = (item.skillManaCostMult - 1) * 100;
+                const sign = perc > 0 ? '+' : '';
+                stats.push(`스킬 마나 소모${sign}${formatNumber(perc)}%`);
+            }
+            if (item.skillPowerMult !== undefined) {
+                const perc = (item.skillPowerMult - 1) * 100;
+                const sign = perc > 0 ? '+' : '';
+                stats.push(`스킬 위력${sign}${formatNumber(perc)}%`);
+            }
             if (item.status) stats.push(`${item.status} 부여`);
             const levelText = item.enhanceLevel ? ` +Lv.${item.enhanceLevel}` : '';
             const name = formatItemName(item);
