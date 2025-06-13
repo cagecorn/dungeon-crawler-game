@@ -1695,6 +1695,7 @@ const MERCENARY_NAMES = [
             { name: 'Sturdy', modifiers: { defense: 1 } },
             { name: 'Refreshing', modifiers: { healthRegen: 1 } },
             { name: 'Mystic', modifiers: { manaRegen: 1 } },
+            { name: 'Vampiric', modifiers: { lifeSteal: 0.05 } },
             { name: 'Venomous', modifiers: { status: 'poison' } },
             { name: 'Serrated', modifiers: { status: 'bleed' } },
             { name: 'Smoldering', modifiers: { status: 'burn' } },
@@ -1714,6 +1715,7 @@ const MERCENARY_NAMES = [
             { name: 'of Bleeding', modifiers: { status: 'bleed' } },
             { name: 'of Burning', modifiers: { status: 'burn' } },
             { name: 'of Frost', modifiers: { status: 'freeze' } },
+            { name: 'of Leeching', modifiers: { lifeSteal: 0.05 } },
             { name: 'of Poison Resistance', modifiers: { poisonResist: 0.3 } },
             { name: 'of Bleed Resistance', modifiers: { bleedResist: 0.3 } },
             { name: 'of Burn Resistance', modifiers: { burnResist: 0.3 } },
@@ -2209,6 +2211,17 @@ const MERCENARY_NAMES = [
             applyDamage(defender, damage);
             if (!crit) SoundEngine.playSound('takeDamage');
 
+            const lifeSteal = getStat(attacker, 'lifeSteal');
+            if (lifeSteal) {
+                const heal = Math.floor(damage * lifeSteal);
+                if (heal > 0) {
+                    attacker.health = Math.min(getStat(attacker, 'maxHealth'), attacker.health + heal);
+                    refreshDetailPanel(attacker);
+                    const name = attacker === gameState.player ? '플레이어' : attacker.name;
+                    addMessage(`🩸 ${name}이(가) ${formatNumber(heal)} 만큼 흡혈했습니다.`, 'combat');
+                }
+            }
+
             let statusApplied = false;
             const statusEffects = [];
             if (status) {
@@ -2315,6 +2328,7 @@ const MERCENARY_NAMES = [
             if (item.bleedResist !== undefined) stats.push(`출혈저항+${formatNumber(item.bleedResist * 100)}%`);
             if (item.burnResist !== undefined) stats.push(`화상저항+${formatNumber(item.burnResist * 100)}%`);
             if (item.freezeResist !== undefined) stats.push(`동결저항+${formatNumber(item.freezeResist * 100)}%`);
+            if (item.lifeSteal !== undefined) stats.push(`흡혈+${formatNumber(item.lifeSteal * 100)}%`);
             if (item.status) stats.push(`${item.status} 부여`);
             const levelText = item.enhanceLevel ? ` +Lv.${item.enhanceLevel}` : '';
             const name = formatItemName(item);
