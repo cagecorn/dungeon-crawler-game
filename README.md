@@ -138,6 +138,11 @@ Each attempt has a 20% chance to fail, which still consumes the materials but do
 
 Equipment can be broken down for extra materials. Click the **분해** button next to a weapon, armor or accessory to dismantle it. You gain both **iron** and **bone** equal to the item's base level plus its enhancement level. The item is removed from your inventory after disassembly.
 
+
+### Leeching and Vampirism Bonuses
+
+Some equipment suffixes grant special `killHealth` or `killMana` modifiers. Gear with the **Leeching** suffix restores health to whoever lands the killing blow, while the **Vampirism** suffix replenishes mana on a kill. These bonuses provide a steady trickle of recovery as you defeat enemies.
+
 ### Special Tiles
 
 Dungeon floors contain several interactive tiles:
