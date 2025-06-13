@@ -7049,7 +7049,7 @@ function processTurn() {
             }
             
             // 힐러는 상태 이상 해제를 우선 고려
-            if (mercenary.role === 'support' || mercenary.role === 'bard') {
+            if (mercenary.role === 'support') {
                 const purifyInfo = MERCENARY_SKILLS[mercenary.skill2];
                 const purifyLevel = mercenary.skillLevels && mercenary.skillLevels[mercenary.skill2] || 1;
                 const purifyBaseMana = purifyInfo ? (purifyInfo.manaCost || 0) + purifyLevel - 1 : 0;
@@ -7074,54 +7074,6 @@ function processTurn() {
                     }
                 }
 
-                if (mercenary.type === 'BARD') {
-                    const hymnSkill = mercenary.skill;
-                    const hymnInfo = MERCENARY_SKILLS[hymnSkill];
-                    const hymnLevel = mercenary.skillLevels && mercenary.skillLevels[hymnSkill] || 1;
-                    const hymnCost = hymnInfo ? hymnInfo.manaCost + hymnLevel - 1 : 0;
-                    const enemyInSight = gameState.monsters.some(mon =>
-                        mon.alive &&
-                        getDistance(mon.x, mon.y, mercenary.x, mercenary.y) <= FOG_RADIUS &&
-                        hasLineOfSight(mercenary.x, mercenary.y, mon.x, mon.y)
-                    );
-                    if (enemyInSight && hymnInfo && (hymnSkill === 'GuardianHymn' || hymnSkill === 'CourageHymn') &&
-                        !(mercenary.skillCooldowns[hymnSkill] > 0) && mercenary.mana >= hymnCost) {
-                        let nearestAlly = null;
-                        let distAlly = Infinity;
-                        const allies = [gameState.player, ...gameState.activeMercenaries.filter(m => m.alive && m !== mercenary)];
-                        allies.forEach(a => {
-                            const d = getDistance(mercenary.x, mercenary.y, a.x, a.y);
-                            if (d <= hymnInfo.range && d < distAlly) {
-                                distAlly = d;
-                                nearestAlly = a;
-                            }
-                        });
-
-                        if (hymnSkill === 'GuardianHymn') {
-                            const appliedSelf = applyShield(mercenary, mercenary, hymnInfo, hymnLevel);
-                            const appliedAlly = nearestAlly ? applyShield(mercenary, nearestAlly, hymnInfo, hymnLevel) : false;
-                            if (appliedSelf || appliedAlly) {
-                                mercenary.mana -= hymnCost;
-                                SoundEngine.playSound('auraActivateMinor');
-                                updateMercenaryDisplay();
-                                mercenary.skillCooldowns[hymnSkill] = hymnInfo.cooldown;
-                                mercenary.hasActed = true;
-                                return;
-                            }
-                        } else if (hymnSkill === 'CourageHymn') {
-                            const appliedSelf = applyAttackBuff(mercenary, mercenary, hymnInfo, hymnLevel);
-                            const appliedAlly = nearestAlly ? applyAttackBuff(mercenary, nearestAlly, hymnInfo, hymnLevel) : false;
-                            if (appliedSelf || appliedAlly) {
-                                mercenary.mana -= hymnCost;
-                                SoundEngine.playSound('auraActivateMajor');
-                                updateMercenaryDisplay();
-                                mercenary.skillCooldowns[hymnSkill] = hymnInfo.cooldown;
-                                mercenary.hasActed = true;
-                                return;
-                            }
-                        }
-                    }
-                }
 
                 const knowsHeal = skillInfo && mercenary.skill === 'Heal';
                 const healOnCooldown = knowsHeal && mercenary.skillCooldowns[mercenary.skill] > 0;
@@ -7193,7 +7145,98 @@ function processTurn() {
 
                 // 이동만 했다면 이후 일반 행동 로직을 계속 진행합니다.
             }
-            
+            else if (mercenary.role === 'bard') {
+                const hymnSkillKey = mercenary.skill;
+                const healSkillKey = mercenary.skill2;
+                const isEnemyNearby = gameState.monsters.some(m =>
+                    getDistance(gameState.player.x, gameState.player.y, m.x, m.y) <= FOG_RADIUS
+                );
+                const hymnInfo = MERCENARY_SKILLS[hymnSkillKey];
+                if (isEnemyNearby && hymnInfo && (hymnInfo.aura || hymnInfo.shield || hymnInfo.attackBuff)) {
+                    const hymnLevel = mercenary.skillLevels && mercenary.skillLevels[hymnSkillKey] || 1;
+                    const baseHymnMana = (hymnInfo.manaCost || 5) + hymnLevel - 1;
+                    const hymnManaCost = getSkillManaCost(mercenary, { manaCost: baseHymnMana });
+                    if (mercenary.mana >= hymnManaCost) {
+                        const alliesToBuff = [gameState.player, ...gameState.activeMercenaries.filter(m => m.alive)]
+                            .filter(ally =>
+                                getDistance(mercenary.x, mercenary.y, ally.x, ally.y) <= getSkillRange(mercenary, hymnInfo) &&
+                                (!ally.buffs || !ally.buffs.find(b => b.name === hymnSkillKey))
+                            );
+                        if (alliesToBuff.length > 0) {
+                            addMessage(`🎵 ${mercenary.name}이(가) ${hymnInfo.name}을(를) 연주합니다!`, 'mercenary', null, mercenary);
+                            alliesToBuff.forEach(ally => {
+                                if (hymnInfo.shield) applyShield(mercenary, ally, hymnInfo, hymnLevel);
+                                if (hymnInfo.attackBuff) applyAttackBuff(mercenary, ally, hymnInfo, hymnLevel);
+                                if (hymnInfo.aura) {
+                                    if (!ally.buffs) ally.buffs = [];
+                                    ally.buffs.push({ name: hymnSkillKey, effects: hymnInfo.aura, turnsLeft: 5 });
+                                }
+                            });
+                            mercenary.mana -= hymnManaCost;
+                            mercenary.skillCooldowns[hymnSkillKey] = getSkillCooldown(mercenary, hymnInfo);
+                            updateMercenaryDisplay();
+                            mercenary.hasActed = true;
+                            return;
+                        }
+                    }
+                }
+
+                const healInfo = MERCENARY_SKILLS[healSkillKey];
+                if (healInfo && healInfo.heal && !(mercenary.skillCooldowns[healSkillKey] > 0)) {
+                    const healLevel = mercenary.skillLevels && mercenary.skillLevels[healSkillKey] || 1;
+                    const healMana = getSkillManaCost(mercenary, healInfo);
+                    if (mercenary.mana >= healMana) {
+                        const healRange = getSkillRange(mercenary, healInfo);
+                        const allies = [gameState.player, ...gameState.activeMercenaries.filter(m => m.alive)];
+                        const target = allies.find(a => a.health < getStat(a, 'maxHealth') * 0.7 &&
+                            getDistance(mercenary.x, mercenary.y, a.x, a.y) <= healRange);
+                        if (target && healTarget(mercenary, target, healInfo, healLevel)) {
+                            mercenary.mana -= healMana;
+                            mercenary.skillCooldowns[healSkillKey] = getSkillCooldown(mercenary, healInfo);
+                            updateMercenaryDisplay();
+                            mercenary.hasActed = true;
+                            return;
+                        }
+                    }
+                }
+
+                let nearestMonster = null;
+                let nearestDistance = Infinity;
+                visibleMonsters.forEach(monster => {
+                    const dist = getDistance(mercenary.x, mercenary.y, monster.x, monster.y);
+                    if (dist < nearestDistance) {
+                        nearestDistance = dist;
+                        nearestMonster = monster;
+                    }
+                });
+
+                if (nearestMonster) {
+                    if (nearestDistance <= attackRange) {
+                        performAttack(mercenary, nearestMonster);
+                        mercenary.hasActed = true;
+                        return;
+                    } else {
+                        const path = findPath(mercenary.x, mercenary.y, nearestMonster.x, nearestMonster.y);
+                        if (path && path.length > 1) {
+                            mercenary.nextX = path[1].x;
+                            mercenary.nextY = path[1].y;
+                        }
+                        mercenary.hasActed = true;
+                        return;
+                    }
+                }
+
+                if (playerDistance > 2) {
+                    const path = findPath(mercenary.x, mercenary.y, gameState.player.x, gameState.player.y);
+                    if (path && path.length > 1) {
+                        mercenary.nextX = path[1].x;
+                        mercenary.nextY = path[1].y;
+                    }
+                }
+                mercenary.hasActed = true;
+                return;
+            }
+
             // 가장 가까운 시야 내 몬스터 찾기 (fog of war 고려)
             let nearestMonster = null;
             let nearestDistance = Infinity;
