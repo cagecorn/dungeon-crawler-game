@@ -2020,7 +2020,8 @@ const MERCENARY_NAMES = [
                             const unitName = unit.name || '유닛';
                             const itemName = item.name || '장비';
                             const skillName = skill ? skill.name : proc.skill;
-                            addMessage(`✨ ${unitName}의 ${itemName} 효과로 ${skillName} 스킬이 발동했습니다!`, 'treasure', null, getUnitImage(unit));
+                            const msgType = item.tier === 'unique' ? 'unique-skill' : 'treasure';
+                            addMessage(`✨ ${unitName}의 ${itemName} 효과로 ${skillName} 스킬이 발동했습니다!`, msgType, null, getUnitImage(unit));
                             if (typeof triggerProcSkill === 'function') {
                                 triggerProcSkill(unit, opponent, proc);
                             }
