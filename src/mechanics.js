@@ -7037,7 +7037,7 @@ function processTurn() {
                 skillInfo &&
                 mercenary.mana >= skillManaCost &&
                 !(mercenary.skillCooldowns[skillKey] > 0) &&
-                (forceSkill || Math.random() < 0.5) &&
+                (forceSkill || Math.random() < (mercenary.type === 'BARD' ? 1.0 : 0.5)) &&
                 ((skillKey !== 'GuardianHymn' && skillKey !== 'CourageHymn') || combatOccurredInTurn || enemyInPlayerSight)
             ) {
                 if (skillKey === 'Heal') {
