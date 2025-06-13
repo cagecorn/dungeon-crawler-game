@@ -12,7 +12,7 @@ async function run() {
 
   const { createItem, formatItem, gameState, createMonster, performAttack, getStat } = win;
 
-  const seq = [0, 0, 0.55, 0, 0.65];
+  const seq = [0, 0, 0.525, 0, 0.65];
   const origRandom = win.Math.random;
   win.Math.random = () => seq.shift() ?? origRandom();
 
