@@ -1773,14 +1773,22 @@ const MERCENARY_NAMES = [
             { name: 'Arcane', modifiers: { magicPower: 3, manaRegen: 1 } },
             { name: 'Savage', modifiers: { attack: 2, critChance: 0.05 } },
             { name: 'Guardian', modifiers: { defense: 2, maxHealth: 10 } },
-            { name: 'Swift', modifiers: { accuracy: 0.05, evasion: 0.05 } }
+            { name: 'Swift', modifiers: { accuracy: 0.05, evasion: 0.05 } },
+            { name: 'Vampiric', modifiers: { lifeSteal: 0.1 } },
+            { name: 'Thorned', modifiers: { damageReflect: 0.2 } },
+            { name: 'Rejuvenating', modifiers: { healOnKill: 10 } },
+            { name: 'Soulful', modifiers: { manaOnKill: 10 } }
         ];
 
         const RARE_SUFFIXES = [
             { name: 'of Mastery', modifiers: { attack: 2, defense: 2 } },
             { name: 'of the Magus', modifiers: { magicPower: 3, manaRegen: 1 } },
             { name: 'of Vitality', modifiers: { maxHealth: 10, healthRegen: 1 } },
-            { name: 'of Quickness', modifiers: { accuracy: 0.05, evasion: 0.05, critChance: 0.05 } }
+            { name: 'of Quickness', modifiers: { accuracy: 0.05, evasion: 0.05, critChance: 0.05 } },
+            { name: 'of Leeching', modifiers: { lifeSteal: 0.1 } },
+            { name: 'of Thorns', modifiers: { damageReflect: 0.2 } },
+            { name: 'of Rejuvenation', modifiers: { healOnKill: 10 } },
+            { name: 'of Souls', modifiers: { manaOnKill: 10 } }
         ];
 
         const MAP_PREFIXES = [
