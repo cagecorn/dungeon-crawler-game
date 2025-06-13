@@ -2060,12 +2060,15 @@ const MERCENARY_NAMES = [
                 aoeTargets.forEach(enemy => {
                     const attackValue = rollDice(skill.damageDice) * level + getStat(source, 'magicPower');
                     const result = performAttack(source, enemy, { attackValue, magic: true, element: skill.element, skipProcs: true });
-                    if (result.hit) {
-                         addMessage(`${skill.icon} ${enemy.name}에게 ${formatNumber(result.damage)}의 광역 피해!`, 'combat', null, getUnitImage(source));
-                         if(enemy.health <= 0) {
-                             if(gameState.monsters.includes(enemy)) killMonster(enemy);
-                             else killMercenary(enemy);
-                         }
+                    const detail = buildAttackDetail(skill.icon, skill.name, result);
+                    if (!result.hit) {
+                        addMessage(`❌ ${enemy.name}에게 ${skill.name}이 빗나갔습니다!`, 'combat', detail, getUnitImage(source));
+                    } else {
+                        addMessage(`${skill.icon} ${enemy.name}에게 ${formatNumber(result.damage)}의 광역 피해!`, 'combat', detail, getUnitImage(source));
+                        if (enemy.health <= 0) {
+                            if (gameState.monsters.includes(enemy)) killMonster(enemy);
+                            else killMercenary(enemy);
+                        }
                     }
                 });
             }
@@ -2081,10 +2084,13 @@ const MERCENARY_NAMES = [
                     skipProcs: true
                 });
 
-                if (result.hit) {
-                    addMessage(`${skill.icon} ${target.name}에게 ${formatNumber(result.damage)}의 원거리 피해!`, 'combat', null, getUnitImage(source));
-                    if(target.health <= 0) {
-                        if(gameState.monsters.includes(target)) killMonster(target);
+                const detail = buildAttackDetail(skill.icon, skill.name, result);
+                if (!result.hit) {
+                    addMessage(`❌ ${target.name}에게 ${skill.name}이 빗나갔습니다!`, 'combat', detail, getUnitImage(source));
+                } else {
+                    addMessage(`${skill.icon} ${target.name}에게 ${formatNumber(result.damage)}의 원거리 피해!`, 'combat', detail, getUnitImage(source));
+                    if (target.health <= 0) {
+                        if (gameState.monsters.includes(target)) killMonster(target);
                         else if (target !== gameState.player) killMercenary(target);
                         else handlePlayerDeath();
                     }
