@@ -5675,7 +5675,8 @@ function killMonster(monster, killer = null) {
             if (armorChoices.length) champion.equipped.armor = createItem(armorChoices[Math.floor(Math.random()*armorChoices.length)], 0, 0, null, enhanceLv);
             if (accChoices.length) champion.equipped.accessory1 = createItem(accChoices[Math.floor(Math.random()*accChoices.length)], 0, 0, null, enhanceLv);
 
-            const skillKeys = Object.keys(MONSTER_SKILLS);
+            const skillKeys = Object.keys(MONSTER_SKILLS)
+                .concat(['Weaken','Sunder','Regression','SpellWeakness','ElementalWeakness']);
             const sk = skillKeys[Math.floor(Math.random() * skillKeys.length)];
             champion.monsterSkill = sk;
             champion.skillLevels = {};
