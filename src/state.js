@@ -4,9 +4,6 @@
     const CELL_SIZE = 33;     // 셀 크기(갭 포함)
     const CELL_WIDTH = CELL_SIZE - 1; // 실제 셀 너비
 
-    // 효과 사이클 관리를 위한 상태
-    const effectCycleState = {};
-
     let gameState = {
         turn: 0,
         gameRunning: true,
@@ -94,11 +91,10 @@
     global.FOG_RADIUS = FOG_RADIUS;
     global.CELL_SIZE = CELL_SIZE;
     global.CELL_WIDTH = CELL_WIDTH;
-    global.effectCycleState = effectCycleState;
     if (typeof document !== 'undefined') {
         document.documentElement.style.setProperty('--cell-width', `${CELL_WIDTH}px`);
     }
     if (typeof module !== 'undefined' && module.exports) {
-        module.exports = { gameState, MONSTER_VISION, FOG_RADIUS, CELL_SIZE, CELL_WIDTH, effectCycleState };
+        module.exports = { gameState, MONSTER_VISION, FOG_RADIUS, CELL_SIZE, CELL_WIDTH };
     }
 })(typeof globalThis !== 'undefined' ? globalThis : this);
