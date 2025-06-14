@@ -6,7 +6,6 @@
 // 전투가 발생했는지 추적하는 플래그
 let combatOccurredInTurn = false;
 let lowHpAlertPlayed = false;
-let lastDangerTurn = -1;
 
 const IS_TEST_ENV =
   typeof navigator !== 'undefined' &&
@@ -463,19 +462,6 @@ function initializeAudio() {
     isAudioInitialized = true;
     console.log("All audio systems initialized by user action.");
 }
-
-function checkDanger() {
-    if (gameState.turn === lastDangerTurn) return;
-    const dangerNearby = gameState.monsters.some(m =>
-        (m.isChampion || m.isElite || m.isSuperior || m.special === 'boss') &&
-        getDistance(m.x, m.y, gameState.player.x, gameState.player.y) <= 5
-    );
-    if (dangerNearby) {
-        playPlayerVoice('assets/audio/player_danger.mp3');
-        lastDangerTurn = gameState.turn;
-    }
-}
-
 
 // ========================== 추가 끝 ==========================
 
@@ -7116,7 +7102,6 @@ function killMonster(monster, killer = null) {
                 return;
             }
 
-            checkDanger();
             processTurn();
         }
 
@@ -7596,7 +7581,6 @@ function processTurn() {
 
         // 다음 턴을 위해 전투 발생 플래그를 리셋합니다.
         combatOccurredInTurn = false;
-        checkDanger();
     }
 
     function processPaladinTurn(mercenary, visibleMonsters = gameState.monsters) {
