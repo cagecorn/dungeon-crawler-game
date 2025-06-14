@@ -6489,6 +6489,20 @@ function killMonster(monster, killer = null) {
             mercenary.alive = false;
             mercenary.health = 0;
 
+            mercenary.buffs = [];
+            mercenary.shield = 0;
+            mercenary.shieldTurns = 0;
+            mercenary.attackBuff = 0;
+            mercenary.attackBuffTurns = 0;
+            mercenary.poison = mercenary.burn = mercenary.freeze = false;
+            mercenary.bleed = mercenary.paralysis = mercenary.nightmare = false;
+            mercenary.silence = mercenary.petrify = mercenary.debuff = false;
+            mercenary.poisonTurns = mercenary.burnTurns = 0;
+            mercenary.freezeTurns = mercenary.bleedTurns = 0;
+            mercenary.paralysisTurns = mercenary.nightmareTurns = 0;
+            mercenary.silenceTurns = mercenary.petrifyTurns = 0;
+            mercenary.debuffTurns = 0;
+
             if (gameState.dungeon[mercenary.y] && gameState.dungeon[mercenary.y][mercenary.x]) {
                 const hasItem = gameState.items.some(i => i.x === mercenary.x && i.y === mercenary.y);
                 gameState.dungeon[mercenary.y][mercenary.x] = hasItem ? 'item' : 'empty';
@@ -7144,10 +7158,18 @@ function killMonster(monster, killer = null) {
             renderDungeon();
         }
 
+        function isEntityOnScreen(entity) {
+            const { camera, viewportSize } = gameState;
+            return entity.x >= camera.x && entity.x < camera.x + viewportSize &&
+                   entity.y >= camera.y && entity.y < camera.y + viewportSize;
+        }
+
         // 턴 처리 (최적화됨)
 function processTurn() {
     if (!gameState.gameRunning) return;
     gameState.turn++;
+
+    const visibleMonsters = gameState.monsters.filter(isEntityOnScreen);
 
     const decrementCooldowns = entity => {
         if (!entity.skillCooldowns) return;
@@ -7188,10 +7210,10 @@ function processTurn() {
     gameState.activeMercenaries.forEach(decrementShield);
     gameState.activeMercenaries.forEach(decrementAttackBuff);
     gameState.activeMercenaries.forEach(decrementBuffs);
-    gameState.monsters.forEach(decrementCooldowns);
-    gameState.monsters.forEach(decrementShield);
-    gameState.monsters.forEach(decrementAttackBuff);
-    gameState.monsters.forEach(decrementBuffs);
+    visibleMonsters.forEach(decrementCooldowns);
+    visibleMonsters.forEach(decrementShield);
+    visibleMonsters.forEach(decrementAttackBuff);
+    visibleMonsters.forEach(decrementBuffs);
 
     for (let i = gameState.corpses.length - 1; i >= 0; i--) {
         const corpse = gameState.corpses[i];
@@ -7205,7 +7227,7 @@ function processTurn() {
 
             const starvedMercs = [];
             const starvedMonsters = [];
-            [...gameState.activeMercenaries, ...gameState.standbyMercenaries].forEach(m => {
+            gameState.activeMercenaries.forEach(m => {
                 m.fullness = Math.max(0, (m.fullness || 0) - FULLNESS_LOSS_PER_TURN);
                 if (m.fullness <= 0) {
                     starvedMercs.push(m);
@@ -7266,13 +7288,13 @@ function processTurn() {
                     killMercenary(mercenary);
                 }
             }
-            gameState.monsters.slice().forEach(monster => {
+            visibleMonsters.slice().forEach(monster => {
                 if (applyStatusEffects(monster)) {
                     killMonster(monster);
                 }
             });
 
-            gameState.monsters.forEach(m => {
+            visibleMonsters.forEach(m => {
                 if (m.bleedTurns && m.bleedTurns > 0) {
                     m.bleedTurns--;
                 }
@@ -9464,7 +9486,7 @@ upgradeMercenarySkill, upgradeMonsterSkill, useItem, useItemOnTarget, useSkill, 
     updateCraftingDetailDisplay, showCraftingDetailPanel, hideCraftingDetailPanel,
     showCorpsePanel, hideCorpsePanel, ignoreCorpse, getMonsterRank,
     getMonsterImage, getMercImage, getPlayerImage, getUnitImage,
-    isPlayerSide, isSameSide
+    isPlayerSide, isSameSide, isEntityOnScreen
 };
 Object.assign(window, exportsObj, {SKILL_DEFS, MERCENARY_SKILLS, MONSTER_SKILLS, MONSTER_SKILL_SETS, MONSTER_TRAITS, MONSTER_TRAIT_SETS, PREFIXES, SUFFIXES, RARE_PREFIXES, RARE_SUFFIXES, MAP_PREFIXES, MAP_SUFFIXES, MAP_TILE_TYPES, CORPSE_TURNS, UNIQUE_ITEMS, UNIQUE_EFFECT_POOL});
 
