@@ -1587,6 +1587,10 @@ const MERCENARY_NAMES = [
         const UNIQUE_EFFECT_POOL = [
             { event: 'onAttack', skill: 'FireNova', chance: 0.15 },
             { event: 'onAttack', skill: 'IceNova', chance: 0.15 },
+            { event: 'onAttack', skill: 'WindNova', chance: 0.15 },
+            { event: 'onAttack', skill: 'EarthNova', chance: 0.15 },
+            { event: 'onAttack', skill: 'LightNova', chance: 0.15 },
+            { event: 'onAttack', skill: 'DarkNova', chance: 0.15 },
             { event: 'onDamaged', skill: 'GuardianHymn', chance: 0.1 },
             { event: 'onDamaged', skill: 'CourageHymn', chance: 0.1 }
         ];
@@ -1598,6 +1602,10 @@ const MERCENARY_NAMES = [
             Iceball: { name: 'Iceball', icon: '❄️', damageDice: '1d8', range: 5, magic: true, element: 'ice', manaCost: 2, cooldown: 2 },
             FireNova: { name: 'Fire Nova', icon: '🔥', damageDice: '1d6', radius: 3, magic: true, element: 'fire', manaCost: 5, cooldown: 3, novaType: 'fire', screenShake: { intensity: 3, duration: 200 } },
             IceNova: { name: 'Ice Nova', icon: '❄️', damageDice: '1d6', radius: 3, magic: true, element: 'ice', manaCost: 4, cooldown: 3, novaType: 'ice' },
+            WindNova: { name: 'Wind Nova', icon: '💨', damageDice: '1d6', radius: 3, magic: true, element: 'wind', manaCost: 4, cooldown: 3, novaType: 'wind' },
+            EarthNova: { name: 'Earth Nova', icon: '🌱', damageDice: '1d6', radius: 3, magic: true, element: 'earth', manaCost: 4, cooldown: 3, novaType: 'earth' },
+            LightNova: { name: 'Light Nova', icon: '✨', damageDice: '1d6', radius: 3, magic: true, element: 'light', manaCost: 4, cooldown: 3, novaType: 'light' },
+            DarkNova: { name: 'Dark Nova', icon: '🌑', damageDice: '1d6', radius: 3, magic: true, element: 'dark', manaCost: 4, cooldown: 3, novaType: 'dark' },
             Heal: { name: 'Heal', icon: '💖', heal: 10, range: 2, manaCost: 3, cooldown: 2 },
             Purify: { name: 'Purify', icon: '🌀', purify: true, range: 2, manaCost: 2, cooldown: 2 },
             Teleport: { name: 'Teleport', icon: '🌀', teleport: true, manaCost: 2, cooldown: 1 },
