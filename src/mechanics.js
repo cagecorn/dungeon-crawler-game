@@ -562,6 +562,8 @@ const MERCENARY_NAMES = [
 // ==========================
 // Dungeon dirty cell helpers
 // ==========================
+// `gameState` is defined in src/state.js and attached globally. It
+// includes the `dirtyCells` Set used here for efficient re-rendering.
 function markDirty(x, y) {
     if (!gameState.dirtyCells) return;
     gameState.dirtyCells.add(`${x},${y}`);
