@@ -4763,6 +4763,9 @@ function killMonster(monster, killer = null) {
                 }
             }
         }
+        if (typeof CanvasRenderer !== 'undefined' && CanvasRenderer.render) {
+            CanvasRenderer.render(gameState);
+        }
 
         function handleDungeonClick(e) {
             initializeAudio();
@@ -5285,6 +5288,9 @@ function killMonster(monster, killer = null) {
             updateInventoryDisplay();
             updateSkillDisplay();
             updateMercenaryDisplay();
+            if (typeof CanvasRenderer !== 'undefined' && CanvasRenderer.initialize) {
+                CanvasRenderer.initialize(gameState.dungeonSize);
+            }
             renderDungeon();
             updateCamera();
         }
@@ -6358,6 +6364,9 @@ function killMonster(monster, killer = null) {
 
             updateStats();
             updateMercenaryDisplay();
+            if (typeof CanvasRenderer !== 'undefined' && CanvasRenderer.initialize) {
+                CanvasRenderer.initialize(gameState.dungeonSize);
+            }
             renderDungeon();
         }
 
