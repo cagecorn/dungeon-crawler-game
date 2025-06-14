@@ -368,7 +368,7 @@ const BgmPlayer = {
         this.audioElement = document.getElementById('bgm-player');
         if (this.audioElement) {
             this.isInitialized = true;
-            this.audioElement.volume = 0.3; // BGM 볼륨 설정
+            this.audioElement.volume = 0.5; // BGM 볼륨 설정
 
             // [추가] 'ended' 이벤트 리스너. 현재 곡 재생이 끝나면 자동으로 호출됩니다.
             this.audioElement.addEventListener('ended', () => {
@@ -414,6 +414,12 @@ const BgmPlayer = {
     toggleMute() {
         if (!this.audioElement) return;
         this.audioElement.muted = !this.audioElement.muted;
+    },
+
+    changeVolume(delta) {
+        if (!this.audioElement) return;
+        const newVol = Math.max(0, Math.min(1, this.audioElement.volume + delta));
+        this.audioElement.volume = newVol;
     },
 
     // 재생 시작 함수 수정
@@ -9272,6 +9278,10 @@ function processTurn() {
         if (prevBtn) prevBtn.onclick = () => { initializeAudio(); BgmPlayer.playPreviousTrack(); };
         const toggleBtn = document.getElementById('toggle-bgm');
         if (toggleBtn) toggleBtn.onclick = () => { initializeAudio(); BgmPlayer.toggleMute(); };
+        const volUpBtn = document.getElementById('vol-up');
+        if (volUpBtn) volUpBtn.onclick = () => { initializeAudio(); BgmPlayer.changeVolume(0.1); };
+        const volDownBtn = document.getElementById('vol-down');
+        if (volDownBtn) volDownBtn.onclick = () => { initializeAudio(); BgmPlayer.changeVolume(-0.1); };
 
         document.addEventListener('keydown', (e) => {
             initializeAudio();
