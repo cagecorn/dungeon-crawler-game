@@ -9604,43 +9604,5 @@ upgradeMercenarySkill, upgradeMonsterSkill, useItem, useItemOnTarget, useSkill, 
     getMonsterImage, getMercImage, getPlayerImage, getUnitImage,
     isPlayerSide, isSameSide
 };
-// ======================= 추가 시작 =======================
-// 1초마다 모든 유닛의 효과 아이콘 인덱스를 업데이트하고, 다시 렌더링합니다.
-if (!IS_TEST_ENV) {
-    setInterval(() => {
-        if (!gameState.gameRunning) return; // 게임이 멈췄을 땐 실행하지 않음
-
-        const allUnits = [
-            gameState.player,
-            ...gameState.activeMercenaries.filter(m => m.alive),
-            ...gameState.monsters
-        ];
-
-        let needsLightweightRender = false;
-
-        allUnits.forEach(unit => {
-            if (unit && effectCycleState[unit.id]) {
-                const state = effectCycleState[unit.id];
-
-                // 버프 인덱스를 독립적으로 순환시킵니다.
-                if (state.buffs && state.buffs.length > 1) {
-                    state.buffIndex = (state.buffIndex + 1) % state.buffs.length;
-                    needsLightweightRender = true;
-                }
-
-                // 디버프 인덱스를 독립적으로 순환시킵니다.
-                if (state.debuffs && state.debuffs.length > 1) {
-                    state.debuffIndex = (state.debuffIndex + 1) % state.debuffs.length;
-                    needsLightweightRender = true;
-                }
-            }
-        });
-
-        if (needsLightweightRender) {
-            updateAllEffectIcons(); // [수정] 맵 전체 렌더링 대신 가벼운 아이콘 업데이트 함수 호출
-        }
-    }, 1000); // 1초 간격
-}
-// ======================= 추가 끝 =======================
 Object.assign(window, exportsObj, {SKILL_DEFS, MERCENARY_SKILLS, MONSTER_SKILLS, MONSTER_SKILL_SETS, MONSTER_TRAITS, MONSTER_TRAIT_SETS, PREFIXES, SUFFIXES, RARE_PREFIXES, RARE_SUFFIXES, MAP_PREFIXES, MAP_SUFFIXES, MAP_TILE_TYPES, CORPSE_TURNS, UNIQUE_ITEMS, UNIQUE_EFFECT_POOL});
 
