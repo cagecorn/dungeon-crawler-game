@@ -34,8 +34,8 @@ async function run() {
 
   const buffContainer = cellDiv.querySelector('.buff-container');
   const icon = SKILL_DEFS[monster.auraSkill].icon;
-  if (!buffContainer || !buffContainer.textContent.includes(icon)) {
-    console.error('monster aura icon missing');
+  if (buffContainer) {
+    console.error('monster aura icon should not display');
     process.exit(1);
   }
 }

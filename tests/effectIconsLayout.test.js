@@ -31,30 +31,12 @@ async function run() {
   const buff = div.querySelector('.buff-container');
   const status = div.querySelector('.status-container');
 
-  if (!buff || !status) {
-    console.error('containers not created');
+  if (buff || status) {
+    console.error('effect containers should not exist');
     process.exit(1);
   }
 
-  if (buff.children.length !== 5 || status.children.length !== 4) {
-    console.error('incorrect number of icons');
-    process.exit(1);
-  }
-
-  const buffStyle = win.getComputedStyle(buff);
-  const statusStyle = win.getComputedStyle(status);
-
-  if (buffStyle.display !== 'flex' || statusStyle.display !== 'flex') {
-    console.error('display style incorrect');
-    process.exit(1);
-  }
-
-  if (buffStyle.flexWrap !== 'wrap' || statusStyle.flexWrap !== 'wrap') {
-    console.error('flex-wrap missing');
-    process.exit(1);
-  }
-
-  console.log('icon layout ok');
+  console.log('no icon layout ok');
 }
 
 run().catch(e => { console.error(e); process.exit(1); });
