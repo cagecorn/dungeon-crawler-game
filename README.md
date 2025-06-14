@@ -177,9 +177,8 @@ npm install
 ```
 
 The core `gameState` object used throughout the game is created in
-[`src/state.js`](src/state.js). It exposes properties like `dirtyCells`
-on the global object so other modules such as `src/mechanics.js` can
-access them directly.
+[`src/state.js`](src/state.js) and is attached to the global object so
+other modules such as `src/mechanics.js` can access it directly.
 
 ## Testing
 

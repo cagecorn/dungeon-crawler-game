@@ -11,7 +11,6 @@
         dungeonSize: 80,
         fogOfWar: [],
         cellElements: [],
-        dirtyCells: new Set(),
         player: {
             id: 'player',
             x: 1,
@@ -88,16 +87,6 @@
         currentMapModifiers: {}
     };
 
-    /**
-     * \uC9C0\uC815\uB41C \uC88C\uD45C\uC758 \uC140\uC744 \uB2E4\uC74C \uB80C\uB354\uB9C1 \uB300\uC0C1\uC73C\uB85C \uD45C\uC2DC\uD569\uB2C8\uB2E4.
-     * @param {number} x
-     * @param {number} y
-     */
-    function markDirty(x, y) {
-        if (x >= 0 && x < gameState.dungeonSize && y >= 0 && y < gameState.dungeonSize) {
-            gameState.dirtyCells.add(`${x},${y}`); // Set\uC5D0 "x,y" \uD615\uD0DC\uC758 \uBB38\uC790\uC5F4\uB85C \uC800\uC7A5
-        }
-    }
     global.gameState = gameState;
     global.MONSTER_VISION = MONSTER_VISION;
     global.FOG_RADIUS = FOG_RADIUS;
@@ -107,6 +96,6 @@
         document.documentElement.style.setProperty('--cell-width', `${CELL_WIDTH}px`);
     }
     if (typeof module !== 'undefined' && module.exports) {
-        module.exports = { gameState, markDirty, MONSTER_VISION, FOG_RADIUS, CELL_SIZE, CELL_WIDTH };
+        module.exports = { gameState, MONSTER_VISION, FOG_RADIUS, CELL_SIZE, CELL_WIDTH };
     }
 })(typeof globalThis !== 'undefined' ? globalThis : this);

@@ -3833,13 +3833,16 @@ function updateMaterialsDisplay() {
 
         // 안개 업데이트
         function updateFogOfWar() {
-            for (let y = 0; y < gameState.dungeonSize; y++) {
+            const startY = Math.max(0, gameState.player.y - FOG_RADIUS);
+            const endY = Math.min(gameState.dungeonSize - 1, gameState.player.y + FOG_RADIUS);
+            const startX = Math.max(0, gameState.player.x - FOG_RADIUS);
+            const endX = Math.min(gameState.dungeonSize - 1, gameState.player.x + FOG_RADIUS);
+
+            for (let y = startY; y <= endY; y++) {
                 if (!gameState.fogOfWar[y]) gameState.fogOfWar[y] = [];
-                for (let x = 0; x < gameState.dungeonSize; x++) {
+                for (let x = startX; x <= endX; x++) {
                     if (getDistance(x, y, gameState.player.x, gameState.player.y) <= FOG_RADIUS) {
                         gameState.fogOfWar[y][x] = false;
-                    } else if (gameState.fogOfWar[y][x] === undefined) {
-                        gameState.fogOfWar[y][x] = true;
                     }
                 }
             }
