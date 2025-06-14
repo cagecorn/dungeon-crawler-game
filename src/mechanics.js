@@ -9385,16 +9385,16 @@ if (!(typeof navigator !== 'undefined' && navigator.userAgent &&
         allUnits.forEach(unit => {
             if (unit && effectCycleState[unit.id]) {
                 const state = effectCycleState[unit.id];
-                let updated = false;
+
+                // 버프 인덱스를 독립적으로 순환시킵니다.
                 if (state.buffs && state.buffs.length > 1) {
                     state.buffIndex = (state.buffIndex + 1) % state.buffs.length;
-                    updated = true;
+                    needsRender = true;
                 }
+
+                // 디버프 인덱스를 독립적으로 순환시킵니다.
                 if (state.debuffs && state.debuffs.length > 1) {
                     state.debuffIndex = (state.debuffIndex + 1) % state.debuffs.length;
-                    updated = true;
-                }
-                if (updated) {
                     needsRender = true;
                 }
             }
