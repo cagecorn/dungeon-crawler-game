@@ -60,6 +60,7 @@
         },
         activeMercenaries: [],
         standbyMercenaries: [],
+        supporters: [null, null],
         get mercenaries(){ return this.activeMercenaries; },
         monsters: [],
         corpses: [],
