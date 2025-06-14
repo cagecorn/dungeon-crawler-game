@@ -39,6 +39,12 @@
   /* border: 1px solid #000; */
 }
 
+.cell.darkness {
+  background: #000;
+  color: transparent;
+  background-image: none !important;
+}
+
 .cell.empty.player {
   background-image: url("assets/images/player.png"), url("assets/images/floor-tile.png");
   background-size: contain, cover;

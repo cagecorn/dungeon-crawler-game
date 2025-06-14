@@ -4670,6 +4670,12 @@ function killMonster(monster, killer = null) {
                     if (buffEl) buffEl.innerHTML = '';
                     if (statusEl) statusEl.innerHTML = '';
                     const baseCellType = gameState.dungeon[y][x];
+                    if (gameState.fogOfWar[y] && gameState.fogOfWar[y][x]) {
+                        div.className = 'cell darkness';
+                        if (tileBg) tileBg.style.backgroundImage = '';
+                        div.textContent = '';
+                        continue;
+                    }
                     const finalClasses = ['cell', baseCellType];
                     let mapTile = null;
                     if (baseCellType === 'tile') {
@@ -7094,12 +7100,21 @@ function killMonster(monster, killer = null) {
                    entity.y >= camera.y && entity.y < camera.y + viewportSize;
         }
 
+        function isCellVisible(x, y) {
+            return gameState.fogOfWar[y] && gameState.fogOfWar[y][x] === false;
+        }
+
+        function isEntityVisible(entity) {
+            return isCellVisible(entity.x, entity.y);
+        }
+
         // 턴 처리 (최적화됨)
 function processTurn() {
     if (!gameState.gameRunning) return;
     gameState.turn++;
 
-    const visibleMonsters = gameState.monsters.filter(isEntityOnScreen);
+    const visibleMonsters = IS_TEST_ENV ? gameState.monsters :
+        gameState.monsters.filter(isEntityVisible);
 
     const decrementCooldowns = entity => {
         if (!entity.skillCooldowns) return;
@@ -7174,7 +7189,7 @@ function processTurn() {
                 removeMercenary(m);
             });
 
-            gameState.monsters.forEach(monster => {
+            visibleMonsters.forEach(monster => {
                 if (monster.affinity !== undefined) {
                     monster.fullness = Math.max(0, (monster.fullness || 0) - FULLNESS_LOSS_PER_TURN);
                     if (monster.fullness <= 0) {
@@ -7244,7 +7259,7 @@ function processTurn() {
             });
 
             sortedMercenaries.forEach(mercenary => {
-                processMercenaryTurn(mercenary, gameState.monsters);
+                processMercenaryTurn(mercenary, visibleMonsters);
             });
 
             const occupied = new Set();
@@ -7262,7 +7277,7 @@ function processTurn() {
                 monster.hasActed = false;
             });
             
-            for (const monster of [...gameState.monsters]) {
+            for (const monster of [...visibleMonsters]) {
                 if (monster.hasActed || !gameState.gameRunning) continue;
                 if ((monster.paralysis && monster.paralysisTurns > 0) || (monster.petrify && monster.petrifyTurns > 0)) {
                     monster.paralysisTurns && monster.paralysisTurns--;
@@ -8419,7 +8434,9 @@ function processTurn() {
             const range = 5;
             let target = null;
             let dist = Infinity;
-            for (const monster of gameState.monsters) {
+            const monstersToCheck = IS_TEST_ENV ? gameState.monsters :
+                gameState.monsters.filter(isEntityVisible);
+            for (const monster of monstersToCheck) {
                 const d = getDistance(gameState.player.x, gameState.player.y, monster.x, monster.y);
                 if (d <= range && d < dist && hasLineOfSight(gameState.player.x, gameState.player.y, monster.x, monster.y)) {
                     target = monster;
@@ -8828,7 +8845,9 @@ function processTurn() {
             const searchRange = (skill.melee && skill.dashRange)
                 ? getSkillRange(gameState.player, { range: skill.dashRange })
                 : getSkillRange(gameState.player, skill);
-            for (const monster of gameState.monsters) {
+            const monstersToCheck = IS_TEST_ENV ? gameState.monsters :
+                gameState.monsters.filter(isEntityVisible);
+            for (const monster of monstersToCheck) {
                 const d = getDistance(gameState.player.x, gameState.player.y, monster.x, monster.y);
                 if (d <= searchRange && d < dist && hasLineOfSight(gameState.player.x, gameState.player.y, monster.x, monster.y)) {
                     target = monster;
