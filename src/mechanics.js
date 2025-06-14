@@ -559,6 +559,21 @@ const MERCENARY_NAMES = [
     'Chaos', 'Order', 'Balance', 'Harmony', 'Discord', 'Fury', 'Rage', 'Calm', 'Serenity', 'Tranquil'
 ];
 
+// ==========================
+// Dungeon dirty cell helpers
+// ==========================
+function markDirty(x, y) {
+    if (!gameState.dirtyCells) return;
+    gameState.dirtyCells.add(`${x},${y}`);
+}
+
+function setDungeonCell(x, y, value) {
+    if (gameState.dungeon[y]) {
+        gameState.dungeon[y][x] = value;
+        markDirty(x, y);
+    }
+}
+
         const MAX_FULLNESS = 100;
         const FULLNESS_LOSS_PER_TURN = 0.01;
         // corpses now remain indefinitely so they never disappear on their own
@@ -3685,7 +3700,7 @@ function updateMaterialsDisplay() {
                         const idx = gameState.items.findIndex(it => it.x === pos.x && it.y === pos.y);
                         if (idx !== -1) gameState.items.splice(idx, 1);
                     }
-                    gameState.dungeon[pos.y][pos.x] = 'empty';
+                    setDungeonCell(pos.x, pos.y, 'empty');
                     mercenary.x = pos.x;
                     mercenary.y = pos.y;
                     return true;
@@ -3836,11 +3851,11 @@ function updateMaterialsDisplay() {
             for (let y = 0; y < gameState.dungeonSize; y++) {
                 if (!gameState.fogOfWar[y]) gameState.fogOfWar[y] = [];
                 for (let x = 0; x < gameState.dungeonSize; x++) {
-                    if (getDistance(x, y, gameState.player.x, gameState.player.y) <= FOG_RADIUS) {
-                        gameState.fogOfWar[y][x] = false;
-                    } else if (gameState.fogOfWar[y][x] === undefined) {
-                        gameState.fogOfWar[y][x] = true;
-                    }
+                    const visible = getDistance(x, y, gameState.player.x, gameState.player.y) <= FOG_RADIUS;
+                    const prev = gameState.fogOfWar[y][x];
+                    const next = !visible;
+                    if (prev !== next) markDirty(x, y);
+                    gameState.fogOfWar[y][x] = next;
                 }
             }
         }
@@ -4207,7 +4222,7 @@ function killMonster(monster, killer = null) {
                     }
                     const droppedItem = createItem(randomUniqueKey, pos.x, pos.y);
                     gameState.items.push(droppedItem);
-                    gameState.dungeon[pos.y][pos.x] = 'item';
+                    setDungeonCell(pos.x, pos.y, 'item');
                     addMessage(`✨ 전설이 깃든... ${formatItemName(droppedItem)}을(를) 획득했습니다!`, 'treasure');
                 }
             } else if (monster.isChampion) {
@@ -4221,7 +4236,7 @@ function killMonster(monster, killer = null) {
                     drop.x = pos.x;
                     drop.y = pos.y;
                     gameState.items.push(drop);
-                    gameState.dungeon[pos.y][pos.x] = 'item';
+                    setDungeonCell(pos.x, pos.y, 'item');
                 }
             } else if (monster.special === 'boss') {
                 const bossItems = ['magicSword', 'magicStaff', 'plateArmor', 'greaterHealthPotion'];
@@ -4233,7 +4248,7 @@ function killMonster(monster, killer = null) {
                 }
                 const bossItem = createItem(bossItemKey, pos.x, pos.y, null, Math.floor(gameState.floor / 5), Math.random() < 0.1);
                 gameState.items.push(bossItem);
-                gameState.dungeon[pos.y][pos.x] = 'item';
+                setDungeonCell(pos.x, pos.y, 'item');
                 addMessage(`🎁 ${monster.name}이(가) ${formatItemName(bossItem)}을(를) 떨어뜨렸습니다!`, 'treasure');
             } else {
                 let lootChance = monster.lootChance + (gameState.currentMapModifiers?.lootChanceBonus || 0);
@@ -4255,7 +4270,7 @@ function killMonster(monster, killer = null) {
                     }
                     const droppedItem = createItem(randomItemKey, pos.x, pos.y, null, Math.floor(gameState.floor / 5), Math.random() < 0.1);
                     gameState.items.push(droppedItem);
-                    gameState.dungeon[pos.y][pos.x] = 'item';
+                    setDungeonCell(pos.x, pos.y, 'item');
                     addMessage(`📦 ${monster.name}이(가) ${formatItemName(droppedItem)}을(를) 떨어뜨렸습니다!`, 'item');
                 }
             }
@@ -4267,14 +4282,14 @@ function killMonster(monster, killer = null) {
                 }
                 const scroll = createRecipeScroll(unknown[Math.floor(Math.random() * unknown.length)], pos.x, pos.y);
                 gameState.items.push(scroll);
-                gameState.dungeon[pos.y][pos.x] = 'item';
+                setDungeonCell(pos.x, pos.y, 'item');
             }
             const idx = gameState.monsters.findIndex(m => m === monster);
             if (idx !== -1) gameState.monsters.splice(idx, 1);
             monster.health = 0;
             monster.turnsLeft = CORPSE_TURNS;
             gameState.corpses.push(monster);
-            gameState.dungeon[monster.y][monster.x] = itemOnCorpse ? 'item' : 'corpse';
+            setDungeonCell(monster.x, monster.y, itemOnCorpse ? 'item' : 'corpse');
         }
 
         function convertMonsterToMercenary(monster) {
@@ -4392,7 +4407,7 @@ function killMonster(monster, killer = null) {
             const idx = gameState.corpses.findIndex(c => c === corpse);
             if (idx !== -1) gameState.corpses.splice(idx, 1);
             const hasItem = gameState.items.some(i => i.x === corpse.x && i.y === corpse.y);
-            gameState.dungeon[corpse.y][corpse.x] = hasItem ? 'item' : 'empty';
+            setDungeonCell(corpse.x, corpse.y, hasItem ? 'item' : 'empty');
             updateStats();
             updateMercenaryDisplay();
             renderDungeon();
@@ -4411,7 +4426,7 @@ function killMonster(monster, killer = null) {
             const idx = gameState.corpses.findIndex(c => c === corpse);
             if (idx !== -1) gameState.corpses.splice(idx, 1);
             const hasItem = gameState.items.some(i => i.x === corpse.x && i.y === corpse.y);
-            gameState.dungeon[corpse.y][corpse.x] = hasItem ? 'item' : 'empty';
+            setDungeonCell(corpse.x, corpse.y, hasItem ? 'item' : 'empty');
             addMessage(`🔪 ${corpse.name}의 시체를 해체하여 ${gained.join(', ')}을(를) 얻었습니다.`, 'item');
             renderDungeon();
         }
@@ -4433,7 +4448,7 @@ function killMonster(monster, killer = null) {
             // Remove the corpse and clear the dungeon cell
             const cIdx = gameState.corpses.findIndex(c => c === corpse);
             if (cIdx !== -1) gameState.corpses.splice(cIdx, 1);
-            gameState.dungeon[corpse.y][corpse.x] = 'empty';
+            setDungeonCell(corpse.x, corpse.y, 'empty');
 
             // Move the player to a neighbouring empty tile
             const pos = findAdjacentEmpty(corpse.x, corpse.y);
@@ -4651,9 +4666,13 @@ function killMonster(monster, killer = null) {
         function renderDungeon() {
             const dungeonEl = document.getElementById('dungeon');
             if (!dungeonEl || !gameState.cellElements.length) return;
-            for (let y = 0; y < gameState.dungeonSize; y++) {
-                for (let x = 0; x < gameState.dungeonSize; x++) {
-                    const div = gameState.cellElements[y][x];
+            const cells = [...gameState.dirtyCells];
+            if (cells.length === 0) return;
+            for (const key of cells) {
+                const [xStr, yStr] = key.split(',');
+                const x = parseInt(xStr, 10);
+                const y = parseInt(yStr, 10);
+                const div = gameState.cellElements[y][x];
 
                     // [최적화] 매번 검색하는 대신 캐시된 요소를 직접 사용합니다.
                     const tileBg = div.tileBg;
@@ -4811,7 +4830,7 @@ function killMonster(monster, killer = null) {
                         div.style.filter = '';
                     }
                 }
-            }
+            gameState.dirtyCells.clear();
         }
 
         function handleDungeonClick(e) {
@@ -4999,7 +5018,7 @@ function killMonster(monster, killer = null) {
             const visitedCells = [];
             const stack = [{ x: 1, y: 1 }];
             visited[1][1] = true;
-            gameState.dungeon[1][1] = 'empty';
+            setDungeonCell(1, 1, 'empty');
             visitedCells.push({ x: 1, y: 1 });
 
             while (stack.length) {
@@ -5050,7 +5069,7 @@ function killMonster(monster, killer = null) {
 
             gameState.player.x = 1;
             gameState.player.y = 1;
-            gameState.dungeon[1][1] = 'empty';
+            setDungeonCell(1, 1, 'empty');
 
             if (gameState.floor === 1 && gameState.player.inventory.length === 0) {
                 const starterPotion = createItem('healthPotion', 0, 0);
@@ -5064,7 +5083,7 @@ function killMonster(monster, killer = null) {
                 const starterEgg = createItem('superiorEgg', gameState.player.x + 1, gameState.player.y);
                 starterEgg.incubation = 1; // 이 알의 부화 시간을 1턴으로 특별히 설정
                 gameState.items.push(starterEgg);
-                gameState.dungeon[starterEgg.y][starterEgg.x] = 'item';
+                setDungeonCell(starterEgg.x, starterEgg.y, 'item');
 
                 const essences = ['strengthEssence','agilityEssence','enduranceEssence','focusEssence','intelligenceEssence','skillLevelEssence'];
                 essences.forEach(k => {
@@ -5095,7 +5114,7 @@ function killMonster(monster, killer = null) {
                     exitY = exitCell.y;
                 }
                 gameState.exitLocations.push({ x: exitX, y: exitY });
-                gameState.dungeon[exitY][exitX] = 'exit';
+                setDungeonCell(exitX, exitY, 'exit');
             }
             if (gameState.exitLocations.length) {
                 gameState.exitLocation = gameState.exitLocations[0];
@@ -5126,7 +5145,7 @@ function killMonster(monster, killer = null) {
                     monster.defense += modifiers.monsterDefenseBonus || 0;
                     gameState.monsters.push(monster);
                 }
-                gameState.dungeon[y][x] = 'monster';
+                setDungeonCell(x, y, 'monster');
             }
 
             // 층마다 챔피언 한 명 배치
@@ -5143,7 +5162,7 @@ function killMonster(monster, killer = null) {
                 const ct = champTypes[Math.floor(Math.random() * champTypes.length)];
                 const champ = createChampion(ct, cx, cy, dungeonLevel);
                 gameState.monsters.push(champ);
-                gameState.dungeon[cy][cx] = 'monster';
+                setDungeonCell(cx, cy, 'monster');
             }
 
             // 층마다 엘리트 몬스터 배치
@@ -5155,7 +5174,7 @@ function killMonster(monster, killer = null) {
             const eType = monsterTypes[Math.floor(Math.random() * monsterTypes.length)];
             const elite = createEliteMonster(eType, ex, ey, dungeonLevel);
             gameState.monsters.push(elite);
-            gameState.dungeon[ey][ex] = 'monster';
+            setDungeonCell(ex, ey, 'monster');
             const around = 2 + Math.floor(Math.random() * 4);
             for (let i = 0; i < around; i++) {
                 const pos = findAdjacentEmpty(ex, ey);
@@ -5163,7 +5182,7 @@ function killMonster(monster, killer = null) {
                 const t = monsterTypes[Math.floor(Math.random() * monsterTypes.length)];
                 const m = createMonster(t, pos.x, pos.y, dungeonLevel);
                 gameState.monsters.push(m);
-                gameState.dungeon[pos.y][pos.x] = 'monster';
+                setDungeonCell(pos.x, pos.y, 'monster');
             }
 
             // 보물은 던전 크기와 층수에 따라 적당히 배치
@@ -5177,7 +5196,7 @@ function killMonster(monster, killer = null) {
                 } while (gameState.dungeon[y][x] !== 'empty');
                 const treasure = createTreasure(x, y, 5 + Math.floor(Math.random() * 20));
                 gameState.treasures.push(treasure);
-                gameState.dungeon[y][x] = 'treasure';
+                setDungeonCell(x, y, 'treasure');
             }
 
             const itemKeys = Object.keys(ITEMS);
@@ -5193,7 +5212,7 @@ function killMonster(monster, killer = null) {
                 const key = spawnKeys[Math.floor(Math.random() * spawnKeys.length)];
                 const item = createItem(key, x, y, null, Math.floor(dungeonLevel / 5), Math.random() < 0.1);
                 gameState.items.push(item);
-                gameState.dungeon[y][x] = 'item';
+                setDungeonCell(x, y, 'item');
             }
 
 
@@ -5204,7 +5223,7 @@ function killMonster(monster, killer = null) {
                     x = Math.floor(Math.random() * size);
                     y = Math.floor(Math.random() * size);
                 } while (gameState.dungeon[y][x] !== 'empty');
-                gameState.dungeon[y][x] = 'plant';
+                setDungeonCell(x, y, 'plant');
             }
 
             if (!IS_TEST_ENV) {
@@ -5215,7 +5234,7 @@ function killMonster(monster, killer = null) {
                         x = Math.floor(Math.random() * size);
                         y = Math.floor(Math.random() * size);
                     } while (gameState.dungeon[y][x] !== 'empty');
-                    gameState.dungeon[y][x] = 'chest';
+                    setDungeonCell(x, y, 'chest');
                 }
 
                 const mineCount = 1 + Math.floor(Math.random() * 2);
@@ -5225,7 +5244,7 @@ function killMonster(monster, killer = null) {
                         x = Math.floor(Math.random() * size);
                         y = Math.floor(Math.random() * size);
                     } while (gameState.dungeon[y][x] !== 'empty');
-                    gameState.dungeon[y][x] = 'mine';
+                    setDungeonCell(x, y, 'mine');
                 }
 
                 const treeCount = 2 + Math.floor(Math.random() * 3);
@@ -5235,7 +5254,7 @@ function killMonster(monster, killer = null) {
                         x = Math.floor(Math.random() * size);
                         y = Math.floor(Math.random() * size);
                     } while (gameState.dungeon[y][x] !== 'empty');
-                    gameState.dungeon[y][x] = 'tree';
+                    setDungeonCell(x, y, 'tree');
                 }
 
                 const boneCount = 1 + Math.floor(Math.random() * 2);
@@ -5245,7 +5264,7 @@ function killMonster(monster, killer = null) {
                         x = Math.floor(Math.random() * size);
                         y = Math.floor(Math.random() * size);
                     } while (gameState.dungeon[y][x] !== 'empty');
-                    gameState.dungeon[y][x] = 'bones';
+                    setDungeonCell(x, y, 'bones');
                 }
 
                 if (!globalThis.spawnPaladinTest && Math.random() < 0.02) {
@@ -5256,7 +5275,7 @@ function killMonster(monster, killer = null) {
                     } while (gameState.dungeon[py][px] !== 'empty');
                     const pal = createMercenary('PALADIN', px, py);
                     gameState.paladinSpawns.push({ x: px, y: py, mercenary: pal });
-                    gameState.dungeon[py][px] = 'paladin';
+                    setDungeonCell(px, py, 'paladin');
                 }
 
                 const templeCount = 1 + Math.floor(Math.random() * 3);
@@ -5268,7 +5287,7 @@ function killMonster(monster, killer = null) {
                         y = Math.floor(Math.random() * size);
                     } while (gameState.dungeon[y][x] !== 'empty');
                     const tType = templeTypes[Math.floor(Math.random() * templeTypes.length)];
-                    gameState.dungeon[y][x] = tType;
+                    setDungeonCell(x, y, tType);
                 }
 
                 const graveCount = 1 + Math.floor(Math.random() * 2);
@@ -5278,7 +5297,7 @@ function killMonster(monster, killer = null) {
                         x = Math.floor(Math.random() * size);
                         y = Math.floor(Math.random() * size);
                     } while (gameState.dungeon[y][x] !== 'empty');
-                    gameState.dungeon[y][x] = 'grave';
+                    setDungeonCell(x, y, 'grave');
                 }
             }
 
@@ -5289,7 +5308,7 @@ function killMonster(monster, killer = null) {
                     ay = Math.floor(Math.random() * size);
                 } while (gameState.dungeon[ay][ax] !== 'empty');
                 gameState.altarLocation = { x: ax, y: ay };
-                gameState.dungeon[ay][ax] = 'altar';
+                setDungeonCell(ax, ay, 'altar');
             }
 
 
@@ -5300,7 +5319,7 @@ function killMonster(monster, killer = null) {
                 sy = Math.floor(Math.random() * size);
             } while (gameState.dungeon[sy][sx] !== 'empty');
             gameState.shopLocation = { x: sx, y: sy };
-            gameState.dungeon[sy][sx] = 'shop';
+            setDungeonCell(sx, sy, 'shop');
 
             gameState.shopItems = [];
             const availableItems = itemKeys.filter(k =>
@@ -5362,6 +5381,11 @@ function killMonster(monster, killer = null) {
                 }
                 gameState.cellElements.push(cellRow);
             }
+            for (let y = 0; y < size; y++) {
+                for (let x = 0; x < size; x++) {
+                    markDirty(x, y);
+                }
+            }
         }
 
         // 카메라 업데이트 (최적화됨)
@@ -5398,6 +5422,12 @@ function killMonster(monster, killer = null) {
                 const translateX = -gameState.camera.x * cellSize;
                 const translateY = -gameState.camera.y * cellSize;
                 dungeonElement.style.transform = `translate3d(${translateX}px, ${translateY}px, 0)`;
+
+                for (let yy = gameState.camera.y; yy < gameState.camera.y + viewportSize; yy++) {
+                    for (let xx = gameState.camera.x; xx < gameState.camera.x + viewportSize; xx++) {
+                        markDirty(xx, yy);
+                    }
+                }
             }
         }
 
@@ -6432,7 +6462,7 @@ function killMonster(monster, killer = null) {
 
             if (gameState.dungeon[mercenary.y] && gameState.dungeon[mercenary.y][mercenary.x]) {
                 const hasItem = gameState.items.some(i => i.x === mercenary.x && i.y === mercenary.y);
-                gameState.dungeon[mercenary.y][mercenary.x] = hasItem ? 'item' : 'empty';
+                setDungeonCell(mercenary.x, mercenary.y, hasItem ? 'item' : 'empty');
             }
 
             mercenary.affinity = Math.max(0, (mercenary.affinity || 0) - 5);
@@ -6732,7 +6762,7 @@ function killMonster(monster, killer = null) {
                         if (itemIndex !== -1) {
                             gameState.items.splice(itemIndex, 1);
                         }
-                        gameState.dungeon[newY][newX] = 'empty';
+                        setDungeonCell(newX, newY, 'empty');
                     }
                 }
 
@@ -6788,7 +6818,7 @@ function killMonster(monster, killer = null) {
                     if (treasureIndex !== -1) {
                         gameState.treasures.splice(treasureIndex, 1);
                     }
-                    gameState.dungeon[newY][newX] = 'empty';
+                    setDungeonCell(newX, newY, 'empty');
                 }
             }
             
@@ -6804,7 +6834,7 @@ function killMonster(monster, killer = null) {
                     if (itemIndex !== -1) {
                         gameState.items.splice(itemIndex, 1);
                     }
-                    gameState.dungeon[newY][newX] = 'empty';
+                    setDungeonCell(newX, newY, 'empty');
                 }
             }
 
@@ -6825,7 +6855,7 @@ function killMonster(monster, killer = null) {
                     gained.push(mat);
                 }
                 addMessage(`🌿 식물을 채집하여 ${gained.join(', ')}을(를) 얻었습니다.`, 'item');
-                gameState.dungeon[newY][newX] = 'empty';
+                    setDungeonCell(newX, newY, 'empty');
                 updateMaterialsDisplay();
             }
 
@@ -6838,17 +6868,17 @@ function killMonster(monster, killer = null) {
                     const pos = findAdjacentEmpty(newX, newY);
                     const drop = createItem(key, pos.x, pos.y, null, Math.floor(gameState.floor / 5), Math.random() < 0.1);
                     gameState.items.push(drop);
-                    gameState.dungeon[pos.y][pos.x] = 'item';
+                    setDungeonCell(pos.x, pos.y, 'item');
                 }
                 const unknown = Object.keys(RECIPES).filter(r => !gameState.knownRecipes.includes(r));
                 if (unknown.length && Math.random() < 0.25) {
                     const pos = findAdjacentEmpty(newX, newY);
                     const scroll = createRecipeScroll(unknown[Math.floor(Math.random() * unknown.length)], pos.x, pos.y);
                     gameState.items.push(scroll);
-                    gameState.dungeon[pos.y][pos.x] = 'item';
+                    setDungeonCell(pos.x, pos.y, 'item');
                 }
                 addMessage('🎁 보물 상자가 열렸습니다!', 'treasure');
-                gameState.dungeon[newY][newX] = 'empty';
+                setDungeonCell(newX, newY, 'empty');
             }
 
             if (cellType === 'mine') {
@@ -6858,7 +6888,7 @@ function killMonster(monster, killer = null) {
                 if (!gameState.materials.iron) gameState.materials.iron = 0;
                 gameState.materials.iron += qty;
                 addMessage(`⛏️ 철 ${qty}개를 채굴했습니다.`, 'info');
-                gameState.dungeon[newY][newX] = 'empty';
+                setDungeonCell(newX, newY, 'empty');
                 updateMaterialsDisplay();
             }
 
@@ -6869,7 +6899,7 @@ function killMonster(monster, killer = null) {
                 if (!gameState.materials.wood) gameState.materials.wood = 0;
                 gameState.materials.wood += qty;
                 addMessage(`🌳 나무 ${qty}개를 얻었습니다.`, 'info');
-                gameState.dungeon[newY][newX] = 'empty';
+                setDungeonCell(newX, newY, 'empty');
                 updateMaterialsDisplay();
             }
 
@@ -6889,7 +6919,7 @@ function killMonster(monster, killer = null) {
                             gameState.player.gold -= cost;
                             gameState.activeMercenaries.push(mercenary);
                             gameState.paladinSpawns.splice(gameState.paladinSpawns.indexOf(spawn),1);
-                            gameState.dungeon[newY][newX] = 'empty';
+                            setDungeonCell(newX, newY, 'empty');
                             playSoundFile(String(MERCENARY_TYPES.PALADIN.voiceFile));
                             addMessage(`🎉 ${MERCENARY_TYPES.PALADIN.name}을(를) 고용했습니다!`, 'mercenary');
                             updateStats();
@@ -6908,7 +6938,7 @@ function killMonster(monster, killer = null) {
                 if (!gameState.materials.bone) gameState.materials.bone = 0;
                 gameState.materials.bone += qty;
                 addMessage(`🦴 뼈 ${qty}개를 수집했습니다.`, 'info');
-                gameState.dungeon[newY][newX] = 'empty';
+                setDungeonCell(newX, newY, 'empty');
                 updateMaterialsDisplay();
             }
 
@@ -6923,7 +6953,7 @@ function killMonster(monster, killer = null) {
                         const pos = findAdjacentEmpty(newX, newY);
                         const drop = createItem(key, pos.x, pos.y, null, Math.floor(gameState.floor / 5) + 1, Math.random() < 0.1);
                         gameState.items.push(drop);
-                        gameState.dungeon[pos.y][pos.x] = 'item';
+                        setDungeonCell(pos.x, pos.y, 'item');
                     }
 
                     const matQty = 10 + gameState.floor * 5;
@@ -6942,13 +6972,13 @@ function killMonster(monster, killer = null) {
                         const t = monsterTypes[Math.floor(Math.random() * monsterTypes.length)];
                         const m = createMonster(t, pos.x, pos.y, gameState.floor + 1);
                         gameState.monsters.push(m);
-                        gameState.dungeon[pos.y][pos.x] = 'monster';
+                        setDungeonCell(pos.x, pos.y, 'monster');
                     }
 
                     updateMaterialsDisplay();
                     updateStats();
                 }
-                gameState.dungeon[newY][newX] = 'empty';
+                setDungeonCell(newX, newY, 'empty');
             }
 
             if (cellType.startsWith('temple')) {
@@ -6972,7 +7002,7 @@ function killMonster(monster, killer = null) {
                     [...gameState.activeMercenaries, ...gameState.standbyMercenaries].forEach(m => { m.affinity = (m.affinity || 0) + 10; });
                     addMessage('✨ 우정의 사원에서 호감도가 상승했습니다!', 'info');
                 }
-                gameState.dungeon[newY][newX] = 'empty';
+                setDungeonCell(newX, newY, 'empty');
                 updateStats();
             }
 
@@ -7148,7 +7178,7 @@ function processTurn() {
         if (corpse.turnsLeft <= 0) {
             gameState.corpses.splice(i, 1);
             const hasItem = gameState.items.some(it => it.x === corpse.x && it.y === corpse.y);
-            gameState.dungeon[corpse.y][corpse.x] = hasItem ? 'item' : 'empty';
+            setDungeonCell(corpse.x, corpse.y, hasItem ? 'item' : 'empty');
         }
     }
 
@@ -7191,7 +7221,7 @@ function processTurn() {
                 if (idx !== -1) {
                     gameState.monsters.splice(idx, 1);
                     if (monster.y >= 0 && monster.x >= 0 && gameState.dungeon[monster.y]) {
-                        gameState.dungeon[monster.y][monster.x] = 'empty';
+                        setDungeonCell(monster.x, monster.y, 'empty');
                     }
                 }
             });
@@ -7367,10 +7397,10 @@ function processTurn() {
                             !gameState.activeMercenaries.some(m => m.x === newX && m.y === newY && m.alive)) {
 
                             // 몬스터 이동
-                            gameState.dungeon[monster.y][monster.x] = 'empty';
+                            setDungeonCell(monster.x, monster.y, 'empty');
                             monster.x = newX;
                             monster.y = newY;
-                            gameState.dungeon[newY][newX] = 'monster';
+                            setDungeonCell(newX, newY, 'monster');
 
                             // 이동 후 공격 가능한지 체크
                             const newDistance = getDistance(monster.x, monster.y, nearestTarget.x, nearestTarget.y);
@@ -7401,10 +7431,10 @@ function processTurn() {
                                     !gameState.monsters.some(m => m.x === step.x && m.y === step.y && m !== monster) &&
                                     !gameState.activeMercenaries.some(m => m.x === step.x && m.y === step.y && m.alive);
                                 if (valid) {
-                                    gameState.dungeon[monster.y][monster.x] = 'empty';
+                                    setDungeonCell(monster.x, monster.y, 'empty');
                                     monster.x = step.x;
                                     monster.y = step.y;
-                                    gameState.dungeon[step.y][step.x] = 'monster';
+                                    setDungeonCell(step.x, step.y, 'monster');
 
                                     const newDistance = getDistance(monster.x, monster.y, nearestTarget.x, nearestTarget.y);
                                     if (newDistance <= monster.range &&
@@ -7684,10 +7714,10 @@ function processTurn() {
                     unit.nextX = path[1].x;
                     unit.nextY = path[1].y;
                 } else {
-                    gameState.dungeon[unit.y][unit.x] = 'empty';
+                    setDungeonCell(unit.x, unit.y, 'empty');
                     unit.x = path[1].x;
                     unit.y = path[1].y;
-                    gameState.dungeon[unit.y][unit.x] = 'monster';
+                    setDungeonCell(unit.x, unit.y, 'monster');
                 }
             }
         }
@@ -8323,6 +8353,7 @@ function processTurn() {
             const saved = JSON.parse(data);
             delete saved.mercenaries;
             Object.assign(gameState, saved);
+            gameState.dirtyCells = new Set();
             gameState.activeRecipes = saved.activeRecipes || saved.knownRecipes;
             if (saved.player.statPoints === undefined) {
                 gameState.player.statPoints = 0;
@@ -8907,7 +8938,7 @@ function processTurn() {
                 }
                 if (idx !== -1) gameState.items.splice(idx, 1);
                 if (gameState.dungeon[item.y] && gameState.dungeon[item.y][item.x] === 'item') {
-                    gameState.dungeon[item.y][item.x] = 'empty';
+                    setDungeonCell(item.x, item.y, 'empty');
                 }
             });
             if (gotItem) playPlayerVoice('assets/audio/player_item.mp3');
@@ -9204,7 +9235,7 @@ function processTurn() {
                 if (pos.x === gameState.player.x && pos.y === gameState.player.y) break;
                 const scroll = createRecipeScroll(key, pos.x, pos.y);
                 gameState.items.push(scroll);
-                gameState.dungeon[pos.y][pos.x] = 'item';
+                setDungeonCell(pos.x, pos.y, 'item');
             }
         }
 
@@ -9214,7 +9245,7 @@ function processTurn() {
                 if (pos.x === gameState.player.x && pos.y === gameState.player.y) break;
                 const mapItem = createItem('graveyardMap', pos.x, pos.y);
                 gameState.items.push(mapItem);
-                gameState.dungeon[pos.y][pos.x] = 'item';
+                setDungeonCell(pos.x, pos.y, 'item');
             }
         }
 
@@ -9250,7 +9281,7 @@ function processTurn() {
                 if (palPos.x !== gameState.player.x || palPos.y !== gameState.player.y) {
                     const pal = createMercenary('PALADIN', palPos.x, palPos.y);
                     gameState.paladinSpawns.push({ x: palPos.x, y: palPos.y, mercenary: pal, cost: 1 });
-                    gameState.dungeon[palPos.y][palPos.x] = 'paladin';
+                    setDungeonCell(palPos.x, palPos.y, 'paladin');
                     renderDungeon();
                 }
             }
@@ -9379,7 +9410,7 @@ function processTurn() {
             });
         });
 const exportsObj = {
-gameState, addMessage, addToInventory, advanceIncubators, advanceGameLoop,
+gameState, markDirty, setDungeonCell, addMessage, addToInventory, advanceIncubators, advanceGameLoop,
 applyStatusEffects, applyAttackBuff, assignSkill, autoMoveStep, averageDice, buildAttackDetail,
 buyShopItem, checkLevelUp, checkMercenaryLevelUp, checkMonsterLevelUp, 
 convertMonsterToMercenary, craftItem, createChampion, createEliteMonster, 
