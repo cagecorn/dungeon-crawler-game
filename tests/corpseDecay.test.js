@@ -31,17 +31,17 @@ async function run() {
     process.exit(1);
   }
 
-  const turns = monster.turnsLeft;
-  for (let i = 0; i < turns; i++) {
+  // corpses should remain even after many turns
+  for (let i = 0; i < 100; i++) {
     processTurn();
   }
 
-  if (gameState.corpses.includes(monster)) {
-    console.error('corpse not removed after duration');
+  if (!gameState.corpses.includes(monster)) {
+    console.error('corpse disappeared unexpectedly');
     process.exit(1);
   }
-  if (gameState.dungeon[1][1] !== 'empty') {
-    console.error('dungeon tile not cleared after corpse decay');
+  if (gameState.dungeon[1][1] !== 'corpse') {
+    console.error('dungeon tile no longer marked corpse');
     process.exit(1);
   }
 }

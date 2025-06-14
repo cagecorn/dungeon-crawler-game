@@ -575,7 +575,8 @@ const MERCENARY_NAMES = [
 
         const MAX_FULLNESS = 100;
         const FULLNESS_LOSS_PER_TURN = 0.01;
-        const CORPSE_TURNS = 60; // how long a corpse remains on the map
+        // corpses now remain indefinitely so they never disappear on their own
+        const CORPSE_TURNS = Infinity;
         const CORRIDOR_WIDTH = 7; // width of dungeon corridors
 
         function carveWideCorridor(map, x1, y1, x2, y2) {
