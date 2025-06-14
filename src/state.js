@@ -8,7 +8,7 @@
         turn: 0,
         gameRunning: true,
         dungeon: [],
-        dungeonSize: 80,
+        dungeonSize: 40,
         fogOfWar: [],
         cellElements: [],
         player: {
