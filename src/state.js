@@ -11,6 +11,7 @@
         dungeonSize: 80,
         fogOfWar: [],
         cellElements: [],
+        dirtyCells: new Set(),
         player: {
             id: 'player',
             x: 1,
