@@ -7210,7 +7210,7 @@ function processTurn() {
                     continue;
                 }
 
-                // 챔피언 몬스터 전용 AI
+                // [추가] 몬스터가 챔피언이면 전용 AI를 사용하고 다음 몬스터로 넘어갑니다.
                 if (monster.isChampion) {
                     processChampionTurn(monster);
                     monster.hasActed = true;
@@ -7646,6 +7646,7 @@ function processTurn() {
                 return;
             }
 
+            // [추가] 용병이 챔피언이면 전용 AI를 사용하고 턴을 마칩니다.
             if (mercenary.isChampion) {
                 processChampionTurn(mercenary, visibleMonsters);
                 mercenary.hasActed = true;
