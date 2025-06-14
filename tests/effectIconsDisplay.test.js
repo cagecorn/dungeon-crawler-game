@@ -28,40 +28,21 @@ async function run() {
 
   updateUnitEffectIcons(gameState.player, div);
 
-  const state = win.effectCycleState[gameState.player.id];
   const buffContainer = div.querySelector('.buff-container');
   const debuffContainer = div.querySelector('.status-container');
 
-  if (!state || !buffContainer || !debuffContainer) {
+  if (!buffContainer || !debuffContainer) {
     console.error('setup failed');
     process.exit(1);
   }
-  if (state.buffs.length < 2 || state.debuffs.length < 2) {
-    console.error('icons not stored correctly');
+
+  if (buffContainer.children.length < 2 || debuffContainer.children.length < 2) {
+    console.error('icons not displayed correctly');
     process.exit(1);
   }
 
-  const initialDebuff = debuffContainer.textContent;
-
-  // change buff index only
-  state.buffIndex = 1;
-  updateUnitEffectIcons(gameState.player, div);
-
-  if (buffContainer.textContent !== state.buffs[1] || debuffContainer.textContent !== initialDebuff) {
-    console.error('buff rotation failed');
-    process.exit(1);
-  }
-
-  // change debuff index only
-  state.debuffIndex = 1;
-  updateUnitEffectIcons(gameState.player, div);
-
-  if (buffContainer.textContent !== state.buffs[1] || debuffContainer.textContent !== state.debuffs[1]) {
-    console.error('debuff rotation failed');
-    process.exit(1);
-  }
-
-  console.log('icon cycle ok');
+  console.log('icon display ok');
 }
 
 run().catch(e => { console.error(e); process.exit(1); });
+
