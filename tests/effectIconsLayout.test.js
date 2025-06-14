@@ -36,7 +36,7 @@ async function run() {
     process.exit(1);
   }
 
-  if (buff.children.length !== 1 || status.children.length !== 0) {
+  if (buff.children.length !== 1 || status.children.length !== 1) {
     console.error('incorrect number of icons');
     process.exit(1);
   }
