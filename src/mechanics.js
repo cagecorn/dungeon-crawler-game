@@ -5,6 +5,8 @@
 
 // 전투가 발생했는지 추적하는 플래그
 let combatOccurredInTurn = false;
+let lowHpAlertPlayed = false;
+let lastDangerTurn = -1;
 
 /**
  * 지정된 경로의 오디오 파일을 재생하는 헬퍼 함수
@@ -33,6 +35,15 @@ function playRandomKillQuote(mercenary) {
         const index = Math.floor(Math.random() * data.killQuotes.length);
         playSoundFile(String(data.killQuotes[index]));
     }
+}
+
+function playPlayerKillQuote() {
+    const quotes = [
+        'assets/audio/player_kill_1.mp3',
+        'assets/audio/player_kill_2.mp3'
+    ];
+    const index = Math.floor(Math.random() * quotes.length);
+    playSoundFile(quotes[index]);
 }
 const SoundEngine = {
     audioContext: null,
@@ -425,12 +436,25 @@ function initializeAudio() {
 
     try {
         SoundEngine.initialize();
+        playSoundFile('assets/audio/player_start.mp3');
     } catch (err) {
         console.error("Audio initialization failed", err);
     }
     
     isAudioInitialized = true;
     console.log("All audio systems initialized by user action.");
+}
+
+function checkDanger() {
+    if (gameState.turn === lastDangerTurn) return;
+    const dangerNearby = gameState.monsters.some(m =>
+        (m.isChampion || m.isElite || m.isSuperior || m.special === 'boss') &&
+        getDistance(m.x, m.y, gameState.player.x, gameState.player.y) <= 5
+    );
+    if (dangerNearby) {
+        playSoundFile('assets/audio/player_danger.mp3');
+        lastDangerTurn = gameState.turn;
+    }
 }
 
 
@@ -3041,6 +3065,7 @@ function updateMaterialsDisplay() {
                 gameState.knownRecipes.push(key);
                 const name = RECIPES[key]?.name || key;
                 addMessage(`📖 ${name} 레시피를 배웠습니다!`, 'item');
+                playSoundFile('assets/audio/player_recipe.mp3');
 
                 // 상세 패널 UI 업데이트 함수를 여기서 직접 호출
                 updateCraftingDetailDisplay();
@@ -4058,6 +4083,7 @@ function killMonster(monster, killer = null) {
                 }
             } else {
                 addMessage(`💀 ${monster.name}을(를) 처치했습니다!`, 'combat', null, getMonsterImage(monster));
+                playPlayerKillQuote();
                 gameState.player.exp += monster.exp;
                 let goldGain = monster.gold;
                 if (gameState.currentMapModifiers && gameState.currentMapModifiers.goldMultiplier) {
@@ -4258,10 +4284,12 @@ function killMonster(monster, killer = null) {
                 gameState.player.gold -= cost;
                 gameState.activeMercenaries.push(mercenary);
                 addMessage(`🎉 ${corpse.name}을(를) 부활시켜 동료로 만들었습니다!`, 'mercenary');
+                playSoundFile('assets/audio/player_revive.mp3');
             } else if (gameState.standbyMercenaries.length < 5) {
                 gameState.player.gold -= cost;
                 gameState.standbyMercenaries.push(mercenary);
                 addMessage(`📋 부활한 ${corpse.name}을(를) 대기열에 추가했습니다.`, 'mercenary');
+                playSoundFile('assets/audio/player_revive.mp3');
             } else {
                 addMessage('❌ 용병이 가득 찼습니다.', 'info');
                 return;
@@ -6596,6 +6624,7 @@ function killMonster(monster, killer = null) {
                     if (item) {
                         addToInventory(item);
                         SoundEngine.playSound('getItem');
+                        playSoundFile('assets/audio/player_item.mp3');
                         addMessage(`📦 ${item.name}을(를) 획득했습니다!`, 'item');
 
                         const itemIndex = gameState.items.findIndex(i => i === item);
@@ -6649,6 +6678,7 @@ function killMonster(monster, killer = null) {
                 const treasure = gameState.treasures.find(t => t.x === newX && t.y === newY);
                 if (treasure) {
                     SoundEngine.playSound('treasure');
+                    playSoundFile('assets/audio/player_gold.mp3');
                     let gold = treasure.gold;
                     gameState.player.gold += gold;
                     addMessage(`💎 보물을 발견했습니다! ${formatNumber(gold)} 골드를 획득했습니다!`, "treasure");
@@ -6666,6 +6696,7 @@ function killMonster(monster, killer = null) {
                 if (item) {
                     addToInventory(item);
                     SoundEngine.playSound('getItem'); // 아이템 획득음 재생
+                    playSoundFile('assets/audio/player_item.mp3');
                     addMessage(`📦 ${item.name}을(를) 획득했습니다!`, 'item');
 
                     const itemIndex = gameState.items.findIndex(i => i === item);
@@ -6682,6 +6713,7 @@ function killMonster(monster, killer = null) {
 
             if (cellType === 'plant') {
                 SoundEngine.playSound('gatherMaterial');
+                playSoundFile('assets/audio/player_craft.mp3');
                 const materialsPool = ['herb', 'bread', 'meat', 'lettuce'];
                 const gained = [];
                 const count = Math.floor(Math.random() * 2) + 1;
@@ -6720,6 +6752,7 @@ function killMonster(monster, killer = null) {
 
             if (cellType === 'mine') {
                 SoundEngine.playSound('gatherMaterial');
+                playSoundFile('assets/audio/player_craft.mp3');
                 const qty = 5 + gameState.floor * 3;
                 if (!gameState.materials.iron) gameState.materials.iron = 0;
                 gameState.materials.iron += qty;
@@ -6730,6 +6763,7 @@ function killMonster(monster, killer = null) {
 
             if (cellType === 'tree') {
                 SoundEngine.playSound('gatherMaterial');
+                playSoundFile('assets/audio/player_craft.mp3');
                 const qty = 5 + gameState.floor * 3;
                 if (!gameState.materials.wood) gameState.materials.wood = 0;
                 gameState.materials.wood += qty;
@@ -6768,6 +6802,7 @@ function killMonster(monster, killer = null) {
 
             if (cellType === 'bones') {
                 SoundEngine.playSound('gatherMaterial');
+                playSoundFile('assets/audio/player_craft.mp3');
                 const qty = 5 + gameState.floor * 3;
                 if (!gameState.materials.bone) gameState.materials.bone = 0;
                 gameState.materials.bone += qty;
@@ -6817,6 +6852,7 @@ function killMonster(monster, killer = null) {
 
             if (cellType.startsWith('temple')) {
                 SoundEngine.playSound('templeChime');
+                playSoundFile('assets/audio/player_temple.mp3');
                 if (cellType === 'templeHeal') {
                     gameState.player.health = getStat(gameState.player, 'maxHealth');
                     gameState.player.mana = getStat(gameState.player, 'maxMana');
@@ -6861,6 +6897,7 @@ function killMonster(monster, killer = null) {
                 return;
             }
 
+            checkDanger();
             processTurn();
         }
 
@@ -7311,6 +7348,14 @@ function processTurn() {
             advanceIncubators();
             updateIncubatorDisplay();
 
+            const hpRatio = gameState.player.health / getStat(gameState.player, 'maxHealth');
+            if (hpRatio < 0.25 && !lowHpAlertPlayed) {
+                playSoundFile('assets/audio/player_low_hp.mp3');
+                lowHpAlertPlayed = true;
+            } else if (hpRatio >= 0.25) {
+                lowHpAlertPlayed = false;
+            }
+
             // [추가된 유휴 대사 시스템]
             // 이번 턴에 전투가 없었고, 0.3% 확률을 통과했을 때 대사를 출력합니다.
             if (!combatOccurredInTurn && Math.random() < 0.003) {
@@ -7333,6 +7378,7 @@ function processTurn() {
 
         // 다음 턴을 위해 전투 발생 플래그를 리셋합니다.
         combatOccurredInTurn = false;
+        checkDanger();
     }
 
     function processPaladinTurn(mercenary, visibleMonsters = gameState.monsters) {
@@ -8740,19 +8786,23 @@ function processTurn() {
                 processTurn();
                 return;
             }
+            let gotItem = false;
             items.forEach(item => {
                 const idx = gameState.items.indexOf(item);
                 if (item.type === ITEM_TYPES.RECIPE_SCROLL) {
                     learnRecipe(item.recipe);
+                    gotItem = true;
                 } else {
                     addToInventory(item);
                     addMessage(`📦 ${item.name}을(를) 획득했습니다!`, 'item');
+                    gotItem = true;
                 }
                 if (idx !== -1) gameState.items.splice(idx, 1);
                 if (gameState.dungeon[item.y] && gameState.dungeon[item.y][item.x] === 'item') {
                     gameState.dungeon[item.y][item.x] = 'empty';
                 }
             });
+            if (gotItem) playSoundFile('assets/audio/player_item.mp3');
             renderDungeon();
             processTurn();
         }
@@ -8772,6 +8822,7 @@ function processTurn() {
 
         function showShop() {
             SoundEngine.playSound('openPanel');
+            playSoundFile('assets/audio/player_shop.mp3');
             updateShopDisplay();
             document.getElementById('shop-panel').style.display = 'block';
             gameState.gameRunning = false;
