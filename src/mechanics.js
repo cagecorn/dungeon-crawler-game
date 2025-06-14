@@ -2203,6 +2203,7 @@ const MERCENARY_NAMES = [
 
         function getAuraBonus(character, stat) {
             let bonus = 0;
+            // 맵에 있는 유닛들의 오라
             const sources = [
                 gameState.player,
                 ...gameState.activeMercenaries.filter(m => m.alive),
@@ -2221,10 +2222,32 @@ const MERCENARY_NAMES = [
                     const skill = SKILL_DEFS[key];
                     if (skill && skill.passive && skill.aura && skill.aura[stat] !== undefined) {
                         const dist = getDistance(src.x, src.y, character.x, character.y);
-                        if (dist <= (skill.radius || 0)) bonus += skill.aura[stat];
+                        if (dist <= (skill.radius || 0)) {
+                            const level = (src.skillLevels && src.skillLevels[key]) || 1;
+                            bonus += skill.aura[stat] * level;
+                        }
                     }
                 });
             });
+
+            // [수정] 서포터의 오라 로직
+            gameState.supporters.forEach(supporter => {
+                if (!supporter) return; // 서포터 슬롯이 비어있으면 건너뜁니다.
+
+                const keys = [supporter.skill, supporter.skill2, supporter.auraSkill].filter(Boolean);
+                keys.forEach(key => {
+                    const skillInfo = SKILL_DEFS[key] || MERCENARY_SKILLS[key] || MONSTER_SKILLS[key];
+                    if (skillInfo && skillInfo.passive && skillInfo.aura && skillInfo.aura[stat] !== undefined) {
+                        // 서포터의 오라는 항상 플레이어 위치를 중심으로 발동
+                        const dist = getDistance(gameState.player.x, gameState.player.y, character.x, character.y);
+                        if (dist <= (skillInfo.radius || 0)) {
+                             const level = (supporter.skillLevels && supporter.skillLevels[key]) || 1;
+                             bonus += skillInfo.aura[stat] * level;
+                        }
+                    }
+                });
+            });
+
             return bonus;
         }
 
@@ -3744,8 +3767,8 @@ function updateMaterialsDisplay() {
          */
         function getActiveAuraIcons(character) {
             const icons = new Set();
-            const checkSource = (source) => {
-                if (!source || (source !== gameState.player && !source.alive)) return;
+            const checkSource = (source, isSupporter = false) => {
+                if (!source || (!isSupporter && source !== gameState.player && !source.alive)) return;
                 if (!isSameSide(source, character)) return;
 
                 const skillKeys = [
@@ -3757,16 +3780,23 @@ function updateMaterialsDisplay() {
 
                 skillKeys.forEach(key => {
                     const skill = SKILL_DEFS[key] || MERCENARY_SKILLS[key] || MONSTER_SKILLS[key];
-                    if (skill && skill.passive && skill.aura && getDistance(source.x, source.y, character.x, character.y) <= (skill.radius || 0)) {
-                        icons.add(skill.icon);
+                    if (skill && skill.passive && skill.aura) {
+                        const sourceX = isSupporter ? gameState.player.x : source.x;
+                        const sourceY = isSupporter ? gameState.player.y : source.y;
+                        if (getDistance(sourceX, sourceY, character.x, character.y) <= (skill.radius || 0)) {
+                            icons.add(skill.icon);
+                        }
                     }
                 });
             };
 
-            // 플레이어, 모든 아군 용병, 엘리트 및 상급 몬스터가 거는 오라를 모두 확인
+            // 맵 위의 유닛 오라 확인
             checkSource(gameState.player);
             gameState.activeMercenaries.forEach(merc => checkSource(merc));
             gameState.monsters.filter(m => m.isElite || m.isSuperior).forEach(elite => checkSource(elite));
+            
+            // [수정] 서포터가 거는 오라 확인
+            gameState.supporters.forEach(supporter => checkSource(supporter, true));
 
             return Array.from(icons);
         }
