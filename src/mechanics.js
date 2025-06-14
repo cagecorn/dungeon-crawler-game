@@ -3780,18 +3780,20 @@ function updateMaterialsDisplay() {
          * @param {HTMLElement} cellDiv - 해당 유닛이 위치한 셀의 div 요소
          */
         function updateUnitEffectIcons(unit, cellDiv) {
-            let buffContainer = cellDiv.querySelector('.buff-container');
-            let statusContainer = cellDiv.querySelector('.status-container');
+            let buffContainer = cellDiv.buffContainer || cellDiv.querySelector('.buff-container');
+            let statusContainer = cellDiv.statusContainer || cellDiv.querySelector('.status-container');
 
             if (!buffContainer) {
                 buffContainer = document.createElement('div');
                 buffContainer.className = 'buff-container';
                 cellDiv.appendChild(buffContainer);
+                cellDiv.buffContainer = buffContainer;
             }
             if (!statusContainer) {
                 statusContainer = document.createElement('div');
                 statusContainer.className = 'status-container';
                 cellDiv.appendChild(statusContainer);
+                cellDiv.statusContainer = statusContainer;
             }
 
             buffContainer.innerHTML = '';
@@ -4628,13 +4630,13 @@ function killMonster(monster, killer = null) {
             for (let y = 0; y < gameState.dungeonSize; y++) {
                 for (let x = 0; x < gameState.dungeonSize; x++) {
                     const div = gameState.cellElements[y][x];
-                    const tileBg = div.querySelector('.equipped-tile-bg');
+                    const tileBg = div.tileBg;
                     if (tileBg) tileBg.style.removeProperty('background-image');
                     div.style.removeProperty('background-image');
                     div.classList.remove('low-health');
                     // 렌더링마다 이전 아이콘들을 모두 지워 잔상이 남지 않게 합니다.
-                    const buffEl = div.querySelector('.buff-container');
-                    const statusEl = div.querySelector('.status-container');
+                    const buffEl = div.buffContainer;
+                    const statusEl = div.statusContainer;
                     if (buffEl) buffEl.innerHTML = '';
                     if (statusEl) statusEl.innerHTML = '';
                     const baseCellType = gameState.dungeon[y][x];
@@ -4945,17 +4947,20 @@ function killMonster(monster, killer = null) {
                         const tileBg = document.createElement('div');
                         tileBg.className = 'equipped-tile-bg';
                         cellDiv.appendChild(tileBg);
+                        cellDiv.tileBg = tileBg;
                         cellDiv.className = 'cell';
 
                         // 버프/디버프 아이콘 컨테이너
                         const buffContainer = document.createElement('div');
                         buffContainer.className = 'buff-container';
                         cellDiv.appendChild(buffContainer);
+                        cellDiv.buffContainer = buffContainer;
 
                         // 상태이상 아이콘 컨테이너
                         const statusContainer = document.createElement('div');
                         statusContainer.className = 'status-container';
                         cellDiv.appendChild(statusContainer);
+                        cellDiv.statusContainer = statusContainer;
 
                         dungeonEl.appendChild(cellDiv);
                         cellRow.push(cellDiv);
@@ -5330,15 +5335,18 @@ function killMonster(monster, killer = null) {
                     const tileBg = document.createElement('div');
                     tileBg.className = 'equipped-tile-bg';
                     cellDiv.appendChild(tileBg);
+                    cellDiv.tileBg = tileBg;
                     cellDiv.className = 'cell';
 
                     const buffContainer = document.createElement('div');
                     buffContainer.className = 'buff-container';
                     cellDiv.appendChild(buffContainer);
+                    cellDiv.buffContainer = buffContainer;
 
                     const statusContainer = document.createElement('div');
                     statusContainer.className = 'status-container';
                     cellDiv.appendChild(statusContainer);
+                    cellDiv.statusContainer = statusContainer;
 
                     dungeonEl.appendChild(cellDiv);
                     cellRow.push(cellDiv);
