@@ -2821,6 +2821,7 @@ function setDungeonCell(x, y, value) {
                 if (proj.homing && proj.target && proj.target.health <= 0) {
                     continue;
                 }
+                markDirty(proj.x, proj.y);
                 if (proj.homing && proj.target) {
                     proj.dx = Math.sign(proj.target.x - proj.x);
                     proj.dy = Math.sign(proj.target.y - proj.y);
@@ -2881,6 +2882,7 @@ function setDungeonCell(x, y, value) {
 
                 proj.x = nx;
                 proj.y = ny;
+                markDirty(nx, ny);
                 proj.rangeLeft--;
                 if (proj.rangeLeft > 0) {
                     remaining.push(proj);
@@ -3853,11 +3855,14 @@ function updateMaterialsDisplay() {
             for (let y = 0; y < gameState.dungeonSize; y++) {
                 if (!gameState.fogOfWar[y]) gameState.fogOfWar[y] = [];
                 for (let x = 0; x < gameState.dungeonSize; x++) {
-                    const visible = getDistance(x, y, gameState.player.x, gameState.player.y) <= FOG_RADIUS;
-                    const prev = gameState.fogOfWar[y][x];
-                    const next = !visible;
-                    if (prev !== next) markDirty(x, y);
-                    gameState.fogOfWar[y][x] = next;
+                    if (getDistance(x, y, gameState.player.x, gameState.player.y) <= FOG_RADIUS) {
+                        if (gameState.fogOfWar[y][x]) {
+                            gameState.fogOfWar[y][x] = false;
+                            markDirty(x, y);
+                        }
+                    } else {
+                        gameState.fogOfWar[y][x] = true;
+                    }
                 }
             }
         }
@@ -4292,6 +4297,7 @@ function killMonster(monster, killer = null) {
             monster.turnsLeft = CORPSE_TURNS;
             gameState.corpses.push(monster);
             setDungeonCell(monster.x, monster.y, itemOnCorpse ? 'item' : 'corpse');
+            markDirty(monster.x, monster.y);
         }
 
         function convertMonsterToMercenary(monster) {
@@ -6742,10 +6748,14 @@ function killMonster(monster, killer = null) {
             }
             
             const cellType = gameState.dungeon[newY][newX];
-            
+
             if (cellType === 'wall') {
                 return;
             }
+
+            // Mark cells before any potential movement or interaction
+            markDirty(oldX, oldY);
+            markDirty(newX, newY);
             
             const blockingMercenary = gameState.activeMercenaries.find(m => m.x === newX && m.y === newY && m.alive);
             if (blockingMercenary) {
