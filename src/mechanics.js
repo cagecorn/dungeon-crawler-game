@@ -8,6 +8,9 @@ let combatOccurredInTurn = false;
 let lowHpAlertPlayed = false;
 let lastDangerTurn = -1;
 
+// 각 유닛의 버프/디버프 아이콘 순환 상태를 저장
+const effectCycleState = {};
+
 /**
  * 지정된 경로의 오디오 파일을 재생하는 헬퍼 함수
  * @param {string} filePath - 재생할 오디오 파일의 경로
