@@ -7652,9 +7652,11 @@ function processTurn() {
         }
     }
 
-        // 용병 AI (개선됨 - 장비 보너스 적용, 안전성 체크 추가)
-        function processMercenaryTurn(mercenary, visibleMonsters = gameState.monsters) {
+        // [전체 교체] 용병 AI 최적화
+        function processMercenaryTurn(mercenary, allMonstersOnMap = gameState.monsters) {
             if (!mercenary.alive || mercenary.hasActed) return;
+
+            // 행동 불가 상태이상 체크
             if ((mercenary.paralysis && mercenary.paralysisTurns > 0) || (mercenary.petrify && mercenary.petrifyTurns > 0)) {
                 mercenary.paralysisTurns && mercenary.paralysisTurns--;
                 mercenary.petrifyTurns && mercenary.petrifyTurns--;
@@ -7664,208 +7666,119 @@ function processTurn() {
                 return;
             }
 
-            // [추가] 용병이 챔피언이면 전용 AI를 사용하고 턴을 마칩니다.
+            mercenary.nextX = mercenary.x;
+            mercenary.nextY = mercenary.y;
+
+            // [최적화] 용병 주변의 몬스터만 필터링합니다.
+            const visibleMonsters = allMonstersOnMap.filter(m =>
+                getDistance(mercenary.x, mercenary.y, m.x, m.y) <= PARTY_LEASH_RADIUS
+            );
+
+            // [최적화] 챔피언/성기사는 전용 AI를 먼저 실행합니다.
             if (mercenary.isChampion) {
                 processChampionTurn(mercenary, visibleMonsters);
                 mercenary.hasActed = true;
                 return;
             }
-            mercenary.nextX = mercenary.x;
-            mercenary.nextY = mercenary.y;
-            const moveTiles = 1;
-
-            if (mercenary.silence && mercenary.silenceTurns > 0) {
-                mercenary.silenceTurns--;
-                if (mercenary.silenceTurns <= 0) mercenary.silence = false;
+            if (mercenary.role === 'paladin') {
+                processPaladinTurn(mercenary, visibleMonsters);
+                mercenary.hasActed = true;
+                return;
             }
 
-            if (mercenary.bleedTurns && mercenary.bleedTurns > 0) {
-                mercenary.bleedTurns--;
-            }
-
-            
-            // 장비 초기화 확인
-            if (!mercenary.equipped) {
-                mercenary.equipped = { weapon: null, armor: null, accessory1: null, accessory2: null, tile: null };
-            }
-            
-            // 플레이어와의 거리 유지 (1~3칸 사이)
             const playerDistance = getDistance(mercenary.x, mercenary.y, gameState.player.x, gameState.player.y);
-            const minDistanceFromPlayer = 1;
-            const maxDistanceFromPlayer = 3;
-            const skillInfo = MERCENARY_SKILLS[mercenary.skill] || MONSTER_SKILLS[mercenary.skill];
-            const skillLevel = mercenary.skillLevels && mercenary.skillLevels[mercenary.skill] || 1;
-            const baseSkillMana = skillInfo ? (skillInfo.manaCost || 0) + skillLevel - 1 : 0;
-            const skillManaCost = skillInfo ? getSkillManaCost(mercenary, { manaCost: baseSkillMana }) : 0;
-            const baseAttackRange = mercenary.role === 'ranged' ? 3 :
-                                   mercenary.role === 'caster' ? 2 : 1;
-            let attackRange = baseAttackRange;
 
-            function directMoveToPlayer() {
-                const dx = Math.sign(gameState.player.x - mercenary.x);
-                const dy = Math.sign(gameState.player.y - mercenary.y);
-                const nx = mercenary.x + dx;
-                const ny = mercenary.y + dy;
-                const valid = nx >= 0 && nx < gameState.dungeonSize &&
-                    ny >= 0 && ny < gameState.dungeonSize &&
-                    gameState.dungeon[ny][nx] !== 'wall' &&
-                    gameState.dungeon[ny][nx] !== 'monster' &&
-                    !(nx === gameState.player.x && ny === gameState.player.y);
-                if (valid) {
-                    mercenary.nextX = nx;
-                    mercenary.nextY = ny;
-                    mercenary.hasActed = true;
-                }
-            }
-            
-            // 힐러는 상태 이상 해제를 우선 고려
-            if (mercenary.role === 'support') {
-                const purifyInfo = MERCENARY_SKILLS[mercenary.skill2];
-                const purifyLevel = mercenary.skillLevels && mercenary.skillLevels[mercenary.skill2] || 1;
-                const purifyBaseMana = purifyInfo ? (purifyInfo.manaCost || 0) + purifyLevel - 1 : 0;
-                const purifyMana = purifyInfo ? getSkillManaCost(mercenary, { manaCost: purifyBaseMana }) : 0;
-                const purifyOnCooldown = purifyInfo && mercenary.skillCooldowns[mercenary.skill2] > 0;
-                if (purifyInfo && mercenary.skill2 === 'Purify' && !purifyOnCooldown && mercenary.mana >= purifyMana) {
-                    const inRange = target => getDistance(mercenary.x, mercenary.y, target.x, target.y) <= getSkillRange(mercenary, purifyInfo);
-                    const hasStatus = t => t.poison || t.burn || t.freeze || t.bleed || t.paralysis || t.nightmare || t.silence || t.petrify || t.debuff;
+            // [최적화] 주변에 적이 있을 때만 전투 AI를 실행합니다.
+            if (visibleMonsters.length > 0) {
+                const skillInfo = MERCENARY_SKILLS[mercenary.skill] || MONSTER_SKILLS[mercenary.skill];
+                const skillLevel = mercenary.skillLevels && mercenary.skillLevels[mercenary.skill] || 1;
+                const skillManaCost = skillInfo ? getSkillManaCost(mercenary, { manaCost: (skillInfo.manaCost || 0) + skillLevel - 1 }) : 0;
+                const skillOnCooldown = skillInfo && mercenary.skillCooldowns[mercenary.skill] > 0;
 
-                    const targetToPurify = [gameState.player, ...gameState.activeMercenaries.filter(m => m.alive)].find(
-                        t => hasStatus(t) && inRange(t)
-                    );
-
-                    if (targetToPurify) {
-                        if (purifyTarget(mercenary, targetToPurify, purifyInfo)) {
-                            mercenary.mana -= purifyMana;
+                if (mercenary.role === 'support') {
+                    const purifyInfo = MERCENARY_SKILLS[mercenary.skill2];
+                    if (purifyInfo && mercenary.skill2 === 'Purify' && !(mercenary.skillCooldowns[mercenary.skill2] > 0) &&
+                        mercenary.mana >= getSkillManaCost(mercenary, purifyInfo)) {
+                        const targets = [gameState.player, ...gameState.activeMercenaries.filter(m => m.alive)];
+                        const hasStatus = t => t.poison || t.burn || t.freeze || t.bleed || t.paralysis || t.nightmare || t.silence || t.petrify || t.debuff;
+                        const range = getSkillRange(mercenary, purifyInfo);
+                        const target = targets.find(t => hasStatus(t) && getDistance(mercenary.x, mercenary.y, t.x, t.y) <= range);
+                        if (target && purifyTarget(mercenary, target, purifyInfo)) {
+                            mercenary.mana -= getSkillManaCost(mercenary, purifyInfo);
                             mercenary.skillCooldowns[mercenary.skill2] = getSkillCooldown(mercenary, purifyInfo);
                             updateMercenaryDisplay();
                             mercenary.hasActed = true;
-                            return; // 정화 후 턴 종료
-                        }
-                    }
-                }
-
-
-                const knowsHeal = skillInfo && mercenary.skill === 'Heal';
-                const healOnCooldown = knowsHeal && mercenary.skillCooldowns[mercenary.skill] > 0;
-                const manaCost = knowsHeal ? skillManaCost : HEAL_MANA_COST;
-                const healLevel = knowsHeal ? skillLevel : 1;
-                const healRange = knowsHeal ? getSkillRange(mercenary, skillInfo) : 2;
-
-                if (!healOnCooldown && mercenary.mana >= manaCost && gameState.player.health < getStat(gameState.player, 'maxHealth') * 0.7) {
-                    if (getDistance(mercenary.x, mercenary.y, gameState.player.x, gameState.player.y) <= healRange) {
-                        const healed = knowsHeal
-                            ? healTarget(mercenary, gameState.player, skillInfo, healLevel)
-                            : healTarget(mercenary, gameState.player);
-                        if (healed) {
-                            mercenary.mana -= manaCost;
-                            if (knowsHeal) mercenary.skillCooldowns[mercenary.skill] = getSkillCooldown(mercenary, skillInfo);
-                            updateMercenaryDisplay();
-                            mercenary.hasActed = true;
                             return;
                         }
                     }
-                }
 
-                for (const otherMerc of gameState.activeMercenaries) {
-                    if (otherMerc !== mercenary && otherMerc.alive && otherMerc.health < getStat(otherMerc, 'maxHealth') * 0.5) {
-                        if (!healOnCooldown && mercenary.mana >= manaCost && getDistance(mercenary.x, mercenary.y, otherMerc.x, otherMerc.y) <= healRange) {
-                            const healed = knowsHeal
-                                ? healTarget(mercenary, otherMerc, skillInfo, healLevel)
-                                : healTarget(mercenary, otherMerc);
+                    const knowsHeal = mercenary.skill === 'Heal';
+                    const healRange = knowsHeal && skillInfo ? getSkillRange(mercenary, skillInfo) : 2;
+                    const healMana = knowsHeal ? skillManaCost : HEAL_MANA_COST;
+                    const healOnCd = knowsHeal && skillOnCooldown;
+                    const healLvl = knowsHeal ? skillLevel : 1;
+                    const tryHeal = target => {
+                        if (!healOnCd && mercenary.mana >= healMana && getDistance(mercenary.x, mercenary.y, target.x, target.y) <= healRange) {
+                            const healed = knowsHeal ? healTarget(mercenary, target, skillInfo, healLvl) : healTarget(mercenary, target);
                             if (healed) {
-                                mercenary.mana -= manaCost;
+                                mercenary.mana -= healMana;
                                 if (knowsHeal) mercenary.skillCooldowns[mercenary.skill] = getSkillCooldown(mercenary, skillInfo);
                                 updateMercenaryDisplay();
                                 mercenary.hasActed = true;
-                                return;
+                                return true;
                             }
                         }
+                        return false;
+                    };
+
+                    if (gameState.player.health < getStat(gameState.player, 'maxHealth') * 0.7 &&
+                        tryHeal(gameState.player)) return;
+                    for (const ally of gameState.activeMercenaries) {
+                        if (ally !== mercenary && ally.alive && ally.health < getStat(ally, 'maxHealth') * 0.5 && tryHeal(ally)) return;
                     }
-                }
-
-                if (!healOnCooldown && mercenary.health < getStat(mercenary, 'maxHealth') && mercenary.mana >= manaCost) {
-                    const healed = knowsHeal
-                        ? healTarget(mercenary, mercenary, skillInfo, healLevel)
-                        : healTarget(mercenary, mercenary);
-                    if (healed) {
-                        mercenary.mana -= manaCost;
-                        if (knowsHeal) mercenary.skillCooldowns[mercenary.skill] = getSkillCooldown(mercenary, skillInfo);
-                        updateMercenaryDisplay();
-                        mercenary.hasActed = true;
-                        return;
-                    }
-                }
-
-                // 3순위: 안전 거리 확보를 위한 이동
-                if (playerDistance > 3) {
-                    const path = findPath(mercenary.x, mercenary.y, gameState.player.x, gameState.player.y);
-                    if (path && path.length > 1) {
-                        const step = path[1];
-                        const valid = step.x >= 0 && step.x < gameState.dungeonSize &&
-                            step.y >= 0 && step.y < gameState.dungeonSize &&
-                            gameState.dungeon[step.y][step.x] !== 'wall' &&
-                            !(step.x === gameState.player.x && step.y === gameState.player.y);
-
-                        if (valid) {
-                            mercenary.nextX = step.x;
-                            mercenary.nextY = step.y;
-                        }
-                    }
-                }
-
-                // 이동만 했다면 이후 일반 행동 로직을 계속 진행합니다.
-            }
-            else if (mercenary.role === 'paladin') {
-                processPaladinTurn(mercenary, visibleMonsters);
-            }
-            else if (mercenary.role === 'bard') {
-                const hymnSkillKey = mercenary.skill;
-                const healSkillKey = mercenary.skill2;
-                const isEnemyNearby = gameState.monsters.some(m =>
-                    getDistance(gameState.player.x, gameState.player.y, m.x, m.y) <= FOG_RADIUS
-                );
-                const hymnInfo = MERCENARY_SKILLS[hymnSkillKey];
-                if (isEnemyNearby && hymnInfo && (hymnInfo.aura || hymnInfo.shield || hymnInfo.attackBuff)) {
-                    const hymnLevel = mercenary.skillLevels && mercenary.skillLevels[hymnSkillKey] || 1;
-                    const baseHymnMana = (hymnInfo.manaCost || 5) + hymnLevel - 1;
-                    const hymnManaCost = getSkillManaCost(mercenary, { manaCost: baseHymnMana });
-                    if (mercenary.mana >= hymnManaCost) {
-                        const alliesToBuff = [gameState.player, ...gameState.activeMercenaries.filter(m => m.alive)]
-                            .filter(ally =>
-                                getDistance(mercenary.x, mercenary.y, ally.x, ally.y) <= getSkillRange(mercenary, hymnInfo) &&
-                                (!ally.buffs || !ally.buffs.find(b => b.name === hymnSkillKey))
-                            );
-                        if (alliesToBuff.length > 0) {
+                    if (mercenary.health < getStat(mercenary, 'maxHealth') && tryHeal(mercenary)) return;
+                } else if (mercenary.role === 'bard') {
+                    const hymnInfo = MERCENARY_SKILLS[mercenary.skill];
+                    const healInfo = MERCENARY_SKILLS[mercenary.skill2];
+                    const enemyNearby = gameState.monsters.some(m =>
+                        getDistance(gameState.player.x, gameState.player.y, m.x, m.y) <= FOG_RADIUS
+                    );
+                    if (enemyNearby && hymnInfo && (hymnInfo.aura || hymnInfo.shield || hymnInfo.attackBuff) &&
+                        mercenary.mana >= getSkillManaCost(mercenary, hymnInfo) && !(mercenary.skillCooldowns[mercenary.skill] > 0)) {
+                        const allies = [gameState.player, ...gameState.activeMercenaries.filter(m => m.alive)];
+                        const range = getSkillRange(mercenary, hymnInfo);
+                        const targets = allies.filter(a =>
+                            getDistance(mercenary.x, mercenary.y, a.x, a.y) <= range &&
+                            (!a.buffs || !a.buffs.find(b => b.name === mercenary.skill))
+                        );
+                        if (targets.length > 0) {
                             addMessage(`🎵 ${mercenary.name}이(가) ${hymnInfo.name}을(를) 연주합니다!`, 'mercenary', null, mercenary);
-                            alliesToBuff.forEach(ally => {
-                                if (hymnInfo.shield) applyShield(mercenary, ally, hymnInfo, hymnLevel);
-                                if (hymnInfo.attackBuff) applyAttackBuff(mercenary, ally, hymnInfo, hymnLevel);
+                            const level = mercenary.skillLevels && mercenary.skillLevels[mercenary.skill] || 1;
+                            targets.forEach(t => {
+                                if (hymnInfo.shield) applyShield(mercenary, t, hymnInfo, level);
+                                if (hymnInfo.attackBuff) applyAttackBuff(mercenary, t, hymnInfo, level);
                                 if (hymnInfo.aura) {
-                                    if (!ally.buffs) ally.buffs = [];
-                                    ally.buffs.push({ name: hymnSkillKey, effects: hymnInfo.aura, turnsLeft: 5 });
+                                    if (!t.buffs) t.buffs = [];
+                                    t.buffs.push({ name: mercenary.skill, effects: hymnInfo.aura, turnsLeft: 5 });
                                 }
                             });
-                            mercenary.mana -= hymnManaCost;
-                            mercenary.skillCooldowns[hymnSkillKey] = getSkillCooldown(mercenary, hymnInfo);
+                            mercenary.mana -= getSkillManaCost(mercenary, hymnInfo);
+                            mercenary.skillCooldowns[mercenary.skill] = getSkillCooldown(mercenary, hymnInfo);
                             updateMercenaryDisplay();
                             mercenary.hasActed = true;
                             return;
                         }
                     }
-                }
 
-                const healInfo = MERCENARY_SKILLS[healSkillKey];
-                if (healInfo && healInfo.heal && !(mercenary.skillCooldowns[healSkillKey] > 0)) {
-                    const healLevel = mercenary.skillLevels && mercenary.skillLevels[healSkillKey] || 1;
-                    const healMana = getSkillManaCost(mercenary, healInfo);
-                    if (mercenary.mana >= healMana) {
+                    if (healInfo && healInfo.heal && !(mercenary.skillCooldowns[mercenary.skill2] > 0) &&
+                        mercenary.mana >= getSkillManaCost(mercenary, healInfo)) {
                         const healRange = getSkillRange(mercenary, healInfo);
+                        const level = mercenary.skillLevels && mercenary.skillLevels[mercenary.skill2] || 1;
                         const allies = [gameState.player, ...gameState.activeMercenaries.filter(m => m.alive)];
-                        const target = allies.find(a => a.health < getStat(a, 'maxHealth') * 0.7 &&
-                            getDistance(mercenary.x, mercenary.y, a.x, a.y) <= healRange);
-                        if (target && healTarget(mercenary, target, healInfo, healLevel)) {
-                            mercenary.mana -= healMana;
-                            mercenary.skillCooldowns[healSkillKey] = getSkillCooldown(mercenary, healInfo);
+                        const target = allies.find(a => a.health < getStat(a, 'maxHealth') * 0.7 && getDistance(mercenary.x, mercenary.y, a.x, a.y) <= healRange);
+                        if (target && healTarget(mercenary, target, healInfo, level)) {
+                            mercenary.mana -= getSkillManaCost(mercenary, healInfo);
+                            mercenary.skillCooldowns[mercenary.skill2] = getSkillCooldown(mercenary, healInfo);
                             updateMercenaryDisplay();
                             mercenary.hasActed = true;
                             return;
@@ -7876,394 +7789,59 @@ function processTurn() {
                 let nearestMonster = null;
                 let nearestDistance = Infinity;
                 visibleMonsters.forEach(monster => {
-                    const distanceFromPlayer = getDistance(monster.x, monster.y, gameState.player.x, gameState.player.y);
-                    if (distanceFromPlayer > PARTY_LEASH_RADIUS) {
-                        return;
-                    }
-                    if (!hasLineOfSight(mercenary.x, mercenary.y, monster.x, monster.y)) {
-                        return;
-                    }
-
                     const dist = getDistance(mercenary.x, mercenary.y, monster.x, monster.y);
-                    if (dist < nearestDistance) {
+                    if (dist < nearestDistance && hasLineOfSight(mercenary.x, mercenary.y, monster.x, monster.y)) {
                         nearestDistance = dist;
                         nearestMonster = monster;
                     }
                 });
 
+                if (skillInfo && nearestMonster && !skillOnCooldown && mercenary.mana >= skillManaCost &&
+                    Math.random() < (mercenary.type === 'BARD' ? 1.0 : 0.5) &&
+                    nearestDistance <= getSkillRange(mercenary, skillInfo)) {
+                    let attackValue = getStat(mercenary, 'attack');
+                    if (skillInfo.damageDice) {
+                        attackValue = (rollDice(skillInfo.damageDice) * skillLevel + (skillInfo.magic ? getStat(mercenary, 'magicPower') : getStat(mercenary, 'attack'))) * getSkillPowerMult(mercenary);
+                    } else if (skillInfo.multiplier) {
+                        attackValue = Math.floor(attackValue * skillInfo.multiplier * skillLevel * getSkillPowerMult(mercenary));
+                    } else {
+                        attackValue = Math.floor(attackValue * skillLevel * getSkillPowerMult(mercenary));
+                    }
+                    const result = performAttack(mercenary, nearestMonster, { attackValue, magic: skillInfo.magic, element: skillInfo.element, damageDice: skillInfo.damageDice });
+                    if (nearestMonster.health <= 0) killMonster(nearestMonster, mercenary);
+                    mercenary.mana -= skillManaCost;
+                    mercenary.skillCooldowns[mercenary.skill] = getSkillCooldown(mercenary, skillInfo);
+                    updateMercenaryDisplay();
+                    mercenary.hasActed = true;
+                    return;
+                }
+
                 if (nearestMonster) {
+                    const attackRange = mercenary.range || (mercenary.role === 'ranged' ? 3 : 1);
                     if (nearestDistance <= attackRange) {
                         performAttack(mercenary, nearestMonster);
-                        mercenary.hasActed = true;
-                        return;
+                        if (nearestMonster.health <= 0) killMonster(nearestMonster, mercenary);
                     } else {
                         const path = findPath(mercenary.x, mercenary.y, nearestMonster.x, nearestMonster.y);
                         if (path && path.length > 1) {
                             mercenary.nextX = path[1].x;
                             mercenary.nextY = path[1].y;
                         }
-                        mercenary.hasActed = true;
-                        return;
-                    }
-                }
-
-                if (playerDistance > 2) {
-                    const path = findPath(mercenary.x, mercenary.y, gameState.player.x, gameState.player.y);
-                    if (path && path.length > 1) {
-                        mercenary.nextX = path[1].x;
-                        mercenary.nextY = path[1].y;
-                    }
-                }
-                mercenary.hasActed = true;
-                return;
-            }
-
-            // 가장 가까운 시야 내 몬스터 찾기 (fog of war 고려)
-            let nearestMonster = null;
-            let nearestDistance = Infinity;
-
-            // 플레이어 시야 내 몬스터 존재 여부 확인
-            const enemyInPlayerSight = gameState.monsters.some(mon =>
-                mon.alive &&
-                getDistance(mon.x, mon.y, gameState.player.x, gameState.player.y) <= FOG_RADIUS &&
-                hasLineOfSight(gameState.player.x, gameState.player.y, mon.x, mon.y)
-            );
-            
-            visibleMonsters.forEach(monster => {
-                const distanceFromPlayer = getDistance(monster.x, monster.y, gameState.player.x, gameState.player.y);
-                if (distanceFromPlayer > PARTY_LEASH_RADIUS) {
-                    return; // 몬스터가 너무 멀리 있으면 목표에서 제외
-                }
-
-                const dist = getDistance(mercenary.x, mercenary.y, monster.x, monster.y);
-                if (dist < nearestDistance && hasLineOfSight(mercenary.x, mercenary.y, monster.x, monster.y)) {
-                    nearestDistance = dist;
-                    nearestMonster = monster;
-                }
-            });
-
-            const skillKey = mercenary.skill;
-            let forceSkill = false;
-            if (skillKey === 'HawkEye' && nearestMonster && nearestDistance > attackRange && nearestDistance <= getSkillRange(mercenary, skillInfo)) {
-                forceSkill = true;
-            }
-            if (mercenary.silence && mercenary.silenceTurns > 0) {
-                // silence just decrements in applyStatusEffects
-            } else if (
-                skillInfo &&
-                mercenary.mana >= skillManaCost &&
-                !(mercenary.skillCooldowns[skillKey] > 0) &&
-                (forceSkill || Math.random() < (mercenary.type === 'BARD' ? 1.0 : 0.5)) &&
-                ((skillKey !== 'GuardianHymn' && skillKey !== 'CourageHymn') || combatOccurredInTurn || enemyInPlayerSight)
-            ) {
-                if (skillKey === 'Heal') {
-                    let target = null;
-                    if (gameState.player.health < getStat(gameState.player, 'maxHealth') && getDistance(mercenary.x, mercenary.y, gameState.player.x, gameState.player.y) <= getSkillRange(mercenary, skillInfo)) {
-                        target = gameState.player;
-                    }
-                    if (!target) {
-                        for (const m of gameState.activeMercenaries) {
-                            if (m !== mercenary && m.alive && m.health < getStat(m, 'maxHealth') && getDistance(mercenary.x, mercenary.y, m.x, m.y) <= getSkillRange(mercenary, skillInfo)) {
-                                target = m;
-                                break;
-                            }
-                        }
-                    }
-                    if (!target && mercenary.health < getStat(mercenary, 'maxHealth')) {
-                        target = mercenary;
-                    }
-                    if (target && healTarget(mercenary, target, skillInfo, skillLevel)) {
-                        mercenary.mana -= skillManaCost;
-                        mercenary.skillCooldowns[skillKey] = getSkillCooldown(mercenary, skillInfo);
-                        updateMercenaryDisplay();
-                        mercenary.hasActed = true;
-                        return;
-                    }
-                } else if (skillKey === 'GuardianHymn') {
-                    let nearestAlly = null;
-                    let distAlly = Infinity;
-                    const allies = [gameState.player, ...gameState.activeMercenaries.filter(m => m.alive && m !== mercenary)];
-                    allies.forEach(a => {
-                        const d = getDistance(mercenary.x, mercenary.y, a.x, a.y);
-                        if (d <= getSkillRange(mercenary, skillInfo) && d < distAlly) {
-                            distAlly = d;
-                            nearestAlly = a;
-                        }
-                    });
-
-                    const appliedSelf = applyShield(mercenary, mercenary, skillInfo, skillLevel);
-                    const appliedAlly = nearestAlly ? applyShield(mercenary, nearestAlly, skillInfo, skillLevel) : false;
-                    if (appliedSelf || appliedAlly) {
-                        mercenary.mana -= skillManaCost;
-                        SoundEngine.playSound('auraActivateMinor');
-                        updateMercenaryDisplay();
-                        mercenary.skillCooldowns[skillKey] = getSkillCooldown(mercenary, skillInfo);
-                        mercenary.hasActed = true;
-                        return;
-                    }
-                } else if (skillKey === 'CourageHymn') {
-                    let nearestAlly = null;
-                    let distAlly = Infinity;
-                    const allies = [gameState.player, ...gameState.activeMercenaries.filter(m => m.alive && m !== mercenary)];
-                    allies.forEach(a => {
-                        const d = getDistance(mercenary.x, mercenary.y, a.x, a.y);
-                        if (d <= getSkillRange(mercenary, skillInfo) && d < distAlly) {
-                            distAlly = d;
-                            nearestAlly = a;
-                        }
-                    });
-
-                    const appliedSelf = applyAttackBuff(mercenary, mercenary, skillInfo, skillLevel);
-                    const appliedAlly = nearestAlly ? applyAttackBuff(mercenary, nearestAlly, skillInfo, skillLevel) : false;
-                    if (appliedSelf || appliedAlly) {
-                        mercenary.mana -= skillManaCost;
-                        SoundEngine.playSound('auraActivateMajor');
-                        updateMercenaryDisplay();
-                        mercenary.skillCooldowns[skillKey] = getSkillCooldown(mercenary, skillInfo);
-                        mercenary.hasActed = true;
-                        return;
-                    }
-                } else if (skillKey === 'ChargeAttack' && nearestMonster && nearestDistance <= skillInfo.dashRange && hasLineOfSight(mercenary.x, mercenary.y, nearestMonster.x, nearestMonster.y)) {
-                    let attackValue = getStat(mercenary, 'attack');
-                    attackValue = Math.floor(attackValue * skillInfo.multiplier * skillLevel);
-
-                    const path = findPath(mercenary.x, mercenary.y, nearestMonster.x, nearestMonster.y);
-                    let destX = mercenary.x;
-                    let destY = mercenary.y;
-                    if (path && path.length > 1) {
-                        const maxSteps = Math.min(skillInfo.dashRange, path.length - 2);
-                        for (let i = 1; i <= maxSteps; i++) {
-                            const step = path[i];
-                            const blocked =
-                                gameState.dungeon[step.y][step.x] === 'wall' ||
-                                gameState.dungeon[step.y][step.x] === 'monster' ||
-                                (step.x === gameState.player.x && step.y === gameState.player.y) ||
-                                gameState.activeMercenaries.some(m => m !== mercenary && m.alive && m.x === step.x && m.y === step.y);
-                            if (blocked) {
-                                break;
-                            }
-                            destX = step.x;
-                            destY = step.y;
-                        }
-                    }
-                    // move first before attacking
-                    mercenary.x = destX;
-                    mercenary.y = destY;
-                    mercenary.nextX = destX;
-                    mercenary.nextY = destY;
-
-                    const hits = 1;
-                    const icon = skillInfo.icon;
-                    const result = performAttack(mercenary, nearestMonster, { attackValue, status: mercenary.equipped.weapon && mercenary.equipped.weapon.status });
-                    const detail = buildAttackDetail(skillInfo.icon, skillInfo.name, result);
-                    if (!result.hit) {
-                        addMessage(`❌ ${mercenary.name}의 ${skillInfo.name}이 빗나갔습니다!`, "mercenary", detail);
-                    } else {
-                        const critMsg = result.crit ? ' (치명타!)' : '';
-                        let dmgStr = result.baseDamage;
-                        if (result.elementDamage) {
-                            const emoji = ELEMENT_EMOJI[result.element] || '';
-                            dmgStr = `${result.baseDamage}+${emoji}${result.elementDamage}`;
-                        }
-                        addMessage(`${icon} ${mercenary.name}이(가) ${nearestMonster.name}에게 ${dmgStr}의 피해를 입혔습니다${critMsg}!`, "mercenary", detail);
-                    }
-
-                    if (nearestMonster.health <= 0) {
-                        killMonster(nearestMonster, mercenary);
-                    }
-                    mercenary.mana -= skillManaCost;
-                    mercenary.skillCooldowns[skillKey] = getSkillCooldown(mercenary, skillInfo);
-                    updateMercenaryDisplay();
-                    mercenary.hasActed = true;
-                    return;
-                } else if (MONSTER_SKILLS[skillKey] && nearestMonster && nearestDistance <= getSkillRange(mercenary, skillInfo) && hasLineOfSight(mercenary.x, mercenary.y, nearestMonster.x, nearestMonster.y)) {
-                    const base = skillInfo.magic ? getStat(mercenary, 'magicPower') : getStat(mercenary, 'attack');
-                    const attackValue = (rollDice(skillInfo.damageDice) * skillLevel + base) * getSkillPowerMult(mercenary);
-                    const hits = skillInfo.hits || 1;
-                    const icon = skillInfo.icon;
-                    for (let i = 0; i < hits; i++) {
-                        const result = performAttack(mercenary, nearestMonster, { attackValue, magic: skillInfo.magic, element: skillInfo.element, status: skillInfo.status || (mercenary.equipped.weapon && mercenary.equipped.weapon.status), damageDice: skillInfo.damageDice });
-                        const detail = buildAttackDetail(icon, skillInfo.name, result);
-                        if (!result.hit) {
-                            addMessage(`❌ ${mercenary.name}의 ${skillInfo.name}이 빗나갔습니다!`, "mercenary", detail);
-                        } else {
-                            const critMsg = result.crit ? ' (치명타!)' : '';
-                            let dmgStr = result.baseDamage;
-                            if (result.elementDamage) {
-                                const emoji = ELEMENT_EMOJI[result.element] || '';
-                                dmgStr = `${result.baseDamage}+${emoji}${result.elementDamage}`;
-                            }
-                            addMessage(`${icon} ${mercenary.name}이(가) ${nearestMonster.name}에게 ${dmgStr}의 피해를 입혔습니다${critMsg}!`, "mercenary", detail);
-                        }
-
-                        if (nearestMonster.health <= 0) break;
-                    }
-
-                    if (nearestMonster.health <= 0) {
-                        killMonster(nearestMonster, mercenary);
-                    }
-                    mercenary.mana -= skillManaCost;
-                    mercenary.skillCooldowns[skillKey] = getSkillCooldown(mercenary, skillInfo);
-                    updateMercenaryDisplay();
-                    mercenary.hasActed = true;
-                    return;
-                } else if (nearestMonster && nearestDistance <= getSkillRange(mercenary, skillInfo) && hasLineOfSight(mercenary.x, mercenary.y, nearestMonster.x, nearestMonster.y)) {
-                    let attackValue = getStat(mercenary, 'attack');
-                    if (skillKey === 'ChargeAttack') {
-                        attackValue = Math.floor(attackValue * skillInfo.multiplier * skillLevel * getSkillPowerMult(mercenary));
-                    } else if (skillKey === 'Fireball' || skillKey === 'Iceball') {
-                        attackValue = (rollDice(skillInfo.damageDice) * skillLevel + getStat(mercenary, 'magicPower')) * getSkillPowerMult(mercenary);
-                    } else if (skillKey === 'HawkEye') {
-                        attackValue = (rollDice(skillInfo.damageDice) * skillLevel + getStat(mercenary, 'attack')) * getSkillPowerMult(mercenary);
-                    } else {
-                        attackValue = Math.floor(attackValue * skillLevel * getSkillPowerMult(mercenary));
-                    }
-
-                    const hits = (skillKey === 'DoubleStrike' || skillKey === 'DoubleThrust') ? 2 : 1;
-                    const icon = skillInfo.icon;
-                    for (let i = 0; i < hits; i++) {
-                        const result = performAttack(mercenary, nearestMonster, { attackValue, magic: skillInfo.magic, element: skillInfo.element, status: mercenary.equipped.weapon && mercenary.equipped.weapon.status, damageDice: skillInfo.damageDice });
-                        const detail = buildAttackDetail(icon, skillInfo.name, result);
-                        if (!result.hit) {
-                            addMessage(`❌ ${mercenary.name}의 ${skillInfo.name}이 빗나갔습니다!`, "mercenary", detail);
-                        } else {
-                            const critMsg = result.crit ? ' (치명타!)' : '';
-                            let dmgStr = result.baseDamage;
-                            if (result.elementDamage) {
-                                const emoji = ELEMENT_EMOJI[result.element] || '';
-                                dmgStr = `${result.baseDamage}+${emoji}${result.elementDamage}`;
-                            }
-                            addMessage(`${icon} ${mercenary.name}이(가) ${nearestMonster.name}에게 ${dmgStr}의 피해를 입혔습니다${critMsg}!`, "mercenary", detail);
-                        }
-
-                        if (nearestMonster.health <= 0) break;
-                    }
-
-                    if (nearestMonster.health <= 0) {
-                        killMonster(nearestMonster, mercenary);
-                    }
-                    mercenary.mana -= skillManaCost;
-                    mercenary.skillCooldowns[skillKey] = getSkillCooldown(mercenary, skillInfo);
-                    updateMercenaryDisplay();
-                    mercenary.hasActed = true;
-                    return;
-                }
-            }
-            
-            if (nearestMonster) {
-                if (nearestDistance <= attackRange) {
-                    if (mercenary.role === 'ranged') {
-                        createHomingProjectile(mercenary.x, mercenary.y, nearestMonster, mercenary);
-                        addMessage('🏹 원거리 공격', 'mercenary');
-                        mercenary.hasActed = true;
-                        return;
-                    }
-                    // 공격 (장비 보너스 적용)
-                    const totalAttack = getStat(mercenary, 'attack');
-
-                    const result = performAttack(mercenary, nearestMonster, { attackValue: totalAttack, status: mercenary.equipped.weapon && mercenary.equipped.weapon.status });
-                    const detail = buildAttackDetail('근접 공격', '', result);
-                    if (!result.hit) {
-                        addMessage(`❌ ${mercenary.name}의 공격이 빗나갔습니다!`, "mercenary", detail);
-                    } else {
-                        const critMsg = result.crit ? ' (치명타!)' : '';
-                        let dmgStr = result.baseDamage;
-                        if (result.elementDamage) {
-                            const emoji = ELEMENT_EMOJI[result.element] || '';
-                            dmgStr = `${result.baseDamage}+${emoji}${result.elementDamage}`;
-                        }
-                        addMessage(`⚔️ ${mercenary.name}이(가) ${nearestMonster.name}에게 ${dmgStr}의 피해를 입혔습니다${critMsg}!`, "mercenary", detail);
-                    }
-                    
-                    if (nearestMonster.health <= 0) {
-                        killMonster(nearestMonster, mercenary);
                     }
                     mercenary.hasActed = true;
-                    return;
-                } else {
-                    const targetPos = findAdjacentEmpty(nearestMonster.x, nearestMonster.y);
-                    const path = findPath(mercenary.x, mercenary.y, targetPos.x, targetPos.y);
-                    if (path && path.length > 1) {
-                        const step = path[Math.min(moveTiles, path.length - 1)];
-                        const newDistanceFromPlayer = getDistance(step.x, step.y, gameState.player.x, gameState.player.y);
-                        const stepMonsterDist = getDistance(step.x, step.y, nearestMonster.x, nearestMonster.y);
-                        const stepValid = step.x >= 0 && step.x < gameState.dungeonSize &&
-                            step.y >= 0 && step.y < gameState.dungeonSize &&
-                            gameState.dungeon[step.y][step.x] !== 'wall' &&
-                            gameState.dungeon[step.y][step.x] !== 'monster' &&
-                            !(step.x === gameState.player.x && step.y === gameState.player.y);
-
-                        if (stepValid) {
-                            if (mercenary.role === 'tank') {
-                                mercenary.nextX = step.x;
-                                mercenary.nextY = step.y;
-                                mercenary.hasActed = true;
-                            } else if (newDistanceFromPlayer >= minDistanceFromPlayer && stepMonsterDist < nearestDistance) {
-                                mercenary.nextX = step.x;
-                                mercenary.nextY = step.y;
-                                mercenary.hasActed = true;
-                            } else if (playerDistance > maxDistanceFromPlayer) {
-                                // too far from player, move toward player instead
-                                const backPath = findPath(mercenary.x, mercenary.y, gameState.player.x, gameState.player.y);
-                                if (backPath && backPath.length > 1) {
-                                    const backStep = backPath[Math.min(moveTiles, backPath.length - 1)];
-                                    const backValid = backStep.x >= 0 && backStep.x < gameState.dungeonSize &&
-                                        backStep.y >= 0 && backStep.y < gameState.dungeonSize &&
-                                        gameState.dungeon[backStep.y][backStep.x] !== 'wall' &&
-                                        gameState.dungeon[backStep.y][backStep.x] !== 'monster' &&
-                                        !(backStep.x === gameState.player.x && backStep.y === gameState.player.y);
-                                    if (backValid) {
-                                        mercenary.nextX = backStep.x;
-                                        mercenary.nextY = backStep.y;
-                                        mercenary.hasActed = true;
-                                    }
-                                }
-                            }
-                        } else if (playerDistance > maxDistanceFromPlayer) {
-                            const backPath = findPath(mercenary.x, mercenary.y, gameState.player.x, gameState.player.y);
-                            if (backPath && backPath.length > 1) {
-                                const backStep = backPath[Math.min(moveTiles, backPath.length - 1)];
-                                const backValid = backStep.x >= 0 && backStep.x < gameState.dungeonSize &&
-                                    backStep.y >= 0 && backStep.y < gameState.dungeonSize &&
-                                    gameState.dungeon[backStep.y][backStep.x] !== 'wall' &&
-                                    gameState.dungeon[backStep.y][backStep.x] !== 'monster' &&
-                                    !(backStep.x === gameState.player.x && backStep.y === gameState.player.y);
-                                if (backValid) {
-                                    mercenary.nextX = backStep.x;
-                                    mercenary.nextY = backStep.y;
-                                    mercenary.hasActed = true;
-                                }
-                            }
-                        }
-                        if (!mercenary.hasActed) {
-                            directMoveToPlayer();
-                        }
-                    } else {
-                        directMoveToPlayer();
-                    }
-                }
-            } else {
-                if (playerDistance > maxDistanceFromPlayer) {
-                    const path = findPath(mercenary.x, mercenary.y, gameState.player.x, gameState.player.y);
-                    if (path && path.length > 1) {
-                        const step = path[Math.min(moveTiles, path.length - 1)];
-                        const stepValid = step.x >= 0 && step.x < gameState.dungeonSize &&
-                            step.y >= 0 && step.y < gameState.dungeonSize &&
-                            gameState.dungeon[step.y][step.x] !== 'wall' &&
-                            gameState.dungeon[step.y][step.x] !== 'monster' &&
-                            !(step.x === gameState.player.x && step.y === gameState.player.y);
-
-                        if (stepValid) {
-                            mercenary.nextX = step.x;
-                            mercenary.nextY = step.y;
-                            mercenary.hasActed = true;
-                        }
-                    }
-                    if (!mercenary.hasActed) {
-                        directMoveToPlayer();
-                    }
+                    return; // 전투 행동 후 턴 종료
                 }
             }
+
+            // 주변에 적이 없을 경우: 플레이어를 따라가는 '유휴' 로직만 수행합니다.
+            if (playerDistance > 3) {
+                const path = findPath(mercenary.x, mercenary.y, gameState.player.x, gameState.player.y);
+                if (path && path.length > 1) {
+                    mercenary.nextX = path[1].x;
+                    mercenary.nextY = path[1].y;
+                }
+            }
+            mercenary.hasActed = true;
         }
 
         // 게임 저장
