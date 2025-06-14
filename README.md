@@ -176,6 +176,11 @@ Install dependencies with:
 npm install
 ```
 
+The core `gameState` object used throughout the game is created in
+[`src/state.js`](src/state.js). It exposes properties like `dirtyCells`
+on the global object so other modules such as `src/mechanics.js` can
+access them directly.
+
 ## Testing
 
 The test suite relies on development dependencies such as **jsdom**. Ensure they
