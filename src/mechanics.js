@@ -4482,7 +4482,7 @@ function killMonster(monster, killer = null) {
         }
 
         function advanceIncubators() {
-            const monsterTypes = getMonsterPoolForFloor(gameState.floor);
+            const monsterTypes = getAllMonsterTypes();
             gameState.incubators.forEach((slot, i) => {
                 if (!slot) return;
                 slot.remainingTurns--;
@@ -4521,6 +4521,10 @@ function killMonster(monster, killer = null) {
             updateMercenaryDisplay();
             updateIncubatorDisplay();
             renderDungeon();
+        }
+
+        function getAllMonsterTypes() {
+            return Object.keys(MONSTER_TYPES);
         }
 
         function getMonsterPoolForFloor(floor) {
@@ -9330,7 +9334,7 @@ createRecipeScroll, learnRecipe,
 createSuperiorMonster, createTreasure, createNovaEffect, createScreenShake, playSkillOverlayEffect, playNovaSkillEffect, dissectCorpse, equipItem,
 equipItemToMercenary, estimateSkillDamage, findAdjacentEmpty, findNearestEmpty, findPath,
  formatItem, formatItemName, formatNumber, generateDungeon, rebuildDungeonDOM, generateStars, getAuraBonus,
-getDistance, getMonsterPoolForFloor, getPlayerEmoji, getStat, getStatusResist,
+getDistance, getMonsterPoolForFloor, getAllMonsterTypes, getPlayerEmoji, getStat, getStatusResist,
 getActiveAuraIcons, buildEffectDetails, updateUnitEffectIcons,
 getSkillRange, getSkillCooldown, getSkillManaCost, getSkillPowerMult,
 handleDungeonClick, handleItemClick, handlePlayerDeath,
