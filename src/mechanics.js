@@ -4668,12 +4668,12 @@ function killMonster(monster, killer = null) {
         function renderDungeon() {
             const dungeonEl = document.getElementById('dungeon');
             if (!dungeonEl || !gameState.cellElements.length) return;
-            const cells = [...gameState.dirtyCells];
-            if (cells.length === 0) return;
-            for (const key of cells) {
+            if (gameState.dirtyCells.size === 0) return;
+            for (const key of gameState.dirtyCells) {
                 const [xStr, yStr] = key.split(',');
                 const x = parseInt(xStr, 10);
                 const y = parseInt(yStr, 10);
+
                 const div = gameState.cellElements[y][x];
 
                     // [최적화] 매번 검색하는 대신 캐시된 요소를 직접 사용합니다.
@@ -4826,7 +4826,7 @@ function killMonster(monster, killer = null) {
                     }
 
                     div.className = finalClasses.join(' ');
-                    if (gameState.fogOfWar[y] && gameState.fogOfWar[y][x]) {
+                    if (gameState.fogOfWar[y]?.[x]) {
                         div.style.filter = 'brightness(0.2)';
                     } else {
                         div.style.filter = '';
