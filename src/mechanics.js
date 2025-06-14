@@ -7286,8 +7286,14 @@ function processTurn() {
             sortedMercenaries.forEach(mercenary => {
                 const key = `${mercenary.nextX},${mercenary.nextY}`;
                 if (!occupied.has(key)) {
+                    const oldX = mercenary.x;
+                    const oldY = mercenary.y;
                     mercenary.x = mercenary.nextX;
                     mercenary.y = mercenary.nextY;
+                    if (oldX !== mercenary.x || oldY !== mercenary.y) {
+                        markDirty(oldX, oldY);
+                        markDirty(mercenary.nextX, mercenary.nextY);
+                    }
                     occupied.add(key);
                 }
             });
