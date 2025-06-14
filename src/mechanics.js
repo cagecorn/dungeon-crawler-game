@@ -3797,26 +3797,38 @@ function updateMaterialsDisplay() {
                 });
             }
 
-            const icons = [...auraIcons, ...statusIcons, ...buffIcons];
+            const buffs = [...auraIcons, ...buffIcons];
+            const debuffs = statusIcons;
 
             // 2. Update effectCycleState when icons change
-            if (icons.length === 0) {
+            if (buffs.length === 0 && debuffs.length === 0) {
                 delete effectCycleState[unit.id];
             } else {
                 const current = effectCycleState[unit.id];
-                const changed = !current || JSON.stringify(current.icons) !== JSON.stringify(icons);
+                const changed =
+                    !current ||
+                    JSON.stringify(current.buffs) !== JSON.stringify(buffs) ||
+                    JSON.stringify(current.debuffs) !== JSON.stringify(debuffs);
                 if (changed) {
-                    effectCycleState[unit.id] = { icons, currentIndex: 0 };
+                    effectCycleState[unit.id] = { buffs, debuffs, buffIndex: 0, debuffIndex: 0 };
                 }
             }
 
-            // 3. Render only the current icon
+            // 3. Render the currently indexed buff and debuff icons
             const state = effectCycleState[unit.id];
-            if (state && state.icons.length > 0) {
-                const iconSpan = document.createElement('span');
-                iconSpan.className = 'effect-icon';
-                iconSpan.textContent = state.icons[state.currentIndex];
-                buffContainer.appendChild(iconSpan);
+            if (state) {
+                if (state.buffs.length > 0) {
+                    const iconSpan = document.createElement('span');
+                    iconSpan.className = 'effect-icon';
+                    iconSpan.textContent = state.buffs[state.buffIndex];
+                    buffContainer.appendChild(iconSpan);
+                }
+                if (state.debuffs.length > 0) {
+                    const iconSpan = document.createElement('span');
+                    iconSpan.className = 'effect-icon';
+                    iconSpan.textContent = state.debuffs[state.debuffIndex];
+                    statusContainer.appendChild(iconSpan);
+                }
             }
         }
 
@@ -9313,7 +9325,7 @@ upgradeMercenarySkill, upgradeMonsterSkill, useItem, useItemOnTarget, useSkill, 
     isPlayerSide, isSameSide
 };
 // ======================= 추가 시작 =======================
-// 1초마다 모든 유닛의 효과 아이콘 인덱스를 업데이트하고, 다시 렌더링합니다.
+// 효과 아이콘을 주기적으로 순환하기 위한 인터벌을 설정합니다.
 if (!(typeof navigator !== 'undefined' && navigator.userAgent &&
     (navigator.userAgent.includes('Node.js') || navigator.userAgent.includes('jsdom')))) {
     setInterval(() => {
@@ -9328,10 +9340,14 @@ if (!(typeof navigator !== 'undefined' && navigator.userAgent &&
         let needsRender = false;
 
         allUnits.forEach(unit => {
-            if (unit && effectCycleState[unit.id]) {
-                const state = effectCycleState[unit.id];
-                if (state.icons.length > 1) { // 아이콘이 2개 이상일 때만 순환
-                    state.currentIndex = (state.currentIndex + 1) % state.icons.length;
+            const state = effectCycleState[unit.id];
+            if (state) {
+                if (state.buffs.length > 1) {
+                    state.buffIndex = (state.buffIndex + 1) % state.buffs.length;
+                    needsRender = true;
+                }
+                if (state.debuffs.length > 1) {
+                    state.debuffIndex = (state.debuffIndex + 1) % state.debuffs.length;
                     needsRender = true;
                 }
             }
