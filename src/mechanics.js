@@ -9550,7 +9550,7 @@ upgradeMercenarySkill, upgradeMonsterSkill, useItem, useItemOnTarget, useSkill, 
     isPlayerSide, isSameSide
 };
 // ======================= 추가 시작 =======================
-// 1초마다 모든 유닛의 효과 아이콘 인덱스를 업데이트하고, 필요한 셀만 갱신합니다.
+// 1초마다 모든 유닛의 효과 아이콘 인덱스를 업데이트하고, 다시 렌더링합니다.
 if (!IS_TEST_ENV) {
     setInterval(() => {
         if (!gameState.gameRunning) return; // 게임이 멈췄을 땐 실행하지 않음
@@ -9561,7 +9561,7 @@ if (!IS_TEST_ENV) {
             ...gameState.monsters
         ];
 
-        let needsRender = false;
+        let needsLightweightRender = false;
 
         allUnits.forEach(unit => {
             if (unit && effectCycleState[unit.id]) {
@@ -9570,19 +9570,19 @@ if (!IS_TEST_ENV) {
                 // 버프 인덱스를 독립적으로 순환시킵니다.
                 if (state.buffs && state.buffs.length > 1) {
                     state.buffIndex = (state.buffIndex + 1) % state.buffs.length;
-                    needsRender = true;
+                    needsLightweightRender = true;
                 }
 
                 // 디버프 인덱스를 독립적으로 순환시킵니다.
                 if (state.debuffs && state.debuffs.length > 1) {
                     state.debuffIndex = (state.debuffIndex + 1) % state.debuffs.length;
-                    needsRender = true;
+                    needsLightweightRender = true;
                 }
             }
         });
 
-        if (needsRender) {
-            updateAllEffectIcons(); // 아이콘이 변경되었으므로 해당 셀만 갱신
+        if (needsLightweightRender) {
+            updateAllEffectIcons(); // [수정] 맵 전체 렌더링 대신 가벼운 아이콘 업데이트 함수 호출
         }
     }, 1000); // 1초 간격
 }
