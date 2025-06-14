@@ -7217,6 +7217,13 @@ function processTurn() {
                     continue;
                 }
 
+                // 플레이어와 너무 멀리 떨어진 몬스터는 이번 턴에 행동하지 않습니다.
+                const distToPlayer = getDistance(monster.x, monster.y, gameState.player.x, gameState.player.y);
+                if (distToPlayer > MONSTER_VISION) {
+                    monster.hasActed = true;
+                    continue;
+                }
+
                 // [추가] 몬스터가 챔피언이면 전용 AI를 사용하고 다음 몬스터로 넘어갑니다.
                 if (monster.isChampion) {
                     processChampionTurn(monster);
