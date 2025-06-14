@@ -3969,89 +3969,53 @@ function updateMaterialsDisplay() {
                 cellDiv.statusContainer = statusContainer;
             }
 
+            if (!buffContainer || !statusContainer) return;
+
             buffContainer.innerHTML = '';
             statusContainer.innerHTML = '';
 
             if (!unit || !unit.id) return;
 
-            // 1. Collect buff and debuff icons separately
-            const allBuffIcons = [];
-            const allDebuffIcons = [];
-
-            // Auras are buffs
-            allBuffIcons.push(...getActiveAuraIcons(unit));
-
-            // Status ailments are debuffs
-            const STATUS_KEYS = ['poison', 'burn', 'freeze', 'bleed', 'paralysis', 'nightmare', 'silence', 'petrify', 'debuff'];
-            STATUS_KEYS.forEach(status => {
-                if (unit[status] && unit[status + 'Turns'] > 0) {
-                    allDebuffIcons.push(STATUS_ICONS[status]);
-                }
-            });
-
-            // Buffs array uses ⬆️ for buffs and ⬇️ for debuffs
+            const allBuffIcons = new Set();
+            getActiveAuraIcons(unit).forEach(icon => allBuffIcons.add(icon));
             if (Array.isArray(unit.buffs)) {
                 unit.buffs.forEach(buff => {
                     const skillDef = Object.values(SKILL_DEFS).find(def => def.name === buff.name);
-                    if (skillDef && skillDef.icon) {
-                        if (skillDef.icon === '⬆️') {
-                            allBuffIcons.push(skillDef.icon);
-                        } else if (skillDef.icon === '⬇️') {
-                            allDebuffIcons.push(skillDef.icon);
-                        }
+                    if (skillDef && skillDef.icon === '⬆️') {
+                        allBuffIcons.add(skillDef.icon);
                     }
                 });
             }
 
-            const uniqueBuffs = [...new Set(allBuffIcons)].sort();
-            const uniqueDebuffs = [...new Set(allDebuffIcons)].sort();
-            // Sorting ensures deterministic order to prevent flicker from unordered Set iteration
-
-            // 2. Update effectCycleState
-            if (uniqueBuffs.length === 0 && uniqueDebuffs.length === 0) {
-                delete effectCycleState[unit.id];
-            } else {
-                const currentState = effectCycleState[unit.id] || {};
-
-                const buffsChanged = !currentState.buffs ||
-                    JSON.stringify([...currentState.buffs].sort()) !== JSON.stringify(uniqueBuffs);
-                const debuffsChanged = !currentState.debuffs ||
-                    JSON.stringify([...currentState.debuffs].sort()) !== JSON.stringify(uniqueDebuffs);
-
-                if (!effectCycleState[unit.id]) {
-                    effectCycleState[unit.id] = { buffs: [], debuffs: [], buffIndex: 0, debuffIndex: 0 };
+            const allDebuffIcons = new Set();
+            const STATUS_KEYS = ['poison', 'burn', 'freeze', 'bleed', 'paralysis', 'nightmare', 'silence', 'petrify', 'debuff'];
+            STATUS_KEYS.forEach(status => {
+                if (unit[status] && unit[status + 'Turns'] > 0) {
+                    allDebuffIcons.add(STATUS_ICONS[status]);
                 }
-
-                if (buffsChanged) {
-                    effectCycleState[unit.id].buffs = uniqueBuffs;
-                    effectCycleState[unit.id].buffIndex = 0;
-                }
-                if (debuffsChanged) {
-                    effectCycleState[unit.id].debuffs = uniqueDebuffs;
-                    effectCycleState[unit.id].debuffIndex = 0;
-                }
+            });
+            if (Array.isArray(unit.buffs)) {
+                unit.buffs.forEach(buff => {
+                    const skillDef = Object.values(SKILL_DEFS).find(def => def.name === buff.name);
+                    if (skillDef && skillDef.icon === '⬇️') {
+                        allDebuffIcons.add(skillDef.icon);
+                    }
+                });
             }
 
-            // 3. Render current icons
-            const state = effectCycleState[unit.id];
-            if (state) {
-                // Buff icon (top)
-                if (state.buffs && state.buffs.length > 0) {
-                    const currentBuffIcon = state.buffs[state.buffIndex];
-                    const iconSpan = document.createElement('span');
-                    iconSpan.className = 'effect-icon';
-                    iconSpan.textContent = currentBuffIcon;
-                    buffContainer.appendChild(iconSpan);
-                }
-                // Debuff icon (bottom)
-                if (state.debuffs && state.debuffs.length > 0) {
-                    const currentDebuffIcon = state.debuffs[state.debuffIndex];
-                    const iconSpan = document.createElement('span');
-                    iconSpan.className = 'effect-icon';
-                    iconSpan.textContent = currentDebuffIcon;
-                    statusContainer.appendChild(iconSpan);
-                }
-            }
+            allBuffIcons.forEach(icon => {
+                const iconSpan = document.createElement('span');
+                iconSpan.className = 'effect-icon';
+                iconSpan.textContent = icon;
+                buffContainer.appendChild(iconSpan);
+            });
+
+            allDebuffIcons.forEach(icon => {
+                const iconSpan = document.createElement('span');
+                iconSpan.className = 'effect-icon';
+                iconSpan.textContent = icon;
+                statusContainer.appendChild(iconSpan);
+            });
         }
 
         // 몬스터 생성
