@@ -7,6 +7,9 @@
 let combatOccurredInTurn = false;
 let lowHpAlertPlayed = false;
 
+// 슈페리어 몬스터의 스킬 풀을 미리 계산하여 저장할 변수
+let superiorSkillPool = [];
+
 const IS_TEST_ENV =
   typeof navigator !== 'undefined' &&
   navigator.userAgent &&
@@ -4009,9 +4012,7 @@ function updateMaterialsDisplay() {
         function createSuperiorMonster(type, x, y, level = 1) {
             const monster = createMonster(type, x, y, level + 1);
             const auraKeys = ['MightAura','ProtectAura','RegenerationAura','MeditationAura','HasteAura','ConcentrationAura','CondemnAura','NaturalAura'];
-            const skillKeys = Object.keys(MERCENARY_SKILLS)
-                .filter(k => !k.endsWith('Aura') && !DEBUFF_SKILLS.includes(k));
-            const skill = skillKeys[Math.floor(Math.random() * skillKeys.length)];
+            const skill = superiorSkillPool[Math.floor(Math.random() * superiorSkillPool.length)];
             const auraSkill = auraKeys[Math.floor(Math.random() * auraKeys.length)];
             monster.isElite = true;
             monster.isSuperior = true;
@@ -9236,6 +9237,10 @@ function processTurn() {
             });
             if (allSkills[0]) gameState.player.assignedSkills[1] = allSkills[0];
             if (allSkills[1]) gameState.player.assignedSkills[2] = allSkills[1];
+
+            // 게임 시작 시 슈페리어 몬스터의 스킬 풀을 한 번만 계산합니다.
+            superiorSkillPool = Object.keys(MERCENARY_SKILLS)
+                .filter(k => !k.endsWith('Aura') && !DEBUFF_SKILLS.includes(k));
 
             generateDungeon();
             const zombieMerc = convertMonsterToMercenary(createMonster('ZOMBIE', 0, 0, 1));
