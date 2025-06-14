@@ -199,24 +199,6 @@
   image-rendering: pixelated;
 }
 
-/* ---- Special unit glow effects ---- */
-.cell.elite {
-  box-shadow: 0 0 8px rgba(244, 67, 54, 0.7);
-  animation: monsterPulse 1.5s ease-in-out infinite alternate;
-}
-
-.cell.champion {
-  /* BUG FIX: 챔피언 셀의 배경색을 명시적으로 투명하게 설정하여 
-     하위 바닥 타일 이미지가 보이도록 수정합니다. */
-  background-color: transparent;
-  box-shadow: 0 0 8px rgba(255, 235, 59, 0.7);
-  animation: monsterPulse 1.5s ease-in-out infinite alternate;
-}
-
-.cell.superior {
-  box-shadow: 0 0 8px rgba(33, 150, 243, 0.7);
-  animation: monsterPulse 1.5s ease-in-out infinite alternate;
-}
 
 .inv-filter-btn {
   padding: 4px 8px;
@@ -316,11 +298,6 @@
 }
 
 
-.low-health {
-  /* 이미지 자체가 붉은 색으로 보이도록 필터를 적용합니다. */
-  filter: brightness(0.6) sepia(1) hue-rotate(-50deg) saturate(6);
-  animation: monsterPulse 1s ease-in-out infinite alternate;
-}
 
 /* 시체 셀 스타일 및 아이콘 표시 */
 .corpse {
