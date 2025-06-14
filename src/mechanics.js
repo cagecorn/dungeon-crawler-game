@@ -3773,50 +3773,85 @@ function updateMaterialsDisplay() {
                 cellDiv.appendChild(statusContainer);
             }
 
-            // clear previous icons
             buffContainer.innerHTML = '';
             statusContainer.innerHTML = '';
 
-            if (!unit || unit.id === undefined || unit.id === null) return;
+            if (!unit || !unit.id) return;
 
-            // 1. Collect aura, status and buff icons
-            const auraIcons = getActiveAuraIcons(unit);
-            const statusIcons = [];
+            // 1. Collect buff and debuff icons separately
+            const allBuffIcons = [];
+            const allDebuffIcons = [];
+
+            // Auras are buffs
+            allBuffIcons.push(...getActiveAuraIcons(unit));
+
+            // Status ailments are debuffs
             const STATUS_KEYS = ['poison', 'burn', 'freeze', 'bleed', 'paralysis', 'nightmare', 'silence', 'petrify', 'debuff'];
-            STATUS_KEYS.forEach(key => {
-                if (unit[key] && unit[key + 'Turns'] > 0) {
-                    statusIcons.push(STATUS_ICONS[key]);
+            STATUS_KEYS.forEach(status => {
+                if (unit[status] && unit[status + 'Turns'] > 0) {
+                    allDebuffIcons.push(STATUS_ICONS[status]);
                 }
             });
 
-            const buffIcons = [];
+            // Buffs array uses ⬆️ for buffs and ⬇️ for debuffs
             if (Array.isArray(unit.buffs)) {
-                unit.buffs.forEach(b => {
-                    const info = SKILL_DEFS[b.name] || MERCENARY_SKILLS[b.name] || MONSTER_SKILLS[b.name];
-                    if (info && info.icon) buffIcons.push(info.icon);
+                unit.buffs.forEach(buff => {
+                    const skillDef = Object.values(SKILL_DEFS).find(def => def.name === buff.name);
+                    if (skillDef && skillDef.icon) {
+                        if (skillDef.icon === '⬆️') {
+                            allBuffIcons.push(skillDef.icon);
+                        } else if (skillDef.icon === '⬇️') {
+                            allDebuffIcons.push(skillDef.icon);
+                        }
+                    }
                 });
             }
 
-            const icons = [...auraIcons, ...statusIcons, ...buffIcons];
+            const uniqueBuffs = [...new Set(allBuffIcons)];
+            const uniqueDebuffs = [...new Set(allDebuffIcons)];
 
-            // 2. Update effectCycleState when icons change
-            if (icons.length === 0) {
+            // 2. Update effectCycleState
+            if (uniqueBuffs.length === 0 && uniqueDebuffs.length === 0) {
                 delete effectCycleState[unit.id];
             } else {
-                const current = effectCycleState[unit.id];
-                const changed = !current || JSON.stringify(current.icons) !== JSON.stringify(icons);
-                if (changed) {
-                    effectCycleState[unit.id] = { icons, currentIndex: 0 };
+                const currentState = effectCycleState[unit.id] || {};
+
+                const buffsChanged = !currentState.buffs || JSON.stringify(currentState.buffs) !== JSON.stringify(uniqueBuffs);
+                const debuffsChanged = !currentState.debuffs || JSON.stringify(currentState.debuffs) !== JSON.stringify(uniqueDebuffs);
+
+                if (!effectCycleState[unit.id]) {
+                    effectCycleState[unit.id] = { buffs: [], debuffs: [], buffIndex: 0, debuffIndex: 0 };
+                }
+
+                if (buffsChanged) {
+                    effectCycleState[unit.id].buffs = uniqueBuffs;
+                    effectCycleState[unit.id].buffIndex = 0;
+                }
+                if (debuffsChanged) {
+                    effectCycleState[unit.id].debuffs = uniqueDebuffs;
+                    effectCycleState[unit.id].debuffIndex = 0;
                 }
             }
 
-            // 3. Render only the current icon
+            // 3. Render current icons
             const state = effectCycleState[unit.id];
-            if (state && state.icons.length > 0) {
-                const iconSpan = document.createElement('span');
-                iconSpan.className = 'effect-icon';
-                iconSpan.textContent = state.icons[state.currentIndex];
-                buffContainer.appendChild(iconSpan);
+            if (state) {
+                // Buff icon (top)
+                if (state.buffs && state.buffs.length > 0) {
+                    const currentBuffIcon = state.buffs[state.buffIndex];
+                    const iconSpan = document.createElement('span');
+                    iconSpan.className = 'effect-icon';
+                    iconSpan.textContent = currentBuffIcon;
+                    buffContainer.appendChild(iconSpan);
+                }
+                // Debuff icon (bottom)
+                if (state.debuffs && state.debuffs.length > 0) {
+                    const currentDebuffIcon = state.debuffs[state.debuffIndex];
+                    const iconSpan = document.createElement('span');
+                    iconSpan.className = 'effect-icon';
+                    iconSpan.textContent = currentDebuffIcon;
+                    statusContainer.appendChild(iconSpan);
+                }
             }
         }
 
@@ -9330,8 +9365,16 @@ if (!(typeof navigator !== 'undefined' && navigator.userAgent &&
         allUnits.forEach(unit => {
             if (unit && effectCycleState[unit.id]) {
                 const state = effectCycleState[unit.id];
-                if (state.icons.length > 1) { // 아이콘이 2개 이상일 때만 순환
-                    state.currentIndex = (state.currentIndex + 1) % state.icons.length;
+                let updated = false;
+                if (state.buffs && state.buffs.length > 1) {
+                    state.buffIndex = (state.buffIndex + 1) % state.buffs.length;
+                    updated = true;
+                }
+                if (state.debuffs && state.debuffs.length > 1) {
+                    state.debuffIndex = (state.debuffIndex + 1) % state.debuffs.length;
+                    updated = true;
+                }
+                if (updated) {
                     needsRender = true;
                 }
             }
