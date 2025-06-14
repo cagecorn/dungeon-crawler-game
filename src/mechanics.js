@@ -5728,9 +5728,12 @@ function killMonster(monster, killer = null) {
             if (armorChoices.length) champion.equipped.armor = createItem(armorChoices[Math.floor(Math.random()*armorChoices.length)], 0, 0, null, enhanceLv);
             if (accChoices.length) champion.equipped.accessory1 = createItem(accChoices[Math.floor(Math.random()*accChoices.length)], 0, 0, null, enhanceLv);
 
-            const skillKeys = Object.keys(MONSTER_SKILLS)
-                .concat(DEBUFF_SKILLS);
-            const sk = skillKeys[Math.floor(Math.random() * skillKeys.length)];
+            // [수정] 챔피언의 스킬 풀에 디버프 스킬 5종을 추가합니다.
+            const monsterAttackSkills = Object.keys(MONSTER_SKILLS);
+            const debuffSkills = ['Weaken', 'Sunder', 'Regression', 'SpellWeakness', 'ElementalWeakness'];
+            const championSkillPool = [...monsterAttackSkills, ...debuffSkills];
+
+            const sk = championSkillPool[Math.floor(Math.random() * championSkillPool.length)];
             champion.monsterSkill = sk;
             champion.skillLevels = {};
             champion.skillLevels[sk] = Math.floor((level - 1) / 3) + 1;
