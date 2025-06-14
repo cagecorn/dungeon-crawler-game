@@ -4601,21 +4601,27 @@ function killMonster(monster, killer = null) {
         }
 
         // 던전 렌더링
+        // [전체 교체] 렉 해결을 위해 최적화된 renderDungeon 함수
         function renderDungeon() {
             const dungeonEl = document.getElementById('dungeon');
             if (!dungeonEl || !gameState.cellElements.length) return;
+
             for (let y = 0; y < gameState.dungeonSize; y++) {
                 for (let x = 0; x < gameState.dungeonSize; x++) {
                     const div = gameState.cellElements[y][x];
-                    const tileBg = div.querySelector('.equipped-tile-bg');
+
+                    // [최적화] querySelector 대신, 미리 저장해둔(캐싱된) 요소를 직접 사용합니다.
+                    const tileBg = div.tileBg;
+                    const buffEl = div.buffContainer;
+                    const statusEl = div.statusContainer;
+
                     if (tileBg) tileBg.style.removeProperty('background-image');
                     div.style.removeProperty('background-image');
                     div.classList.remove('low-health');
-                    // 렌더링마다 이전 아이콘들을 모두 지워 잔상이 남지 않게 합니다.
-                    const buffEl = div.querySelector('.buff-container');
-                    const statusEl = div.querySelector('.status-container');
+
                     if (buffEl) buffEl.innerHTML = '';
                     if (statusEl) statusEl.innerHTML = '';
+
                     const baseCellType = gameState.dungeon[y][x];
                     const finalClasses = ['cell', baseCellType];
                     let mapTile = null;
@@ -4638,53 +4644,46 @@ function killMonster(monster, killer = null) {
                         }
                         updateUnitEffectIcons(gameState.player, div);
                     } else {
-                            const merc = gameState.activeMercenaries.find(m => m.x === x && m.y === y && m.alive);
-                            if (merc) {
-                                finalClasses.push('mercenary');
-                                if (merc.isMonster && merc.monsterType) {
-                                    // 아군이 된 몬스터의 경우 monsterType을 이용해 몬스터 이미지 클래스를 적용
-                                    finalClasses.push('monster', merc.monsterType.replace('_', '-').toLowerCase());
-                                } else if (merc.type) {
-                                    // 일반 용병일 경우 기존 로직대로 type을 사용
-                                    finalClasses.push(merc.type.toLowerCase());
-                                }
-                                if (merc.isSuperior) finalClasses.push('superior');
-                                else if (merc.isChampion) finalClasses.push('champion');
-                                else if (merc.isElite) finalClasses.push('elite');
-                                const mercBgImages = [];
-                                if (mapTile) mercBgImages.push(`url('${String(mapTile.imageUrl)}')`);
-                                if (merc.equipped.tile) {
-                                    mercBgImages.push(`url('${String(merc.equipped.tile.imageUrl)}')`);
-                                }
-                                if (tileBg && mercBgImages.length) tileBg.style.backgroundImage = mercBgImages.join(', ');
-                                const maxHealth = getStat(merc, 'maxHealth');
-                                if (maxHealth > 0 && merc.health / maxHealth < 0.25) {
-                                    finalClasses.push('low-health');
-                                }
-                                div.textContent = '';
-                                updateUnitEffectIcons(merc, div);
-                            } else {
-                                const proj = gameState.projectiles.find(p => p.x === x && p.y === y);
-                                if (proj) {
-                                    finalClasses.push('projectile');
-                                    div.textContent = proj.icon;
-                                } else if (baseCellType === 'monster') {
+                        const merc = gameState.activeMercenaries.find(m => m.x === x && m.y === y && m.alive);
+                        if (merc) {
+                            finalClasses.push('mercenary');
+                            if (merc.isMonster && merc.monsterType) {
+                                finalClasses.push('monster', merc.monsterType.replace('_', '-').toLowerCase());
+                            } else if (merc.type) {
+                                finalClasses.push(merc.type.toLowerCase());
+                            }
+                            if (merc.isSuperior) finalClasses.push('superior');
+                            else if (merc.isChampion) finalClasses.push('champion');
+                            else if (merc.isElite) finalClasses.push('elite');
+                            const mercBgImages = [];
+                            if (mapTile) mercBgImages.push(`url('${String(mapTile.imageUrl)}')`);
+                            if (merc.equipped.tile) {
+                                mercBgImages.push(`url('${String(merc.equipped.tile.imageUrl)}')`);
+                            }
+                            if (tileBg && mercBgImages.length) tileBg.style.backgroundImage = mercBgImages.join(', ');
+                            const maxHealth = getStat(merc, 'maxHealth');
+                            if (maxHealth > 0 && merc.health / maxHealth < 0.25) {
+                                finalClasses.push('low-health');
+                            }
+                            div.textContent = '';
+                            updateUnitEffectIcons(merc, div);
+                        } else {
+                            const proj = gameState.projectiles.find(p => p.x === x && p.y === y);
+                            if (proj) {
+                                finalClasses.push('projectile');
+                                div.textContent = proj.icon;
+                            } else if (baseCellType === 'monster') {
                                 const m = gameState.monsters.find(mon => mon.x === x && mon.y === y);
                                 if (m) {
                                     if (m.isChampion) {
-                                        // 1. 'monster' 클래스를 'empty'로 교체
                                         const monsterClassIndex = finalClasses.indexOf('monster');
                                         if (monsterClassIndex > -1) {
                                             finalClasses[monsterClassIndex] = 'empty';
                                         }
-                                        // 2. 용병과 직업 클래스 추가
                                         finalClasses.push('mercenary', m.type.toLowerCase());
                                     } else {
                                         const monsterClass = m.type.replace('_', '-').toLowerCase();
                                         finalClasses.push('monster', monsterClass);
-
-                                        // BUG FIX: 이미지 스프라이트가 있는 몬스터 목록에 4종을 추가하여
-                                        // 불필요한 텍스트 아이콘이 표시되지 않도록 수정합니다.
                                         const monstersWithSprites = ['slime', 'goblin-archer', 'goblin', 'zombie', 'kobold', 'skeleton', 'goblin-wizard'];
                                         if (!monstersWithSprites.includes(monsterClass)) {
                                              div.textContent = m.icon;
@@ -4714,10 +4713,6 @@ function killMonster(monster, killer = null) {
                                     } else {
                                         div.textContent = item.icon;
                                     }
-                                }
-                            } else if (baseCellType === 'tile') {
-                                if (tileBg && mapTile) {
-                                    tileBg.style.backgroundImage = `url('${String(mapTile.imageUrl)}')`;
                                 }
                             } else if (baseCellType === 'plant') {
                                 div.textContent = '🌿';
@@ -4755,7 +4750,7 @@ function killMonster(monster, killer = null) {
                     }
 
                     div.className = finalClasses.join(' ');
-                    if (gameState.fogOfWar[y] && gameState.fogOfWar[y][x]) {
+                    if (gameState.fogOfWar[y]?.[x]) {
                         div.style.filter = 'brightness(0.2)';
                     } else {
                         div.style.filter = '';
@@ -4924,17 +4919,20 @@ function killMonster(monster, killer = null) {
                         const tileBg = document.createElement('div');
                         tileBg.className = 'equipped-tile-bg';
                         cellDiv.appendChild(tileBg);
+                        cellDiv.tileBg = tileBg;
                         cellDiv.className = 'cell';
 
                         // 버프/디버프 아이콘 컨테이너
                         const buffContainer = document.createElement('div');
                         buffContainer.className = 'buff-container';
                         cellDiv.appendChild(buffContainer);
+                        cellDiv.buffContainer = buffContainer;
 
                         // 상태이상 아이콘 컨테이너
                         const statusContainer = document.createElement('div');
                         statusContainer.className = 'status-container';
                         cellDiv.appendChild(statusContainer);
+                        cellDiv.statusContainer = statusContainer;
 
                         dungeonEl.appendChild(cellDiv);
                         cellRow.push(cellDiv);
@@ -5311,15 +5309,18 @@ function killMonster(monster, killer = null) {
                     const tileBg = document.createElement('div');
                     tileBg.className = 'equipped-tile-bg';
                     cellDiv.appendChild(tileBg);
+                    cellDiv.tileBg = tileBg;
                     cellDiv.className = 'cell';
 
                     const buffContainer = document.createElement('div');
                     buffContainer.className = 'buff-container';
                     cellDiv.appendChild(buffContainer);
+                    cellDiv.buffContainer = buffContainer;
 
                     const statusContainer = document.createElement('div');
                     statusContainer.className = 'status-container';
                     cellDiv.appendChild(statusContainer);
+                    cellDiv.statusContainer = statusContainer;
 
                     dungeonEl.appendChild(cellDiv);
                     cellRow.push(cellDiv);
