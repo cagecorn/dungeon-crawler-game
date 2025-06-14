@@ -445,13 +445,6 @@
   outline: none;
 }
 
-/* 대사 메시지 스타일 */
-.message.dialogue {
-    color: #a7d8ff;
-    background-color: #2a3a4a;
-    border-left-color: #64b5f6;
-    font-style: italic;
-}
 
 .rare {
   color: #42a5f5;
