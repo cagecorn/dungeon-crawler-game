@@ -8627,6 +8627,8 @@ function processTurn() {
 
         function handleTeleport(skillKey, skill, level, manaCost) {
             const p = gameState.player;
+            const oldX = p.x;
+            const oldY = p.y;
             if (p.teleportSavedX === null) {
                 p.teleportSavedX = p.x;
                 p.teleportSavedY = p.y;
@@ -8634,16 +8636,20 @@ function processTurn() {
             } else if (p.teleportReturnX === null) {
                 p.teleportReturnX = p.x;
                 p.teleportReturnY = p.y;
+                markDirty(oldX, oldY);
                 p.x = p.teleportSavedX;
                 p.y = p.teleportSavedY;
+                markDirty(p.x, p.y);
                 addMessage('🌀 저장된 위치로 이동했습니다.', 'info');
             } else {
                 const tx = p.teleportReturnX;
                 const ty = p.teleportReturnY;
                 p.teleportReturnX = null;
                 p.teleportReturnY = null;
+                markDirty(oldX, oldY);
                 p.x = tx;
                 p.y = ty;
+                markDirty(p.x, p.y);
                 addMessage('🌀 이전 위치로 돌아왔습니다.', 'info');
             }
             p.mana -= manaCost;
