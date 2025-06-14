@@ -8,14 +8,18 @@ let combatOccurredInTurn = false;
 let lowHpAlertPlayed = false;
 let lastDangerTurn = -1;
 
+const IS_TEST_ENV =
+  typeof navigator !== 'undefined' &&
+  navigator.userAgent &&
+  (/Node\.js|jsdom/i).test(navigator.userAgent);
+
 /**
  * 지정된 경로의 오디오 파일을 재생하는 헬퍼 함수
  * @param {string} filePath - 재생할 오디오 파일의 경로
  */
 function playSoundFile(filePath) {
     if (!filePath) return;
-    if (typeof navigator !== 'undefined' && navigator.userAgent &&
-        (navigator.userAgent.includes('Node.js') || navigator.userAgent.includes('jsdom'))) {
+    if (IS_TEST_ENV) {
         return;
     }
     if (typeof Audio !== 'undefined') {
@@ -437,7 +441,7 @@ let isAudioInitialized = false;
  */
 function initializeAudio() {
     if (isAudioInitialized) return;
-    if (typeof navigator !== 'undefined' && navigator.userAgent && (navigator.userAgent.includes('Node.js') || navigator.userAgent.includes('jsdom'))) {
+    if (IS_TEST_ENV) {
         // Skip audio initialization in testing environments like jsdom
         isAudioInitialized = true;
         return;
@@ -3875,7 +3879,7 @@ function updateMaterialsDisplay() {
             const endurance = data.baseHealth / 2;
             const agility = Math.max(0, Math.round((data.baseAccuracy - 0.7) / 0.02));
             const monster = {
-                id: Math.random().toString(36).substr(2, 9),
+                id: Math.random().toString(36).substr(2, 9) || '0',
                 type,
                 name: data.name,
                 icon: data.icon,
@@ -5024,11 +5028,10 @@ function killMonster(monster, killer = null) {
                 const starterPotion = createItem('healthPotion', 0, 0);
                 gameState.player.inventory.push(starterPotion);
 
-                const isTestEnv = typeof navigator !== 'undefined' && /jsdom/i.test(navigator.userAgent);
-                gameState.player.equipped.weapon = createItem('volcanicEruptor', 0, 0, null, 0, !isTestEnv);
-                gameState.player.equipped.armor = createItem('glacialGuard', 0, 0, null, 0, !isTestEnv);
-                gameState.player.equipped.accessory1 = createItem('guardianAmulet', 0, 0, null, 0, !isTestEnv);
-                gameState.player.equipped.accessory2 = createItem('courageAmulet', 0, 0, null, 0, !isTestEnv);
+                gameState.player.equipped.weapon = createItem('volcanicEruptor', 0, 0, null, 0, !IS_TEST_ENV);
+                gameState.player.equipped.armor = createItem('glacialGuard', 0, 0, null, 0, !IS_TEST_ENV);
+                gameState.player.equipped.accessory1 = createItem('guardianAmulet', 0, 0, null, 0, !IS_TEST_ENV);
+                gameState.player.equipped.accessory2 = createItem('courageAmulet', 0, 0, null, 0, !IS_TEST_ENV);
                 // 시작 슈페리어 알을 플레이어 앞에 드랍하도록 수정
                 const starterEgg = createItem('superiorEgg', gameState.player.x + 1, gameState.player.y);
                 starterEgg.incubation = 1; // 이 알의 부화 시간을 1턴으로 특별히 설정
@@ -5176,8 +5179,7 @@ function killMonster(monster, killer = null) {
                 gameState.dungeon[y][x] = 'plant';
             }
 
-            const isTestEnv = typeof navigator !== 'undefined' && /jsdom/i.test(navigator.userAgent);
-            if (!isTestEnv) {
+            if (!IS_TEST_ENV) {
                 const chestCount = 1 + Math.floor(Math.random() * 2);
                 for (let i = 0; i < chestCount; i++) {
                     let x, y;
@@ -5451,13 +5453,12 @@ function killMonster(monster, killer = null) {
         function createMercenary(type, x, y) {
             const mercType = MERCENARY_TYPES[type];
             const skillPool = MERCENARY_SKILL_SETS[type] || [];
-            const isTestMerc = typeof navigator !== 'undefined' && /jsdom/i.test(navigator.userAgent);
             let assignedSkill;
             if (type === 'BARD') {
                 const hymns = skillPool.filter(s => s !== 'Heal');
-                assignedSkill = hymns.length ? (isTestMerc ? hymns[0] : hymns[Math.floor(Math.random() * hymns.length)]) : null;
+                assignedSkill = hymns.length ? (IS_TEST_ENV ? hymns[0] : hymns[Math.floor(Math.random() * hymns.length)]) : null;
             } else {
-                assignedSkill = skillPool.length ? (isTestMerc ? skillPool[0] : skillPool[Math.floor(Math.random() * skillPool.length)]) : null;
+                assignedSkill = skillPool.length ? (IS_TEST_ENV ? skillPool[0] : skillPool[Math.floor(Math.random() * skillPool.length)]) : null;
             }
             let assignedSkill2 = type === 'HEALER' ? 'Purify' : null;
             if (type === 'BARD') assignedSkill2 = 'Heal';
@@ -5465,7 +5466,7 @@ function killMonster(monster, killer = null) {
                 const paladinSet = MERCENARY_SKILL_SETS['PALADIN'] || [];
                 const keys = Object.keys(MERCENARY_SKILLS)
                     .filter(k => !paladinSet.includes(k) && !k.endsWith('Aura') && !DEBUFF_SKILLS.includes(k));
-                assignedSkill2 = keys.length ? (isTestMerc ? keys[0] : keys[Math.floor(Math.random() * keys.length)]) : null;
+                assignedSkill2 = keys.length ? (IS_TEST_ENV ? keys[0] : keys[Math.floor(Math.random() * keys.length)]) : null;
             }
             const randomBaseName = MERCENARY_NAMES[Math.floor(Math.random() * MERCENARY_NAMES.length)];
             const jobLabel = mercType.name.split(' ')[1] || mercType.name;
@@ -5474,7 +5475,7 @@ function killMonster(monster, killer = null) {
             const focus = (mercType.baseMaxMana || 0) / 2;
             const agility = Math.max(0, Math.round((mercType.baseAccuracy - 0.7) / 0.02));
             return {
-                id: Math.random().toString(36).substr(2, 9),
+                id: Math.random().toString(36).substr(2, 9) || '0',
                 type: type,
                 name: name,
                 icon: mercType.icon,
@@ -5557,7 +5558,7 @@ function killMonster(monster, killer = null) {
         function createItem(itemKey, x, y, prefixName, enhanceLevel = 0, rare = false) {
             const itemData = ITEMS[itemKey] || UNIQUE_ITEMS[itemKey];
             const item = {
-                id: Math.random().toString(36).substr(2, 9),
+                id: Math.random().toString(36).substr(2, 9) || '0',
                 key: itemKey,
                 baseName: itemData.name,
                 name: itemData.name,
@@ -5675,8 +5676,7 @@ function killMonster(monster, killer = null) {
             }
 
             if (item.tier === 'unique') {
-                const isTest = typeof navigator !== 'undefined' && /jsdom/i.test(navigator.userAgent);
-                if (!isTest) {
+                if (!IS_TEST_ENV) {
                     const effect = UNIQUE_EFFECT_POOL[Math.floor(Math.random() * UNIQUE_EFFECT_POOL.length)];
                     if (effect) {
                         if (!item.procs) item.procs = [];
@@ -5697,7 +5697,7 @@ function killMonster(monster, killer = null) {
         function createRecipeScroll(recipeKey, x, y) {
             const name = RECIPES[recipeKey]?.name || recipeKey;
             return {
-                id: Math.random().toString(36).substr(2, 9),
+                id: Math.random().toString(36).substr(2, 9) || '0',
                 type: ITEM_TYPES.RECIPE_SCROLL,
                 recipe: recipeKey,
                 baseName: `${name} Recipe`,
@@ -5725,7 +5725,7 @@ function killMonster(monster, killer = null) {
                 else if (type === 'HEALER') { special = 'ranged'; range = 3; }
             }
             const champion = {
-                id: Math.random().toString(36).substr(2, 9),
+                id: Math.random().toString(36).substr(2, 9) || '0',
                 type,
                 name,
                 icon: base.icon,
@@ -5980,8 +5980,7 @@ function killMonster(monster, killer = null) {
                 }
             }
             let failChance = 0.2;
-            if (typeof navigator !== 'undefined' && navigator.userAgent &&
-                (navigator.userAgent.includes('Node.js') || navigator.userAgent.includes('jsdom'))) {
+            if (IS_TEST_ENV) {
                 failChance = 0; // deterministic success during tests
             }
 
@@ -7158,8 +7157,7 @@ function processTurn() {
                     m.affinity = Math.min(200, (m.affinity || 0) + AFFINITY_PER_TURN);
                 }
             });
-            const isTestEnv = typeof navigator !== 'undefined' && /jsdom/i.test(navigator.userAgent);
-            if (!isTestEnv) processProjectiles();
+            if (!IS_TEST_ENV) processProjectiles();
 
             if (applyStatusEffects(gameState.player)) {
                 handlePlayerDeath();
@@ -8593,7 +8591,6 @@ function processTurn() {
                 createScreenShake(skill.screenShake.intensity, skill.screenShake.duration);
             }
 
-            const isTestEnv = typeof navigator !== 'undefined' && /jsdom/i.test(navigator.userAgent);
             const novaAction = () => {
                 targets.slice().forEach(monster => {
                     const attackValue = (rollDice(skill.damageDice) * level + getStat(gameState.player, 'magicPower')) * getSkillPowerMult(gameState.player);
@@ -8622,7 +8619,7 @@ function processTurn() {
                     }
                 });
             };
-            if (isTestEnv) {
+            if (IS_TEST_ENV) {
                 novaAction();
             } else {
                 setTimeout(novaAction, 200);
@@ -8988,8 +8985,7 @@ function processTurn() {
                 return;
             }
 
-            const isTest = typeof navigator !== 'undefined' && /jsdom/i.test(navigator.userAgent);
-            if (isTest && typeof prompt === 'function') {
+            if (IS_TEST_ENV && typeof prompt === 'function') {
                 const msg = choices.map((c, i) => `${i}: ${c.label}`).join('\n');
                 const res = prompt(msg);
                 const idx = parseInt(res, 10);
@@ -9377,8 +9373,7 @@ upgradeMercenarySkill, upgradeMonsterSkill, useItem, useItemOnTarget, useSkill, 
 };
 // ======================= 추가 시작 =======================
 // 1초마다 모든 유닛의 효과 아이콘 인덱스를 업데이트하고, 다시 렌더링합니다.
-if (!(typeof navigator !== 'undefined' && navigator.userAgent &&
-    (navigator.userAgent.includes('Node.js') || navigator.userAgent.includes('jsdom')))) {
+if (!IS_TEST_ENV) {
     setInterval(() => {
         if (!gameState.gameRunning) return; // 게임이 멈췄을 땐 실행하지 않음
 
