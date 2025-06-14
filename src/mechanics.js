@@ -7463,8 +7463,11 @@ function processTurn() {
             }
         });
 
+        // ▼ [수정됨] 몬스터가 있을 때와 없을 때의 행동을 명확히 분리합니다.
         if (nearestMonster) {
-            // ----- Step 1: apply self buff if not active -----
+            // --- 몬스터가 시야에 있을 때의 행동 로직 ---
+
+            // 1순위: 버프 사용
             const buffKey = mercenary.skill;
             const buffInfo = MERCENARY_SKILLS[buffKey] || MONSTER_SKILLS[buffKey];
             const buffLevel = mercenary.skillLevels && mercenary.skillLevels[buffKey] || 1;
@@ -7554,7 +7557,7 @@ function processTurn() {
             mercenary.hasActed = true;
             return;
         } else {
-            // No visible monster - move toward the player
+            // --- 몬스터가 시야에 없을 때의 행동 로직 (플레이어 따라다니기) ---
             const playerDistance = getDistance(mercenary.x, mercenary.y, gameState.player.x, gameState.player.y);
             if (playerDistance > 3) {
                 const path = findPath(mercenary.x, mercenary.y, gameState.player.x, gameState.player.y);
