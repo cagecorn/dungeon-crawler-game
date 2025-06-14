@@ -3895,69 +3895,14 @@ function updateMaterialsDisplay() {
          * @param {HTMLElement} cellDiv - 해당 유닛이 위치한 셀의 div 요소
          */
         function updateUnitEffectIcons(unit, cellDiv) {
-            let buffContainer = cellDiv.buffContainer || cellDiv.querySelector('.buff-container');
-            let statusContainer = cellDiv.statusContainer || cellDiv.querySelector('.status-container');
-
-            if (!buffContainer) {
-                buffContainer = document.createElement('div');
-                buffContainer.className = 'buff-container';
-                cellDiv.appendChild(buffContainer);
-                cellDiv.buffContainer = buffContainer;
+            if (cellDiv.buffContainer) {
+                cellDiv.buffContainer.remove();
+                cellDiv.buffContainer = null;
             }
-            if (!statusContainer) {
-                statusContainer = document.createElement('div');
-                statusContainer.className = 'status-container';
-                cellDiv.appendChild(statusContainer);
-                cellDiv.statusContainer = statusContainer;
+            if (cellDiv.statusContainer) {
+                cellDiv.statusContainer.remove();
+                cellDiv.statusContainer = null;
             }
-
-            if (!buffContainer || !statusContainer) return;
-
-            buffContainer.innerHTML = '';
-            statusContainer.innerHTML = '';
-
-            if (!unit || !unit.id) return;
-
-            const allBuffIcons = new Set();
-            getActiveAuraIcons(unit).forEach(icon => allBuffIcons.add(icon));
-            if (Array.isArray(unit.buffs)) {
-                unit.buffs.forEach(buff => {
-                    const skillDef = Object.values(SKILL_DEFS).find(def => def.name === buff.name);
-                    if (skillDef && skillDef.icon === '⬆️') {
-                        allBuffIcons.add(skillDef.icon);
-                    }
-                });
-            }
-
-            const allDebuffIcons = new Set();
-            const STATUS_KEYS = ['poison', 'burn', 'freeze', 'bleed', 'paralysis', 'nightmare', 'silence', 'petrify', 'debuff'];
-            STATUS_KEYS.forEach(status => {
-                if (unit[status] && unit[status + 'Turns'] > 0) {
-                    allDebuffIcons.add(STATUS_ICONS[status]);
-                }
-            });
-            if (Array.isArray(unit.buffs)) {
-                unit.buffs.forEach(buff => {
-                    const skillDef = Object.values(SKILL_DEFS).find(def => def.name === buff.name);
-                    if (skillDef && skillDef.icon === '⬇️') {
-                        allDebuffIcons.add(skillDef.icon);
-                    }
-                });
-            }
-
-            allBuffIcons.forEach(icon => {
-                const iconSpan = document.createElement('span');
-                iconSpan.className = 'effect-icon';
-                iconSpan.textContent = icon;
-                buffContainer.appendChild(iconSpan);
-            });
-
-            allDebuffIcons.forEach(icon => {
-                const iconSpan = document.createElement('span');
-                iconSpan.className = 'effect-icon';
-                iconSpan.textContent = icon;
-                statusContainer.appendChild(iconSpan);
-            });
         }
 
         // 몬스터 생성
@@ -5032,17 +4977,7 @@ function killMonster(monster, killer = null) {
                         cellDiv.tileBg = tileBg;
                         cellDiv.className = 'cell';
 
-                        // 버프/디버프 아이콘 컨테이너
-                        const buffContainer = document.createElement('div');
-                        buffContainer.className = 'buff-container';
-                        cellDiv.appendChild(buffContainer);
-                        cellDiv.buffContainer = buffContainer;
-
-                        // 상태이상 아이콘 컨테이너
-                        const statusContainer = document.createElement('div');
-                        statusContainer.className = 'status-container';
-                        cellDiv.appendChild(statusContainer);
-                        cellDiv.statusContainer = statusContainer;
+                        // previous buff/debuff containers removed
 
                         dungeonEl.appendChild(cellDiv);
                         cellRow.push(cellDiv);
@@ -5420,15 +5355,7 @@ function killMonster(monster, killer = null) {
                     cellDiv.tileBg = tileBg;
                     cellDiv.className = 'cell';
 
-                    const buffContainer = document.createElement('div');
-                    buffContainer.className = 'buff-container';
-                    cellDiv.appendChild(buffContainer);
-                    cellDiv.buffContainer = buffContainer;
-
-                    const statusContainer = document.createElement('div');
-                    statusContainer.className = 'status-container';
-                    cellDiv.appendChild(statusContainer);
-                    cellDiv.statusContainer = statusContainer;
+                    // previous buff/debuff containers removed
 
                     dungeonEl.appendChild(cellDiv);
                     cellRow.push(cellDiv);

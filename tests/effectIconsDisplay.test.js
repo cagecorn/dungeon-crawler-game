@@ -31,17 +31,12 @@ async function run() {
   const buffContainer = div.querySelector('.buff-container');
   const debuffContainer = div.querySelector('.status-container');
 
-  if (!buffContainer || !debuffContainer) {
-    console.error('setup failed');
+  if (buffContainer || debuffContainer) {
+    console.error('effect icons should not be displayed');
     process.exit(1);
   }
 
-  if (buffContainer.children.length < 2 || debuffContainer.children.length < 2) {
-    console.error('icons not displayed correctly');
-    process.exit(1);
-  }
-
-  console.log('icon display ok');
+  console.log('icons removed ok');
 }
 
 run().catch(e => { console.error(e); process.exit(1); });

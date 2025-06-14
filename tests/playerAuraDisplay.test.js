@@ -32,8 +32,8 @@ async function run() {
 
   const buffContainer = cellDiv.querySelector('.buff-container');
   const icon = SKILL_DEFS['MightAura'].icon;
-  if (!buffContainer || !buffContainer.textContent.includes(icon)) {
-    console.error('player aura icon missing on tile');
+  if (buffContainer) {
+    console.error('aura icon should not display on tile');
     process.exit(1);
   }
 
