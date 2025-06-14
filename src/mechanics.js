@@ -14,8 +14,7 @@ let lastDangerTurn = -1;
  */
 function playSoundFile(filePath) {
     if (!filePath) return;
-    if (typeof navigator !== 'undefined' && navigator.userAgent &&
-        (navigator.userAgent.includes('Node.js') || navigator.userAgent.includes('jsdom'))) {
+    if (typeof isTestEnvironment === 'function' && isTestEnvironment()) {
         return;
     }
     if (typeof Audio !== 'undefined') {
@@ -437,7 +436,7 @@ let isAudioInitialized = false;
  */
 function initializeAudio() {
     if (isAudioInitialized) return;
-    if (typeof navigator !== 'undefined' && navigator.userAgent && (navigator.userAgent.includes('Node.js') || navigator.userAgent.includes('jsdom'))) {
+    if (typeof isTestEnvironment === 'function' && isTestEnvironment()) {
         // Skip audio initialization in testing environments like jsdom
         isAudioInitialized = true;
         return;
@@ -5024,7 +5023,7 @@ function killMonster(monster, killer = null) {
                 const starterPotion = createItem('healthPotion', 0, 0);
                 gameState.player.inventory.push(starterPotion);
 
-                const isTestEnv = typeof navigator !== 'undefined' && /jsdom/i.test(navigator.userAgent);
+                const isTestEnv = typeof isTestEnvironment === 'function' && isTestEnvironment();
                 gameState.player.equipped.weapon = createItem('volcanicEruptor', 0, 0, null, 0, !isTestEnv);
                 gameState.player.equipped.armor = createItem('glacialGuard', 0, 0, null, 0, !isTestEnv);
                 gameState.player.equipped.accessory1 = createItem('guardianAmulet', 0, 0, null, 0, !isTestEnv);
@@ -5176,7 +5175,7 @@ function killMonster(monster, killer = null) {
                 gameState.dungeon[y][x] = 'plant';
             }
 
-            const isTestEnv = typeof navigator !== 'undefined' && /jsdom/i.test(navigator.userAgent);
+            const isTestEnv = typeof isTestEnvironment === 'function' && isTestEnvironment();
             if (!isTestEnv) {
                 const chestCount = 1 + Math.floor(Math.random() * 2);
                 for (let i = 0; i < chestCount; i++) {
@@ -5451,7 +5450,7 @@ function killMonster(monster, killer = null) {
         function createMercenary(type, x, y) {
             const mercType = MERCENARY_TYPES[type];
             const skillPool = MERCENARY_SKILL_SETS[type] || [];
-            const isTestMerc = typeof navigator !== 'undefined' && /jsdom/i.test(navigator.userAgent);
+            const isTestMerc = typeof isTestEnvironment === 'function' && isTestEnvironment();
             let assignedSkill;
             if (type === 'BARD') {
                 const hymns = skillPool.filter(s => s !== 'Heal');
@@ -5675,7 +5674,7 @@ function killMonster(monster, killer = null) {
             }
 
             if (item.tier === 'unique') {
-                const isTest = typeof navigator !== 'undefined' && /jsdom/i.test(navigator.userAgent);
+                const isTest = typeof isTestEnvironment === 'function' && isTestEnvironment();
                 if (!isTest) {
                     const effect = UNIQUE_EFFECT_POOL[Math.floor(Math.random() * UNIQUE_EFFECT_POOL.length)];
                     if (effect) {
@@ -5980,8 +5979,7 @@ function killMonster(monster, killer = null) {
                 }
             }
             let failChance = 0.2;
-            if (typeof navigator !== 'undefined' && navigator.userAgent &&
-                (navigator.userAgent.includes('Node.js') || navigator.userAgent.includes('jsdom'))) {
+            if (typeof isTestEnvironment === 'function' && isTestEnvironment()) {
                 failChance = 0; // deterministic success during tests
             }
 
@@ -7158,7 +7156,7 @@ function processTurn() {
                     m.affinity = Math.min(200, (m.affinity || 0) + AFFINITY_PER_TURN);
                 }
             });
-            const isTestEnv = typeof navigator !== 'undefined' && /jsdom/i.test(navigator.userAgent);
+            const isTestEnv = typeof isTestEnvironment === 'function' && isTestEnvironment();
             if (!isTestEnv) processProjectiles();
 
             if (applyStatusEffects(gameState.player)) {
@@ -8593,7 +8591,7 @@ function processTurn() {
                 createScreenShake(skill.screenShake.intensity, skill.screenShake.duration);
             }
 
-            const isTestEnv = typeof navigator !== 'undefined' && /jsdom/i.test(navigator.userAgent);
+            const isTestEnv = typeof isTestEnvironment === 'function' && isTestEnvironment();
             const novaAction = () => {
                 targets.slice().forEach(monster => {
                     const attackValue = (rollDice(skill.damageDice) * level + getStat(gameState.player, 'magicPower')) * getSkillPowerMult(gameState.player);
@@ -8988,7 +8986,7 @@ function processTurn() {
                 return;
             }
 
-            const isTest = typeof navigator !== 'undefined' && /jsdom/i.test(navigator.userAgent);
+            const isTest = typeof isTestEnvironment === 'function' && isTestEnvironment();
             if (isTest && typeof prompt === 'function') {
                 const msg = choices.map((c, i) => `${i}: ${c.label}`).join('\n');
                 const res = prompt(msg);
@@ -9377,8 +9375,7 @@ upgradeMercenarySkill, upgradeMonsterSkill, useItem, useItemOnTarget, useSkill, 
 };
 // ======================= 추가 시작 =======================
 // 1초마다 모든 유닛의 효과 아이콘 인덱스를 업데이트하고, 다시 렌더링합니다.
-if (!(typeof navigator !== 'undefined' && navigator.userAgent &&
-    (navigator.userAgent.includes('Node.js') || navigator.userAgent.includes('jsdom')))) {
+if (!(typeof isTestEnvironment === 'function' && isTestEnvironment())) {
     setInterval(() => {
         if (!gameState.gameRunning) return; // 게임이 멈췄을 땐 실행하지 않음
 

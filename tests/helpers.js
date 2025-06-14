@@ -10,6 +10,7 @@ async function loadGame(options = {}) {
   let html = fs.readFileSync(htmlPath, 'utf8');
   html = html.replace(/<link rel="stylesheet" href="style.css">/, '');
   html = html.replace('<script src="dice.js"></script>', '');
+  html = html.replace('<script src="src/env.js"></script>', '');
   const dom = new JSDOM(html, {
     runScripts: 'dangerously',
     resources: 'usable',
@@ -37,7 +38,7 @@ async function loadGame(options = {}) {
   });
 
   const ctx = dom.getInternalVMContext();
-  const modules = ['src/state.js', 'src/ui.js', 'src/mechanics.js'];
+  const modules = ['src/env.js', 'src/state.js', 'src/ui.js', 'src/mechanics.js'];
   for (const file of modules) {
     const code = fs.readFileSync(path.join(__dirname, '..', file), 'utf8');
     const script = new vm.Script(code, { filename: file });
