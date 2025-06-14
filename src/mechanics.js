@@ -6729,8 +6729,10 @@ function killMonster(monster, killer = null) {
                 gameState.autoMovePath = null;
             }
             
-            const newX = gameState.player.x + dx;
-            const newY = gameState.player.y + dy;
+            const oldX = gameState.player.x;
+            const oldY = gameState.player.y;
+            const newX = oldX + dx;
+            const newY = oldY + dy;
             
             if (newX < 0 || newX >= gameState.dungeonSize || 
                 newY < 0 || newY >= gameState.dungeonSize) {
@@ -6745,10 +6747,12 @@ function killMonster(monster, killer = null) {
             
             const blockingMercenary = gameState.activeMercenaries.find(m => m.x === newX && m.y === newY && m.alive);
             if (blockingMercenary) {
-                const oldX = gameState.player.x;
-                const oldY = gameState.player.y;
+                markDirty(oldX, oldY);
+                const mercOldX = blockingMercenary.x;
+                const mercOldY = blockingMercenary.y;
                 gameState.player.x = newX;
                 gameState.player.y = newY;
+                markDirty(newX, newY);
 
                 if (cellType === 'item') {
                     const item = gameState.items.find(i => i.x === newX && i.y === newY);
@@ -6768,6 +6772,8 @@ function killMonster(monster, killer = null) {
 
                 blockingMercenary.x = oldX;
                 blockingMercenary.y = oldY;
+                markDirty(mercOldX, mercOldY);
+                markDirty(blockingMercenary.x, blockingMercenary.y);
                 processTurn();
                 return;
             }
@@ -6802,8 +6808,10 @@ function killMonster(monster, killer = null) {
                 }
             }
             
+            markDirty(oldX, oldY);
             gameState.player.x = newX;
             gameState.player.y = newY;
+            markDirty(newX, newY);
             
             if (cellType === 'treasure') {
                 const treasure = gameState.treasures.find(t => t.x === newX && t.y === newY);
