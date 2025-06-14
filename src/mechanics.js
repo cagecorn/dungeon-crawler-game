@@ -3163,25 +3163,94 @@ function updateMaterialsDisplay() {
             updateSkillDisplay();
         }
 
+        /** 서포터로 지정된 용병을 UI에 표시합니다. */
+        function updateSupporterDisplay() {
+            const slotsContainer = document.getElementById('supporter-slots');
+            slotsContainer.innerHTML = '';
+
+            gameState.supporters.forEach((supporter, index) => {
+                const slotDiv = document.createElement('div');
+                slotDiv.className = 'mercenary-info alive';
+
+                if (supporter) {
+                    slotDiv.innerHTML = `<span>[${index + 1}] ${supporter.icon} ${supporter.name}</span>`;
+                    const removeBtn = document.createElement('button');
+                    removeBtn.textContent = '해제';
+                    removeBtn.className = 'sell-button';
+                    removeBtn.onclick = (e) => {
+                        e.stopPropagation();
+                        removeSupporter(index);
+                    };
+                    slotDiv.appendChild(removeBtn);
+                } else {
+                    slotDiv.textContent = `[서포트 ${index + 1}] 비어있음`;
+                    slotDiv.style.borderLeftColor = '#666';
+                }
+                slotsContainer.appendChild(slotDiv);
+            });
+        }
+
+        /** 대기 용병을 서포터 슬롯에 임명합니다. */
+        function assignSupporter(merc, slotIndex) {
+            if (!merc) return;
+
+            const otherSlot = gameState.supporters.findIndex(sup => sup && sup.id === merc.id);
+            if (otherSlot !== -1) {
+                gameState.supporters[otherSlot] = null;
+            }
+
+            const currentSupporter = gameState.supporters[slotIndex];
+            if (currentSupporter) {
+                gameState.standbyMercenaries.push(currentSupporter);
+            }
+
+            const mercInStandbyIndex = gameState.standbyMercenaries.findIndex(m => m.id === merc.id);
+            if (mercInStandbyIndex > -1) {
+                gameState.standbyMercenaries.splice(mercInStandbyIndex, 1);
+            }
+
+            gameState.supporters[slotIndex] = merc;
+
+            addMessage(`💖 ${merc.name}을(를) 서포터 ${slotIndex + 1}로 임명했습니다.`, 'mercenary');
+            updateMercenaryDisplay();
+            updateStats();
+        }
+
+        /** 지정된 슬롯에서 서포터를 해제하고 대기열로 복귀시킵니다. */
+        function removeSupporter(index) {
+            const supporter = gameState.supporters[index];
+            if (!supporter) return;
+
+            gameState.standbyMercenaries.push(supporter);
+            gameState.supporters[index] = null;
+
+            addMessage(`💔 ${supporter.name}이(가) 서포터에서 해제되었습니다.`, 'mercenary');
+            updateMercenaryDisplay();
+            updateStats();
+        }
+
         // 용병 목록 갱신
         function updateMercenaryDisplay() {
             const activeList = document.getElementById('active-mercenary-list');
             const standbyList = document.getElementById('standby-mercenary-list');
             activeList.innerHTML = '';
             standbyList.innerHTML = '';
+
+            updateSupporterDisplay();
+
             gameState.activeMercenaries.forEach((merc, i) => {
                 const div = document.createElement('div');
                 const statusClass = merc.alive ? 'alive' : 'dead';
                 div.className = `mercenary-info ${statusClass}`;
 
-            const hp = `${formatNumber(merc.health)}/${formatNumber(getStat(merc, 'maxHealth'))}`;
-            const mp = `${formatNumber(merc.mana)}/${formatNumber(getStat(merc, 'maxMana'))}`;
+                const hp = `${formatNumber(merc.health)}/${formatNumber(getStat(merc, 'maxHealth'))}`;
+                const mp = `${formatNumber(merc.mana)}/${formatNumber(getStat(merc, 'maxMana'))}`;
                 const weapon = merc.equipped && merc.equipped.weapon ? merc.equipped.weapon.name : '없음';
                 const armor = merc.equipped && merc.equipped.armor ? merc.equipped.armor.name : '없음';
                 const accessory1 = merc.equipped && merc.equipped.accessory1 ? merc.equipped.accessory1.name : '없음';
                 const accessory2 = merc.equipped && merc.equipped.accessory2 ? merc.equipped.accessory2.name : '없음';
-            const totalAttack = formatNumber(getStat(merc, 'attack'));
-            const totalDefense = formatNumber(getStat(merc, 'defense'));
+                const totalAttack = formatNumber(getStat(merc, 'attack'));
+                const totalDefense = formatNumber(getStat(merc, 'defense'));
                 const skillInfo = MERCENARY_SKILLS[merc.skill] || MONSTER_SKILLS[merc.skill];
                 const skillInfo2 = MERCENARY_SKILLS[merc.skill2] || MONSTER_SKILLS[merc.skill2];
                 let skillText = skillInfo ? `스킬:${skillInfo.name}(MP ${skillInfo.manaCost})` : '스킬: 없음';
@@ -3213,16 +3282,21 @@ function updateMaterialsDisplay() {
             gameState.standbyMercenaries.forEach((merc, i) => {
                 const div = document.createElement('div');
                 div.className = 'mercenary-info alive';
+
                 const skillInfo = MERCENARY_SKILLS[merc.skill] || MONSTER_SKILLS[merc.skill];
                 const skillInfo2 = MERCENARY_SKILLS[merc.skill2] || MONSTER_SKILLS[merc.skill2];
                 let skillText = skillInfo ? `스킬:${skillInfo.name}(MP ${skillInfo.manaCost})` : '스킬: 없음';
                 if (skillInfo2) skillText += ` / ${skillInfo2.name}(MP ${skillInfo2.manaCost})`;
                 div.textContent = `${merc.icon} ${merc.name} (대기) [${skillText}]`;
 
+                const controlsDiv = document.createElement('div');
+                controlsDiv.style.marginTop = '4px';
+
                 const swapBtn = document.createElement('button');
                 swapBtn.textContent = '배치';
-                swapBtn.style.marginLeft = '5px';
-                swapBtn.onclick = () => {
+                swapBtn.className = 'sell-button';
+                swapBtn.onclick = (e) => {
+                    e.stopPropagation();
                     const options = gameState.activeMercenaries.map((m, idx) => `${idx + 1}: ${m.name}`);
                     const choice = prompt(`교체할 활동 용병을 선택하세요:\n${options.join('\n')}`);
                     if (choice === null) return;
@@ -3231,9 +3305,23 @@ function updateMaterialsDisplay() {
                         swapActiveAndStandby(idx, i);
                     }
                 };
-                div.appendChild(swapBtn);
-            standbyList.appendChild(div);
-        });
+                controlsDiv.appendChild(swapBtn);
+
+                const support1Btn = document.createElement('button');
+                support1Btn.textContent = '서포트 1';
+                support1Btn.className = 'sell-button';
+                support1Btn.onclick = (e) => { e.stopPropagation(); assignSupporter(merc, 0); };
+                controlsDiv.appendChild(support1Btn);
+
+                const support2Btn = document.createElement('button');
+                support2Btn.textContent = '서포트 2';
+                support2Btn.className = 'sell-button';
+                support2Btn.onclick = (e) => { e.stopPropagation(); assignSupporter(merc, 1); };
+                controlsDiv.appendChild(support2Btn);
+
+                div.appendChild(controlsDiv);
+                standbyList.appendChild(div);
+            });
         }
 
         function updateIncubatorDisplay() {
@@ -9273,6 +9361,7 @@ function processTurn() {
             updateSkillDisplay();
             updateIncubatorDisplay();
             updateMaterialsDisplay();
+            updateMercenaryDisplay();
             updateTileTabDisplay();
             updateActionButtons();
             updateStats();
