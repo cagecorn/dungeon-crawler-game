@@ -48,6 +48,13 @@
             box-shadow: 0 0 20px rgba(0, 0, 0, 0.8);
             border: 2px solid #444;
         }
+        #game-canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            image-rendering: pixelated;
+            z-index: 0;
+        }
         :root {
             --cell-width: 32px;
             --panel-bg: #f5f5dc;
@@ -869,6 +876,7 @@
     <div class="main-container">
         <div class="game-area">
             <div class="dungeon-container">
+                <canvas id="game-canvas"></canvas>
                 <div class="dungeon" id="dungeon"></div>
             </div>
             <div class="message-log" id="message-log"></div>
@@ -1029,6 +1037,7 @@
     </div>
     <audio id="bgm-player"></audio>
     <script src="dice.js"></script>
+    <script type="module" src="src/canvasRenderer.js"></script>
     <script type="module" src="src/state.js"></script>
     <script type="module" src="src/ui.js"></script>
     <script type="module" src="src/mechanics.js"></script>

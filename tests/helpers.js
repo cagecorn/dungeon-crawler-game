@@ -37,7 +37,7 @@ async function loadGame(options = {}) {
   });
 
   const ctx = dom.getInternalVMContext();
-  const modules = ['src/state.js', 'src/ui.js', 'src/mechanics.js'];
+  const modules = ['src/state.js', 'src/ui.js', 'src/canvasRenderer.js', 'src/mechanics.js'];
   for (const file of modules) {
     const code = fs.readFileSync(path.join(__dirname, '..', file), 'utf8');
     const script = new vm.Script(code, { filename: file });
