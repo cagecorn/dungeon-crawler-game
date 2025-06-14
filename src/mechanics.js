@@ -4741,6 +4741,41 @@ function killMonster(monster, killer = null) {
             return died;
         }
 
+        // [새로 추가된 함수] 1초마다 아이콘만 가볍게 새로고침합니다.
+        function updateAllEffectIcons() {
+            const allUnits = [gameState.player, ...gameState.activeMercenaries.filter(m=>m.alive), ...gameState.monsters];
+            for (const unit of allUnits) {
+                if (!unit || unit.x < 0 || unit.y < 0) continue; // 맵에 없는 유닛은 건너뜁니다.
+
+                const cellDiv = gameState.cellElements[unit.y]?.[unit.x];
+                if (!cellDiv) continue;
+
+                const state = effectCycleState[unit.id];
+                if (state) {
+                    const buffContainer = cellDiv.buffContainer;
+                    const statusContainer = cellDiv.statusContainer;
+
+                    // 버프 아이콘 업데이트
+                    if (buffContainer) {
+                        buffContainer.innerHTML = '';
+                        if (state.buffs && state.buffs.length > 0) {
+                            const currentBuffIcon = state.buffs[state.buffIndex];
+                            buffContainer.innerHTML = `<span class="effect-icon">${currentBuffIcon}</span>`;
+                        }
+                    }
+
+                    // 디버프 아이콘 업데이트
+                    if (statusContainer) {
+                        statusContainer.innerHTML = '';
+                        if (state.debuffs && state.debuffs.length > 0) {
+                            const currentDebuffIcon = state.debuffs[state.debuffIndex];
+                            statusContainer.innerHTML = `<span class="effect-icon">${currentDebuffIcon}</span>`;
+                        }
+                    }
+                }
+            }
+        }
+
         // 던전 렌더링
         function renderDungeon() {
             const dungeonEl = document.getElementById('dungeon');
@@ -9515,7 +9550,7 @@ upgradeMercenarySkill, upgradeMonsterSkill, useItem, useItemOnTarget, useSkill, 
     isPlayerSide, isSameSide
 };
 // ======================= 추가 시작 =======================
-// 1초마다 모든 유닛의 효과 아이콘 인덱스를 업데이트하고, 다시 렌더링합니다.
+// 1초마다 모든 유닛의 효과 아이콘 인덱스를 업데이트하고, 필요한 셀만 갱신합니다.
 if (!IS_TEST_ENV) {
     setInterval(() => {
         if (!gameState.gameRunning) return; // 게임이 멈췄을 땐 실행하지 않음
@@ -9547,7 +9582,7 @@ if (!IS_TEST_ENV) {
         });
 
         if (needsRender) {
-            renderDungeon(); // 아이콘이 변경되었으므로 던전을 다시 렌더링
+            updateAllEffectIcons(); // 아이콘이 변경되었으므로 해당 셀만 갱신
         }
     }, 1000); // 1초 간격
 }
