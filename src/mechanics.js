@@ -4748,13 +4748,16 @@ function killMonster(monster, killer = null) {
             for (let y = 0; y < gameState.dungeonSize; y++) {
                 for (let x = 0; x < gameState.dungeonSize; x++) {
                     const div = gameState.cellElements[y][x];
+
+                    // [최적화] 매번 검색하는 대신 캐시된 요소를 직접 사용합니다.
                     const tileBg = div.tileBg;
+                    const buffEl = div.buffContainer;
+                    const statusEl = div.statusContainer;
+
                     if (tileBg) tileBg.style.removeProperty('background-image');
                     div.style.removeProperty('background-image');
                     div.classList.remove('low-health');
-                    // 렌더링마다 이전 아이콘들을 모두 지워 잔상이 남지 않게 합니다.
-                    const buffEl = div.buffContainer;
-                    const statusEl = div.statusContainer;
+
                     if (buffEl) buffEl.innerHTML = '';
                     if (statusEl) statusEl.innerHTML = '';
                     const baseCellType = gameState.dungeon[y][x];
