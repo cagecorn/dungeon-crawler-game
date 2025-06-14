@@ -4654,11 +4654,12 @@ function killMonster(monster, killer = null) {
         function renderDungeon() {
             const dungeonEl = document.getElementById('dungeon');
             if (!dungeonEl || !gameState.cellElements.length) return;
+
             for (let y = 0; y < gameState.dungeonSize; y++) {
                 for (let x = 0; x < gameState.dungeonSize; x++) {
                     const div = gameState.cellElements[y][x];
 
-                    // [최적화] 매번 검색하는 대신 캐시된 요소를 직접 사용합니다.
+                    // [최적화] querySelector 대신, 미리 저장해둔(캐싱된) 요소를 직접 사용합니다.
                     const tileBg = div.tileBg;
                     const buffEl = div.buffContainer;
                     const statusEl = div.statusContainer;
@@ -4669,13 +4670,8 @@ function killMonster(monster, killer = null) {
 
                     if (buffEl) buffEl.innerHTML = '';
                     if (statusEl) statusEl.innerHTML = '';
+
                     const baseCellType = gameState.dungeon[y][x];
-                    if (gameState.fogOfWar[y] && gameState.fogOfWar[y][x]) {
-                        div.className = 'cell darkness';
-                        if (tileBg) tileBg.style.backgroundImage = '';
-                        div.textContent = '';
-                        continue;
-                    }
                     const finalClasses = ['cell', baseCellType];
                     let mapTile = null;
                     if (baseCellType === 'tile') {
@@ -4774,10 +4770,6 @@ function killMonster(monster, killer = null) {
                                         div.textContent = item.icon;
                                     }
                                 }
-                            } else if (baseCellType === 'tile') {
-                                if (tileBg && mapTile) {
-                                    tileBg.style.backgroundImage = `url('${String(mapTile.imageUrl)}')`;
-                                }
                             } else if (baseCellType === 'plant') {
                                 div.textContent = '🌿';
                             } else if (baseCellType === 'chest') {
@@ -4814,7 +4806,7 @@ function killMonster(monster, killer = null) {
                     }
 
                     div.className = finalClasses.join(' ');
-                    if (gameState.fogOfWar[y] && gameState.fogOfWar[y][x]) {
+                    if (gameState.fogOfWar[y]?.[x]) {
                         div.style.filter = 'brightness(0.2)';
                     } else {
                         div.style.filter = '';
