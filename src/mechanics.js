@@ -7441,26 +7441,28 @@ function processTurn() {
             }
         });
 
-        const buffKey = mercenary.skill;
-        const buffInfo = MERCENARY_SKILLS[buffKey] || MONSTER_SKILLS[buffKey];
-        const buffLevel = mercenary.skillLevels && mercenary.skillLevels[buffKey] || 1;
-        const buffMana = buffInfo ? getSkillManaCost(mercenary, buffInfo) : 0;
-        const hasBuff = buffInfo && Array.isArray(mercenary.buffs) && mercenary.buffs.some(b => b.name === buffInfo.name);
-
-        if (nearestMonster && buffInfo && buffInfo.statBuff && !hasBuff && !(mercenary.skillCooldowns[buffKey] > 0) && mercenary.mana >= buffMana) {
-            applyStatPercentBuff(mercenary, mercenary, buffInfo, buffLevel);
-            mercenary.mana -= buffMana;
-            mercenary.skillCooldowns[buffKey] = getSkillCooldown(mercenary, buffInfo);
-            updateMercenaryDisplay();
-            mercenary.hasActed = true;
-            return;
-        }
-
         if (nearestMonster) {
+            // ----- Step 1: apply self buff if not active -----
+            const buffKey = mercenary.skill;
+            const buffInfo = MERCENARY_SKILLS[buffKey] || MONSTER_SKILLS[buffKey];
+            const buffLevel = mercenary.skillLevels && mercenary.skillLevels[buffKey] || 1;
+            const buffMana = buffInfo ? getSkillManaCost(mercenary, buffInfo) : 0;
+            const hasBuff = buffInfo && Array.isArray(mercenary.buffs) && mercenary.buffs.some(b => b.name === buffInfo.name);
+
+            if (buffInfo && buffInfo.statBuff && !hasBuff && !(mercenary.skillCooldowns[buffKey] > 0) && mercenary.mana >= buffMana) {
+                applyStatPercentBuff(mercenary, mercenary, buffInfo, buffLevel);
+                mercenary.mana -= buffMana;
+                mercenary.skillCooldowns[buffKey] = getSkillCooldown(mercenary, buffInfo);
+                updateMercenaryDisplay();
+                mercenary.hasActed = true;
+                return;
+            }
+
             const secondKey = mercenary.skill2;
             const secondInfo = MERCENARY_SKILLS[secondKey] || MONSTER_SKILLS[secondKey];
             const secondLevel = mercenary.skillLevels && mercenary.skillLevels[secondKey] || 1;
             const secondMana = secondInfo ? getSkillManaCost(mercenary, secondInfo) : 0;
+            // ----- Step 2: use offensive skill if available -----
             if (secondInfo && !(mercenary.skillCooldowns[secondKey] > 0) && mercenary.mana >= secondMana &&
                 nearestDistance <= getSkillRange(mercenary, secondInfo) &&
                 hasLineOfSight(mercenary.x, mercenary.y, nearestMonster.x, nearestMonster.y)) {
@@ -7513,7 +7515,7 @@ function processTurn() {
                 mercenary.hasActed = true;
                 return;
             }
-
+            // ----- Step 3: use basic attack if in range -----
             const baseAttackRange = 1;
             if (nearestDistance <= baseAttackRange) {
                 performAttack(mercenary, nearestMonster);
@@ -7521,6 +7523,7 @@ function processTurn() {
                 mercenary.hasActed = true;
                 return;
             }
+            // ----- Step 4: move toward the monster -----
             const path = findPath(mercenary.x, mercenary.y, nearestMonster.x, nearestMonster.y);
             if (path && path.length > 1) {
                 mercenary.nextX = path[1].x;
@@ -7528,15 +7531,16 @@ function processTurn() {
             }
             mercenary.hasActed = true;
             return;
-        }
-
-        const playerDistance = getDistance(mercenary.x, mercenary.y, gameState.player.x, gameState.player.y);
-        if (playerDistance > 3) {
-            const path = findPath(mercenary.x, mercenary.y, gameState.player.x, gameState.player.y);
-            if (path && path.length > 1) {
-                mercenary.nextX = path[1].x;
-                mercenary.nextY = path[1].y;
-                mercenary.hasActed = true;
+        } else {
+            // No visible monster - move toward the player
+            const playerDistance = getDistance(mercenary.x, mercenary.y, gameState.player.x, gameState.player.y);
+            if (playerDistance > 3) {
+                const path = findPath(mercenary.x, mercenary.y, gameState.player.x, gameState.player.y);
+                if (path && path.length > 1) {
+                    mercenary.nextX = path[1].x;
+                    mercenary.nextY = path[1].y;
+                    mercenary.hasActed = true;
+                }
             }
         }
     }
