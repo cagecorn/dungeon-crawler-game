@@ -7505,22 +7505,12 @@ function processTurn() {
 
     // 챔피언 AI 로직
     function processChampionTurn(champion, visibleMonsters = null) {
-        const debuffSkills = DEBUFF_SKILLS;
-        const skillKey = champion.monsterSkill;
+        const debuffSkills = ['Weaken', 'Sunder', 'Regression', 'SpellWeakness', 'ElementalWeakness'];
+        // 아군은 skill, 적군은 monsterSkill 값을 사용
+        const skillKey = champion.skill || champion.monsterSkill;
 
-        function moveTowardPlayer() {
-            const path = findPath(champion.x, champion.y, gameState.player.x, gameState.player.y);
-            if (path && path.length > 1) {
-                champion.nextX = path[1].x;
-                champion.nextY = path[1].y;
-            }
-        }
-
-        if (!skillKey) {
-            if (isPlayerSide(champion)) {
-                const dist = getDistance(champion.x, champion.y, gameState.player.x, gameState.player.y);
-                if (dist > 3) moveTowardPlayer();
-            }
+        if (!skillKey) { // 스킬이 없으면 기본 공격/이동만 수행
+            performBasicAttackOrMove(champion, visibleMonsters);
             return;
         }
 
@@ -7528,12 +7518,12 @@ function processTurn() {
 
         // 1. 가장 가까운 적 찾기
         const opponents = isPlayerSide(champion)
-            ? (visibleMonsters || gameState.monsters).filter(op =>
-                getDistance(op.x, op.y, gameState.player.x, gameState.player.y) <= PARTY_LEASH_RADIUS)
+            ? (visibleMonsters || gameState.monsters.filter(m => m.alive))
             : [gameState.player, ...gameState.activeMercenaries.filter(m => m.alive)];
 
         let nearestOpponent = null;
         let nearestDistance = Infinity;
+
         opponents.forEach(opp => {
             const dist = getDistance(champion.x, champion.y, opp.x, opp.y);
             if (dist < nearestDistance && hasLineOfSight(champion.x, champion.y, opp.x, opp.y)) {
@@ -7542,15 +7532,21 @@ function processTurn() {
             }
         });
 
-        if (!nearestOpponent) {
+        if (!nearestOpponent) { // 주변에 적이 없으면 플레이어에게 이동 (아군 기준)
             if (isPlayerSide(champion)) {
-                const dist = getDistance(champion.x, champion.y, gameState.player.x, gameState.player.y);
-                if (dist > 3) moveTowardPlayer();
+                const playerDistance = getDistance(champion.x, champion.y, gameState.player.x, gameState.player.y);
+                if (playerDistance > PARTY_LEASH_RADIUS - 1) {
+                    const path = findPath(champion.x, champion.y, gameState.player.x, gameState.player.y);
+                    if (path && path.length > 1) {
+                        champion.nextX = path[1].x;
+                        champion.nextY = path[1].y;
+                    }
+                }
             }
             return;
         }
 
-        // 2. AI 행동 결정
+        // 2. 행동 결정 - 디버프 우선
         if (isDebuffSkill) {
             const skillInfo = SKILL_DEFS[skillKey];
             const hasDebuff = nearestOpponent.buffs && nearestOpponent.buffs.some(b => b.name === skillInfo.name);
@@ -7562,33 +7558,39 @@ function processTurn() {
                 applyStatPercentBuff(champion, nearestOpponent, skillInfo, level);
                 champion.mana -= getSkillManaCost(champion, skillInfo);
                 champion.skillCooldowns[skillKey] = getSkillCooldown(champion, skillInfo);
-                addMessage(`${champion.name}이(가) ${nearestOpponent.name}에게 ${skillInfo.name}을(를) 시전했습니다!`, 'combat', null, getUnitImage(champion));
+                addMessage(`${getUnitImage(champion) ? '' : skillInfo.icon} ${champion.name}이(가) ${nearestOpponent.name}에게 ${skillInfo.name}을(를) 시전했습니다!`, 'combat', null, getUnitImage(champion));
                 return;
             }
         }
 
-        const attackRange = champion.range || 1;
-        if (nearestDistance <= attackRange) {
-            performAttack(champion, nearestOpponent);
-            if (nearestOpponent.health <= 0) {
-                if (isPlayerSide(nearestOpponent)) {
-                    if (nearestOpponent === gameState.player) handlePlayerDeath();
-                    else killMercenary(nearestOpponent);
+        // 기본 공격 또는 이동
+        performBasicAttackOrMove(champion, nearestOpponent, nearestDistance);
+    }
+
+    // 챔피언의 기본 공격/이동 로직
+    function performBasicAttackOrMove(unit, target, distance) {
+        const attackRange = unit.range || 1;
+        if (distance <= attackRange) {
+            const result = performAttack(unit, target);
+            if (target.health <= 0) {
+                if (isPlayerSide(target)) {
+                    if (target === gameState.player) handlePlayerDeath();
+                    else killMercenary(target);
                 } else {
-                    killMonster(nearestOpponent, champion);
+                    killMonster(target, unit);
                 }
             }
         } else {
-            const path = findPath(champion.x, champion.y, nearestOpponent.x, nearestOpponent.y);
+            const path = findPath(unit.x, unit.y, target.x, target.y);
             if (path && path.length > 1) {
-                if (isPlayerSide(champion)) {
-                    champion.nextX = path[1].x;
-                    champion.nextY = path[1].y;
+                if (isPlayerSide(unit)) {
+                    unit.nextX = path[1].x;
+                    unit.nextY = path[1].y;
                 } else {
-                    gameState.dungeon[champion.y][champion.x] = 'empty';
-                    champion.x = path[1].x;
-                    champion.y = path[1].y;
-                    gameState.dungeon[champion.y][champion.x] = 'monster';
+                    gameState.dungeon[unit.y][unit.x] = 'empty';
+                    unit.x = path[1].x;
+                    unit.y = path[1].y;
+                    gameState.dungeon[unit.y][unit.x] = 'monster';
                 }
             }
         }
