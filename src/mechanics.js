@@ -7341,7 +7341,19 @@ function processTurn() {
                         }
                     }
                 }
-                
+
+                const distToPlayer = getDistance(monster.x, monster.y, gameState.player.x, gameState.player.y);
+                const nearestMercDist = Math.min(
+                    ...gameState.activeMercenaries
+                        .filter(m => m.alive)
+                        .map(m => getDistance(monster.x, monster.y, m.x, m.y)),
+                    Infinity
+                );
+                if (distToPlayer > MONSTER_VISION && nearestMercDist > MONSTER_VISION) {
+                    monster.hasActed = true;
+                    continue;
+                }
+
                 let nearestTarget = null;
                 let nearestDistance = Infinity;
                 
