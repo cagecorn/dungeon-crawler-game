@@ -1956,24 +1956,72 @@ const MERCENARY_NAMES = [
             return true;
         }
 
-        // BFS 경로 탐색
+        // A* 경로 탐색으로 성능 개선
         function findPath(startX, startY, targetX, targetY) {
             const size = gameState.dungeonSize;
             if (startX < 0 || startY < 0 || startX >= size || startY >= size) return null;
             if (targetX < 0 || targetY < 0 || targetX >= size || targetY >= size) return null;
-            const queue = [[startX, startY]];
-            let head = 0;
-            const visited = Array.from({ length: size }, () => Array(size).fill(false));
-            const cameFrom = {};
+
+            const h = (x, y) => Math.abs(x - targetX) + Math.abs(y - targetY);
             const key = (x, y) => `${x},${y}`;
-            visited[startY][startX] = true;
+
+            class MinHeap {
+                constructor() { this.data = []; }
+                push(node) {
+                    this.data.push(node);
+                    this.bubbleUp(this.data.length - 1);
+                }
+                bubbleUp(index) {
+                    const arr = this.data;
+                    while (index > 0) {
+                        const parent = (index - 1) >> 1;
+                        if (arr[index].f >= arr[parent].f) break;
+                        [arr[index], arr[parent]] = [arr[parent], arr[index]];
+                        index = parent;
+                    }
+                }
+                pop() {
+                    if (this.data.length === 0) return null;
+                    const top = this.data[0];
+                    const end = this.data.pop();
+                    if (this.data.length > 0) {
+                        this.data[0] = end;
+                        this.sinkDown(0);
+                    }
+                    return top;
+                }
+                sinkDown(index) {
+                    const arr = this.data;
+                    const length = arr.length;
+                    while (true) {
+                        let left = index * 2 + 1;
+                        let right = left + 1;
+                        let smallest = index;
+                        if (left < length && arr[left].f < arr[smallest].f) smallest = left;
+                        if (right < length && arr[right].f < arr[smallest].f) smallest = right;
+                        if (smallest === index) break;
+                        [arr[index], arr[smallest]] = [arr[smallest], arr[index]];
+                        index = smallest;
+                    }
+                }
+                get length() { return this.data.length; }
+            }
+
+            const open = new MinHeap();
+            open.push({ x: startX, y: startY, g: 0, f: h(startX, startY) });
+            const inOpen = new Set([key(startX, startY)]);
+            const cameFrom = {};
+            const gScore = Array.from({ length: size }, () => Array(size).fill(Infinity));
+            gScore[startY][startX] = 0;
             cameFrom[key(startX, startY)] = null;
 
-            while (head < queue.length) {
-                const [x, y] = queue[head++];
-                if (x === targetX && y === targetY) {
+            while (open.length) {
+                const current = open.pop();
+                inOpen.delete(key(current.x, current.y));
+
+                if (current.x === targetX && current.y === targetY) {
                     const path = [];
-                    let cur = [x, y];
+                    let cur = [current.x, current.y];
                     while (cur) {
                         path.unshift({ x: cur[0], y: cur[1] });
                         cur = cameFrom[key(cur[0], cur[1])];
@@ -1983,15 +2031,22 @@ const MERCENARY_NAMES = [
 
                 const dirs = [[1,0], [-1,0], [0,1], [0,-1]];
                 for (const [dx, dy] of dirs) {
-                    const nx = x + dx;
-                    const ny = y + dy;
+                    const nx = current.x + dx;
+                    const ny = current.y + dy;
                     if (nx < 0 || ny < 0 || nx >= size || ny >= size) continue;
-                    if (visited[ny][nx]) continue;
                     const cell = gameState.dungeon[ny][nx];
                     if ((cell === 'wall' || cell === 'monster') && !(nx === targetX && ny === targetY)) continue;
-                    visited[ny][nx] = true;
-                    cameFrom[key(nx, ny)] = [x, y];
-                    queue.push([nx, ny]);
+
+                    const tentativeG = current.g + 1;
+                    if (tentativeG < gScore[ny][nx]) {
+                        gScore[ny][nx] = tentativeG;
+                        cameFrom[key(nx, ny)] = [current.x, current.y];
+                        const node = { x: nx, y: ny, g: tentativeG, f: tentativeG + h(nx, ny) };
+                        if (!inOpen.has(key(nx, ny))) {
+                            open.push(node);
+                            inOpen.add(key(nx, ny));
+                        }
+                    }
                 }
             }
             return null;
