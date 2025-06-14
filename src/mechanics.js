@@ -3807,8 +3807,9 @@ function updateMaterialsDisplay() {
                 });
             }
 
-            const uniqueBuffs = [...new Set(allBuffIcons)];
-            const uniqueDebuffs = [...new Set(allDebuffIcons)];
+            const uniqueBuffs = [...new Set(allBuffIcons)].sort();
+            const uniqueDebuffs = [...new Set(allDebuffIcons)].sort();
+            // Sorting ensures deterministic order to prevent flicker from unordered Set iteration
 
             // 2. Update effectCycleState
             if (uniqueBuffs.length === 0 && uniqueDebuffs.length === 0) {
@@ -3816,8 +3817,10 @@ function updateMaterialsDisplay() {
             } else {
                 const currentState = effectCycleState[unit.id] || {};
 
-                const buffsChanged = !currentState.buffs || JSON.stringify(currentState.buffs) !== JSON.stringify(uniqueBuffs);
-                const debuffsChanged = !currentState.debuffs || JSON.stringify(currentState.debuffs) !== JSON.stringify(uniqueDebuffs);
+                const buffsChanged = !currentState.buffs ||
+                    JSON.stringify([...currentState.buffs].sort()) !== JSON.stringify(uniqueBuffs);
+                const debuffsChanged = !currentState.debuffs ||
+                    JSON.stringify([...currentState.debuffs].sort()) !== JSON.stringify(uniqueDebuffs);
 
                 if (!effectCycleState[unit.id]) {
                     effectCycleState[unit.id] = { buffs: [], debuffs: [], buffIndex: 0, debuffIndex: 0 };
